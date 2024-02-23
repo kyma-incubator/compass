@@ -44,6 +44,7 @@ type ResolverRoot interface {
 	EventDefinition() EventDefinitionResolver
 	EventSpec() EventSpecResolver
 	Formation() FormationResolver
+	FormationAssignment() FormationAssignmentResolver
 	FormationTemplate() FormationTemplateResolver
 	IntegrationSystem() IntegrationSystemResolver
 	Mutation() MutationResolver
@@ -127,7 +128,6 @@ type ComplexityRoot struct {
 		Status                  func(childComplexity int) int
 		SystemNumber            func(childComplexity int) int
 		SystemStatus            func(childComplexity int) int
-		TenantBusinessType      func(childComplexity int) int
 		UpdatedAt               func(childComplexity int) int
 		Webhooks                func(childComplexity int) int
 	}
@@ -370,26 +370,33 @@ type ComplexityRoot struct {
 	}
 
 	Formation struct {
-		Error                func(childComplexity int) int
-		FormationAssignment  func(childComplexity int, id string) int
-		FormationAssignments func(childComplexity int, first *int, after *PageCursor) int
-		FormationTemplateID  func(childComplexity int) int
-		ID                   func(childComplexity int) int
-		Name                 func(childComplexity int) int
-		State                func(childComplexity int) int
-		Status               func(childComplexity int) int
+		Error                         func(childComplexity int) int
+		FormationAssignment           func(childComplexity int, id string) int
+		FormationAssignments          func(childComplexity int, first *int, after *PageCursor) int
+		FormationTemplateID           func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		LastNotificationSentTimestamp func(childComplexity int) int
+		LastStateChangeTimestamp      func(childComplexity int) int
+		Name                          func(childComplexity int) int
+		State                         func(childComplexity int) int
+		Status                        func(childComplexity int) int
+		TenantID                      func(childComplexity int) int
 	}
 
 	FormationAssignment struct {
-		Configuration func(childComplexity int) int
-		Error         func(childComplexity int) int
-		ID            func(childComplexity int) int
-		Source        func(childComplexity int) int
-		SourceType    func(childComplexity int) int
-		State         func(childComplexity int) int
-		Target        func(childComplexity int) int
-		TargetType    func(childComplexity int) int
-		Value         func(childComplexity int) int
+		Configuration                 func(childComplexity int) int
+		Error                         func(childComplexity int) int
+		ID                            func(childComplexity int) int
+		LastNotificationSentTimestamp func(childComplexity int) int
+		LastStateChangeTimestamp      func(childComplexity int) int
+		Source                        func(childComplexity int) int
+		SourceEntity                  func(childComplexity int) int
+		SourceType                    func(childComplexity int) int
+		State                         func(childComplexity int) int
+		Target                        func(childComplexity int) int
+		TargetEntity                  func(childComplexity int) int
+		TargetType                    func(childComplexity int) int
+		Value                         func(childComplexity int) int
 	}
 
 	FormationAssignmentPage struct {
@@ -437,6 +444,7 @@ type ComplexityRoot struct {
 
 	FormationTemplate struct {
 		ApplicationTypes       func(childComplexity int) int
+		DiscoveryConsumers     func(childComplexity int) int
 		FormationConstraints   func(childComplexity int) int
 		ID                     func(childComplexity int) int
 		LeadingProductIDs      func(childComplexity int) int
@@ -583,8 +591,10 @@ type ComplexityRoot struct {
 		SetBundleInstanceAuth                        func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
+		SetTenantLabel                               func(childComplexity int, tenantID string, key string, value interface{}) int
 		SubscribeTenant                              func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) int
 		UnassignFormation                            func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		UnassignFormationGlobal                      func(childComplexity int, objectID string, objectType FormationObjectType, formation string) int
 		UnpairApplication                            func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterApplication                        func(childComplexity int, id string, mode *OperationMode) int
 		UnregisterIntegrationSystem                  func(childComplexity int, id string) int
@@ -684,12 +694,13 @@ type ComplexityRoot struct {
 		FormationTemplates                         func(childComplexity int, first *int, after *PageCursor) int
 		FormationTemplatesByName                   func(childComplexity int, name string, first *int, after *PageCursor) int
 		Formations                                 func(childComplexity int, first *int, after *PageCursor) int
+		FormationsForObject                        func(childComplexity int, objectID string) int
 		HealthChecks                               func(childComplexity int, types []HealthCheckType, origin *string, first *int, after *PageCursor) int
 		IntegrationSystem                          func(childComplexity int, id string) int
 		IntegrationSystems                         func(childComplexity int, first *int, after *PageCursor) int
 		LabelDefinition                            func(childComplexity int, key string) int
 		LabelDefinitions                           func(childComplexity int) int
-		RootTenant                                 func(childComplexity int, externalTenant string) int
+		RootTenants                                func(childComplexity int, externalTenant string) int
 		Runtime                                    func(childComplexity int, id string) int
 		RuntimeByTokenIssuer                       func(childComplexity int, issuer string) int
 		Runtimes                                   func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
@@ -763,7 +774,7 @@ type ComplexityRoot struct {
 		InternalID  func(childComplexity int) int
 		Labels      func(childComplexity int, key *string) int
 		Name        func(childComplexity int) int
-		ParentID    func(childComplexity int) int
+		Parents     func(childComplexity int) int
 		Provider    func(childComplexity int) int
 		Type        func(childComplexity int) int
 	}
@@ -773,12 +784,6 @@ type ComplexityRoot struct {
 		ResourceID   func(childComplexity int) int
 		ResourceType func(childComplexity int) int
 		TenantID     func(childComplexity int) int
-	}
-
-	TenantBusinessType struct {
-		Code func(childComplexity int) int
-		ID   func(childComplexity int) int
-		Name func(childComplexity int) int
 	}
 
 	TenantPage struct {
@@ -830,7 +835,6 @@ type APISpecResolver interface {
 }
 type ApplicationResolver interface {
 	ApplicationTemplate(ctx context.Context, obj *Application) (*ApplicationTemplate, error)
-	TenantBusinessType(ctx context.Context, obj *Application) (*TenantBusinessType, error)
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
@@ -873,6 +877,11 @@ type FormationResolver interface {
 	FormationAssignment(ctx context.Context, obj *Formation, id string) (*FormationAssignment, error)
 	FormationAssignments(ctx context.Context, obj *Formation, first *int, after *PageCursor) (*FormationAssignmentPage, error)
 	Status(ctx context.Context, obj *Formation) (*FormationStatus, error)
+}
+type FormationAssignmentResolver interface {
+	SourceEntity(ctx context.Context, obj *FormationAssignment) (FormationParticipant, error)
+
+	TargetEntity(ctx context.Context, obj *FormationAssignment) (FormationParticipant, error)
 }
 type FormationTemplateResolver interface {
 	Webhooks(ctx context.Context, obj *FormationTemplate) ([]*Webhook, error)
@@ -935,6 +944,7 @@ type MutationResolver interface {
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
+	UnassignFormationGlobal(ctx context.Context, objectID string, objectType FormationObjectType, formation string) (*Formation, error)
 	CreateFormationConstraint(ctx context.Context, formationConstraint FormationConstraintInput) (*FormationConstraint, error)
 	DeleteFormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
 	UpdateFormationConstraint(ctx context.Context, id string, in FormationConstraintUpdateInput) (*FormationConstraint, error)
@@ -943,6 +953,7 @@ type MutationResolver interface {
 	CreateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	UpdateLabelDefinition(ctx context.Context, in LabelDefinitionInput) (*LabelDefinition, error)
 	SetApplicationLabel(ctx context.Context, applicationID string, key string, value interface{}) (*Label, error)
+	SetTenantLabel(ctx context.Context, tenantID string, key string, value interface{}) (*Label, error)
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*Label, error)
 	SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*Label, error)
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
@@ -1005,7 +1016,7 @@ type QueryResolver interface {
 	TenantByExternalID(ctx context.Context, id string) (*Tenant, error)
 	TenantByInternalID(ctx context.Context, id string) (*Tenant, error)
 	TenantByLowestOwnerForResource(ctx context.Context, id string, resource string) (string, error)
-	RootTenant(ctx context.Context, externalTenant string) (*Tenant, error)
+	RootTenants(ctx context.Context, externalTenant string) ([]*Tenant, error)
 	AutomaticScenarioAssignmentForScenario(ctx context.Context, scenarioName string) (*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignmentsForSelector(ctx context.Context, selector LabelSelectorInput) ([]*AutomaticScenarioAssignment, error)
 	AutomaticScenarioAssignments(ctx context.Context, first *int, after *PageCursor) (*AutomaticScenarioAssignmentPage, error)
@@ -1014,6 +1025,7 @@ type QueryResolver interface {
 	Formation(ctx context.Context, id string) (*Formation, error)
 	FormationByName(ctx context.Context, name string) (*Formation, error)
 	Formations(ctx context.Context, first *int, after *PageCursor) (*FormationPage, error)
+	FormationsForObject(ctx context.Context, objectID string) ([]*Formation, error)
 	FormationConstraints(ctx context.Context) ([]*FormationConstraint, error)
 	FormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
 	FormationConstraintsByFormationType(ctx context.Context, formationTemplateID string) ([]*FormationConstraint, error)
@@ -1426,13 +1438,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.SystemStatus(childComplexity), true
-
-	case "Application.tenantBusinessType":
-		if e.complexity.Application.TenantBusinessType == nil {
-			break
-		}
-
-		return e.complexity.Application.TenantBusinessType(childComplexity), true
 
 	case "Application.updatedAt":
 		if e.complexity.Application.UpdatedAt == nil {
@@ -2562,6 +2567,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Formation.ID(childComplexity), true
 
+	case "Formation.lastNotificationSentTimestamp":
+		if e.complexity.Formation.LastNotificationSentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Formation.LastNotificationSentTimestamp(childComplexity), true
+
+	case "Formation.lastStateChangeTimestamp":
+		if e.complexity.Formation.LastStateChangeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.Formation.LastStateChangeTimestamp(childComplexity), true
+
 	case "Formation.name":
 		if e.complexity.Formation.Name == nil {
 			break
@@ -2582,6 +2601,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Formation.Status(childComplexity), true
+
+	case "Formation.tenantID":
+		if e.complexity.Formation.TenantID == nil {
+			break
+		}
+
+		return e.complexity.Formation.TenantID(childComplexity), true
 
 	case "FormationAssignment.configuration":
 		if e.complexity.FormationAssignment.Configuration == nil {
@@ -2604,12 +2630,33 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationAssignment.ID(childComplexity), true
 
+	case "FormationAssignment.lastNotificationSentTimestamp":
+		if e.complexity.FormationAssignment.LastNotificationSentTimestamp == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.LastNotificationSentTimestamp(childComplexity), true
+
+	case "FormationAssignment.lastStateChangeTimestamp":
+		if e.complexity.FormationAssignment.LastStateChangeTimestamp == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.LastStateChangeTimestamp(childComplexity), true
+
 	case "FormationAssignment.source":
 		if e.complexity.FormationAssignment.Source == nil {
 			break
 		}
 
 		return e.complexity.FormationAssignment.Source(childComplexity), true
+
+	case "FormationAssignment.sourceEntity":
+		if e.complexity.FormationAssignment.SourceEntity == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.SourceEntity(childComplexity), true
 
 	case "FormationAssignment.sourceType":
 		if e.complexity.FormationAssignment.SourceType == nil {
@@ -2631,6 +2678,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationAssignment.Target(childComplexity), true
+
+	case "FormationAssignment.targetEntity":
+		if e.complexity.FormationAssignment.TargetEntity == nil {
+			break
+		}
+
+		return e.complexity.FormationAssignment.TargetEntity(childComplexity), true
 
 	case "FormationAssignment.targetType":
 		if e.complexity.FormationAssignment.TargetType == nil {
@@ -2827,6 +2881,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.ApplicationTypes(childComplexity), true
+
+	case "FormationTemplate.discoveryConsumers":
+		if e.complexity.FormationTemplate.DiscoveryConsumers == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.DiscoveryConsumers(childComplexity), true
 
 	case "FormationTemplate.formationConstraints":
 		if e.complexity.FormationTemplate.FormationConstraints == nil {
@@ -3919,6 +3980,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetRuntimeLabel(childComplexity, args["runtimeID"].(string), args["key"].(string), args["value"].(interface{})), true
 
+	case "Mutation.setTenantLabel":
+		if e.complexity.Mutation.SetTenantLabel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setTenantLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetTenantLabel(childComplexity, args["tenantID"].(string), args["key"].(string), args["value"].(interface{})), true
+
 	case "Mutation.subscribeTenant":
 		if e.complexity.Mutation.SubscribeTenant == nil {
 			break
@@ -3942,6 +4015,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UnassignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput)), true
+
+	case "Mutation.unassignFormationGlobal":
+		if e.complexity.Mutation.UnassignFormationGlobal == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_unassignFormationGlobal_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UnassignFormationGlobal(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(string)), true
 
 	case "Mutation.unpairApplication":
 		if e.complexity.Mutation.UnpairApplication == nil {
@@ -4760,6 +4845,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.Formations(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.formationsForObject":
+		if e.complexity.Query.FormationsForObject == nil {
+			break
+		}
+
+		args, err := ec.field_Query_formationsForObject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.FormationsForObject(childComplexity, args["objectID"].(string)), true
+
 	case "Query.healthChecks":
 		if e.complexity.Query.HealthChecks == nil {
 			break
@@ -4815,17 +4912,17 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.LabelDefinitions(childComplexity), true
 
-	case "Query.rootTenant":
-		if e.complexity.Query.RootTenant == nil {
+	case "Query.rootTenants":
+		if e.complexity.Query.RootTenants == nil {
 			break
 		}
 
-		args, err := ec.field_Query_rootTenant_args(context.TODO(), rawArgs)
+		args, err := ec.field_Query_rootTenants_args(context.TODO(), rawArgs)
 		if err != nil {
 			return 0, false
 		}
 
-		return e.complexity.Query.RootTenant(childComplexity, args["externalTenant"].(string)), true
+		return e.complexity.Query.RootTenants(childComplexity, args["externalTenant"].(string)), true
 
 	case "Query.runtime":
 		if e.complexity.Query.Runtime == nil {
@@ -5219,12 +5316,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Tenant.Name(childComplexity), true
 
-	case "Tenant.parentID":
-		if e.complexity.Tenant.ParentID == nil {
+	case "Tenant.parents":
+		if e.complexity.Tenant.Parents == nil {
 			break
 		}
 
-		return e.complexity.Tenant.ParentID(childComplexity), true
+		return e.complexity.Tenant.Parents(childComplexity), true
 
 	case "Tenant.provider":
 		if e.complexity.Tenant.Provider == nil {
@@ -5267,27 +5364,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.TenantAccess.TenantID(childComplexity), true
-
-	case "TenantBusinessType.code":
-		if e.complexity.TenantBusinessType.Code == nil {
-			break
-		}
-
-		return e.complexity.TenantBusinessType.Code(childComplexity), true
-
-	case "TenantBusinessType.id":
-		if e.complexity.TenantBusinessType.ID == nil {
-			break
-		}
-
-		return e.complexity.TenantBusinessType.ID(childComplexity), true
-
-	case "TenantBusinessType.name":
-		if e.complexity.TenantBusinessType.Name == nil {
-			break
-		}
-
-		return e.complexity.TenantBusinessType.Name(childComplexity), true
 
 	case "TenantPage.data":
 		if e.complexity.TenantPage.Data == nil {
@@ -5834,6 +5910,8 @@ interface SystemAuth {
 
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
+union FormationParticipant = Application | Runtime | RuntimeContext
+
 input APIDefinitionInput {
 	"""
 	**Validation:** ASCII printable characters, max=100
@@ -6150,13 +6228,15 @@ input BundleUpdateInput {
 input BusinessTenantMappingInput {
 	name: String!
 	externalTenant: String!
-	parent: String
+	parents: [String]
 	subdomain: String
 	region: String
 	type: String!
 	provider: String!
 	licenseType: String
 	customerId: String
+	costObjectId: String
+	costObjectType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -6318,6 +6398,7 @@ input FormationTemplateInput {
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
+	discoveryConsumers: [String!]
 }
 
 input IntegrationDependencyInput {
@@ -6560,7 +6641,6 @@ type Application {
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
-	tenantBusinessType: TenantBusinessType
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -6851,6 +6931,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	tenantID: ID! @hasScopes(path: "graphql.field.formation.tenant_id")
 	"""
 	Formation lifecycle notifications state
 	"""
@@ -6865,18 +6946,24 @@ type Formation {
 	Aggregated formation status
 	"""
 	status: FormationStatus!
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
+	sourceEntity: FormationParticipant
 	target: ID!
 	targetType: FormationAssignmentType!
+	targetEntity: FormationParticipant
 	state: String!
 	value: String
 	configuration: String
 	error: String
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -6933,6 +7020,7 @@ type FormationTemplate {
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
+	discoveryConsumers: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -7120,7 +7208,7 @@ type Tenant {
 	internalID: ID!
 	name: String
 	type: String
-	parentID: ID
+	parents: [ID]
 	initialized: Boolean
 	labels(key: String): Labels
 	provider: String!
@@ -7131,12 +7219,6 @@ type TenantAccess {
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
-}
-
-type TenantBusinessType {
-	id: ID!
-	code: String!
-	name: String!
 }
 
 type TenantPage implements Pageable {
@@ -7271,7 +7353,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
-	rootTenant(externalTenant: String!): Tenant! @hasScopes(path: "graphql.query.rootTenant")
+	rootTenants(externalTenant: String!): [Tenant!] @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -7304,6 +7386,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationsForObject(objectID: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForObject")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
@@ -7558,6 +7641,11 @@ type Mutation {
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
+	- [unassign application from formation global](examples/unassign-formation-global/unassign-application-from-formation-global.graphql)
+	"""
+	unassignFormationGlobal(objectID: ID!, objectType: FormationObjectType!, formation: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationGlobal")
+	"""
+	**Examples**
 	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
 	"""
 	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
@@ -7598,6 +7686,10 @@ type Mutation {
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+	"""
+	If a label with given key already exist, it will be replaced with provided value.
+	"""
+	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	
@@ -9527,6 +9619,36 @@ func (ec *executionContext) field_Mutation_setRuntimeLabel_args(ctx context.Cont
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_setTenantLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["tenantID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["tenantID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["key"]; ok {
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg1
+	var arg2 interface{}
+	if tmp, ok := rawArgs["value"]; ok {
+		arg2, err = ec.unmarshalNAny2interface(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["value"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_subscribeTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -9586,6 +9708,36 @@ func (ec *executionContext) field_Mutation_subscribeTenant_args(ctx context.Cont
 		}
 	}
 	args["subscriptionPayload"] = arg6
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_unassignFormationGlobal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["objectID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["objectID"] = arg0
+	var arg1 FormationObjectType
+	if tmp, ok := rawArgs["objectType"]; ok {
+		arg1, err = ec.unmarshalNFormationObjectType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationObjectType(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["objectType"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["formation"]; ok {
+		arg2, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formation"] = arg2
 	return args, nil
 }
 
@@ -10880,6 +11032,20 @@ func (ec *executionContext) field_Query_formation_args(ctx context.Context, rawA
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_formationsForObject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["objectID"]; ok {
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["objectID"] = arg0
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_formations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -10990,7 +11156,7 @@ func (ec *executionContext) field_Query_labelDefinition_args(ctx context.Context
 	return args, nil
 }
 
-func (ec *executionContext) field_Query_rootTenant_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+func (ec *executionContext) field_Query_rootTenants_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
 	var arg0 string
@@ -12444,37 +12610,6 @@ func (ec *executionContext) _Application_applicationTemplate(ctx context.Context
 	res := resTmp.(*ApplicationTemplate)
 	fc.Result = res
 	return ec.marshalOApplicationTemplate2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationTemplate(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _Application_tenantBusinessType(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "Application",
-		Field:    field,
-		Args:     nil,
-		IsMethod: true,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Application().TenantBusinessType(rctx, obj)
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*TenantBusinessType)
-	fc.Result = res
-	return ec.marshalOTenantBusinessType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantBusinessType(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Application_labels(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
@@ -18172,6 +18307,64 @@ func (ec *executionContext) _Formation_formationTemplateId(ctx context.Context, 
 	return ec.marshalNID2string(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Formation_tenantID(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return obj.TenantID, nil
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.field.formation.tenant_id")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, obj, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(string); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be string`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Formation_state(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18347,6 +18540,68 @@ func (ec *executionContext) _Formation_status(ctx context.Context, field graphql
 	return ec.marshalNFormationStatus2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatus(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Formation_lastStateChangeTimestamp(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStateChangeTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Formation_lastNotificationSentTimestamp(ctx context.Context, field graphql.CollectedField, obj *Formation) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Formation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastNotificationSentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationAssignment_id(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18449,6 +18704,37 @@ func (ec *executionContext) _FormationAssignment_sourceType(ctx context.Context,
 	return ec.marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _FormationAssignment_sourceEntity(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FormationAssignment().SourceEntity(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(FormationParticipant)
+	fc.Result = res
+	return ec.marshalOFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _FormationAssignment_target(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -18515,6 +18801,37 @@ func (ec *executionContext) _FormationAssignment_targetType(ctx context.Context,
 	res := resTmp.(FormationAssignmentType)
 	fc.Result = res
 	return ec.marshalNFormationAssignmentType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationAssignmentType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_targetEntity(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FormationAssignment().TargetEntity(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(FormationParticipant)
+	fc.Result = res
+	return ec.marshalOFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignment_state(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
@@ -18642,6 +18959,68 @@ func (ec *executionContext) _FormationAssignment_error(ctx context.Context, fiel
 	res := resTmp.(*string)
 	fc.Result = res
 	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_lastStateChangeTimestamp(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastStateChangeTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationAssignment_lastNotificationSentTimestamp(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationAssignment",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.LastNotificationSentTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationAssignmentPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationAssignmentPage) (ret graphql.Marshaler) {
@@ -19832,6 +20211,37 @@ func (ec *executionContext) _FormationTemplate_supportsReset(ctx context.Context
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _FormationTemplate_discoveryConsumers(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "FormationTemplate",
+		Field:    field,
+		Args:     nil,
+		IsMethod: false,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.DiscoveryConsumers, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]string)
+	fc.Result = res
+	return ec.marshalOString2ᚕstringᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
@@ -24755,6 +25165,71 @@ func (ec *executionContext) _Mutation_unassignFormation(ctx context.Context, fie
 	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_unassignFormationGlobal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_unassignFormationGlobal_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().UnassignFormationGlobal(rctx, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.unassignFormationGlobal")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Formation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Formation)
+	fc.Result = res
+	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_createFormationConstraint(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -25239,6 +25714,71 @@ func (ec *executionContext) _Mutation_setApplicationLabel(ctx context.Context, f
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setApplicationLabel")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Label); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Label`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Label)
+	fc.Result = res
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Mutation_setTenantLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_setTenantLabel_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SetTenantLabel(rctx, args["tenantID"].(string), args["key"].(string), args["value"].(interface{}))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setTenantLabel")
 			if err != nil {
 				return nil, err
 			}
@@ -29588,7 +30128,7 @@ func (ec *executionContext) _Query_tenantByLowestOwnerForResource(ctx context.Co
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+func (ec *executionContext) _Query_rootTenants(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -29604,7 +30144,7 @@ func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql
 
 	ctx = graphql.WithFieldContext(ctx, fc)
 	rawArgs := field.ArgumentMap(ec.Variables)
-	args, err := ec.field_Query_rootTenant_args(ctx, rawArgs)
+	args, err := ec.field_Query_rootTenants_args(ctx, rawArgs)
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
@@ -29613,7 +30153,7 @@ func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().RootTenant(rctx, args["externalTenant"].(string))
+			return ec.resolvers.Query().RootTenants(rctx, args["externalTenant"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.query.rootTenant")
@@ -29633,24 +30173,21 @@ func (ec *executionContext) _Query_rootTenant(ctx context.Context, field graphql
 		if tmp == nil {
 			return nil, nil
 		}
-		if data, ok := tmp.(*Tenant); ok {
+		if data, ok := tmp.([]*Tenant); ok {
 			return data, nil
 		}
-		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant`, tmp)
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Tenant`, tmp)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
-	res := resTmp.(*Tenant)
+	res := resTmp.([]*Tenant)
 	fc.Result = res
-	return ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
+	return ec.marshalOTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_automaticScenarioAssignmentForScenario(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -30153,6 +30690,71 @@ func (ec *executionContext) _Query_formations(ctx context.Context, field graphql
 	res := resTmp.(*FormationPage)
 	fc.Result = res
 	return ec.marshalNFormationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) _Query_formationsForObject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Query",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Query_formationsForObject_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().FormationsForObject(rctx, args["objectID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationsForObject")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.([]*Formation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be []*github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*Formation)
+	fc.Result = res
+	return ec.marshalNFormation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationᚄ(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Query_formationConstraints(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
@@ -31955,7 +32557,7 @@ func (ec *executionContext) _Tenant_type(ctx context.Context, field graphql.Coll
 	return ec.marshalOString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) _Tenant_parentID(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
+func (ec *executionContext) _Tenant_parents(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
 			ec.Error(ctx, ec.Recover(ctx, r))
@@ -31972,7 +32574,7 @@ func (ec *executionContext) _Tenant_parentID(ctx context.Context, field graphql.
 	ctx = graphql.WithFieldContext(ctx, fc)
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.ParentID, nil
+		return obj.Parents, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -31981,9 +32583,9 @@ func (ec *executionContext) _Tenant_parentID(ctx context.Context, field graphql.
 	if resTmp == nil {
 		return graphql.Null
 	}
-	res := resTmp.(string)
+	res := resTmp.([]string)
 	fc.Result = res
-	return ec.marshalOID2string(ctx, field.Selections, res)
+	return ec.marshalOID2ᚕstring(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _Tenant_initialized(ctx context.Context, field graphql.CollectedField, obj *Tenant) (ret graphql.Marshaler) {
@@ -32223,108 +32825,6 @@ func (ec *executionContext) _TenantAccess_owner(ctx context.Context, field graph
 	res := resTmp.(bool)
 	fc.Result = res
 	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _TenantBusinessType_id(ctx context.Context, field graphql.CollectedField, obj *TenantBusinessType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "TenantBusinessType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.ID, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _TenantBusinessType_code(ctx context.Context, field graphql.CollectedField, obj *TenantBusinessType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "TenantBusinessType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Code, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) _TenantBusinessType_name(ctx context.Context, field graphql.CollectedField, obj *TenantBusinessType) (ret graphql.Marshaler) {
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	fc := &graphql.FieldContext{
-		Object:   "TenantBusinessType",
-		Field:    field,
-		Args:     nil,
-		IsMethod: false,
-	}
-
-	ctx = graphql.WithFieldContext(ctx, fc)
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Name, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) _TenantPage_data(ctx context.Context, field graphql.CollectedField, obj *TenantPage) (ret graphql.Marshaler) {
@@ -35297,9 +35797,9 @@ func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context
 			if err != nil {
 				return it, err
 			}
-		case "parent":
+		case "parents":
 			var err error
-			it.Parent, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			it.Parents, err = ec.unmarshalOString2ᚕᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35336,6 +35836,18 @@ func (ec *executionContext) unmarshalInputBusinessTenantMappingInput(ctx context
 		case "customerId":
 			var err error
 			it.CustomerID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "costObjectId":
+			var err error
+			it.CostObjectID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "costObjectType":
+			var err error
+			it.CostObjectType, err = ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -35881,6 +36393,12 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 		case "supportsReset":
 			var err error
 			it.SupportsReset, err = ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "discoveryConsumers":
+			var err error
+			it.DiscoveryConsumers, err = ec.unmarshalOString2ᚕstringᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -36560,6 +37078,30 @@ func (ec *executionContext) _CredentialData(ctx context.Context, sel ast.Selecti
 	}
 }
 
+func (ec *executionContext) _FormationParticipant(ctx context.Context, sel ast.SelectionSet, obj FormationParticipant) graphql.Marshaler {
+	switch obj := (obj).(type) {
+	case nil:
+		return graphql.Null
+	case *Application:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Application(ctx, sel, obj)
+	case *Runtime:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Runtime(ctx, sel, obj)
+	case *RuntimeContext:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._RuntimeContext(ctx, sel, obj)
+	default:
+		panic(fmt.Errorf("unexpected type %T", obj))
+	}
+}
+
 func (ec *executionContext) _OneTimeToken(ctx context.Context, sel ast.SelectionSet, obj OneTimeToken) graphql.Marshaler {
 	switch obj := (obj).(type) {
 	case nil:
@@ -36925,7 +37467,7 @@ func (ec *executionContext) _AppSystemAuth(ctx context.Context, sel ast.Selectio
 	return out
 }
 
-var applicationImplementors = []string{"Application"}
+var applicationImplementors = []string{"Application", "FormationParticipant"}
 
 func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionSet, obj *Application) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, applicationImplementors)
@@ -36969,17 +37511,6 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 					}
 				}()
 				res = ec._Application_applicationTemplate(ctx, field, obj)
-				return res
-			})
-		case "tenantBusinessType":
-			field := field
-			out.Concurrently(i, func() (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Application_tenantBusinessType(ctx, field, obj)
 				return res
 			})
 		case "labels":
@@ -38424,6 +38955,11 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "tenantID":
+			out.Values[i] = ec._Formation_tenantID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&invalids, 1)
+			}
 		case "state":
 			out.Values[i] = ec._Formation_state(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -38467,6 +39003,10 @@ func (ec *executionContext) _Formation(ctx context.Context, sel ast.SelectionSet
 				}
 				return res
 			})
+		case "lastStateChangeTimestamp":
+			out.Values[i] = ec._Formation_lastStateChangeTimestamp(ctx, field, obj)
+		case "lastNotificationSentTimestamp":
+			out.Values[i] = ec._Formation_lastNotificationSentTimestamp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38492,32 +39032,54 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 		case "id":
 			out.Values[i] = ec._FormationAssignment_id(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "source":
 			out.Values[i] = ec._FormationAssignment_source(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "sourceType":
 			out.Values[i] = ec._FormationAssignment_sourceType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "sourceEntity":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FormationAssignment_sourceEntity(ctx, field, obj)
+				return res
+			})
 		case "target":
 			out.Values[i] = ec._FormationAssignment_target(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "targetType":
 			out.Values[i] = ec._FormationAssignment_targetType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
+		case "targetEntity":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FormationAssignment_targetEntity(ctx, field, obj)
+				return res
+			})
 		case "state":
 			out.Values[i] = ec._FormationAssignment_state(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
-				invalids++
+				atomic.AddUint32(&invalids, 1)
 			}
 		case "value":
 			out.Values[i] = ec._FormationAssignment_value(ctx, field, obj)
@@ -38525,6 +39087,10 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._FormationAssignment_configuration(ctx, field, obj)
 		case "error":
 			out.Values[i] = ec._FormationAssignment_error(ctx, field, obj)
+		case "lastStateChangeTimestamp":
+			out.Values[i] = ec._FormationAssignment_lastStateChangeTimestamp(ctx, field, obj)
+		case "lastNotificationSentTimestamp":
+			out.Values[i] = ec._FormationAssignment_lastNotificationSentTimestamp(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -38848,6 +39414,8 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			if out.Values[i] == graphql.Null {
 				atomic.AddUint32(&invalids, 1)
 			}
+		case "discoveryConsumers":
+			out.Values[i] = ec._FormationTemplate_discoveryConsumers(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -39520,6 +40088,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "unassignFormationGlobal":
+			out.Values[i] = ec._Mutation_unassignFormationGlobal(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "createFormationConstraint":
 			out.Values[i] = ec._Mutation_createFormationConstraint(ctx, field)
 			if out.Values[i] == graphql.Null {
@@ -39557,6 +40130,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "setApplicationLabel":
 			out.Values[i] = ec._Mutation_setApplicationLabel(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "setTenantLabel":
+			out.Values[i] = ec._Mutation_setTenantLabel(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -40247,7 +40825,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				}
 				return res
 			})
-		case "rootTenant":
+		case "rootTenants":
 			field := field
 			out.Concurrently(i, func() (res graphql.Marshaler) {
 				defer func() {
@@ -40255,10 +40833,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_rootTenant(ctx, field)
-				if res == graphql.Null {
-					atomic.AddUint32(&invalids, 1)
-				}
+				res = ec._Query_rootTenants(ctx, field)
 				return res
 			})
 		case "automaticScenarioAssignmentForScenario":
@@ -40350,6 +40925,20 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_formations(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&invalids, 1)
+				}
+				return res
+			})
+		case "formationsForObject":
+			field := field
+			out.Concurrently(i, func() (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_formationsForObject(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&invalids, 1)
 				}
@@ -40479,7 +41068,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 	return out
 }
 
-var runtimeImplementors = []string{"Runtime"}
+var runtimeImplementors = []string{"Runtime", "FormationParticipant"}
 
 func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, obj *Runtime) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeImplementors)
@@ -40591,7 +41180,7 @@ func (ec *executionContext) _Runtime(ctx context.Context, sel ast.SelectionSet, 
 	return out
 }
 
-var runtimeContextImplementors = []string{"RuntimeContext"}
+var runtimeContextImplementors = []string{"RuntimeContext", "FormationParticipant"}
 
 func (ec *executionContext) _RuntimeContext(ctx context.Context, sel ast.SelectionSet, obj *RuntimeContext) graphql.Marshaler {
 	fields := graphql.CollectFields(ec.OperationContext, sel, runtimeContextImplementors)
@@ -40859,8 +41448,8 @@ func (ec *executionContext) _Tenant(ctx context.Context, sel ast.SelectionSet, o
 			out.Values[i] = ec._Tenant_name(ctx, field, obj)
 		case "type":
 			out.Values[i] = ec._Tenant_type(ctx, field, obj)
-		case "parentID":
-			out.Values[i] = ec._Tenant_parentID(ctx, field, obj)
+		case "parents":
+			out.Values[i] = ec._Tenant_parents(ctx, field, obj)
 		case "initialized":
 			out.Values[i] = ec._Tenant_initialized(ctx, field, obj)
 		case "labels":
@@ -40918,43 +41507,6 @@ func (ec *executionContext) _TenantAccess(ctx context.Context, sel ast.Selection
 			}
 		case "owner":
 			out.Values[i] = ec._TenantAccess_owner(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
-
-var tenantBusinessTypeImplementors = []string{"TenantBusinessType"}
-
-func (ec *executionContext) _TenantBusinessType(ctx context.Context, sel ast.SelectionSet, obj *TenantBusinessType) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, tenantBusinessTypeImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("TenantBusinessType")
-		case "id":
-			out.Values[i] = ec._TenantBusinessType_id(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "code":
-			out.Values[i] = ec._TenantBusinessType_code(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "name":
-			out.Values[i] = ec._TenantBusinessType_name(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
@@ -44717,6 +45269,13 @@ func (ec *executionContext) marshalOFormationError2githubᚗcomᚋkymaᚑincubat
 	return ec._FormationError(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalOFormationParticipant2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationParticipant(ctx context.Context, sel ast.SelectionSet, v FormationParticipant) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._FormationParticipant(ctx, sel, v)
+}
+
 func (ec *executionContext) marshalOFormationStatusError2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationStatusErrorᚄ(ctx context.Context, sel ast.SelectionSet, v []*FormationStatusError) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -44873,6 +45432,38 @@ func (ec *executionContext) unmarshalOID2string(ctx context.Context, v interface
 
 func (ec *executionContext) marshalOID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
 	return graphql.MarshalID(v)
+}
+
+func (ec *executionContext) unmarshalOID2ᚕstring(ctx context.Context, v interface{}) ([]string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOID2string(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOID2ᚕstring(ctx context.Context, sel ast.SelectionSet, v []string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOID2string(ctx, sel, v[i])
+	}
+
+	return ret
 }
 
 func (ec *executionContext) unmarshalOID2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
@@ -45411,6 +46002,38 @@ func (ec *executionContext) marshalOString2ᚕstringᚄ(ctx context.Context, sel
 	return ret
 }
 
+func (ec *executionContext) unmarshalOString2ᚕᚖstring(ctx context.Context, v interface{}) ([]*string, error) {
+	var vSlice []interface{}
+	if v != nil {
+		if tmp1, ok := v.([]interface{}); ok {
+			vSlice = tmp1
+		} else {
+			vSlice = []interface{}{v}
+		}
+	}
+	var err error
+	res := make([]*string, len(vSlice))
+	for i := range vSlice {
+		res[i], err = ec.unmarshalOString2ᚖstring(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalOString2ᚕᚖstring(ctx context.Context, sel ast.SelectionSet, v []*string) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	for i := range v {
+		ret[i] = ec.marshalOString2ᚖstring(ctx, sel, v[i])
+	}
+
+	return ret
+}
+
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -45493,6 +46116,46 @@ func (ec *executionContext) marshalOTenant2githubᚗcomᚋkymaᚑincubatorᚋcom
 	return ec._Tenant(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalOTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantᚄ(ctx context.Context, sel ast.SelectionSet, v []*Tenant) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+	return ret
+}
+
 func (ec *executionContext) marshalOTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v *Tenant) graphql.Marshaler {
 	if v == nil {
 		return graphql.Null
@@ -45509,17 +46172,6 @@ func (ec *executionContext) marshalOTenantAccess2ᚖgithubᚗcomᚋkymaᚑincuba
 		return graphql.Null
 	}
 	return ec._TenantAccess(ctx, sel, v)
-}
-
-func (ec *executionContext) marshalOTenantBusinessType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantBusinessType(ctx context.Context, sel ast.SelectionSet, v TenantBusinessType) graphql.Marshaler {
-	return ec._TenantBusinessType(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalOTenantBusinessType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantBusinessType(ctx context.Context, sel ast.SelectionSet, v *TenantBusinessType) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return ec._TenantBusinessType(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx context.Context, v interface{}) (Timestamp, error) {

@@ -45,7 +45,6 @@ func (c *converter) ToEntity(in *model.Application) (*Entity, error) {
 		HealthCheckURL:        repo.NewNullableString(in.HealthCheckURL),
 		IntegrationSystemID:   repo.NewNullableString(in.IntegrationSystemID),
 		ApplicationTemplateID: repo.NewNullableString(in.ApplicationTemplateID),
-		TenantBusinessTypeID:  repo.NewNullableString(in.TenantBusinessTypeID),
 		BaseURL:               repo.NewNullableString(in.BaseURL),
 		ApplicationNamespace:  repo.NewNullableString(in.ApplicationNamespace),
 		SystemNumber:          repo.NewNullableString(in.SystemNumber),
@@ -85,7 +84,6 @@ func (c *converter) FromEntity(entity *Entity) *model.Application {
 		HealthCheckURL:        repo.StringPtrFromNullableString(entity.HealthCheckURL),
 		IntegrationSystemID:   repo.StringPtrFromNullableString(entity.IntegrationSystemID),
 		ApplicationTemplateID: repo.StringPtrFromNullableString(entity.ApplicationTemplateID),
-		TenantBusinessTypeID:  repo.StringPtrFromNullableString(entity.TenantBusinessTypeID),
 		BaseURL:               repo.StringPtrFromNullableString(entity.BaseURL),
 		ApplicationNamespace:  repo.StringPtrFromNullableString(entity.ApplicationNamespace),
 		OrdLabels:             repo.JSONRawMessageFromNullableString(entity.OrdLabels),
@@ -119,7 +117,6 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		ApplicationNamespace:  in.ApplicationNamespace,
 		IntegrationSystemID:   in.IntegrationSystemID,
 		ApplicationTemplateID: in.ApplicationTemplateID,
-		TenantBusinessTypeID:  in.TenantBusinessTypeID,
 		ProviderName:          in.ProviderName,
 		SystemNumber:          in.SystemNumber,
 		LocalTenantID:         in.LocalTenantID,
@@ -127,9 +124,9 @@ func (c *converter) ToGraphQL(in *model.Application) *graphql.Application {
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}
@@ -301,13 +298,4 @@ func (c *converter) statusGraphQLToModel(in *graphql.ApplicationStatus) *model.A
 		Condition: model.ApplicationStatusCondition(in.Condition),
 		Timestamp: time.Time(in.Timestamp),
 	}
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }

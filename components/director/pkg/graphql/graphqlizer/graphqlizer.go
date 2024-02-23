@@ -731,6 +731,12 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 				{{- if $i}}, {{- end}} {{ marshal $e }}
 			{{- end }} ],
 		{{- end}}
+		{{- if .DiscoveryConsumers }} 
+		discoveryConsumers: [
+			{{- range $i, $e := .DiscoveryConsumers }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		{{- end}}
 		{{- if .Webhooks }}
 		webhooks: [
 			{{- range $i, $e := .Webhooks }}
@@ -968,8 +974,11 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 			{
 				name: {{ quote $tenant.Name }},
  				externalTenant: {{ quote $tenant.ExternalTenant }},
-				{{- if $tenant.Parent }}
-				parent: {{ quote $tenant.Parent }},
+				{{- if $tenant.Parents }}
+				parents: [
+				{{- range $i, $e := $tenant.Parents }}
+					{{- if $i}}, {{- end}} {{ quote $e }}
+				{{- end }} ],
 				{{- end }}
 				{{- if $tenant.Region }}
 				region: {{ quote $tenant.Region }},
@@ -983,6 +992,12 @@ func (g *Graphqlizer) WriteTenantsInputToGQL(in []graphql.BusinessTenantMappingI
 				{{- if $tenant.CustomerID }}
 				customerId: {{ quote $tenant.CustomerID }},
 				{{- end }}
+				{{- if $tenant.CostObjectID }}
+				costObjectId: {{ quote $tenant.CostObjectID }},
+				{{- end }}
+				{{- if $tenant.CostObjectType }}
+				costObjectType: {{ quote $tenant.CostObjectType }},
+				{{- end }}
 				type: {{ quote $tenant.Type }},
 				provider: {{ quote $tenant.Provider }}
 			}
@@ -994,8 +1009,11 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 	return g.genericToGQL(in, `{
 		name: {{ quote .Name }},
 		externalTenant: {{ quote .ExternalTenant }},
-		{{- if .Parent }}
-		parent: {{ quote .Parent }},
+		{{- if .Parents }}
+		parents: [
+		{{- range $i, $e := .Parents }}
+			{{- if $i}}, {{- end}} {{ quote $e }}
+		{{- end }} ],
 		{{- end }}
 		{{- if .Region }}
 		region: {{ quote .Region }},
@@ -1005,6 +1023,12 @@ func (g *Graphqlizer) WriteTenantInputToGQL(in graphql.BusinessTenantMappingInpu
 		{{- end }}
 		{{- if $.LicenseType }}
 		licenseType: {{ quote .LicenseType }},
+		{{- end }}
+		{{- if .CostObjectID }}
+		costObjectId: {{ quote .CostObjectID }},
+		{{- end }}
+		{{- if .CostObjectType }}
+		costObjectType: {{ quote .CostObjectType }},
 		{{- end }}
 		type: {{ quote .Type }},
 		provider: {{ quote .Provider }}
@@ -1027,8 +1051,11 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 		{
 			name: {{ quote .Name }},
  			externalTenant: {{ quote .ExternalTenant }},
-			{{- if .Parent }}
-			parent: {{ quote .Parent }},
+			{{- if .Parents }}
+			parents: [
+			{{- range $i, $e := .Parents }}
+				{{- if $i}}, {{- end}} {{ quote $e }}
+			{{- end }} ],
 			{{- end }}
 			{{- if .Region }}
 			region: {{ quote .Region }},
@@ -1038,6 +1065,12 @@ func (g *Graphqlizer) UpdateTenantsInputToGQL(in graphql.BusinessTenantMappingIn
 			{{- end }}
 			{{- if .LicenseType }}
 			licenseType: {{ quote .LicenseType }},
+			{{- end }}
+			{{- if .CostObjectID }}
+			costObjectId: {{ quote .CostObjectID }},
+			{{- end }}
+			{{- if .CostObjectType }}
+			costObjectType: {{ quote .CostObjectType }},
 			{{- end }}
 			type: {{ quote .Type }},
 			provider: {{ quote .Provider }}

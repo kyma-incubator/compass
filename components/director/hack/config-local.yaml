@@ -31,7 +31,9 @@ graphql:
     formationTemplates: [ "formation_template:read" ]
     formationTemplatesByName: [ "formation_template:read" ]
     formation: ["formation:read"]
+    formationByName: ["formation:read"]
     formations: ["formation:read"]
+    formationsForObject: ["formation:global_read"]
     formationConstraint: ["formation_constraint:read"]
     formationConstraints: ["formation_constraint:read"]
     formationConstraintsByFormationType: ["formation_constraint:read"]
@@ -79,6 +81,7 @@ graphql:
     deleteFormation: ["formation:write"]
     assignFormation: ["formation:write"]
     unassignFormation: ["formation:write"]
+    unassignFormationGlobal: ["formation:global_write"]
     resynchronizeFormationNotifications: ["formation:write"]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
@@ -108,6 +111,7 @@ graphql:
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
+    setTenantLabel: ["tenant:write"]
     subscribeTenant: ["tenant_subscription:write"]
     unsubscribeTenant: ["tenant_subscription:write"]
     createFormationTemplate: ["formation_template:write"]
@@ -152,6 +156,8 @@ graphql:
       webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
+    formation:
+      tenant_id: ["formation:global_read"]
 
   input:
     application:
@@ -241,6 +247,8 @@ clientCredentialsRegistrationScopes:
     - "certificate_subject_mapping:read"
     - "certificate_subject_mapping:write"
     - "formation.state:write"
+    - "formation:global_write"
+    - "formation:global_read"
 applicationHideSelectors:
   applicationHideSelectorKey:
     - "applicationHideSelectorValue"

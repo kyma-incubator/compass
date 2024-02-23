@@ -19,6 +19,10 @@ type TenantRepository struct {
 func (_m *TenantRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.BusinessTenantMapping
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
@@ -41,23 +45,25 @@ func (_m *TenantRepository) Get(ctx context.Context, id string) (*model.Business
 	return r0, r1
 }
 
-// GetCustomerIDParentRecursively provides a mock function with given fields: ctx, tenant
-func (_m *TenantRepository) GetCustomerIDParentRecursively(ctx context.Context, tenant string) (string, error) {
-	ret := _m.Called(ctx, tenant)
+// GetParentsRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *TenantRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalTenant)
 
-	var r0 string
+	var r0 []*model.BusinessTenantMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, tenant)
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalTenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, tenant)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, externalTenant)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, tenant)
+		r1 = rf(ctx, externalTenant)
 	} else {
 		r1 = ret.Error(1)
 	}

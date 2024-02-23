@@ -176,7 +176,7 @@ func (r *repository) ListByName(ctx context.Context, name string) ([]*model.Appl
 
 // ListByFilters builds a subquery for a given slice of labelfilter.LabelFilter and gets a slice of model.ApplicationTemplate
 func (r *repository) ListByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.ApplicationTemplate, error) {
-	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.IntersectSet, filter)
+	filterSubquery, args, err := label.FilterQueryGlobal(model.AppTemplateLabelableObject, label.UnionSet, filter)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}

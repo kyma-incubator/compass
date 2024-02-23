@@ -80,6 +80,8 @@ const (
 	IntegrationDependency Type = "integrationDependency"
 	// Aspect type represents the Aspect inside Integration Dependency resource
 	Aspect Type = "aspect"
+	// DataProduct type represents the Data Product resource.
+	DataProduct Type = "dataProduct"
 	// AspectEventResource type represents the Aspect Event Resource inside Aspect resource
 	AspectEventResource Type = "aspectEventResource"
 	// AutomaticScenarioAssigment type represents ASA resource.
@@ -110,8 +112,8 @@ const (
 	Tenant Type = "tenant"
 	// TenantAccess type represents tenant access resource.
 	TenantAccess Type = "tenantAccess"
-	// TenantBusinessType type represents tenant business type resource.
-	TenantBusinessType Type = "tenantBusinessType"
+	// TenantParent type represents tenant parent resource.
+	TenantParent Type = "tenantParent"
 	// Schema type represents schema resource.
 	Schema Type = "schemaMigration"
 	// SystemsSync type represents systems synchronization timestamps resource
@@ -130,7 +132,6 @@ var tenantAccessTable = map[Type]string{
 	RuntimeContext: "tenant_runtime_contexts",
 
 	// Views
-
 	Label:                      "labels_tenants",
 	ApplicationLabel:           "application_labels_tenants",
 	RuntimeLabel:               "runtime_labels_tenants",
@@ -157,6 +158,7 @@ var tenantAccessTable = map[Type]string{
 	IntegrationDependency:      "integration_dependencies_tenants",
 	Aspect:                     "aspects_tenants",
 	AspectEventResource:        "aspect_event_resources_tenants",
+	DataProduct:                "data_products_tenants",
 	Webhook:                    "webhooks_tenants",
 	AppWebhook:                 "application_webhooks_tenants",
 	RuntimeWebhook:             "runtime_webhooks_tenants",

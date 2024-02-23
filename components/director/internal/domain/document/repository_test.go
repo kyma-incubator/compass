@@ -245,8 +245,8 @@ func TestRepository_ListAllForBundle(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT bundle_id AS id, COUNT(*) AS total_count FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) GROUP BY bundle_id ORDER BY bundle_id ASC`),
-				Args:     []driver.Value{givenTenant()},
+				Query:    regexp.QuoteMeta(`SELECT bundle_id AS id, COUNT(*) AS total_count FROM public.documents WHERE (id IN (SELECT id FROM documents_tenants WHERE tenant_id = $1)) AND bundle_id IN ($2, $3, $4) GROUP BY bundle_id ORDER BY bundle_id ASC`),
+				Args:     []driver.Value{givenTenant(), emptyPageBundleID, onePageBundleID, multiplePagesBundleID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageBundleID, 0).AddRow(onePageBundleID, 1).AddRow(multiplePagesBundleID, 2)}

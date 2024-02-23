@@ -34,9 +34,9 @@ const (
 	// BundleOrdIDRegex represents the valid structure of the ordID of the ConsumptionBundle
 	BundleOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(consumptionBundle):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// EntityTypeOrdIDRegex represents the valid structure of the ordID of the EntityType
-	EntityTypeOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(entityType):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	EntityTypeOrdIDRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(entityType):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// TombstoneOrdIDRegex represents the valid structure of the ordID of the Tombstone
-	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
+	TombstoneOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(package|consumptionBundle|product|vendor|apiResource|eventResource|entityType|capability|integrationDependency|dataProduct):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*|)?$"
 	// SystemInstanceBaseURLRegex represents the valid structure of the field
 	SystemInstanceBaseURLRegex = "^http[s]?:\\/\\/[^:\\/\\s]+\\.[^:\\/\\s\\.]+(:\\d+)?(\\/[a-zA-Z0-9-\\._~]+)*$"
 	// ConfigBaseURLRegex represents the valid structure of the field
@@ -50,7 +50,11 @@ const (
 	// EventOrdIDRegex represents the valid structure of the ordID of the Event
 	EventOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CapabilityOrdIDRegex represents the valid structure of the ordID of the Capability
-	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(alpha|beta|v[0-9]+|)$"
+	CapabilityOrdIDRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(capability):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// DataProductOrdIDRegex represents the valid structure of the ordID of the Data Product
+	DataProductOrdIDRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(dataProduct):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// DataProductOutputPortsRegex represents the valid structure of the output ports of the Data Product
+	DataProductOutputPortsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(apiResource|eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CorrelationIDsRegex represents the valid structure of the field
 	CorrelationIDsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 	// LabelsKeyRegex represents the valid structure of the field
@@ -62,7 +66,7 @@ const (
 	// VendorPartnersRegex represents the valid structure of the field
 	VendorPartnersRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):(vendor):([a-zA-Z0-9._\\-]+):()$"
 	// CustomPolicyLevelRegex represents the valid structure of the field
-	CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
+	CustomPolicyLevelRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// CustomTypeCredentialExchangeStrategyRegex represents the valid structure of the field
 	CustomTypeCredentialExchangeStrategyRegex = "^([a-z0-9-]+(?:[.][a-z0-9-]+)*):([a-zA-Z0-9._\\-]+):v([0-9]+)$"
 	// SAPProductOrdIDNamespaceRegex represents the valid structure of a SAP Product OrdID Namespace part
@@ -78,6 +82,11 @@ const (
 	EventSuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(eventResource):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
 	// IntegrationDependencySuccessorsRegex represents the valid structure of the Integration Dependency successors array items
 	IntegrationDependencySuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(integrationDependency):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+	// DataProductSuccessorsRegex represents the valid structure of the Integration Dependency successors array items
+	DataProductSuccessorsRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):(dataProduct):([a-zA-Z0-9._\\-]+):(v0|v[1-9][0-9]*)$"
+
+	// ResponsibleRegex represents the valid structure of the `responsible` field for API, Event and Data Product
+	ResponsibleRegex = "^([a-z0-9]+(?:[.][a-z0-9]+)*):([a-zA-Z0-9._\\-\\/]+):([a-zA-Z0-9._\\-\\/]+)$"
 
 	// MinDescriptionLength represents the minimal accepted length of the Description field
 	MinDescriptionLength = 1
@@ -126,6 +135,10 @@ const (
 	MinCorrelationIDLength = 1
 	// MaxCorrelationIDLength represents the maximal accepted length of the Correlation ID field
 	MaxCorrelationIDLength = 255
+	// MinResponsibleLength represents the minimal accepted length of the Correlation ID field
+	MinResponsibleLength = 1
+	// MaxResponsibleLength represents the maximal accepted length of the Correlation ID field
+	MaxResponsibleLength = 255
 
 	// IntegrationDependencyMsg represents the resource name for Integration Dependency used in error message
 	IntegrationDependencyMsg string = "integration dependency"
@@ -163,6 +176,10 @@ const (
 	APIProtocolSAPSQLAPIV1 string = "sap-sql-api-v1"
 	// APIProtocolGraphql is one of the available api protocol options
 	APIProtocolGraphql string = "graphql"
+	// APIProtocolDeltaSharing is one of the available api protocol options
+	APIProtocolDeltaSharing string = "delta-sharing"
+	// APIProtocolSapInaAPIV1 is one of the available api protocol options
+	APIProtocolSapInaAPIV1 string = "sap-ina-api-v1"
 
 	// APIVisibilityPublic is one of the available api visibility options
 	APIVisibilityPublic = public
@@ -192,6 +209,13 @@ const (
 	// IntegrationDependencyVisibilityInternal is one of the available Integration Dependency visibility options
 	IntegrationDependencyVisibilityInternal = internal
 
+	// DataProductVisibilityPublic is one of the available Data Product visibility options
+	DataProductVisibilityPublic = public
+	// DataProductVisibilityPrivate is one of the available Data Product visibility options
+	DataProductVisibilityPrivate = private
+	// DataProductVisibilityInternal is one of the available Data Product visibility options
+	DataProductVisibilityInternal = internal
+
 	// APIImplementationStandardDocumentAPI is one of the available api implementation standard options
 	APIImplementationStandardDocumentAPI string = "sap:ord-document-api:v1"
 	// APIImplementationStandardServiceBroker is one of the available api implementation standard options
@@ -202,6 +226,10 @@ const (
 	APIImplementationStandardApeAPI string = "sap:ape-api:v1"
 	// APIImplementationStandardCdiAPI is one of the available api implementation standard options
 	APIImplementationStandardCdiAPI string = "sap:cdi-api:v1"
+	// APIImplementationStandardHdlfDeltaSharing is one of the available api implementation standard options
+	APIImplementationStandardHdlfDeltaSharing string = "sap:hdlf-delta-sharing:v1"
+	// APIImplementationStandardHanaCloudSQL is one of the available api implementation standard options
+	APIImplementationStandardHanaCloudSQL string = "sap:hana-cloud-sql:v1"
 	// APIImplementationStandardCustom is one of the available api implementation standard options
 	APIImplementationStandardCustom = custom
 
@@ -225,10 +253,30 @@ const (
 	// CapabilityTypeMDICapabilityV1 is the MDI Capability V1 Specification
 	CapabilityTypeMDICapabilityV1 string = "sap.mdo:mdi-capability:v1"
 
-	// APIModelSelectorTypeODATA for odata selector tyor.
+	// APIModelSelectorTypeODATA for odata selector type.
 	APIModelSelectorTypeODATA = "odata"
-	// APIModelSelectorTypeJSONPointer for json pointer selector tyor.
+	// APIModelSelectorTypeJSONPointer for json pointer selector type.
 	APIModelSelectorTypeJSONPointer = "json-pointer"
+
+	// PackageRuntimeRestriction is one of the available RuntimeRestriction options for Package
+	PackageRuntimeRestriction = "sap.datasphere"
+
+	// APIUsageExternal is one of the available Usage options for API
+	APIUsageExternal = "external"
+	// APIUsageLocal is one of the available Usage options for API
+	APIUsageLocal = "local"
+
+	// DataProductTypeBase is one of the available Type options for Data Product
+	DataProductTypeBase = "base"
+	// DataProductTypeDerived is one of the available Type options for Data Product
+	DataProductTypeDerived = "derived"
+
+	// DataProductCategoryBusinessObject is one of the available Category options for Data Product
+	DataProductCategoryBusinessObject = "business-object"
+	// DataProductCategoryAnalytical is one of the available Category options for Data Product
+	DataProductCategoryAnalytical = "analytical"
+	// DataProductCategoryOther is one of the available Category options for Data Product
+	DataProductCategoryOther = "other"
 )
 
 var (
@@ -281,8 +329,10 @@ var (
 	}
 	// SupportedUseCases contain all valid values for this field from the spec
 	SupportedUseCases = map[string]bool{
-		"mass-extraction": true,
-		// "mass-import":     true, // will be added later in spec
+		"data-federation": true,
+		"snapshot":        true,
+		"incremental":     true,
+		"streaming":       true,
 	}
 
 	forbiddenTermsInTitle = []string{
@@ -292,6 +342,14 @@ var (
 		"read",
 		"delete",
 		"update",
+	}
+
+	apiEventResourceLinkTypes = []interface{}{
+		"api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom",
+	}
+
+	dataProductResourceLinkTypes = []interface{}{
+		"payment", "service-level-agreement", "support", "custom",
 	}
 )
 
@@ -433,8 +491,6 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 	return validation.ValidateStruct(pkg,
 		validation.Field(&pkg.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&pkg.Title, titleRules(docPolicyLevel, pkg.PolicyLevel)...),
-		validation.Field(&pkg.ShortDescription, shortDescriptionRules(docPolicyLevel, pkg.PolicyLevel, pkg.Title)...),
-		validation.Field(&pkg.Description, descriptionRules(docPolicyLevel, pkg.PolicyLevel, &pkg.ShortDescription)...),
 		validation.Field(&pkg.SupportInfo, validation.NilOrNotEmpty),
 		validation.Field(&pkg.Version, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&pkg.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelCustom, PolicyLevelNone), validation.When(pkg.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
@@ -446,6 +502,7 @@ func validatePackageInput(pkg *model.PackageInput, docPolicyLevel *string) error
 			validation.Match(regexp.MustCompile(VendorOrdIDRegex)), validation.Length(1, 256)),
 		validation.Field(&pkg.PartOfProducts, partOfProductsRules()...),
 		validation.Field(&pkg.Tags, tagsRules()...),
+		validation.Field(&pkg.RuntimeRestriction, validation.NilOrNotEmpty, validation.In(PackageRuntimeRestriction)),
 		validation.Field(&pkg.Labels, validation.By(validateORDLabels)),
 		validation.Field(&pkg.Countries, countriesRules()...),
 		validation.Field(&pkg.LineOfBusiness, lineOfBusinessRules(docPolicyLevel, pkg.PolicyLevel)...),
@@ -538,8 +595,10 @@ func validateDescriptionDoesNotContainShortDescription(shortDescription *string)
 	}
 }
 
-func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
+func validatePackageInputWithSuppressedErrors(pkg *model.PackageInput, docPolicyLevel *string, packagesFromDB map[string]*model.Package, resourceHashes map[string]uint64) error {
 	return validation.ValidateStruct(pkg,
+		validation.Field(&pkg.ShortDescription, shortDescriptionRules(docPolicyLevel, pkg.PolicyLevel, pkg.Title)...),
+		validation.Field(&pkg.Description, descriptionRules(docPolicyLevel, pkg.PolicyLevel, &pkg.ShortDescription)...),
 		validation.Field(&pkg.Version, validation.By(func(value interface{}) error {
 			return validatePackageVersionInput(value, *pkg, packagesFromDB, resourceHashes)
 		})))
@@ -590,7 +649,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.CustomPolicyLevel, validation.When(api.PolicyLevel != nil && *api.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&api.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&api.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
-		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql)),
+		validation.Field(&api.APIProtocol, validation.Required, validation.In(APIProtocolODataV2, APIProtocolODataV4, APIProtocolSoapInbound, APIProtocolSoapOutbound, APIProtocolRest, APIProtocolSapRfc, APIProtocolWebsocket, APIProtocolSAPSQLAPIV1, APIProtocolGraphql, APIProtocolDeltaSharing, APIProtocolSapInaAPIV1)),
 		validation.Field(&api.Visibility, validation.Required, validation.In(APIVisibilityPublic, APIVisibilityInternal, APIVisibilityPrivate)),
 		validation.Field(&api.PartOfProducts, partOfProductsRules()...),
 		validation.Field(&api.SupportedUseCases,
@@ -605,7 +664,9 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.ResourceDefinitions, validation.By(func(value interface{}) error {
 			return validateAPIResourceDefinitions(value, *api, docPolicyLevel)
 		})),
-		validation.Field(&api.APIResourceLinks, validation.By(validateResourceLinks)),
+		validation.Field(&api.APIResourceLinks, validation.By(func(value interface{}) error {
+			return validateResourceLinks(value, apiEventResourceLinkTypes)
+		})),
 		validation.Field(&api.Links, validation.By(validateORDLinks)),
 		validation.Field(&api.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
 		validation.Field(&api.SunsetDate, validation.When(*api.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(api.SunsetDate != nil, validation.By(isValidDate))),
@@ -615,7 +676,7 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&api.TargetURLs, validation.By(validateEntryPoints), validation.When(api.TargetURLs == nil, validation.By(notPartOfConsumptionBundles(api.PartOfConsumptionBundles)))),
 		validation.Field(&api.Labels, validation.By(validateORDLabels)),
-		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardCustom)),
+		validation.Field(&api.ImplementationStandard, validation.In(APIImplementationStandardDocumentAPI, APIImplementationStandardServiceBroker, APIImplementationStandardCsnExposure, APIImplementationStandardApeAPI, APIImplementationStandardCdiAPI, APIImplementationStandardHdlfDeltaSharing, APIImplementationStandardHanaCloudSQL, APIImplementationStandardCustom)),
 		validation.Field(&api.CustomImplementationStandard, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required, validation.Match(regexp.MustCompile(CustomImplementationStandardRegex))).Else(validation.Empty)),
 		validation.Field(&api.CustomImplementationStandardDescription, validation.When(api.ImplementationStandard != nil && *api.ImplementationStandard == APIImplementationStandardCustom, validation.Required).Else(validation.Empty)),
 		validation.Field(&api.PartOfConsumptionBundles, validation.By(func(value interface{}) error {
@@ -632,7 +693,9 @@ func validateAPIInput(api *model.APIDefinitionInput, docPolicyLevel *string) err
 		validation.Field(&api.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&api.Direction, validation.In(APIDirectionInbound, APIDirectionMixed, APIDirectionOutbound)),
 		validation.Field(&api.LastUpdate, validation.When(api.LastUpdate != nil, validation.By(isValidDate))),
-		validation.Field(&api.DeprecationDate, validation.NilOrNotEmpty, validation.When(api.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&api.DeprecationDate, validation.NilOrNotEmpty, validation.When(*api.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(api.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&api.Responsible, validation.NilOrNotEmpty, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
+		validation.Field(&api.Usage, validation.NilOrNotEmpty, validation.In(APIUsageExternal, APIUsageLocal)),
 	)
 }
 
@@ -665,7 +728,9 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 			return validateEventResourceDefinition(value, *event, docPolicyLevel)
 		})),
 		validation.Field(&event.Links, validation.By(validateORDLinks)),
-		validation.Field(&event.EventResourceLinks, validation.By(validateResourceLinks)),
+		validation.Field(&event.EventResourceLinks, validation.By(func(value interface{}) error {
+			return validateResourceLinks(value, apiEventResourceLinkTypes)
+		})),
 		validation.Field(&event.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
 		validation.Field(&event.SunsetDate, validation.When(*event.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(event.SunsetDate != nil, validation.By(isValidDate))),
 		validation.Field(&event.Successors, validation.By(func(value interface{}) error {
@@ -689,7 +754,8 @@ func validateEventInput(event *model.EventDefinitionInput, docPolicyLevel *strin
 		validation.Field(&event.DocumentationLabels, validation.By(validateDocumentationLabels)),
 		validation.Field(&event.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&event.LastUpdate, validation.When(event.LastUpdate != nil, validation.By(isValidDate))),
-		validation.Field(&event.DeprecationDate, validation.NilOrNotEmpty, validation.When(event.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&event.DeprecationDate, validation.NilOrNotEmpty, validation.When(*event.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(event.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&event.Responsible, validation.NilOrNotEmpty, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
 	)
 }
 
@@ -700,8 +766,12 @@ func validateEventInputWithSuppressedErrors(event *model.EventDefinitionInput, e
 		})))
 }
 
-func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
+func validateEntityTypeInputWithSuppressedErrors(entityType *model.EntityTypeInput, docPolicyLevel *string, entityTypesFromDB map[string]*model.EntityType, entityTypeHashes map[string]uint64) error {
 	return validation.ValidateStruct(entityType,
+		validation.Field(&entityType.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, entityType.PolicyLevel, entityType.Title)...),
+		validation.Field(&entityType.Description, validation.NilOrNotEmpty,
+			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)), validation.Length(MinDescriptionLength, MaxDescriptionLengthEntityType)),
+			validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&entityType.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateEntityTypeVersionInput(value, *entityType, entityTypesFromDB, entityTypeHashes)
 		})))
@@ -714,10 +784,6 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&entityType.Level, validation.Required, validation.Length(MinLevelLength, MaxLevelLength)),
 		validation.Field(&entityType.Title, titleRules(docPolicyLevel, entityType.PolicyLevel)...),
-		validation.Field(&entityType.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, entityType.PolicyLevel, entityType.Title)...),
-		validation.Field(&entityType.Description, validation.NilOrNotEmpty,
-			validation.When(checkResourcePolicyLevel(docPolicyLevel, entityType.PolicyLevel, PolicyLevelSap) && entityType.ShortDescription != nil, validation.By(validateDescriptionDoesNotContainShortDescription(entityType.ShortDescription)), validation.Length(MinDescriptionLength, MaxDescriptionLengthEntityType)),
-			validation.Length(MinDescriptionLength, MaxDescriptionLength)),
 		validation.Field(&entityType.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
 		validation.Field(&entityType.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
 		validation.Field(&entityType.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
@@ -729,7 +795,7 @@ func validateEntityTypeInput(entityType *model.EntityTypeInput, docPolicyLevel *
 		validation.Field(&entityType.CustomPolicyLevel, validation.When(entityType.PolicyLevel != nil && *entityType.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
 		validation.Field(&entityType.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
 		validation.Field(&entityType.SunsetDate, validation.When(entityType.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(entityType.SunsetDate != nil, validation.By(isValidDate))),
-		validation.Field(&entityType.DeprecationDate, validation.NilOrNotEmpty, validation.When(entityType.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&entityType.DeprecationDate, validation.NilOrNotEmpty, validation.When(entityType.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(entityType.DeprecationDate != nil, validation.By(isValidDate))),
 		validation.Field(&entityType.Successors, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
 		})),
@@ -746,12 +812,10 @@ func validateCapabilityInput(capability *model.CapabilityInput, docPolicyLevel *
 	return validation.ValidateStruct(capability,
 		validation.Field(&capability.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&capability.Name, titleRules(docPolicyLevel, nil)...),
-		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, capability.ShortDescription)...),
 		validation.Field(&capability.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(CapabilityOrdIDRegex))),
 		validation.Field(&capability.Type, validation.Required, validation.In(CapabilityTypeCustom, CapabilityTypeMDICapabilityV1), validation.When(capability.CustomType != nil, validation.In(CapabilityTypeCustom))),
 		validation.Field(&capability.CustomType, validation.When(capability.Type != CapabilityTypeCustom, validation.Empty), validation.Match(regexp.MustCompile(CapabilityCustomTypeRegex))),
 		validation.Field(&capability.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
-		validation.Field(&capability.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, capability.Name)...),
 		validation.Field(&capability.Tags, tagsRules()...),
 		validation.Field(&capability.RelatedEntityTypes, validation.By(func(value interface{}) error {
 			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
@@ -771,8 +835,10 @@ func validateCapabilityInput(capability *model.CapabilityInput, docPolicyLevel *
 }
 
 // fields with validation errors will lead to persisting of the Capability resource
-func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInput, capabilitiesFromDB map[string]*model.Capability, capabilityHashes map[string]uint64) error {
+func validateCapabilityInputWithSuppressedErrors(capability *model.CapabilityInput, docPolicyLevel *string, capabilitiesFromDB map[string]*model.Capability, capabilityHashes map[string]uint64) error {
 	return validation.ValidateStruct(capability,
+		validation.Field(&capability.Description, optionalDescriptionRules(docPolicyLevel, capability.ShortDescription)...),
+		validation.Field(&capability.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, capability.Name)...),
 		validation.Field(&capability.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateCapabilityVersionInput(value, *capability, capabilitiesFromDB, capabilityHashes)
 		})))
@@ -784,8 +850,6 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 		validation.Field(&integrationDependency.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
 		validation.Field(&integrationDependency.CorrelationIDs, correlationIdsRules()...),
 		validation.Field(&integrationDependency.Title, titleRules(docPolicyLevel, nil)...),
-		validation.Field(&integrationDependency.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, integrationDependency.Title)...),
-		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, integrationDependency.ShortDescription)...),
 		validation.Field(&integrationDependency.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
 		validation.Field(&integrationDependency.LastUpdate, validation.When(integrationDependency.LastUpdate != nil, validation.By(isValidDate))),
 		validation.Field(&integrationDependency.Visibility, validation.Required, validation.In(IntegrationDependencyVisibilityPublic, IntegrationDependencyVisibilityInternal, IntegrationDependencyVisibilityPrivate)),
@@ -808,10 +872,61 @@ func validateIntegrationDependencyInput(integrationDependency *model.Integration
 }
 
 // fields with validation errors will lead to persisting of the IntegrationDependency resource
-func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency *model.IntegrationDependencyInput, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
+func validateIntegrationDependencyInputWithSuppressedErrors(integrationDependency *model.IntegrationDependencyInput, docPolicyLevel *string, integrationDependenciesFromDB map[string]*model.IntegrationDependency, integrationDependencyHashes map[string]uint64) error {
 	return validation.ValidateStruct(integrationDependency,
+		validation.Field(&integrationDependency.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, nil, integrationDependency.Title)...),
+		validation.Field(&integrationDependency.Description, optionalDescriptionRules(docPolicyLevel, integrationDependency.ShortDescription)...),
 		validation.Field(&integrationDependency.VersionInput.Value, validation.By(func(value interface{}) error {
 			return validateIntegrationDependencyVersionInput(value, *integrationDependency, integrationDependenciesFromDB, integrationDependencyHashes)
+		})))
+}
+
+func validateDataProductInput(dataProduct *model.DataProductInput, docPolicyLevel *string) error {
+	return validation.ValidateStruct(dataProduct,
+		validation.Field(&dataProduct.OrdID, validation.Required, validation.Length(MinOrdIDLength, MaxOrdIDLength), validation.Match(regexp.MustCompile(DataProductOrdIDRegex))),
+		validation.Field(&dataProduct.LocalTenantID, validation.NilOrNotEmpty, validation.Length(MinLocalTenantIDLength, MaxLocalTenantIDLength)),
+		validation.Field(&dataProduct.CorrelationIDs, correlationIdsRules()...),
+		validation.Field(&dataProduct.Title, titleRules(docPolicyLevel, dataProduct.PolicyLevel)...),
+		validation.Field(&dataProduct.OrdPackageID, validation.Required, validation.Length(MinOrdPackageIDLength, MaxOrdPackageIDLength), validation.Match(regexp.MustCompile(common.PackageOrdIDRegex))),
+		validation.Field(&dataProduct.VersionInput.Value, validation.Required, validation.Match(regexp.MustCompile(common.SemVerRegex))),
+		validation.Field(&dataProduct.LastUpdate, validation.When(dataProduct.LastUpdate != nil, validation.By(isValidDate))),
+		validation.Field(&dataProduct.Visibility, validation.Required, validation.In(DataProductVisibilityPublic, DataProductVisibilityInternal, DataProductVisibilityPrivate)),
+		validation.Field(&dataProduct.ReleaseStatus, validation.Required, validation.In(common.ReleaseStatusBeta, common.ReleaseStatusActive, common.ReleaseStatusDeprecated)),
+		validation.Field(&dataProduct.DeprecationDate, validation.NilOrNotEmpty, validation.When(*dataProduct.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(dataProduct.DeprecationDate != nil, validation.By(isValidDate))),
+		validation.Field(&dataProduct.SunsetDate, validation.NilOrNotEmpty, validation.When(*dataProduct.ReleaseStatus == common.ReleaseStatusDeprecated, validation.Required), validation.When(dataProduct.SunsetDate != nil, validation.By(isValidDate))),
+		validation.Field(&dataProduct.Successors, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(DataProductSuccessorsRegex))
+		})),
+		validation.Field(&dataProduct.ChangeLogEntries, validation.By(validateORDChangeLogEntries)),
+		validation.Field(&dataProduct.Type, validation.Required, validation.In(DataProductTypeBase, DataProductTypeDerived)),
+		validation.Field(&dataProduct.Category, validation.Required, validation.In(DataProductCategoryBusinessObject, DataProductCategoryAnalytical, DataProductCategoryOther)),
+		validation.Field(&dataProduct.EntityTypes, validation.By(func(value interface{}) error {
+			return validateJSONArrayOfStringsMatchPattern(value, regexp.MustCompile(EntityTypeOrdIDRegex))
+		})),
+		validation.Field(&dataProduct.InputPorts, validation.By(validateDataProductInputPorts)),
+		validation.Field(&dataProduct.OutputPorts, validation.Required, validation.By(validateDataProductOutputPorts)),
+		validation.Field(&dataProduct.Responsible, validation.Required, validation.Length(MinResponsibleLength, MaxResponsibleLength), validation.Match(regexp.MustCompile(ResponsibleRegex))),
+		validation.Field(&dataProduct.DataProductLinks, validation.By(func(value interface{}) error {
+			return validateResourceLinks(value, dataProductResourceLinkTypes)
+		})),
+		validation.Field(&dataProduct.Links, validation.By(validateORDLinks)),
+		validation.Field(&dataProduct.Industry, industryRules(docPolicyLevel, dataProduct.PolicyLevel)...),
+		validation.Field(&dataProduct.LineOfBusiness, lineOfBusinessRules(docPolicyLevel, dataProduct.PolicyLevel)...),
+		validation.Field(&dataProduct.Tags, tagsRules()...),
+		validation.Field(&dataProduct.Labels, validation.By(validateORDLabels)),
+		validation.Field(&dataProduct.DocumentationLabels, validation.By(validateDocumentationLabels)),
+		validation.Field(&dataProduct.PolicyLevel, validation.In(PolicyLevelSap, PolicyLevelCustom, PolicyLevelNone), validation.When(dataProduct.CustomPolicyLevel != nil, validation.In(PolicyLevelCustom))),
+		validation.Field(&dataProduct.CustomPolicyLevel, validation.When(dataProduct.PolicyLevel != nil && *dataProduct.PolicyLevel != PolicyLevelCustom, validation.Empty), validation.Match(regexp.MustCompile(CustomPolicyLevelRegex))),
+	)
+}
+
+// fields with validation errors will lead to persisting of the DataProduct resource
+func validateDataProductInputWithSuppressedErrors(dataProduct *model.DataProductInput, docPolicyLevel *string, dataProductsFromDB map[string]*model.DataProduct, dataProductHashes map[string]uint64) error {
+	return validation.ValidateStruct(dataProduct,
+		validation.Field(&dataProduct.ShortDescription, optionalShortDescriptionRules(docPolicyLevel, dataProduct.PolicyLevel, dataProduct.Title)...),
+		validation.Field(&dataProduct.Description, optionalDescriptionRules(docPolicyLevel, dataProduct.ShortDescription)...),
+		validation.Field(&dataProduct.VersionInput.Value, validation.By(func(value interface{}) error {
+			return validateDataProductVersionInput(value, *dataProduct, dataProductsFromDB, dataProductHashes)
 		})))
 }
 
@@ -1061,11 +1176,11 @@ func validatePackageLinks(value interface{}) error {
 	})
 }
 
-func validateResourceLinks(value interface{}) error {
+func validateResourceLinks(value interface{}, resourceTypes []interface{}) error {
 	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
 		"type": {
 			validation.Required,
-			validation.In("api-documentation", "authentication", "client-registration", "console", "payment", "service-level-agreement", "support", "custom"),
+			validation.In(resourceTypes...),
 		},
 		"url": {
 			validation.Required,
@@ -1083,6 +1198,26 @@ func validateResourceLinks(value interface{}) error {
 	})
 }
 
+func validateDataProductInputPorts(value interface{}) error {
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
+		"ordId": {
+			validation.Required,
+			validation.Length(MinOrdIDLength, MaxOrdIDLength),
+			validation.Match(regexp.MustCompile(common.IntegrationDependencyOrdIDRegex)),
+		},
+	})
+}
+
+func validateDataProductOutputPorts(value interface{}) error {
+	return common.ValidateJSONArrayOfObjects(value, map[string][]validation.Rule{
+		"ordId": {
+			validation.Required,
+			validation.Length(MinOrdIDLength, MaxOrdIDLength),
+			validation.Match(regexp.MustCompile(DataProductOutputPortsRegex)),
+		},
+	})
+}
+
 func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionInput, docPolicyLevel *string) error {
 	if value == nil {
 		return nil
@@ -1093,9 +1228,10 @@ func validateAPIResourceDefinitions(value interface{}, api model.APIDefinitionIn
 	apiProtocol := str.PtrStrToStr(api.APIProtocol)
 	resourceDefinitions := api.ResourceDefinitions
 
-	isResourceDefinitionMandatory := !(policyLevel == PolicyLevelSap && apiVisibility == APIVisibilityPrivate)
+	isResourceDefinitionMandatory := policyLevel != PolicyLevelSap || apiVisibility != APIVisibilityPrivate
+	isResourceDefinitionMandatory = isResourceDefinitionMandatory && apiProtocol != APIProtocolDeltaSharing
 	if len(resourceDefinitions) == 0 && isResourceDefinitionMandatory {
-		return errors.New("when api resource visibility is public or internal, resource definitions must be provided")
+		return errors.New("when api resource visibility is public or internal or api protocol is not delta-sharing, resource definitions must be provided")
 	}
 
 	if len(resourceDefinitions) == 0 && !isResourceDefinitionMandatory {
@@ -1339,6 +1475,26 @@ func validateIntegrationDependencyVersionInput(value interface{}, integrationDep
 	return checkHashEquality(integrationDependencyFromDB.Version.Value, integrationDependency.VersionInput.Value, hashDB, hashDoc)
 }
 
+func validateDataProductVersionInput(value interface{}, dataProduct model.DataProductInput, dataProductsFromDB map[string]*model.DataProduct, dataProductHashes map[string]uint64) error {
+	if value == nil {
+		return nil
+	}
+
+	if len(dataProductsFromDB) == 0 {
+		return nil
+	}
+
+	dataProductFromDB, ok := dataProductsFromDB[str.PtrStrToStr(dataProduct.OrdID)]
+	if !ok || isResourceHashMissing(dataProductFromDB.ResourceHash) {
+		return nil
+	}
+
+	hashDB := str.PtrStrToStr(dataProductFromDB.ResourceHash)
+	hashDoc := strconv.FormatUint(dataProductHashes[str.PtrStrToStr(dataProduct.OrdID)], 10)
+
+	return checkHashEquality(dataProductFromDB.Version.Value, dataProduct.VersionInput.Value, hashDB, hashDoc)
+}
+
 func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
 	bytes, err := json.Marshal(api)
 	if err != nil {
@@ -1407,6 +1563,20 @@ func normalizeIntegrationDependency(integrationDependency *model.IntegrationDepe
 	}
 
 	return normalizedIntegrationDependency, nil
+}
+
+func normalizeDataProduct(dataProduct *model.DataProductInput) (model.DataProductInput, error) {
+	bytes, err := json.Marshal(dataProduct)
+	if err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while marshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	var normalizedDataProduct model.DataProductInput
+	if err := json.Unmarshal(bytes, &normalizedDataProduct); err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while unmarshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	return normalizedDataProduct, nil
 }
 
 func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {

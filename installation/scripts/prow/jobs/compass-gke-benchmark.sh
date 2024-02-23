@@ -127,7 +127,7 @@ function createCluster() {
   gcp::provision_k8s_cluster \
         -c "$COMMON_NAME" \
         -p "$CLOUDSDK_CORE_PROJECT" \
-        -v "1.25.10" \
+        -v "1.25.16" \
         -i "cos_containerd" \
         -C "stable" \
         -j "$JOB_NAME" \
@@ -162,7 +162,7 @@ function installHelm() {
 }
 
 function installKymaCLI() {
-  KYMA_CLI_VERSION="2.9.3"
+  KYMA_CLI_VERSION="2.13.2"
   log::info "Installing Kyma CLI version: $KYMA_CLI_VERSION"
 
   PREV_WD=$(pwd)
@@ -326,11 +326,23 @@ for POD in $PODS; do
   kubectl logs -n kyma-system "$POD" -c "$CONTAINER" > "$CONTAINER"-new
 
   if [ -f "$CONTAINER"-old ]; then
-    log::info "Stats of the main installation"
+    echo "================================="
+    
+    log::info "logs of the main installation"
+    cat "$CONTAINER"-old
+    echo "---------------------------------"
+    log::info "benchstat of the main installation"
     benchstat "$CONTAINER"-old
+    
+    echo "================================="
 
-    log::info "Stats of the new installation"
+    log::info "logs of the new installation"
+    cat "$CONTAINER"-new
+    echo "---------------------------------"
+    log::info "benchstat of the new installation"
     benchstat "$CONTAINER"-new
+    
+    echo "================================="
 
     STATS=$(benchstat "$CONTAINER"-old "$CONTAINER"-new)
     log::info "Performance comparison statistics"

@@ -16,10 +16,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-bench-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-director-bench-app
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -33,7 +33,7 @@ spec:
           image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
           imagePullPolicy: IfNotPresent
           command: ["/bin/sh"]
-          args: ["-c", "./director.bench -test.v -test.bench=. -test.benchtime 5s -test.count 5; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          args: ["-c", "./director.bench -test.v -test.bench=. -test.benchtime 10s -test.count 10; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           restartPolicy: Never
           env:
             - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL

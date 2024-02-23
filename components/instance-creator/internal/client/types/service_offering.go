@@ -38,6 +38,11 @@ func (s *ServiceOffering) GetResourceURLPath() string {
 	return paths.ServiceOfferingsPath
 }
 
+// GetResourceName gets the ServiceOffering Name
+func (s *ServiceOffering) GetResourceName() string {
+	return s.Name
+}
+
 // ServiceOfferings represents a collection of Service Offering
 type ServiceOfferings struct {
 	NumItems int                `json:"num_items"`
@@ -51,6 +56,15 @@ func (so *ServiceOfferings) GetType() string {
 
 func (so *ServiceOfferings) GetURLPath() string {
 	return paths.ServiceOfferingsPath
+}
+
+// GetIDs gets the IDs of all ServiceOfferings
+func (sos *ServiceOfferings) GetIDs() []string {
+	ids := make([]string, 0, sos.NumItems)
+	for _, so := range sos.Items {
+		ids = append(ids, so.ID)
+	}
+	return ids
 }
 
 // ServiceOfferingMatchParameters holds all the necessary fields that are used when matching ServiceOfferings

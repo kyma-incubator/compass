@@ -7,8 +7,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
+	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
 
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
@@ -37,14 +43,12 @@ import (
 )
 
 const (
-	ScenariosLabel            = "scenarios"
-	assignFormationCategory   = "assign formation"
-	unassignFormationCategory = "unassign formation"
-	resourceSubtypeANY        = "ANY"
-	exceptionSystemType       = "exception-type"
-	testScenario              = "testScenario"
-	reset                     = true
-	dontReset                 = false
+	ScenariosLabel      = "scenarios"
+	resourceSubtypeANY  = "ANY"
+	exceptionSystemType = "exception-type"
+	testScenario        = "testScenario"
+	reset               = true
+	dontReset           = false
 )
 
 func TestGetFormation(t *testing.T) {
@@ -122,6 +126,183 @@ func TestListFormations(t *testing.T) {
 	})
 }
 
+func TestListFormationsForObjectGlobal(t *testing.T) {
+	ctx := context.Background()
+	tnt := tenant.TestTenants.GetDefaultTenantID()
+	otherTnt := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
+
+	formationTemplateName := "e2e-test-list-formations-for-object-global"
+
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, "landscape_resource_operator", -1)
+
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               certSubjectMappingCustomSubject,
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	LROCertSecuredGraphQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "int-system-app-to-app-notifications")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	namePlaceholder := "name"
+	displayNamePlaceholder := "display-name"
+	appRegion := "test-app-region"
+	appNamespace := "compass.test"
+	localTenantID := "local-tenant-id"
+	applicationType1 := "app-type-1"
+
+	t.Logf("Create application template for type: %q", applicationType1)
+	appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil, graphql.ApplicationStatusConditionConnected)
+	defer appTemplateProvider.Cleanup(t, ctx, oauthGraphQLClient)
+	appTplID := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
+	internalConsumerID := appTplID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
+
+	ftProvider := resource_providers.NewFormationTemplateCreator(formationTemplateName)
+	defer ftProvider.Cleanup(t, ctx, certSecuredGraphQLClient)
+	ftplID := ftProvider.WithSupportedResources(appTemplateProvider.GetResource()).WithLeadingProductIDs([]string{internalConsumerID}).Provide(t, ctx, certSecuredGraphQLClient)
+	ctx = context.WithValue(ctx, context_keys.FormationTemplateIDKey, ftplID)
+	ctx = context.WithValue(ctx, context_keys.FormationTemplateNameKey, ftplID)
+
+	t.Logf("Create application 1 from template: %q", applicationType1)
+	appProvider1 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
+	defer appProvider1.Cleanup(t, ctx, certSecuredGraphQLClient)
+	app1ID := appProvider1.Provide(t, ctx, certSecuredGraphQLClient)
+
+	t.Logf("Create application 2 from template: %q", applicationType1)
+	appProvider2 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
+	defer appProvider2.Cleanup(t, ctx, certSecuredGraphQLClient)
+	app2ID := appProvider2.Provide(t, ctx, certSecuredGraphQLClient)
+
+	formationName := "returned-formation"
+	t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTemplateName)
+	formationProvider := resource_providers.NewFormationProvider(formationName, tnt, &formationTemplateName)
+	defer formationProvider.Cleanup(t, ctx, certSecuredGraphQLClient)
+	formationID := formationProvider.Provide(t, ctx, certSecuredGraphQLClient)
+	ctx = context.WithValue(ctx, context_keys.FormationIDKey, formationID)
+	ctx = context.WithValue(ctx, context_keys.FormationNameKey, formationName)
+
+	formation2Name := "returned-formation-other-tenant"
+	t.Logf("Creating formation with name: %q from template with name: %q", formation2Name, formationTemplateName)
+	formation2Provider := resource_providers.NewFormationProvider(formation2Name, otherTnt, &formationTemplateName)
+	defer formation2Provider.Cleanup(t, ctx, certSecuredGraphQLClient)
+	formation2ID := formation2Provider.Provide(t, ctx, certSecuredGraphQLClient)
+	ctx = context.WithValue(ctx, context_keys.SecondFormationIDKey, formation2ID)
+	ctx = context.WithValue(ctx, context_keys.SecondFormationNameKey, formation2Name)
+
+	formation3Name := "not-returned-formation"
+	t.Logf("Creating formation with name: %q from template with name: %q", formation3Name, formationTemplateName)
+	formation3Provider := resource_providers.NewFormationProvider(formation3Name, tnt, &formationTemplateName)
+	defer formation3Provider.Cleanup(t, ctx, certSecuredGraphQLClient)
+	formation3ID := formation3Provider.Provide(t, ctx, certSecuredGraphQLClient)
+	ctx = context.WithValue(ctx, context_keys.ThirdFormationIDKey, formation3ID)
+	ctx = context.WithValue(ctx, context_keys.ThirdFormationNameKey, formation3Name)
+
+	t.Run("List formations for participant global", func(t *testing.T) {
+		t.Logf("Assign application 1 to formation: %s", formationName)
+		formationVisibilityAsserter := asserters.NewFormationVisibilityAsserter(LROCertSecuredGraphQLClient).WithParticipantID(app1ID).WithFormationExpectations([]*asserters.FormationExpectation{
+			{
+				FormationName:    ctx.Value(context_keys.FormationNameKey).(string),
+				AssignmentsCount: 1,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+		})
+		op := operations.NewAssignAppToFormationOperation(app1ID, tnt).WithFormationNameContextKey(context_keys.FormationNameKey).WithAsserters(formationVisibilityAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Assign application 2 to formation: %s", formationName)
+		formationVisibilityAsserter = asserters.NewFormationVisibilityAsserter(LROCertSecuredGraphQLClient).WithParticipantID(app1ID).WithFormationExpectations([]*asserters.FormationExpectation{
+			{
+				FormationName:    ctx.Value(context_keys.FormationNameKey).(string),
+				AssignmentsCount: 4,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+		})
+		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithFormationNameContextKey(context_keys.FormationNameKey).WithAsserters(formationVisibilityAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		op = operations.NewAddTenantAccess().WithTenantID(otherTnt).WithResourceType(graphql.TenantAccessObjectTypeApplication).WithResourceID(app1ID).WithOwnership(true).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Assign application 1 to formation: %s", formation2Name)
+		formationVisibilityAsserter = asserters.NewFormationVisibilityAsserter(LROCertSecuredGraphQLClient).WithParticipantID(app1ID).WithFormationExpectations([]*asserters.FormationExpectation{
+			{
+				FormationName:    ctx.Value(context_keys.FormationNameKey).(string),
+				AssignmentsCount: 4,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+			{
+				FormationName:    ctx.Value(context_keys.SecondFormationNameKey).(string),
+				AssignmentsCount: 1,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+		})
+		op = operations.NewAssignAppToFormationOperation(app1ID, otherTnt).WithFormationNameContextKey(context_keys.SecondFormationNameKey).WithAsserters(formationVisibilityAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Assign application 2 to formation: %s", formation3Name)
+		formationVisibilityAsserter = asserters.NewFormationVisibilityAsserter(LROCertSecuredGraphQLClient).WithParticipantID(app1ID).WithFormationExpectations([]*asserters.FormationExpectation{
+			{
+				FormationName:    ctx.Value(context_keys.FormationNameKey).(string),
+				AssignmentsCount: 4,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+			{
+				FormationName:    ctx.Value(context_keys.SecondFormationNameKey).(string),
+				AssignmentsCount: 1,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+		})
+		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithFormationNameContextKey(context_keys.ThirdFormationNameKey).WithAsserters(formationVisibilityAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Unassign application 1 from formation: %s", formationName)
+		formationVisibilityAsserter = asserters.NewFormationVisibilityAsserter(LROCertSecuredGraphQLClient).WithParticipantID(app1ID).WithFormationExpectations([]*asserters.FormationExpectation{
+			{
+				FormationName:    ctx.Value(context_keys.FormationNameKey).(string),
+				AssignmentsCount: 1,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+			{
+				FormationName:    ctx.Value(context_keys.SecondFormationNameKey).(string),
+				AssignmentsCount: 1,
+				StatusCondition:  graphql.FormationStatusConditionReady,
+			},
+		})
+		op = operations.NewUnassignAppToFormationOperationGlobal(app2ID).WithAsserters(formationVisibilityAsserter).Operation()
+		defer op.Cleanup(t, ctx, LROCertSecuredGraphQLClient)
+		op.Execute(t, ctx, LROCertSecuredGraphQLClient)
+	})
+
+}
+
 func TestApplicationFormationFlow(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -155,7 +336,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, formation, assignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign application to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), example.AssignFormationCategory, "assign application to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	appRequest := fixtures.FixGetApplicationRequest(app.ID)
@@ -183,7 +364,7 @@ func TestApplicationFormationFlow(t *testing.T) {
 	assert.Nil(t, nilFormation)
 
 	t.Logf("Add access to application: %s for tenant: %s", app.ID, secondTenantID)
-	fixtures.AddTenantAccess(t, ctx, certSecuredGraphQLClient, secondTenantID, app.ID)
+	fixtures.AddTenantAccessForResource(t, ctx, certSecuredGraphQLClient, secondTenantID, app.ID, graphql.TenantAccessObjectTypeApplication, true)
 
 	t.Logf("Tenant: %s should fail to delete appliaction: %s as it is part of formation: %s in tenant: %s", secondTenantID, app.ID, formation, tenantId)
 	fixtures.UnregisterApplicationExpectError(t, ctx, certSecuredGraphQLClient, secondTenantID, &app, []string{fmt.Sprintf("System app is part of the following formations : %s", formation)})
@@ -322,7 +503,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), example.AssignFormationCategory, "assign runtime to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation, newFormation})
@@ -350,7 +531,7 @@ func TestRuntimeFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), example.UnassignFormationCategory, "unassign runtime from formation")
 
 	t.Log("Check that the formation label value is unassigned")
 	checkRuntimeFormationLabelsExists(t, ctx, tenantId, rtm.ID, ScenariosLabel, []string{asaFormation})
@@ -461,7 +642,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, assignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign runtime context to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), example.AssignFormationCategory, "assign runtime context to formation")
 
 	t.Log("Check if new scenario label value was set correctly")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2, newFormation})
@@ -497,7 +678,7 @@ func TestRuntimeContextFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, newFormation, unassignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign runtime context from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), example.UnassignFormationCategory, "unassign runtime context from formation")
 
 	t.Log("Check that the formation label value is unassigned")
 	checkRuntimeContextFormationLabels(t, ctx, tenantId, rtm.ID, runtimeContext.ID, ScenariosLabel, []string{asaFormation, asaFormation2})
@@ -547,7 +728,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, firstFormation, assignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, assignReq.Query(), assignFormationCategory, "assign tenant to formation")
+	example.SaveExampleInCustomDir(t, assignReq.Query(), example.AssignFormationCategory, "assign tenant to formation")
 
 	t.Log("Should match expected ASA")
 	asaPage := fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)
@@ -561,7 +742,7 @@ func TestTenantFormationFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, firstFormation, unassignFormation.Name)
 
-	example.SaveExampleInCustomDir(t, unassignReq.Query(), unassignFormationCategory, "unassign tenant from formation")
+	example.SaveExampleInCustomDir(t, unassignReq.Query(), example.UnassignFormationCategory, "unassign tenant from formation")
 
 	t.Log("Should match expected ASA")
 	asaPage = fixtures.ListAutomaticScenarioAssignmentsWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId)

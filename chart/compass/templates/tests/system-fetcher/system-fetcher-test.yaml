@@ -16,10 +16,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-system-fetcher-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-system-fetcher
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -39,6 +39,8 @@ spec:
               value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
+            - name: SYSTEM_FETCHER_URL
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.systemFetcher.prefix }}"
             - name: SYSTEM_FETCHER_PAGE_SIZE
               value: "{{ .Values.global.systemFetcher.paging.pageSize }}"
             - name: SYSTEM_FETCHER_CONTAINER_NAME
@@ -69,6 +71,8 @@ spec:
               value: {{ .Values.global.systemFetcher.systemSourceKey }}
             - name: TEMPLATE_LABEL_FILTER
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: INTERNAL_DIRECTOR_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
       restartPolicy: Never
 ---
 apiVersion: v1
@@ -96,18 +100,6 @@ metadata:
     app.kubernetes.io/managed-by: {{ .Release.Service }}
     app.kubernetes.io/instance: {{ .Release.Name }}
 rules:
-- apiGroups: ["*"]
-  resources: ["jobs"]
-  resourceNames: ["system-fetcher-test", "system-fetcher-test2"]
-  verbs: ["get", "delete"]
-- apiGroups: ["*"]
-  resources: ["jobs"]
-  resourceNames: []
-  verbs: ["create"]
-- apiGroups: ["*"]
-  resources: ["cronjobs"]
-  resourceNames: ["{{ .Chart.Name }}-{{ .Values.global.systemFetcher.name }}"]
-  verbs: ["get"]
 - apiGroups: ["operations.compass"]
   resources: ["operations"]
   verbs: ["get"]

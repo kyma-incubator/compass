@@ -2,6 +2,7 @@ package formationassignment
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -18,8 +19,8 @@ const tableName string = `public.formation_assignments`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"state", "value", "error"}
-	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error"}
+	updatableTableColumns = []string{"state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
+	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	tenantColumn          = "tenant_id"
 )
 
@@ -39,6 +40,7 @@ type repository struct {
 	unionLister           repo.UnionLister
 	lister                repo.Lister
 	conditionLister       repo.ConditionTreeLister
+	conditionListerGlobal repo.ConditionTreeListerGlobal
 	updaterGlobal         repo.UpdaterGlobal
 	deleter               repo.Deleter
 	deleteConditionTree   repo.DeleterConditionTree
@@ -57,6 +59,7 @@ func NewRepository(conv EntityConverter) *repository {
 		lister:                repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		conditionLister:       repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, tableColumns),
 		updaterGlobal:         repo.NewUpdaterWithEmbeddedTenant(resource.FormationAssignment, tableName, updatableTableColumns, tenantColumn, idTableColumns),
+		conditionListerGlobal: repo.NewConditionTreeListerGlobal(tableName, tableColumns),
 		deleter:               repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
 		deleteConditionTree:   repo.NewDeleterConditionTreeWithEmbeddedTenant(tableName, tenantColumn),
 		existQuerier:          repo.NewExistQuerierWithEmbeddedTenant(tableName, tenantColumn),
@@ -288,6 +291,21 @@ func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, 
 	return r.multipleFromEntities(entities), nil
 }
 
+// ListAllForObjectGlobal retrieves all FormationAssignment objects that have objectID as `target` or `source` from the database across all tenants
+func (r *repository) ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error) {
+	var entities EntityCollection
+	conditions := repo.Or(repo.ConditionTreesFromConditions([]repo.Condition{
+		repo.NewEqualCondition("source", objectID),
+		repo.NewEqualCondition("target", objectID),
+	})...)
+
+	if err := r.conditionListerGlobal.ListConditionTreeGlobal(ctx, resource.FormationAssignment, &entities, conditions); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
 // ListAllForObjectIDs retrieves all FormationAssignment objects for formation with ID `formationID` that have any of the objectIDs as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObjectIDs(ctx context.Context, tenant, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
 	if len(objectIDs) == 0 {
@@ -325,12 +343,24 @@ func (r *repository) ListForIDs(ctx context.Context, tenant string, ids []string
 }
 
 // Update updates the Formation Assignment matching the ID of the input model
-func (r *repository) Update(ctx context.Context, model *model.FormationAssignment) error {
-	if model == nil {
+func (r *repository) Update(ctx context.Context, m *model.FormationAssignment) error {
+	if m == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
+	newEntity := r.conv.ToEntity(m)
 
-	return r.updaterGlobal.UpdateSingleGlobal(ctx, r.conv.ToEntity(model))
+	var oldEntity Entity
+	if err := r.globalGetter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", m.ID)}, repo.NoOrderBy, &oldEntity); err != nil {
+		return err
+	}
+
+	if shouldUpdateLastStateChangeTimestamp(ctx, &oldEntity, newEntity) {
+		log.C(ctx).Debugf("Updating the last state change timestamp for formation assignment with ID: %s", newEntity.ID)
+		now := time.Now()
+		newEntity.LastStateChangeTimestamp = &now
+	}
+
+	return r.updaterGlobal.UpdateSingleGlobal(ctx, newEntity)
 }
 
 // Delete deletes a Formation Assignment with given ID
@@ -360,4 +390,18 @@ func (r *repository) multipleFromEntities(entities EntityCollection) []*model.Fo
 		items = append(items, r.conv.FromEntity(ent))
 	}
 	return items
+}
+
+func shouldUpdateLastStateChangeTimestamp(ctx context.Context, oldEntity, newEntity *Entity) bool {
+	if oldEntity.State != newEntity.State {
+		log.C(ctx).Infof("State of formation assignment with ID: %s was changed from: %s to: %s", oldEntity.ID, oldEntity.State, newEntity.State)
+		return true
+	}
+
+	if oldEntity.State == newEntity.State && newEntity.State == string(model.ConfigPendingAssignmentState) && oldEntity.Value.String != newEntity.Value.String {
+		log.C(ctx).Infof("The state of formation assignment with ID: %s is still %s but the configuration was changed", oldEntity.ID, model.ConfigPendingAssignmentState)
+		return true
+	}
+
+	return false
 }

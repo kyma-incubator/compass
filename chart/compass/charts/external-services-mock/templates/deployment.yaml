@@ -83,6 +83,8 @@ spec:
                 value: "{{ (index .Values.global.tenants 10).id }}"
               - name: APP_TRUSTED_TENANT
                 value: "{{ (index .Values.global.tenants 26).id }}"
+              - name: APP_TRUSTED_NEW_GA
+                value: "{{ (index .Values.global.tenants 40).id }}"
               - name: APP_ON_DEMAND_TENANT
                 value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
               - name: APP_CA_CERT
@@ -121,6 +123,8 @@ spec:
                 value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
               - name: APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY
                 value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
+              - name: APP_TENANT_PROVIDER_COST_OBJECT_ID_PROPERTY
+                value: {{.Values.global.tenantFetcher.tenantProvider.costObjectIdProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
                 value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
               - name: APP_TENANT_PROVIDER_SUBSCRIPTION_ID_PROPERTY
@@ -157,6 +161,8 @@ spec:
                 value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
+              - name: APP_TENANT_CONFIG_TEST_COST_OBJECT_ID
+                value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
@@ -259,6 +265,12 @@ spec:
                 value: {{ .Values.global.tests.destination.instanceID | quote }}
               - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
                 value: {{ .Values.global.tests.subscription.tenants.providerSubaccountID }}
+              - name: APP_SERVICE_MANAGER_PATH
+                value: {{ .Values.global.instanceCreator.apiRootPath }}{{ .Values.global.instanceCreator.apiTenantMappingsEndpoint }}
+              - name: APP_SERVICE_MANAGER_SUBACCOUNT_QUERY_PARAM
+                value: {{ .Values.global.instanceCreator.subaccountQueryParam }}
+              - name: APP_SERVICE_MANAGER_LABELS_QUERY_PARAM
+                value: {{ .Values.global.instanceCreator.labelsQueryParam }}
               - name: APP_PROVIDER_DESTINATION_CLIENT_ID
                 valueFrom:
                   secretKeyRef:

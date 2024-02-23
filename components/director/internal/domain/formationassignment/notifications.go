@@ -95,6 +95,43 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 	}
 }
 
+// GenerateFormationAssignmentPair generates a formation assignment pair with operation given an assignment and reverse assignment
+// If there is a missing reverse assignment, it still generates a pair with an empty ReverseAssignmentReqMapping
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*AssignmentMappingPairWithOperation, error) {
+	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
+	if err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+	}
+
+	var reverseNotificationReq *webhookclient.FormationAssignmentNotificationRequest
+	if reverseFA != nil {
+		log.C(ctx).Infof("Generating reverse formation assignment notifications for ID: %q and formation ID: %q", reverseFA.ID, reverseFA.FormationID)
+		reverseNotificationReq, err = fan.GenerateFormationAssignmentNotification(ctx, reverseFA, operation)
+		if err != nil {
+			return nil, errors.Wrapf(err, "An error occurred while generating reverse formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
+		}
+	}
+
+	faReqMapping := FormationAssignmentRequestMapping{
+		Request:             notificationReq,
+		FormationAssignment: fa,
+	}
+
+	reverseFAReqMapping := FormationAssignmentRequestMapping{
+		Request:             reverseNotificationReq,
+		FormationAssignment: reverseFA,
+	}
+
+	return &AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &AssignmentMappingPair{
+			AssignmentReqMapping:        &faReqMapping,
+			ReverseAssignmentReqMapping: &reverseFAReqMapping,
+		},
+		Operation: operation,
+	}, nil
+}
+
 // PrepareDetailsForNotificationStatusReturned creates NotificationStatusReturnedOperationDetails by given tenantID, formation assignment and formation operation
 func (fan *formationAssignmentNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	var targetType model.ResourceType
@@ -581,6 +618,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 	if formationAssignment == nil {
 		return &webhook.FormationAssignment{}
 	}
+	state := formationAssignment.GetNotificationState()
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
 		FormationID: formationAssignment.FormationID,
@@ -589,7 +627,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		SourceType:  formationAssignment.SourceType,
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
-		State:       formationAssignment.State,
+		State:       state,
 		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
@@ -597,11 +635,6 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 
 func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(ctx context.Context, internalTenantID string) (*webhook.CustomerTenantContext, error) {
 	tenantObject, err := fan.tenantRepository.Get(ctx, internalTenantID)
-	if err != nil {
-		return nil, err
-	}
-
-	customerID, err := fan.tenantRepository.GetCustomerIDParentRecursively(ctx, internalTenantID)
 	if err != nil {
 		return nil, err
 	}
@@ -614,10 +647,26 @@ func (fan *formationAssignmentNotificationService) extractCustomerTenantContext(
 		path = &tenantObject.ExternalTenant
 	}
 
+	tenantParents, err := fan.tenantRepository.GetParentsRecursivelyByExternalTenant(ctx, tenantObject.ExternalTenant)
+	if err != nil {
+		return nil, err
+	}
+
+	var customerID string
+	var costObjectID string
+	for _, parent := range tenantParents {
+		if parent.Type == tenant.Customer {
+			customerID = parent.ExternalTenant
+		} else if parent.Type == tenant.CostObject {
+			costObjectID = parent.ExternalTenant
+		}
+	}
+
 	return &webhook.CustomerTenantContext{
-		CustomerID: customerID,
-		AccountID:  accountID,
-		Path:       path,
+		CustomerID:   customerID,
+		CostObjectID: costObjectID,
+		AccountID:    accountID,
+		Path:         path,
 	}, nil
 }
 

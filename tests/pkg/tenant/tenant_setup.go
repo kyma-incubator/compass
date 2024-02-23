@@ -21,6 +21,7 @@ const (
 	ResourceGroup TenantType = "resource-group"
 	Folder        TenantType = "folder"
 	Organization  TenantType = "organization"
+	CostObject    TenantType = "cost-object"
 
 	TestDefaultCustomerTenant                                  = "Test_DefaultCustomer"
 	TestSystemFetcherTenant                                    = "TestSystemFetcherAccount"
@@ -37,6 +38,7 @@ const (
 	GetScenariosLabelDefinitionCreatesOneIfNotExistsTenantName = "TestGetScenariosLabelDefinitionCreatesOneIfNotExists"
 	AutomaticScenarioAssignmentsWholeScenarioTenantName        = "TestAutomaticScenarioAssignmentsWholeScenario"
 	ApplicationsForRuntimeWithHiddenAppsTenantName             = "TestApplicationsForRuntimeWithHiddenApps"
+	TestIsolatedAccountName                                    = "TestIsolatedAccount"
 	TestDeleteApplicationIfInScenario                          = "TestDeleteApplicationIfInScenario"
 	TestProviderSubaccount                                     = "TestProviderSubaccount"
 	TestCompassProviderSubaccount                              = "TestCompassProviderSubaccount"
@@ -51,6 +53,7 @@ const (
 	TestTenantSubstitutionSubaccount                           = "Test Tenant Substitution Subaccount"
 	TestTenantSubstitutionAccount2                             = "Test Tenant Substitution Account 2"
 	TestTenantSubstitutionSubaccount2                          = "Test Tenant Substitution Subaccount 2"
+	TestSystemFetcherOnNewGAName                               = "TestSystemFetcherOnNewGA"
 )
 
 type Tenant struct {
@@ -112,6 +115,13 @@ func (mgr *TestTenantsManager) Init() {
 		ApplicationsForRuntimeTenantName: {
 			Name:           ApplicationsForRuntimeTenantName,
 			ExternalTenant: "5984a414-1eed-4972-af2c-b2b6a415c7d7",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Status:         Active,
+		},
+		TestIsolatedAccountName: {
+			Name:           TestIsolatedAccountName,
+			ExternalTenant: "ded8eca9-12b9-4076-9458-9deabff87bd8",
 			ProviderName:   testProvider,
 			Type:           Account,
 			Status:         Active,
@@ -301,7 +311,13 @@ func (mgr *TestTenantsManager) Init() {
 			Status:         Active,
 			Parent:         TestTenantSubstitutionAccount2,
 		},
-	}
+		TestSystemFetcherOnNewGAName: {
+			Name:           TestSystemFetcherOnNewGAName,
+			ExternalTenant: "44dfe415-4847-4feb-8580-ecb07958347d",
+			ProviderName:   testProvider,
+			Type:           Account,
+			Status:         Active,
+		}}
 }
 
 func (mgr TestTenantsManager) GetIDByName(t require.TestingT, name string) string {

@@ -174,6 +174,105 @@ func TestServiceGet(t *testing.T) {
 	}
 }
 
+func TestService_ListFormationsForObject(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name                     string
+		FormationAssignmentSvcFn func() *automock.FormationAssignmentService
+		FormationRepoFn          func() *automock.FormationRepository
+		Input                    string
+		ExpectedFormations       []*model.Formation
+		ExpectedErrMessage       string
+	}{
+		{
+			Name: "Success",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(formationAssignments, nil).Once()
+				return svc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
+				})).Return(modelFormations, nil).Once()
+				return repo
+			},
+			Input:              ApplicationID,
+			ExpectedFormations: modelFormations,
+		},
+		{
+			Name: "Success when no assignments are returned",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(nil, nil).Once()
+				return svc
+			},
+			Input:              ApplicationID,
+			ExpectedFormations: nil,
+		},
+		{
+			Name: "Error when listing formations",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(formationAssignments, nil).Once()
+				return svc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
+				})).Return(nil, testErr).Once()
+				return repo
+			},
+			Input:              ApplicationID,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when listing formation assignments",
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, ApplicationID).Return(nil, testErr).Once()
+				return svc
+			},
+			Input:              ApplicationID,
+			ExpectedErrMessage: fmt.Sprintf("while listing formations assignments for participant with ID %s", ApplicationID),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			formationAssignmentService := &automock.FormationAssignmentService{}
+			if testCase.FormationAssignmentSvcFn != nil {
+				formationAssignmentService = testCase.FormationAssignmentSvcFn()
+			}
+			formationRepo := &automock.FormationRepository{}
+			if testCase.FormationRepoFn != nil {
+				formationRepo = testCase.FormationRepoFn()
+			}
+
+			svc := formation.NewService(nil, nil, nil, nil, formationRepo, nil, nil, nil, nil, nil, nil, nil, nil, nil, formationAssignmentService, nil, nil, nil, nil, nil, runtimeType, applicationType)
+
+			// WHEN
+			actual, err := svc.ListFormationsForObject(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedFormations, actual)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+				require.Nil(t, actual)
+			}
+
+			mock.AssertExpectationsForObjects(t, formationRepo, formationAssignmentService)
+		})
+	}
+}
+
 func TestService_GetFormationByName(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)
@@ -1349,6 +1448,8 @@ func TestServiceDeleteFormation(t *testing.T) {
 	formationWithCreateErrorStateAndTechnicalAssignmentError := fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
 
 	expectedFormation := fixFormationModelWithState(model.ReadyFormationState)
+	expectedFormation2 := fixFormationModelWithState(model.ReadyFormationState)
+	formationWithDeletingState := fixFormationModelWithState(model.DeletingFormationState)
 
 	formationWithReadyState := fixFormationModelWithState(model.ReadyFormationState)
 
@@ -1483,6 +1584,38 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			InputFormation:     in,
 			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Success when formation has async webhook and updating to deleting state returns unauthorized error",
+			NotificationsSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateFormationNotifications", ctx, formationLifecycleAsyncWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationAsyncDeleteRequests, nil).Once()
+				notificationSvc.On("SendNotification", ctx, formationNotificationAsyncDeleteRequest).Return(fixFormationNotificationWebhookResponse(200, 200, nil), nil).Once()
+				return notificationSvc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
+				formationRepoMock.On("Update", ctx, fixFormationModelWithState(model.DeletingFormationState)).Return(unauthorizedError).Once()
+				return formationRepoMock
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleAsyncWebhooks, nil).Once()
+				return webhookRepo
+			},
+			InputFormation:    in,
+			ExpectedFormation: formationWithDeletingState,
 		},
 		{
 			Name: "error when can not get labeldef",
@@ -1864,6 +1997,39 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(testErr).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
+				return formationRepoMock
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
+				return webhookRepo
+			},
+			InputFormation:     in,
+			ExpectedFormation:  nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Error when processing formation notifications fails and formation update returns unauthorized error",
+			NotificationsSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithReadyState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(formationNotificationAsyncDeleteRequests, nil).Once()
+				notificationSvc.On("SendNotification", ctx, formationNotificationAsyncDeleteRequest).Return(nil, testErr).Once()
+				return notificationSvc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(unauthorizedError).Once()
+				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation2, nil).Once()
 				return formationRepoMock
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -2594,10 +2760,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	transactionError := errors.New("transaction error")
 	txGen := txtest.NewTransactionContextGenerator(transactionError)
 
-	allStates := []string{string(model.InitialAssignmentState),
-		string(model.DeletingAssignmentState),
-		string(model.CreateErrorAssignmentState),
-		string(model.DeleteErrorAssignmentState)}
+	allStates := model.ResynchronizableFormationAssignmentStates
 
 	testFormation := fixFormationModelWithState(model.ReadyFormationState)
 	formationInCreateErrorState := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.ClientError)
@@ -2666,6 +2829,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 		},
 	}
+
 	var formationAssignmentPairs = make([]*formationassignment.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
 	for i := range formationAssignments {
 		formationAssignmentPairs = append(formationAssignmentPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignments[i]))
@@ -3809,50 +3973,62 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			if testCase.TxFn != nil {
 				persist, transact = testCase.TxFn()
 			}
+
 			labelService := unusedLabelService()
 			if testCase.LabelServiceFn != nil {
 				labelService = testCase.LabelServiceFn()
 			}
+
 			runtimeContextRepo := unusedRuntimeContextRepo()
 			if testCase.RuntimeContextRepoFn != nil {
 				runtimeContextRepo = testCase.RuntimeContextRepoFn()
 			}
+
 			formationRepo := unusedFormationRepo()
 			if testCase.FormationRepositoryFn != nil {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
+
 			formationTemplateRepo := unusedFormationTemplateRepo()
 			if testCase.FormationTemplateRepositoryFn != nil {
 				formationTemplateRepo = testCase.FormationTemplateRepositoryFn()
 			}
+
 			labelRepo := unusedLabelRepo()
 			if testCase.LabelRepoFn != nil {
 				labelRepo = testCase.LabelRepoFn()
 			}
+
 			notificationsSvc := unusedNotificationsService()
 			if testCase.NotificationServiceFN != nil {
 				notificationsSvc = testCase.NotificationServiceFN()
 			}
+
 			formationAssignmentSvc := unusedFormationAssignmentService()
 			if testCase.FormationAssignmentServiceFn != nil {
 				formationAssignmentSvc = testCase.FormationAssignmentServiceFn()
 			}
+
 			formationAssignmentNotificationService := unusedFormationAssignmentNotificationService()
 			if testCase.FormationAssignmentNotificationServiceFN != nil {
 				formationAssignmentNotificationService = testCase.FormationAssignmentNotificationServiceFN()
 			}
+
 			webhookRepo := unusedWebhookRepository()
 			if testCase.WebhookRepoFn != nil {
 				webhookRepo = testCase.WebhookRepoFn()
 			}
+
 			labelDefRepo := unusedLabelDefRepository()
 			if testCase.LabelDefRepositoryFn != nil {
 				labelDefRepo = testCase.LabelDefRepositoryFn()
 			}
+
 			labelDefSvc := unusedLabelDefService()
 			if testCase.LabelDefServiceFn != nil {
 				labelDefSvc = testCase.LabelDefServiceFn()
 			}
+
 			statusService := &automock.StatusService{}
 			if testCase.StatusServiceFn != nil {
 				statusService = testCase.StatusServiceFn()
@@ -3883,6 +4059,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			mock.AssertExpectationsForObjects(t, persist, transact, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService)
 		})
 	}
+
 	t.Run("returns error when empty tenant", func(t *testing.T) {
 		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		_, err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID, false)

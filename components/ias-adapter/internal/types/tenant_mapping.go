@@ -10,6 +10,11 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
+var (
+	ErrInvalidFormationID      = errors.New("$.formationId is invalid or missing")
+	ErrInvalidAssignedTenantID = errors.New("$.assignedTenants[0].uclApplicationId is invalid or missing")
+)
+
 type TenantMapping struct {
 	FormationID     string           `json:"formationId"`
 	ReceiverTenant  ReceiverTenant   `json:"receiverTenant"`
@@ -87,13 +92,13 @@ type AssignedTenantConfiguration struct {
 
 func (tm TenantMapping) Validate() error {
 	if _, err := uuid.Parse(tm.FormationID); err != nil {
-		return errors.New("$.formationId is not a valid uuid")
+		return ErrInvalidFormationID
+	}
+	if _, err := uuid.Parse(tm.AssignedTenants[0].UCLApplicationID); err != nil {
+		return ErrInvalidAssignedTenantID
 	}
 	if tm.ReceiverTenant.ApplicationURL == "" {
 		return errors.New("$.receiverTenant.applicationUrl is required")
-	}
-	if _, err := uuid.Parse(tm.AssignedTenants[0].UCLApplicationID); err != nil {
-		return errors.New("$.assignedTenants[0].uclApplicationId is not a valid uuid")
 	}
 	if tm.AssignedTenants[0].LocalTenantID == "" {
 		return errors.New("$.assignedTenants[0].localTenantId is required")

@@ -211,7 +211,6 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	resynchronizeReq := fixtures.FixResynchronizeFormationNotificationsRequestWithResetOption(formation.ID, true)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, resynchronizeReq, &formation)
 	require.NoError(t, err)
-
 	// Check that there are bundle instance auths created for each application bundle by the Kyma Adapter
 	t.Log("Assert that there are bundle instance auths for application bundles")
 	returnedApp = graphql.ApplicationExt{}

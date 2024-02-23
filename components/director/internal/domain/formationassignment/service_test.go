@@ -45,19 +45,19 @@ var (
 	first = 2
 	after = "test"
 
-	readyState         = string(model.ReadyAssignmentState)
-	configPendingState = string(model.ConfigPendingAssignmentState)
-	createErrorState   = string(model.CreateErrorAssignmentState)
-	initialState       = string(model.InitialAssignmentState)
-	deleteErrorState   = string(model.DeleteErrorAssignmentState)
-	invalidState       = "asd"
+	readyAssignmentState         = string(model.ReadyAssignmentState)
+	configPendingAssignmentState = string(model.ConfigPendingAssignmentState)
+	createErrorAssignmentState   = string(model.CreateErrorAssignmentState)
+	initialAssignmentState       = string(model.InitialAssignmentState)
+	deleteErrorAssignmentState   = string(model.DeleteErrorAssignmentState)
+	invalidState                 = "invalidState"
 
 	formation = &model.Formation{
 		ID:                  TestFormationID,
 		TenantID:            TestTenantID,
 		FormationTemplateID: TestFormationTemplateID,
 		Name:                TestFormationName,
-		State:               TestReadyState,
+		State:               model.ReadyFormationState,
 	}
 	reverseFa = fixReverseFormationAssignment(fa)
 
@@ -2287,12 +2287,12 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 	extendedFaNotificationInitialSelfReferencedReq := fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateSelfReferencingAssignment)
 	extendedFaNotificationInitialReq := fixExtendedFormationAssignmentNotificationReq(reqWebhook, initialStateAssignment)
 
-	configPendingNotificationReport := fixNotificationStatusReportWithStateAndConfig(nil, configPendingState)
-	configPendingNotificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig([]byte(config), configPendingState)
-	readyNotificationReport := fixNotificationStatusReportWithStateAndConfig(nil, readyState)
-	createErrorNotificationReportWithError := fixNotificationStatusReportWithStateAndError(createErrorState, testErr.Error())
-	notificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig([]byte(config), readyState)
-	notificationReportWithSecondConfig := fixNotificationStatusReportWithStateAndConfig([]byte(secondConfig), readyState)
+	configPendingNotificationReport := fixNotificationStatusReportWithStateAndConfig(nil, configPendingAssignmentState)
+	configPendingNotificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig([]byte(config), configPendingAssignmentState)
+	readyNotificationReport := fixNotificationStatusReportWithStateAndConfig(nil, readyAssignmentState)
+	createErrorNotificationReportWithError := fixNotificationStatusReportWithStateAndError(createErrorAssignmentState, testErr.Error())
+	notificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig([]byte(config), readyAssignmentState)
+	notificationReportWithSecondConfig := fixNotificationStatusReportWithStateAndConfig([]byte(secondConfig), readyAssignmentState)
 
 	testCases := []struct {
 		Name                                 string
@@ -2370,7 +2370,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &configPendingState,
+					State:                &configPendingAssignmentState,
 				}, nil)
 				return notificationSvc
 			},
@@ -2396,7 +2396,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &configPendingState,
+					State:                &configPendingAssignmentState,
 				}, nil)
 				return notificationSvc
 			},
@@ -2417,7 +2417,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: nil,
 					ActualStatusCode:     &ok,
-					State:                &configPendingState,
+					State:                &configPendingAssignmentState,
 					Config:               &config,
 				}, nil)
 				return notificationSvc
@@ -2444,7 +2444,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &configPendingState,
+					State:                &configPendingAssignmentState,
 					Config:               &config,
 				}, nil)
 				return notificationSvc
@@ -2608,7 +2608,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &notFound,
-					State:                &createErrorState,
+					State:                &createErrorAssignmentState,
 					Error:                str.Ptr(testErr.Error()),
 				}, nil)
 				return notificationSvc
@@ -2635,7 +2635,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &notFound,
-					State:                &createErrorState,
+					State:                &createErrorAssignmentState,
 					Error:                str.Ptr(testErr.Error()),
 				}, nil)
 				return notificationSvc
@@ -2668,7 +2668,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &notFound,
-					State:                &createErrorState,
+					State:                &createErrorAssignmentState,
 					Config:               &config,
 					Error:                str.Ptr(testErr.Error()),
 				}, nil)
@@ -2698,7 +2698,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &readyState,
+					State:                &readyAssignmentState,
 					Config:               &config,
 				}, nil)
 				return notificationSvc
@@ -2727,7 +2727,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &ok,
-					State:                &deleteErrorState,
+					State:                &deleteErrorAssignmentState,
 				}, nil)
 				return notificationSvc
 			},
@@ -2755,7 +2755,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &readyState,
+					State:                &readyAssignmentState,
 					Config:               &config,
 				}, nil)
 				return notificationSvc
@@ -2784,7 +2784,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &notFound,
-					State:                &readyState,
+					State:                &readyAssignmentState,
 					Config:               &config,
 				}, nil)
 				return notificationSvc
@@ -2813,7 +2813,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &notFound,
-					State:                &readyState,
+					State:                &readyAssignmentState,
 					Config:               &config,
 				}, nil)
 				return notificationSvc
@@ -2841,7 +2841,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &notFound,
-					State:                &createErrorState,
+					State:                &createErrorAssignmentState,
 					Config:               &config,
 					Error:                str.Ptr(testErr.Error()),
 				}, nil)
@@ -2953,7 +2953,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &initialState,
+					State:                &initialAssignmentState,
 				}, nil)
 				return notificationSvc
 			},
@@ -2981,7 +2981,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 					SuccessStatusCode:    &ok,
 					IncompleteStatusCode: &incomplete,
 					ActualStatusCode:     &incomplete,
-					State:                &deleteErrorState,
+					State:                &deleteErrorAssignmentState,
 				}, nil)
 				return notificationSvc
 			},
@@ -3545,16 +3545,16 @@ func TestService_CleanupFormationAssignment(t *testing.T) {
 
 	successResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted}
 	incompleteResponse := &webhook.Response{ActualStatusCode: &accepted, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted}
-	errorResponse := &webhook.Response{ActualStatusCode: &notFound, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, Error: &errMsg, State: &deleteErrorState}
+	errorResponse := &webhook.Response{ActualStatusCode: &notFound, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, Error: &errMsg, State: &deleteErrorAssignmentState}
 	errorResponseWithoutState := &webhook.Response{ActualStatusCode: &notFound, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, Error: &errMsg}
-	createErrorResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &createErrorState}
-	successResponseWithStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &readyState}
-	deleteErrorResponseWithStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &deleteErrorState}
+	createErrorResponse := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &createErrorAssignmentState}
+	successResponseWithStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &readyAssignmentState}
+	deleteErrorResponseWithStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &deleteErrorAssignmentState}
 	responseWithInvalidStateInBody := &webhook.Response{ActualStatusCode: &ok, SuccessStatusCode: &ok, IncompleteStatusCode: &accepted, State: &invalidState}
 
-	readyNotificationReport := fixNotificationStatusReportWithStateAndConfig(nil, readyState)
-	errorNotificationReport := fixNotificationStatusReportWithStateAndError(deleteErrorState, testErr.Error())
-	deleteErrorNotificationReport := fixNotificationStatusReportWithStateAndError(deleteErrorState, "")
+	readyNotificationReport := fixNotificationStatusReportWithStateAndConfig(nil, readyAssignmentState)
+	errorNotificationReport := fixNotificationStatusReportWithStateAndError(deleteErrorAssignmentState, testErr.Error())
+	deleteErrorNotificationReport := fixNotificationStatusReportWithStateAndError(deleteErrorAssignmentState, "")
 
 	testCases := []struct {
 		Name                                        string

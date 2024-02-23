@@ -34,7 +34,7 @@ func Test_getMovedSubaccounts(t *testing.T) {
 		TenantMappingInput: model.BusinessTenantMappingInput{
 			Name:           "subaccount-name",
 			ExternalTenant: "label-value",
-			Parent:         "parent",
+			Parents:        []string{"parent"},
 			Subdomain:      "subdomain",
 			Region:         "region",
 			Type:           string(tenant.Subaccount),
@@ -185,16 +185,34 @@ func Test_getTenantMappings(t *testing.T) {
 	name := "test-name"
 	discriminatorField := "discriminator"
 	subdomainField := "subdomain"
+	costObjectField := "costObject"
 	subdomain := "test-subdomain"
 	providerName := "test-provider"
 	entityTypeField := "type"
 	entityType := "account"
+	costObjectID := "test-cost-object-id"
 
 	expectedTenantMapping := model.BusinessTenantMappingInput{
 		ExternalTenant: id,
 		Name:           name,
 		Subdomain:      subdomain,
+		Parents:        []string{},
 		Type:           entityType,
+		Provider:       providerName,
+	}
+	expectedTenantMappingWithCostObjectParent := model.BusinessTenantMappingInput{
+		ExternalTenant: id,
+		Name:           name,
+		Subdomain:      subdomain,
+		Parents:        []string{costObjectID},
+		Type:           entityType,
+		Provider:       providerName,
+	}
+	expectedCostObjectTenant := model.BusinessTenantMappingInput{
+		ExternalTenant: costObjectID,
+		Name:           costObjectID,
+		Parents:        []string{},
+		Type:           string(tenant.CostObject),
 		Provider:       providerName,
 	}
 
@@ -216,6 +234,7 @@ func Test_getTenantMappings(t *testing.T) {
 				EntityTypeField:        entityTypeField,
 				GlobalAccountGUIDField: globalAccountGUIDField,
 				GlobalAccountKey:       globalAccountKey,
+				CostObjectIDField:      costObjectField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -233,6 +252,37 @@ func Test_getTenantMappings(t *testing.T) {
 			},
 		},
 		{
+			name: "successfully gets businessTenantMappingInputs for correct eventPage format with cost object ID",
+			fieldMapping: resync.TenantFieldMapping{
+				NameField:              nameField,
+				IDField:                idField,
+				SubdomainField:         subdomainField,
+				EventsField:            "events",
+				DetailsField:           "details",
+				EntityTypeField:        entityTypeField,
+				GlobalAccountGUIDField: globalAccountGUIDField,
+				GlobalAccountKey:       globalAccountKey,
+				CostObjectIDField:      costObjectField,
+			},
+			errorFunc: func(t *testing.T, err error) {
+				assert.NoError(t, err)
+			},
+			assertTenantMappingFunc: func(t *testing.T, tenantMappings []model.BusinessTenantMappingInput) {
+				assert.Equal(t, 2, len(tenantMappings))
+				assert.Equal(t, expectedTenantMappingWithCostObjectParent, tenantMappings[0])
+				assert.Equal(t, expectedCostObjectTenant, tenantMappings[1])
+				assert.Equal(t, []string{costObjectID}, tenantMappings[0].Parents)
+			},
+			detailsPairs: [][]Pair{
+				{
+					{idField, id},
+					{nameField, name},
+					{subdomainField, subdomain},
+					{costObjectField, costObjectID},
+				},
+			},
+		},
+		{
 			name: "successfully gets businessTenantMappingInputs for correct eventPage format with discriminator field",
 			fieldMapping: resync.TenantFieldMapping{
 				NameField:              nameField,
@@ -245,6 +295,7 @@ func Test_getTenantMappings(t *testing.T) {
 				EntityTypeField:        entityTypeField,
 				GlobalAccountGUIDField: globalAccountGUIDField,
 				GlobalAccountKey:       globalAccountKey,
+				CostObjectIDField:      costObjectField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -272,6 +323,7 @@ func Test_getTenantMappings(t *testing.T) {
 				DetailsField:       "details",
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
+				CostObjectIDField:  costObjectField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -300,6 +352,7 @@ func Test_getTenantMappings(t *testing.T) {
 				DiscriminatorValue: "discriminator-value",
 				EntityTypeField:    entityTypeField,
 				GlobalAccountKey:   globalAccountKey,
+				CostObjectIDField:  costObjectField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)
@@ -324,6 +377,7 @@ func Test_getTenantMappings(t *testing.T) {
 				DetailsField:       "details",
 				DiscriminatorField: discriminatorField,
 				DiscriminatorValue: "discriminator-value",
+				CostObjectIDField:  costObjectField,
 			},
 			errorFunc: func(t *testing.T, err error) {
 				assert.NoError(t, err)

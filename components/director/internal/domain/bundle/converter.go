@@ -3,7 +3,6 @@ package bundle
 import (
 	"database/sql"
 	"encoding/json"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -69,6 +68,7 @@ func (c *converter) ToEntity(in *model.Bundle) (*Entity, error) {
 		CorrelationIDs:                repo.NewNullableStringFromJSONRawMessage(in.CorrelationIDs),
 		Tags:                          repo.NewNullableStringFromJSONRawMessage(in.Tags),
 		DocumentationLabels:           repo.NewNullableStringFromJSONRawMessage(in.DocumentationLabels),
+		LastUpdate:                    repo.NewNullableString(in.LastUpdate),
 		BaseEntity: &repo.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -111,6 +111,7 @@ func (c *converter) FromEntity(entity *Entity) (*model.Bundle, error) {
 		CorrelationIDs:                 repo.JSONRawMessageFromNullableString(entity.CorrelationIDs),
 		Tags:                           repo.JSONRawMessageFromNullableString(entity.Tags),
 		DocumentationLabels:            repo.JSONRawMessageFromNullableString(entity.DocumentationLabels),
+		LastUpdate:                     repo.StringPtrFromNullableString(entity.LastUpdate),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -148,9 +149,9 @@ func (c *converter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}, nil
@@ -307,13 +308,4 @@ func (c *converter) correlationIDsToJSONRaw(correlationIDs []string) (json.RawMe
 		return nil, errors.Wrap(err, "while marshalling correlation IDs")
 	}
 	return out, nil
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }

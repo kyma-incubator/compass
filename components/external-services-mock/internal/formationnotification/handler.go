@@ -156,6 +156,12 @@ const CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
 // DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 
+// CreateReadyAssignmentState indicates that the formation assignment is in a ready state
+const CreateReadyAssignmentState FormationAssignmentState = "CREATE_READY"
+
+// DeleteReadyAssignmentState indicates that the formation assignment is in a ready state
+const DeleteReadyAssignmentState FormationAssignmentState = "DELETE_READY"
+
 // ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
 const ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 
@@ -179,6 +185,10 @@ type Handler struct {
 	ShouldReturnError         bool
 	config                    Configuration
 	providerDestinationConfig ProviderDestinationConfig
+	// tokenService URL used for oauth2mTLS destinations.
+	// The External Services Mock is used as token provider for oauth2mTLS as the certificates generated
+	// from the test are not trusted by the token providers on real env.
+	oauth2mTLSTokenServiceURL string
 }
 
 // Response is used to model the response for a given formation or formation assignment notification request.
@@ -191,12 +201,13 @@ type Response struct {
 }
 
 // NewHandler creates a new Handler
-func NewHandler(notificationConfiguration Configuration, providerDestinationConfig ProviderDestinationConfig) *Handler {
+func NewHandler(notificationConfiguration Configuration, providerDestinationConfig ProviderDestinationConfig, tokenServiceURL string) *Handler {
 	return &Handler{
-		Mappings:                  make(map[string][]Response),
-		ShouldReturnError:         true,
-		config:                    notificationConfiguration,
-		providerDestinationConfig: providerDestinationConfig,
+		Mappings:                   make(map[string][]Response),
+		ShouldReturnError:          true,
+		config:                     notificationConfiguration,
+		providerDestinationConfig:  providerDestinationConfig,
+		oauth2mTLSTokenServiceURL: tokenServiceURL,
 	}
 }
 
@@ -291,8 +302,9 @@ func (h *Handler) RespondWithIncompleteAndDestinationDetails(writer http.Respons
 			// BasicDestination on 'provider' instance level. Also, the basic destination has only a path for the URL and no correlationIds property
 			// Client Certificate Authentication destination on 'consumer' subaccount(implicitly) level
 			// SAML Assertion destination in the 'consumer' subaccount(implicitly) on provider instance level
-			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-oauth2-client-creds-destination-name\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
-			response := fmt.Sprintf(responseWithPlaceholders, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID, h.config.TestDestinationInstanceID, h.config.TestDestinationInstanceID, h.config.TestProviderSubaccountID)
+			// OAuth2MTLSClientCredentials destination on 'provider' subaccount level
+			responseWithPlaceholders := "{\"state\":\"CONFIG_PENDING\",\"configuration\":{\"destinations\":[{\"name\":\"e2e-design-time-destination-name\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"http://e2e-design-time-url-example.com\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"e2e-basic-destination-name\",\"description\":\"e2e-basic-destination description\",\"url\":\"/e2e-basic-url-path\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-saml-assertion-destination-name\",\"description\":\"e2e saml assertion destination description\",\"url\":\"http://e2e-saml-url-example.com\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-client-cert-auth-destination-name\",\"description\":\"e2e client cert auth destination description\",\"url\":\"http://e2e-client-cert-auth-url-example.com\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-oauth2-client-creds-destination-name\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]},\"oauth2mtls\":{\"correlationIds\":[\"e2e-oauth2mTLS-correlation-ids\"],\"destinations\":[{\"name\":\"e2e-oauth2mTLS-destination-name\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 mTLS destination description\",\"url\":\"http://e2e-oauth2mTLS-url-example.com\",\"additionalProperties\":{\"e2e-oauth2mTLSAuthTestKey\":\"e2e-oauth2mTLSTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}}"
+			response := fmt.Sprintf(responseWithPlaceholders, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID, h.config.TestDestinationInstanceID, h.config.TestDestinationInstanceID, h.config.TestProviderSubaccountID, h.config.TestProviderSubaccountID)
 			httputils.RespondWithBody(ctx, writer, http.StatusOK, json.RawMessage(response))
 			return
 		}
@@ -557,6 +569,33 @@ func (h *Handler) AsyncNoConfig(writer http.ResponseWriter, r *http.Request) {
 	}
 
 	h.asyncFAResponse(ctx, writer, r, Assign, "", responseFunc)
+
+}
+
+// AsyncNoConfigWithCreateReady handles asynchronous formation assignment notification requests for Assign. Sends request without configuration in the body
+func (h *Handler) AsyncNoConfigWithCreateReady(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, CreateReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	h.asyncFAResponse(ctx, writer, r, Assign, "", responseFunc)
+}
+
+// AsyncNoConfigWithDeleteReady handles asynchronous formation assignment notification requests for Assign. Sends request without configuration in the body
+func (h *Handler) AsyncNoConfigWithDeleteReady(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func(client *http.Client, correlationID, formationID, formationAssignmentID, config string) {
+		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, DeleteReadyAssignmentState, &config, formationID, formationAssignmentID); err != nil {
+			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
+		}
+	}
+
+	h.asyncFAResponse(ctx, writer, r, Unassign, "", responseFunc)
 }
 
 // AsyncDestinationPatch handles asynchronous formation assignment notification requests for destination creation during Assign operation
@@ -596,7 +635,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	config := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"}}}}", h.providerDestinationConfig.TokenURL+h.providerDestinationConfig.TokenPath, h.providerDestinationConfig.ClientID, h.providerDestinationConfig.ClientSecret)
+	config := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"},\"oauth2mtls\":{\"url\":\"http://e2e-oauth2mTLS-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\"}}}}", h.providerDestinationConfig.TokenURL+h.providerDestinationConfig.TokenPath, h.providerDestinationConfig.ClientID, h.providerDestinationConfig.ClientSecret,	h.oauth2mTLSTokenServiceURL, h.providerDestinationConfig.ClientID)
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
 
@@ -746,7 +785,11 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 
 	request.Header.Add(correlation.RequestIDHeaderKey, correlationID)
 	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
-	log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %v", formationID, formationAssignmentID, state, testConfig)
+	if testConfig != nil && *testConfig != "" {
+		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %s", formationID, formationAssignmentID, state, *testConfig)
+	} else {
+		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and without config", formationID, formationAssignmentID, state)
+	}
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
 }

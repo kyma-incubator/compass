@@ -17,6 +17,10 @@ type TenantService struct {
 func (_m *TenantService) GetInternalTenant(ctx context.Context, externalTenant string) (string, error) {
 	ret := _m.Called(ctx, externalTenant)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetInternalTenant")
+	}
+
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {

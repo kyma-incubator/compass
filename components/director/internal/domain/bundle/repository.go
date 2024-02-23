@@ -25,8 +25,8 @@ const (
 )
 
 var (
-	bundleColumns    = []string{"id", appIDColumn, "app_template_version_id", "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", correlationIDs, "tags", "resource_hash", "documentation_labels"}
-	updatableColumns = []string{"name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "resource_hash", "documentation_labels"}
+	bundleColumns    = []string{"id", appIDColumn, "app_template_version_id", "name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", correlationIDs, "tags", "resource_hash", "documentation_labels", "last_update"}
+	updatableColumns = []string{"name", "description", "version", "instance_auth_request_json_schema", "default_instance_auth", "ord_id", "local_tenant_id", "short_description", "links", "labels", "credential_exchange_strategies", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "resource_hash", "documentation_labels", "last_update"}
 	orderByColumns   = repo.OrderByParams{repo.NewAscOrderBy(appIDColumn), repo.NewAscOrderBy("id")}
 )
 
@@ -290,7 +290,7 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 			WHERE id IN (
 				SELECT id
 				FROM tenant_applications
-				WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = ? )
+				WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = ? )
 			)
 			AND name = ? AND base_url = ?
 		`, []interface{}{tenantID, destination.XSystemTenantName, destination.XSystemBaseURL})
@@ -301,7 +301,7 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 			WHERE pa.id IN (
 				SELECT id
 				FROM tenant_applications
-				WHERE tenant_id=(SELECT parent FROM business_tenant_mappings WHERE id = ? )
+				WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = ? )
 			)
 			AND l.key='applicationType'
 			AND l.value ?| array[?]

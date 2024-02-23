@@ -42,11 +42,14 @@ func (c *converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 	}
 
 	return &graphql.Formation{
-		ID:                  i.ID,
-		Name:                i.Name,
-		FormationTemplateID: i.FormationTemplateID,
-		State:               string(i.State),
-		Error:               formationErr,
+		ID:                            i.ID,
+		Name:                          i.Name,
+		FormationTemplateID:           i.FormationTemplateID,
+		TenantID:                      i.TenantID,
+		State:                         string(i.State),
+		Error:                         formationErr,
+		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(i.LastStateChangeTimestamp),
+		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(i.LastNotificationSentTimestamp),
 	}, nil
 }
 
@@ -77,12 +80,14 @@ func (c *converter) ToEntity(in *model.Formation) *Entity {
 	}
 
 	return &Entity{
-		ID:                  in.ID,
-		TenantID:            in.TenantID,
-		FormationTemplateID: in.FormationTemplateID,
-		Name:                in.Name,
-		State:               string(in.State),
-		Error:               repo.NewNullableStringFromJSONRawMessage(in.Error),
+		ID:                            in.ID,
+		TenantID:                      in.TenantID,
+		FormationTemplateID:           in.FormationTemplateID,
+		Name:                          in.Name,
+		State:                         string(in.State),
+		Error:                         repo.NewNullableStringFromJSONRawMessage(in.Error),
+		LastStateChangeTimestamp:      in.LastStateChangeTimestamp,
+		LastNotificationSentTimestamp: in.LastNotificationSentTimestamp,
 	}
 }
 
@@ -92,11 +97,13 @@ func (c *converter) FromEntity(entity *Entity) *model.Formation {
 	}
 
 	return &model.Formation{
-		ID:                  entity.ID,
-		TenantID:            entity.TenantID,
-		FormationTemplateID: entity.FormationTemplateID,
-		Name:                entity.Name,
-		State:               model.FormationState(entity.State),
-		Error:               repo.JSONRawMessageFromNullableString(entity.Error),
+		ID:                            entity.ID,
+		TenantID:                      entity.TenantID,
+		FormationTemplateID:           entity.FormationTemplateID,
+		Name:                          entity.Name,
+		State:                         model.FormationState(entity.State),
+		Error:                         repo.JSONRawMessageFromNullableString(entity.Error),
+		LastStateChangeTimestamp:      entity.LastStateChangeTimestamp,
+		LastNotificationSentTimestamp: entity.LastNotificationSentTimestamp,
 	}
 }

@@ -12,6 +12,10 @@ type CredentialData interface {
 	IsCredentialData()
 }
 
+type FormationParticipant interface {
+	IsFormationParticipant()
+}
+
 type OneTimeToken interface {
 	IsOneTimeToken()
 }
@@ -366,15 +370,17 @@ type BundleUpdateInput struct {
 }
 
 type BusinessTenantMappingInput struct {
-	Name           string  `json:"name"`
-	ExternalTenant string  `json:"externalTenant"`
-	Parent         *string `json:"parent"`
-	Subdomain      *string `json:"subdomain"`
-	Region         *string `json:"region"`
-	Type           string  `json:"type"`
-	Provider       string  `json:"provider"`
-	LicenseType    *string `json:"licenseType"`
-	CustomerID     *string `json:"customerId"`
+	Name           string    `json:"name"`
+	ExternalTenant string    `json:"externalTenant"`
+	Parents        []*string `json:"parents"`
+	Subdomain      *string   `json:"subdomain"`
+	Region         *string   `json:"region"`
+	Type           string    `json:"type"`
+	Provider       string    `json:"provider"`
+	LicenseType    *string   `json:"licenseType"`
+	CustomerID     *string   `json:"customerId"`
+	CostObjectID   *string   `json:"costObjectId"`
+	CostObjectType *string   `json:"costObjectType"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
@@ -535,18 +541,6 @@ type FetchRequestStatus struct {
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
-type FormationAssignment struct {
-	ID            string                  `json:"id"`
-	Source        string                  `json:"source"`
-	SourceType    FormationAssignmentType `json:"sourceType"`
-	Target        string                  `json:"target"`
-	TargetType    FormationAssignmentType `json:"targetType"`
-	State         string                  `json:"state"`
-	Value         *string                 `json:"value"`
-	Configuration *string                 `json:"configuration"`
-	Error         *string                 `json:"error"`
-}
-
 type FormationAssignmentPage struct {
 	Data       []*FormationAssignment `json:"data"`
 	PageInfo   *PageInfo              `json:"pageInfo"`
@@ -630,6 +624,7 @@ type FormationTemplateInput struct {
 	Webhooks               []*WebhookInput `json:"webhooks"`
 	LeadingProductIDs      []string        `json:"leadingProductIDs"`
 	SupportsReset          *bool           `json:"supportsReset"`
+	DiscoveryConsumers     []string        `json:"discoveryConsumers"`
 }
 
 type FormationTemplatePage struct {
@@ -877,12 +872,6 @@ type TenantAccessInput struct {
 	ResourceType TenantAccessObjectType `json:"resourceType"`
 	ResourceID   string                 `json:"resourceID"`
 	Owner        bool                   `json:"owner"`
-}
-
-type TenantBusinessType struct {
-	ID   string `json:"id"`
-	Code string `json:"code"`
-	Name string `json:"name"`
 }
 
 type TenantPage struct {

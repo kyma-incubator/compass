@@ -10,7 +10,7 @@ type BusinessTenantMapping struct {
 	ID             string
 	Name           string
 	ExternalTenant string
-	Parent         string
+	Parents        []string
 	Type           tenant.Type
 	Provider       string
 	Status         tenant.Status
@@ -35,7 +35,7 @@ func (t BusinessTenantMapping) ToInput() BusinessTenantMappingInput {
 	return BusinessTenantMappingInput{
 		Name:           t.Name,
 		ExternalTenant: t.ExternalTenant,
-		Parent:         t.Parent,
+		Parents:        t.Parents,
 		Subdomain:      "",
 		Region:         "",
 		Type:           tenant.TypeToStr(t.Type),
@@ -46,15 +46,17 @@ func (t BusinessTenantMapping) ToInput() BusinessTenantMappingInput {
 
 // BusinessTenantMappingInput missing godoc
 type BusinessTenantMappingInput struct {
-	Name           string `json:"name"`
-	ExternalTenant string `json:"id"`
-	Parent         string `json:"parent"`
-	Subdomain      string `json:"subdomain"`
-	Region         string `json:"region"`
-	Type           string `json:"type"`
+	Name           string   `json:"name"`
+	ExternalTenant string   `json:"id"`
+	Parents        []string `json:"parents"`
+	Subdomain      string   `json:"subdomain"`
+	Region         string   `json:"region"`
+	Type           string   `json:"type"`
 	Provider       string
 	LicenseType    *string `json:"licenseType"`
 	CustomerID     *string `json:"customerID"`
+	CostObjectID   *string `json:"costObjectID"`
+	CostObjectType *string `json:"costObjectType"`
 }
 
 // MovedSubaccountMappingInput missing godoc
@@ -71,7 +73,7 @@ func (i *BusinessTenantMappingInput) ToBusinessTenantMapping(id string) *Busines
 		ID:             id,
 		Name:           i.Name,
 		ExternalTenant: i.ExternalTenant,
-		Parent:         i.Parent,
+		Parents:        i.Parents,
 		Type:           tenant.StrToType(i.Type),
 		Provider:       i.Provider,
 		Status:         tenant.Active,

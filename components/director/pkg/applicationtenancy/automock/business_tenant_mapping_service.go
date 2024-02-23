@@ -30,49 +30,25 @@ func (_m *BusinessTenantMappingService) CreateTenantAccessForResource(ctx contex
 	return r0
 }
 
-// GetCustomerIDParentRecursively provides a mock function with given fields: ctx, tenantID
-func (_m *BusinessTenantMappingService) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
-	ret := _m.Called(ctx, tenantID)
+// GetParentsRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *BusinessTenantMappingService) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, externalTenant)
 
-	var r0 string
+	var r0 []*model.BusinessTenantMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, tenantID)
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, externalTenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, tenantID)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, tenantID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetTenantByExternalID provides a mock function with given fields: ctx, id
-func (_m *BusinessTenantMappingService) GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
-	ret := _m.Called(ctx, id)
-
-	var r0 *model.BusinessTenantMapping
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
-		return rf(ctx, id)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
-		r0 = rf(ctx, id)
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, externalTenant)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
 		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, id)
+		r1 = rf(ctx, externalTenant)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -99,6 +75,32 @@ func (_m *BusinessTenantMappingService) GetTenantByID(ctx context.Context, id st
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByIDs provides a mock function with given fields: ctx, ids
+func (_m *BusinessTenantMappingService) ListByIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, ids)
+
+	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, ids)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, ids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, ids)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -283,6 +283,8 @@ interface SystemAuth {
 
 union CredentialData = BasicCredentialData | OAuthCredentialData | CertificateOAuthCredentialData
 
+union FormationParticipant = Application | Runtime | RuntimeContext
+
 input APIDefinitionInput {
 	"""
 	**Validation:** ASCII printable characters, max=100
@@ -599,13 +601,15 @@ input BundleUpdateInput {
 input BusinessTenantMappingInput {
 	name: String!
 	externalTenant: String!
-	parent: String
+	parents: [String]
 	subdomain: String
 	region: String
 	type: String!
 	provider: String!
 	licenseType: String
 	customerId: String
+	costObjectId: String
+	costObjectType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -767,6 +771,7 @@ input FormationTemplateInput {
 	webhooks: [WebhookInput!]
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
+	discoveryConsumers: [String!]
 }
 
 input IntegrationDependencyInput {
@@ -1009,7 +1014,6 @@ type Application {
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
-	tenantBusinessType: TenantBusinessType
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -1300,6 +1304,7 @@ type Formation {
 	id: ID!
 	name: String!
 	formationTemplateId: ID!
+	tenantID: ID! @hasScopes(path: "graphql.field.formation.tenant_id")
 	"""
 	Formation lifecycle notifications state
 	"""
@@ -1314,18 +1319,24 @@ type Formation {
 	Aggregated formation status
 	"""
 	status: FormationStatus!
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignment {
 	id: ID!
 	source: ID!
 	sourceType: FormationAssignmentType!
+	sourceEntity: FormationParticipant
 	target: ID!
 	targetType: FormationAssignmentType!
+	targetEntity: FormationParticipant
 	state: String!
 	value: String
 	configuration: String
 	error: String
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -1382,6 +1393,7 @@ type FormationTemplate {
 	leadingProductIDs: [String!]
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
+	discoveryConsumers: [String!]
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1569,7 +1581,7 @@ type Tenant {
 	internalID: ID!
 	name: String
 	type: String
-	parentID: ID
+	parents: [ID]
 	initialized: Boolean
 	labels(key: String): Labels
 	provider: String!
@@ -1580,12 +1592,6 @@ type TenantAccess {
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
-}
-
-type TenantBusinessType {
-	id: ID!
-	code: String!
-	name: String!
 }
 
 type TenantPage implements Pageable {
@@ -1720,7 +1726,7 @@ type Query {
 	tenantByExternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenants")
 	tenantByInternalID(id: ID!): Tenant @hasScopes(path: "graphql.query.tenantByInternalID")
 	tenantByLowestOwnerForResource(id: ID!, resource: String!): String! @hasScopes(path: "graphql.query.tenantByLowestOwnerForResource")
-	rootTenant(externalTenant: String!): Tenant! @hasScopes(path: "graphql.query.rootTenant")
+	rootTenants(externalTenant: String!): [Tenant!] @hasScopes(path: "graphql.query.rootTenant")
 	"""
 	**Examples**
 	- [query automatic scenario assignment for scenario](examples/query-automatic-scenario-assignment-for-scenario/query-automatic-scenario-assignment-for-scenario.graphql)
@@ -1753,6 +1759,7 @@ type Query {
 	- [query formations](examples/query-formations/query-formations.graphql)
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
+	formationsForObject(objectID: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForObject")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**
@@ -2007,6 +2014,11 @@ type Mutation {
 	unassignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.unassignFormation")
 	"""
 	**Examples**
+	- [unassign application from formation global](examples/unassign-formation-global/unassign-application-from-formation-global.graphql)
+	"""
+	unassignFormationGlobal(objectID: ID!, objectType: FormationObjectType!, formation: ID!): Formation! @hasScopes(path: "graphql.mutation.unassignFormationGlobal")
+	"""
+	**Examples**
 	- [create formation constraint](examples/create-formation-constraint/create-formation-constraint.graphql)
 	"""
 	createFormationConstraint(formationConstraint: FormationConstraintInput! @validate): FormationConstraint! @hasScopes(path: "graphql.mutation.createFormationConstraint")
@@ -2047,6 +2059,10 @@ type Mutation {
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
+	"""
+	If a label with given key already exist, it will be replaced with provided value.
+	"""
+	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
 	

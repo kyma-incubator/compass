@@ -34,6 +34,16 @@ func TestToGraphQL(t *testing.T) {
 			Expected: fixFormationAssignmentGQLModelWithConfigAndError(&TestConfigValueStr, &TestErrorValueStr),
 		},
 		{
+			Name:     "Success when assignment is in INSTANCE_CREATOR_DELETING should return DELETING state",
+			Input:    fixFormationAssignmentModelWithState(string(model.InstanceCreatorDeletingAssignmentState)),
+			Expected: fixFormationAssignmentGQLModelWithState(string(model.DeletingAssignmentState)),
+		},
+		{
+			Name:     "Success when assignment is in INSTANCE_CREATOR_DELETE_ERROR should return DELETE_ERROR state",
+			Input:    fixFormationAssignmentModelWithState(string(model.InstanceCreatorDeleteErrorAssignmentState)),
+			Expected: fixFormationAssignmentGQLModelWithState(string(model.DeleteErrorAssignmentState)),
+		},
+		{
 			Name:     "Success when input is nil",
 			Input:    nil,
 			Expected: nil,
@@ -186,92 +196,6 @@ func TestConverter_FromEntity(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// WHEN
 			result := converter.FromEntity(testCase.Input)
-
-			require.Equal(t, result, testCase.Expected)
-		})
-	}
-}
-
-func TestConverter_ToInput(t *testing.T) {
-	testCases := []struct {
-		Name     string
-		Input    *model.FormationAssignment
-		Expected *model.FormationAssignmentInput
-	}{
-		{
-			Name:     "Success when assignment contains configuration",
-			Input:    fixFormationAssignmentModel(TestConfigValueRawJSON),
-			Expected: fixFormationAssignmentModelInput(TestConfigValueRawJSON),
-		},
-		{
-			Name:     "Success when assignment contains error",
-			Input:    fixFormationAssignmentModelWithError(TestErrorValueRawJSON),
-			Expected: fixFormationAssignmentModelInputWithError(TestErrorValueRawJSON),
-		},
-		{
-			Name:     "Success when assignment contains configuration and error",
-			Input:    fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON),
-			Expected: fixFormationAssignmentModelInputWithConfigurationAndError(TestConfigValueRawJSON, TestErrorValueRawJSON),
-		},
-		{
-			Name:     "Success when input is nil",
-			Input:    nil,
-			Expected: nil,
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// WHEN
-			result := converter.ToInput(testCase.Input)
-
-			require.Equal(t, result, testCase.Expected)
-		})
-	}
-}
-
-func TestConverter_FromInput(t *testing.T) {
-	formationAssignmentWithConfig := fixFormationAssignmentModel(TestConfigValueRawJSON)
-	formationAssignmentWithConfig.TenantID = ""
-	formationAssignmentWithConfig.ID = ""
-
-	formationAssignmentWithError := fixFormationAssignmentModelWithError(TestErrorValueRawJSON)
-	formationAssignmentWithError.TenantID = ""
-	formationAssignmentWithError.ID = ""
-
-	formationAssignmentWithConfigAndError := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
-	formationAssignmentWithConfigAndError.TenantID = ""
-	formationAssignmentWithConfigAndError.ID = ""
-
-	testCases := []struct {
-		Name     string
-		Input    *model.FormationAssignmentInput
-		Expected *model.FormationAssignment
-	}{
-		{
-			Name:     "Success when assignment contains configuration",
-			Input:    fixFormationAssignmentModelInput(TestConfigValueRawJSON),
-			Expected: formationAssignmentWithConfig,
-		},
-		{
-			Name:     "Success when assignment contains error",
-			Input:    fixFormationAssignmentModelInputWithError(TestErrorValueRawJSON),
-			Expected: formationAssignmentWithError,
-		},
-		{
-			Name:     "Success when assignment contains configuration and error",
-			Input:    fixFormationAssignmentModelInputWithConfigurationAndError(TestConfigValueRawJSON, TestErrorValueRawJSON),
-			Expected: formationAssignmentWithConfigAndError,
-		},
-		{
-			Name:     "Success when input is nil",
-			Input:    nil,
-			Expected: nil,
-		},
-	}
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// WHEN
-			result := converter.FromInput(testCase.Input)
 
 			require.Equal(t, result, testCase.Expected)
 		})

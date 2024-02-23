@@ -46,8 +46,8 @@ func TestTenantMover_TenantsToMove(t *testing.T) {
 		TargetTenant:       targetParentTenantID,
 	}
 
-	event1 := fixEvent(t, "Subaccount", movedSubaccount1.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount1))
-	event2 := fixEvent(t, "Subaccount", movedSubaccount2.TenantMappingInput.Parent, movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount2))
+	event1 := fixEvent(t, "Subaccount", movedSubaccount1.TenantMappingInput.Parents[0], movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount1))
+	event2 := fixEvent(t, "Subaccount", movedSubaccount2.TenantMappingInput.Parents[0], movedEventFieldsFromTenant(jobConfig.APIConfig.TenantFieldMapping, jobConfig.APIConfig.MovedSubaccountsFieldMapping, movedSubaccount2))
 
 	pageOneQueryParams := resync.QueryParams{
 		jobConfig.PageSizeField:                        "1",
@@ -144,6 +144,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 
 	ctx := context.TODO()
 	txGen := txtest.NewTransactionContextGenerator(errors.New("test err"))
+	testError := errors.New("test error")
 
 	// GIVEN
 	tenantConverter := domaintenant.NewConverter()
@@ -154,7 +155,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 			ID:             subaccountInternalTenant,
 			Name:           subaccountExternalTenant,
 			ExternalTenant: subaccountExternalTenant,
-			Parent:         sourceParentTenantID,
+			Parents:        []string{sourceParentTenantID},
 			Type:           tenant.Subaccount,
 			Provider:       provider,
 		}
@@ -169,10 +170,16 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 		ExternalTenant: sourceParentTenantID,
 	}
 
+	parentTenant := &model.BusinessTenantMapping{
+		ID:             sourceParentTenantID,
+		ExternalTenant: "parent",
+		Type:           tenant.Account,
+	}
+
 	movedSubaccountInput := graphql.BusinessTenantMappingInput{
 		Name:           subaccountExternalTenant,
 		ExternalTenant: subaccountExternalTenant,
-		Parent:         str.Ptr(targetParent.ID),
+		Parents:        []*string{str.Ptr(targetParent.ExternalTenant)},
 		Subdomain:      str.Ptr(""),
 		Region:         str.Ptr(""),
 		Type:           string(tenant.Subaccount),
@@ -232,6 +239,8 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				tnt := input[0]
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
+				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant}, nil).Once()
+				svc.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{targetParent.ID}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
@@ -288,6 +297,8 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), sourceParentTenantID).Return(sourceParent, nil).Once()
+				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant}, nil).Once()
+				svc.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{targetParent.ID}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
@@ -322,6 +333,8 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
 				svc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), sourceParentTenantID).Return(sourceParent, nil).Once()
+				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant}, nil).Once()
+				svc.On("ListByIDs", txtest.CtxWithDBMatcher(), []string{targetParent.ID}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
@@ -356,12 +369,68 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 				svc := &automock.TenantStorageService{}
 				tnt := input[0]
 				subaccountFromDBWithNewParent := *subaccountFromDB
-				subaccountFromDBWithNewParent.Parent = targetParent.ID
+				subaccountFromDBWithNewParent.Parents = []string{targetParent.ID}
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
 				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{&subaccountFromDBWithNewParent}, nil).Once()
 				return svc
 			},
 			tenantsInput: []model.MovedSubaccountMappingInput{movedSubaccount1},
+		},
+		{
+			name: "Fail while listing tenants by ids and type",
+			jobConfigFn: func() resync.JobConfig {
+				return configForTenantType(tenant.Subaccount)
+			},
+			transactionerFn: txGen.ThatDoesntExpectCommit,
+			directorClientFn: func() *automock.DirectorGraphQLClient {
+				return &automock.DirectorGraphQLClient{}
+			},
+			runtimeSvcFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				var emptyFilters []*labelfilter.LabelFilter
+
+				svc.On("ListByFilters", ctxWithSubaccountMatcher, emptyFilters).Return(nil, nil).Once()
+				return svc
+			},
+			labelRepoFn: func() *automock.LabelRepo { return &automock.LabelRepo{} },
+			tenantStorageSvcFn: func(input []model.MovedSubaccountMappingInput) *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				tnt := input[0]
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
+				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return(nil, testError).Once()
+				return svc
+			},
+			tenantsInput:   []model.MovedSubaccountMappingInput{movedSubaccount1},
+			expectedErrMsg: testError.Error(),
+		},
+		{
+			name: "Fail when a subaccount has more than one parent",
+			jobConfigFn: func() resync.JobConfig {
+				return configForTenantType(tenant.Subaccount)
+			},
+			transactionerFn: txGen.ThatDoesntExpectCommit,
+			directorClientFn: func() *automock.DirectorGraphQLClient {
+				return &automock.DirectorGraphQLClient{}
+			},
+			runtimeSvcFn: func() *automock.RuntimeService {
+				svc := &automock.RuntimeService{}
+				var emptyFilters []*labelfilter.LabelFilter
+
+				svc.On("ListByFilters", ctxWithSubaccountMatcher, emptyFilters).Return(nil, nil).Once()
+				return svc
+			},
+			labelRepoFn: func() *automock.LabelRepo { return &automock.LabelRepo{} },
+			tenantStorageSvcFn: func(input []model.MovedSubaccountMappingInput) *automock.TenantStorageService {
+				svc := &automock.TenantStorageService{}
+				tnt := input[0]
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.TargetTenant}).Return([]*model.BusinessTenantMapping{targetParent}, nil).Once()
+				svc.On("ListsByExternalIDs", txtest.CtxWithDBMatcher(), []string{tnt.SubaccountID}).Return([]*model.BusinessTenantMapping{subaccountFromDB}, nil).Once()
+				svc.On("ListByIDsAndType", txtest.CtxWithDBMatcher(), []string{sourceParentTenantID}, tenant.Account).Return([]*model.BusinessTenantMapping{parentTenant, parentTenant}, nil).Once()
+				return svc
+			},
+			tenantsInput:   []model.MovedSubaccountMappingInput{movedSubaccount1},
+			expectedErrMsg: "the subaccount must have only one parent",
 		},
 		{
 			name: "Fail when subaccount is in formation",
@@ -425,7 +494,7 @@ func TestTenantMover_MoveTenants(t *testing.T) {
 }
 
 func movedEventFieldsFromTenant(tenantFieldMapping resync.TenantFieldMapping, movedSAFieldMapping resync.MovedSubaccountsFieldMapping, tenantInput model.MovedSubaccountMappingInput) map[string]string {
-	eventFields := eventFieldsFromTenant(tenant.Subaccount, tenantFieldMapping, tenantInput.TenantMappingInput)
+	eventFields := eventFieldsFromTenant(tenant.Subaccount, tenantFieldMapping, tenantInput.TenantMappingInput, "")
 	eventFields[movedSAFieldMapping.SourceTenant] = tenantInput.SourceTenant
 	eventFields[movedSAFieldMapping.TargetTenant] = tenantInput.TargetTenant
 	eventFields[movedSAFieldMapping.SubaccountID] = tenantInput.SubaccountID

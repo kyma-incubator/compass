@@ -12,6 +12,7 @@ import (
 
 type UnassignNotificationsAsserter struct {
 	op                                 string
+	state                              *string
 	expectedNotificationsCountForOp    int
 	targetObjectID                     string
 	sourceObjectID                     string
@@ -42,6 +43,11 @@ func NewUnassignNotificationsAsserter(expectedNotificationsCountForOp int, targe
 	}
 }
 
+func (a *UnassignNotificationsAsserter) WithState(state string) *UnassignNotificationsAsserter {
+	a.state = &state
+	return a
+}
+
 func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	formationID := ctx.Value(context_keys.FormationIDKey).(string)
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
@@ -52,9 +58,9 @@ func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx con
 		op := notification.Get("Operation").String()
 		if op == a.op {
 			notificationsFoundCount++
-			err := verifyFormationAssignmentNotification(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false)
+			err := verifyFormationAssignmentNotification(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false, a.state)
 			require.NoError(t, err)
 		}
 	}
-	require.Equal(t, a.expectedNotificationsCountForOp, notificationsFoundCount, "expected %s notifications for target object %s", a.expectedNotificationsCountForOp, a.targetObjectID)
+	require.Equal(t, a.expectedNotificationsCountForOp, notificationsFoundCount, "expected %d notifications for target object %s", a.expectedNotificationsCountForOp, a.targetObjectID)
 }

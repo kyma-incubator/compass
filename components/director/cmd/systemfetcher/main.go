@@ -7,10 +7,17 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/jwt"
-	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	directortime "github.com/kyma-incubator/compass/components/director/pkg/time"
 
@@ -24,8 +31,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 
@@ -37,9 +42,14 @@ import (
 
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
+	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
+	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
+	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -53,6 +63,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/integrationsystem"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/runtime"
 	runtimectx "github.com/kyma-incubator/compass/components/director/internal/domain/runtime_context"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -61,6 +72,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/features"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -83,6 +95,20 @@ import (
 const discoverSystemsOpMode = "DISCOVER_SYSTEMS"
 
 type config struct {
+	Address           string `envconfig:"default=127.0.0.1:8080"`
+	AggregatorRootAPI string `envconfig:"APP_ROOT_API,default=/system-fetcher"`
+
+	ServerTimeout   time.Duration `envconfig:"default=110s"`
+	ShutdownTimeout time.Duration `envconfig:"default=10s"`
+
+	SecurityConfig securityConfig
+
+	ElectionConfig                cronjob.ElectionConfig
+	OperationsManagerConfig       operationsmanager.OperationsManagerConfig
+	ParallelOperationProcessors   int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
+	OperationProcessorQuietPeriod time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=5s"`
+	MaintainOperationsJobInterval time.Duration `envconfig:"APP_MAINTAIN_OPERATIONS_JOB_INTERVAL,default=60m"`
+
 	APIConfig           systemfetcher.APIConfig
 	OAuth2Config        oauth.Config
 	SelfSignedJwtConfig jwt.Config
@@ -110,6 +136,13 @@ type config struct {
 	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
+type securityConfig struct {
+	JwksEndpoint           string        `envconfig:"APP_JWKS_ENDPOINT"`
+	JWKSSyncPeriod         time.Duration `envconfig:"default=5m"`
+	AllowJWTSigningNone    bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
+	SystemFetcherSyncScope string        `envconfig:"APP_SYSTEM_FETCHER_SCOPE,default=system_fetcher:sync"`
+}
+
 type appTemplateConfig struct {
 	LabelFilter                    string `envconfig:"APP_TEMPLATE_LABEL_FILTER"`
 	OverrideApplicationInput       string `envconfig:"APP_TEMPLATE_OVERRIDE_APPLICATION_INPUT"`
@@ -117,76 +150,336 @@ type appTemplateConfig struct {
 }
 
 func main() {
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	term := make(chan os.Signal)
+	signal.HandleInterrupts(ctx, cancel, term)
+
 	cfg := config{}
 	err := envconfig.InitWithPrefix(&cfg, "APP")
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to load config"))
-	}
+	exitOnError(err, "Error while loading app config")
 
-	ctx, err := log.Configure(context.Background(), &cfg.Log)
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to configure logger"))
-	}
+	ctx, err = log.Configure(ctx, &cfg.Log)
+	exitOnError(err, "Error while configuring logger")
+
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "Error while closing the connection to the database")
+	}()
+
+	uidSvc := uid.NewService()
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	businessTenantMappingSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
+
+	opRepo := operation.NewRepository(operation.NewConverter())
+	opSvc := operation.NewService(opRepo, uidSvc)
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to connect to the database"))
-	}
-	defer func() {
-		err := closeFunc()
-		if err != nil {
-			log.D().Fatal(errors.Wrap(err, "failed to close database connection"))
-		}
-	}()
-
 	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to initialize certificate loader"))
-	}
+	exitOnError(err, "Failed to initialize certificate loader")
 
 	keyCache, err := credloader.StartKeyLoader(ctx, cfg.KeyLoaderConfig)
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to initialize key loader"))
-	}
+	exitOnError(err, "Failed to initialize key loader")
 
-	if err = credloader.WaitForKeyCache(keyCache); err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to wait for key cache"))
-	}
+	err = credloader.WaitForKeyCache(keyCache)
+	exitOnError(err, "Failed to wait for key cache")
 
-	if err = credloader.WaitForCertCache(certCache); err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to wait for cert cache"))
-	}
+	err = credloader.WaitForCertCache(certCache)
+	exitOnError(err, "Failed to wait for cert cache")
 
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
 	extSvcMtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	sf, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
+	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
+	exitOnError(err, "Failed to initialize System Fetcher")
+
+	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetching, cfg.OperationsManagerConfig)
+
+	onDemandChannel := make(chan string, 100)
+	handler := initHandler(ctx, operationsManager, businessTenantMappingSvc, transact, onDemandChannel, cfg)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
+	}()
+
+	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
+		systemFetcherOperationProcessor := &systemfetcher.OperationsProcessor{
+			SystemFetcherSvc: systemFetcherSvc,
+		}
+		systemFetcherOperationMaintainer := systemfetcher.NewOperationMaintainer(model.OperationTypeSystemFetching, transact, opSvc, businessTenantMappingSvc)
+		var mutex sync.Mutex
+		for i := 0; i < cfg.ParallelOperationProcessors; i++ {
+			go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor, mutex *sync.Mutex, executorIndex int) {
+				for {
+					select {
+					case <-onDemandChannel:
+					default:
+					}
+					mutex.Lock()
+					templateRenderer, err := reloadTemplates(ctx, cfg, transact)
+					mutex.Unlock()
+					if err != nil {
+						log.C(ctx).Errorf("Failed to reload templates by executor %d . Err: %v", executorIndex, err)
+					}
+					opProcessor.SystemFetcherSvc.SetTemplateRenderer(templateRenderer)
+
+					processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
+					if err != nil {
+						log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
+					}
+					if len(processedOperationID) > 0 {
+						log.C(ctx).Infof("Processed Operation: %s by executor %d", processedOperationID, executorIndex)
+					} else {
+						// Queue is empty - no operation claimed
+						log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
+
+						select {
+						case operationID := <-onDemandChannel:
+							log.C(ctx).Infof("Operation %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+						case <-time.After(cfg.OperationProcessorQuietPeriod):
+							log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
+						}
+					}
+				}
+			}(ctx, operationsManager, systemFetcherOperationProcessor, &mutex, i)
+		}
+
+		go func() {
+			if err := startSyncSystemFetcherOperationsJob(ctx, systemFetcherOperationMaintainer, cfg); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to start sync System Fetcher cronjob. Stopping app...")
+			}
+			cancel()
+		}()
+
+		go func() {
+			if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
+				cancel()
+			}
+		}()
+
+		go func() {
+			if err := operationsManager.StartRescheduleHangedOperationsJob(ctx); err != nil {
+				log.C(ctx).WithError(err).Error("Failed to run RescheduleHangedOperationsJob. Stopping app...")
+				cancel()
+			}
+		}()
+	}
+
+	runMainSrv()
+}
+
+func exitOnError(err error, context string) {
 	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to initialize System Fetcher"))
+		wrappedError := errors.Wrap(err, context)
+		log.D().Fatal(wrappedError)
+	}
+}
+
+func reloadTemplates(ctx context.Context, cfg config, transact persistence.Transactioner) (*systemfetcher.Renderer, error) {
+	uidSvc := uid.NewService()
+	authConverter := auth.NewConverter()
+	webhookConverter := webhook.NewConverter(authConverter)
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	versionConverter := version.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	docConverter := document.NewConverter(frConverter)
+	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
+	labelConverter := label.NewConverter()
+	labelRepo := label.NewRepository(labelConverter)
+	labelDefConverter := labeldef.NewConverter()
+	labelDefRepo := labeldef.NewRepository(labelDefConverter)
+	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
+	applicationRepo := application.NewRepository(appConverter)
+	timeSvc := directortime.NewService()
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
+	intSysConverter := integrationsystem.NewConverter()
+	intSysRepo := integrationsystem.NewRepository(intSysConverter)
+	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
+
+	dataLoader := systemfetcher.NewDataLoader(transact, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
+	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
+		return nil, errors.Wrapf(err, "while loading template data")
 	}
 
-	if cfg.SystemFetcher.OperationalMode != discoverSystemsOpMode {
-		log.C(ctx).Infof("The operatioal mode is set to %q, skipping systems discovery.", cfg.SystemFetcher.OperationalMode)
-		return
+	var placeholdersMapping []systemfetcher.PlaceholderMapping
+	err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
 	}
 
-	if err = sf.SyncSystems(ctx, tenantEntity.Customer); err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to sync systems for customers"))
+	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while creating template renderer")
 	}
 
-	if cfg.SystemFetcher.SyncGlobalAccounts {
-		if err = sf.SyncSystems(ctx, tenantEntity.Account); err != nil {
-			log.D().Fatal(errors.Wrap(err, "failed to sync systems for global accounts"))
+	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping, templateRenderer)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while calculating application templates mappings")
+	}
+
+	return templateRenderer, nil
+}
+
+func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfetcher.OperationsProcessor) (string, error) {
+	op, errGetOperation := opManager.GetOperation(ctx)
+	if errGetOperation != nil {
+		if apperrors.IsNoScheduledOperationsError(errGetOperation) {
+			log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", errGetOperation)
+			return "", nil
+		} else {
+			log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
+			return "", errGetOperation
+		}
+	}
+	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
+	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
+		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
+		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
+			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+			return op.ID, errMarkAsFailed
+		}
+		return op.ID, errProcess
+	}
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
+		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+		return op.ID, errMarkAsCompleted
+	}
+	return op.ID, nil
+}
+
+func startSyncSystemFetcherOperationsJob(ctx context.Context, systemFetcherOperationMaintainer systemfetcher.OperationMaintainer, cfg config) error {
+	resyncJob := cronjob.CronJob{
+		Name: "SyncSystemFetcherOperations",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Infof("Start syncing System Fetcher operations...")
+
+			if err := systemFetcherOperationMaintainer.Maintain(ctx); err != nil {
+				log.C(jobCtx).Errorf("Cannot sync System Fetcher operations. Err: %v", err)
+			}
+
+			log.C(jobCtx).Infof("System Fetcher systems sync finished.")
+		},
+		SchedulePeriod: cfg.MaintainOperationsJobInterval,
+	}
+	return cronjob.RunCronJob(ctx, cfg.ElectionConfig, resyncJob)
+}
+
+func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager, businessTenantMappingSvc systemfetcher.BusinessTenantMappingService, transact persistence.Transactioner, onDemandChannel chan string, cfg config) http.Handler {
+	const (
+		healthzEndpoint = "/healthz"
+		readyzEndpoint  = "/readyz"
+		syncEndpoint    = "/sync"
+	)
+	logger := log.C(ctx)
+
+	mainRouter := mux.NewRouter()
+	mainRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(
+		cfg.AggregatorRootAPI+healthzEndpoint, cfg.AggregatorRootAPI+readyzEndpoint))
+
+	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+
+	httpClient := &http.Client{
+		Transport: httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
+	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.SystemFetcherSyncScope)
+	logger.Infof("Registering sync endpoint...")
+	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
+		logger.Infof("Sync endpoint is enabled.")
+		handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel)
+		apiRouter.HandleFunc(syncEndpoint, handler.ScheduleAggregationForSystemFetcherData).Methods(http.MethodPost)
+	} else {
+		logger.Infof("Sync endpoint is not enabled.")
+		apiRouter.HandleFunc(syncEndpoint, newNotSupportedHandler()).Methods(http.MethodPost)
+	}
+
+	healthCheckRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+	logger.Infof("Registering readiness endpoint...")
+	healthCheckRouter.HandleFunc(readyzEndpoint, newReadinessHandler())
+	logger.Infof("Registering liveness endpoint...")
+	healthCheckRouter.HandleFunc(healthzEndpoint, newReadinessHandler())
+
+	return mainRouter
+}
+
+func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg config, requiredScopes ...string) {
+	scopeValidator := claims.NewScopesValidator(requiredScopes)
+	middleware := authmiddleware.New(httpClient, cfg.SecurityConfig.JwksEndpoint, cfg.SecurityConfig.AllowJWTSigningNone, "", scopeValidator)
+	router.Use(middleware.Handler())
+
+	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.SecurityConfig.JWKSSyncPeriod)
+	periodicExecutor := executor.NewPeriodic(cfg.SecurityConfig.JWKSSyncPeriod, func(ctx context.Context) {
+		if err := middleware.SynchronizeJWKS(ctx); err != nil {
+			log.C(ctx).WithError(err).Errorf("An error has occurred while synchronizing JWKS: %v", err)
+		}
+	})
+	go periodicExecutor.Run(ctx)
+}
+
+func newReadinessHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusOK)
+	}
+}
+
+func newNotSupportedHandler() func(writer http.ResponseWriter, request *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		writer.WriteHeader(http.StatusNotAcceptable)
+	}
+}
+
+func createServer(ctx context.Context, cfg config, handler http.Handler, name string) (func(), func()) {
+	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
+	exitOnError(err, "Error while configuring system fetcher handler")
+
+	srv := &http.Server{
+		Addr:              cfg.Address,
+		Handler:           handlerWithTimeout,
+		ReadHeaderTimeout: cfg.ServerTimeout,
+	}
+
+	runFn := func() {
+		log.C(ctx).Infof("Running %s server on %s...", name, cfg.Address)
+		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
+			log.C(ctx).Errorf("%s HTTP server ListenAndServe: %v", name, err)
 		}
 	}
 
-	if err = sf.UpsertSystemsSyncTimestamps(ctx, transact); err != nil {
-		log.D().Fatal(errors.Wrap(err, "failed to upsert systems synchronization timestamps in database"))
+	shutdownFn := func() {
+		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
+		defer cancel()
+
+		log.C(ctx).Infof("Shutting down %s server...", name)
+		if err := srv.Shutdown(ctx); err != nil {
+			log.C(ctx).Errorf("%s HTTP server Shutdown: %v", name, err)
+		}
 	}
+
+	return runFn, shutdownFn
 }
 
 func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
@@ -196,7 +489,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	tenantConverter := tenant.NewConverter()
-	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -225,7 +517,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -253,13 +544,10 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
-	timeSvc := directortime.NewService()
 	uidSvc := uid.NewService()
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
-	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
@@ -272,17 +560,15 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
-	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
 	webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, webhookLabelBuilder, webhookTenantBuilder, certSubjectInputBuilder)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
-	constraintEngine := operators.NewConstraintEngine(tx, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, systemAuthSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	constraintEngine := operators.NewConstraintEngine(tx, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, nil, nil, systemAuthSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, nil, nil, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, appTemplateRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
-	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo)
+	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo, formationAssignmentRepo, formationRepo)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
@@ -290,6 +576,9 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
+
+	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
+	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
 
 	authProvider := pkgAuth.NewMtlsTokenAuthorizationProvider(cfg.OAuth2Config, cfg.ExternalClientCertSecretName, certCache, pkgAuth.DefaultMtlsClientCreator)
 	jwtAuthProvider := pkgAuth.NewSelfSignedJWTTokenAuthorizationProvider(cfg.SelfSignedJwtConfig)
@@ -320,30 +609,12 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
 	}
 
-	dataLoader := systemfetcher.NewDataLoader(tx, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
-	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
-		return nil, err
-	}
-
-	if err := loadSystemsSynchronizationTimestamps(ctx, tx, systemsSyncSvc); err != nil {
-		return nil, errors.Wrap(err, "failed while loading systems synchronization timestamps")
-	}
-
-	var placeholdersMapping []systemfetcher.PlaceholderMapping
-	if err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping); err != nil {
-		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
-	}
-
-	if err := calculateTemplateMappings(ctx, cfg, tx, appTemplateSvc, placeholdersMapping); err != nil {
-		return nil, errors.Wrap(err, "failed while calculating application templates mappings")
-	}
-
-	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
+	templateRenderer, err := reloadTemplates(ctx, cfg, tx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating template renderer")
+		return nil, errors.Wrapf(err, "while reload templates")
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -364,8 +635,8 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
-	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping, renderer systemfetcher.TemplateRenderer) error {
+	applicationTemplates := make(map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping)
 
 	tx, err := transact.Begin()
 	if err != nil {
@@ -381,12 +652,39 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
-		lbl, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
+		templateMappingKey := systemfetcher.TemplateMappingKey{}
+
+		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: lbl})
+		regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
+		if hasRegionLabel {
+			regionValue, ok := regionModel.Value.(string)
+			if !ok {
+				return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
+			}
+
+			templateMappingKey.Region = regionValue
+		}
+
+		systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
+		appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, systemRoleValue := range appTemplateLblFilterArr {
+			systemRoleStrValue, ok := systemRoleValue.(string)
+			if !ok {
+				continue
+			}
+
+			templateMappingKey.Label = systemRoleStrValue
+
+			applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
+		}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}
@@ -400,45 +698,6 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 	systemfetcher.SelectFilter = createSelectFilter(selectFilterProperties, placeholdersMapping)
 	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
 	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
-	return nil
-}
-
-func loadSystemsSynchronizationTimestamps(ctx context.Context, transact persistence.Transactioner, systemSyncSvc systemfetcher.SystemsSyncService) error {
-	systemSynchronizationTimestamps := make(map[string]map[string]systemfetcher.SystemSynchronizationTimestamp, 0)
-
-	tx, err := transact.Begin()
-	if err != nil {
-		return errors.Wrap(err, "failed to begin transaction")
-	}
-	defer transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	syncTimestamps, err := systemSyncSvc.List(ctx)
-	if err != nil {
-		return err
-	}
-
-	for _, s := range syncTimestamps {
-		currentTimestamp := systemfetcher.SystemSynchronizationTimestamp{
-			ID:                s.ID,
-			LastSyncTimestamp: s.LastSyncTimestamp,
-		}
-
-		if _, ok := systemSynchronizationTimestamps[s.TenantID]; !ok {
-			systemSynchronizationTimestamps[s.TenantID] = make(map[string]systemfetcher.SystemSynchronizationTimestamp, 0)
-		}
-
-		systemSynchronizationTimestamps[s.TenantID][s.ProductID] = currentTimestamp
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return errors.Wrap(err, "failed to commit transaction")
-	}
-
-	systemfetcher.SystemSynchronizationTimestamps = systemSynchronizationTimestamps
-
 	return nil
 }
 

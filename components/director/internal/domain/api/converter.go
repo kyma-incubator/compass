@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"strings"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -78,9 +77,9 @@ func (c *converter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleR
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
-			CreatedAt: timePtrToTimestampPtr(in.CreatedAt),
-			UpdatedAt: timePtrToTimestampPtr(in.UpdatedAt),
-			DeletedAt: timePtrToTimestampPtr(in.DeletedAt),
+			CreatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+			UpdatedAt: graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
+			DeletedAt: graphql.TimePtrToGraphqlTimestampPtr(in.DeletedAt),
 			Error:     in.Error,
 		},
 	}, nil
@@ -190,6 +189,8 @@ func (c *converter) FromEntity(entity *Entity) *model.APIDefinition {
 		Direction:                               repo.StringPtrFromNullableString(entity.Direction),
 		LastUpdate:                              repo.StringPtrFromNullableString(entity.LastUpdate),
 		DeprecationDate:                         repo.StringPtrFromNullableString(entity.DeprecationDate),
+		Responsible:                             repo.StringPtrFromNullableString(entity.Responsible),
+		Usage:                                   repo.StringPtrFromNullableString(entity.Usage),
 		BaseEntity: &model.BaseEntity{
 			ID:        entity.ID,
 			Ready:     entity.Ready,
@@ -249,6 +250,8 @@ func (c *converter) ToEntity(apiModel *model.APIDefinition) *Entity {
 		Direction:                               repo.NewNullableString(apiModel.Direction),
 		LastUpdate:                              repo.NewNullableString(apiModel.LastUpdate),
 		DeprecationDate:                         repo.NewNullableString(apiModel.DeprecationDate),
+		Responsible:                             repo.NewNullableString(apiModel.Responsible),
+		Usage:                                   repo.NewNullableString(apiModel.Usage),
 		BaseEntity: &repo.BaseEntity{
 			ID:        apiModel.ID,
 			Ready:     apiModel.Ready,
@@ -266,15 +269,6 @@ func (c *converter) convertVersionToEntity(inVer *model.Version) version.Version
 	}
 
 	return c.version.ToEntity(*inVer)
-}
-
-func timePtrToTimestampPtr(time *time.Time) *graphql.Timestamp {
-	if time == nil {
-		return nil
-	}
-
-	t := graphql.Timestamp(*time)
-	return &t
 }
 
 // ExtractTargetURLFromJSONArray extracts targetURL into a string from a JSON array representation.

@@ -132,30 +132,6 @@ func (_m *TenantMappingRepository) GetByExternalTenant(ctx context.Context, exte
 	return r0, r1
 }
 
-// GetCustomerIDParentRecursively provides a mock function with given fields: ctx, tenantID
-func (_m *TenantMappingRepository) GetCustomerIDParentRecursively(ctx context.Context, tenantID string) (string, error) {
-	ret := _m.Called(ctx, tenantID)
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
-		return rf(ctx, tenantID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
-		r0 = rf(ctx, tenantID)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, tenantID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetLowestOwnerForResource provides a mock function with given fields: ctx, resourceType, objectID
 func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error) {
 	ret := _m.Called(ctx, resourceType, objectID)
@@ -180,20 +156,20 @@ func (_m *TenantMappingRepository) GetLowestOwnerForResource(ctx context.Context
 	return r0, r1
 }
 
-// GetParentRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
-func (_m *TenantMappingRepository) GetParentRecursivelyByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
+// GetParentsRecursivelyByExternalTenant provides a mock function with given fields: ctx, externalTenant
+func (_m *TenantMappingRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, externalTenant)
 
-	var r0 *model.BusinessTenantMapping
+	var r0 []*model.BusinessTenantMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BusinessTenantMapping, error)); ok {
 		return rf(ctx, externalTenant)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, externalTenant)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.BusinessTenantMapping)
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
 		}
 	}
 
@@ -251,6 +227,58 @@ func (_m *TenantMappingRepository) ListByExternalTenants(ctx context.Context, ex
 
 	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
 		r1 = rf(ctx, externalTenant)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByIds provides a mock function with given fields: ctx, ids
+func (_m *TenantMappingRepository) ListByIds(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, ids)
+
+	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, ids)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, ids)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, ids)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListByIdsAndType provides a mock function with given fields: ctx, ids, tenantType
+func (_m *TenantMappingRepository) ListByIdsAndType(ctx context.Context, ids []string, tenantType pkgtenant.Type) ([]*model.BusinessTenantMapping, error) {
+	ret := _m.Called(ctx, ids, tenantType)
+
+	var r0 []*model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgtenant.Type) ([]*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, ids, tenantType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgtenant.Type) []*model.BusinessTenantMapping); ok {
+		r0 = rf(ctx, ids, tenantType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.BusinessTenantMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string, pkgtenant.Type) error); ok {
+		r1 = rf(ctx, ids, tenantType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -337,17 +365,27 @@ func (_m *TenantMappingRepository) ListPageBySearchTerm(ctx context.Context, sea
 }
 
 // UnsafeCreate provides a mock function with given fields: ctx, item
-func (_m *TenantMappingRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) error {
+func (_m *TenantMappingRepository) UnsafeCreate(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	ret := _m.Called(ctx, item)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) (string, error)); ok {
+		return rf(ctx, item)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) string); ok {
 		r0 = rf(ctx, item)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, model.BusinessTenantMapping) error); ok {
+		r1 = rf(ctx, item)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // Update provides a mock function with given fields: ctx, _a1
@@ -365,17 +403,27 @@ func (_m *TenantMappingRepository) Update(ctx context.Context, _a1 *model.Busine
 }
 
 // Upsert provides a mock function with given fields: ctx, item
-func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) error {
+func (_m *TenantMappingRepository) Upsert(ctx context.Context, item model.BusinessTenantMapping) (string, error) {
 	ret := _m.Called(ctx, item)
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) (string, error)); ok {
+		return rf(ctx, item)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, model.BusinessTenantMapping) string); ok {
 		r0 = rf(ctx, item)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, model.BusinessTenantMapping) error); ok {
+		r1 = rf(ctx, item)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // NewTenantMappingRepository creates a new instance of TenantMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

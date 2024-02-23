@@ -315,8 +315,8 @@ func TestPgRepository_ListByRuntimeIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) GROUP BY runtime_id ORDER BY runtime_id ASC`),
-				Args:     []driver.Value{tenantID},
+				Query:    regexp.QuoteMeta(`SELECT runtime_id AS id, COUNT(*) AS total_count FROM public.runtime_contexts WHERE (id IN (SELECT id FROM tenant_runtime_contexts WHERE tenant_id = $1)) AND runtime_id IN ($2, $3, $4) GROUP BY runtime_id ORDER BY runtime_id ASC`),
+				Args:     []driver.Value{tenantID, emptyPageRuntimeID, onePageRuntimeID, multiplePagesRuntimeID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageRuntimeID, 0).AddRow(onePageRuntimeID, 1).AddRow(multiplePagesRuntimeID, 2)}
@@ -655,8 +655,8 @@ func TestPgRepository_Create(t *testing.T) {
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 			{
-				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.parent FROM business_tenant_mappings t1 WHERE id = ? UNION ALL SELECT t2.id, t2.parent FROM business_tenant_mappings t2 INNER JOIN parents t on t2.id = t.parent) INSERT INTO tenant_runtime_contexts ( tenant_id, id, owner ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner FROM parents)`),
-				Args:        []driver.Value{tenantID, runtimeCtxModel.ID, true},
+				Query:       regexp.QuoteMeta(`WITH RECURSIVE parents AS (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST(? AS uuid) AS child_id FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id WHERE id=? UNION ALL SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id INNER JOIN parents p on p.parent_id = t2.id) INSERT INTO tenant_runtime_contexts ( tenant_id, id, owner, source ) (SELECT parents.id AS tenant_id, ? as id, ? AS owner, parents.child_id as source FROM parents WHERE type != 'cost-object' OR (type = 'cost-object' AND depth = (SELECT MIN(depth) FROM parents WHERE type = 'cost-object')) ) ON CONFLICT ( tenant_id, id, source ) DO NOTHING`),
+				Args:        []driver.Value{tenantID, tenantID, runtimeCtxModel.ID, true},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},

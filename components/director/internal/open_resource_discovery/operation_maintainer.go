@@ -106,7 +106,7 @@ func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Co
 
 	appTemplateOps, err := oc.appTemplateOperations(ctx)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while creating operations for application temapltes")
+		return nil, nil, errors.Wrapf(err, "while creating operations for application templates")
 	}
 	desiredStateOperations = append(desiredStateOperations, appTemplateOps...)
 

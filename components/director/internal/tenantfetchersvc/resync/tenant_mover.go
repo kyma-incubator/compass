@@ -5,6 +5,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"k8s.io/utils/strings/slices"
+
 	"github.com/avast/retry-go/v4"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -108,7 +111,7 @@ func (tmv *tenantMover) moveSubaccount(ctx context.Context, subaccountTenant *mo
 	if err := tmv.gqlClient.UpdateTenant(ctx, subaccountTenant.ID, subaccountTenantGQL); err != nil {
 		return errors.Wrapf(err, "while updating tenant with id %s", subaccountTenant.ID)
 	}
-	log.C(ctx).Infof("Successfully moved subaccount tenant %s to new parent with ID %s", subaccountTenant.ID, subaccountTenant.Parent)
+	log.C(ctx).Infof("Successfully moved subaccount tenant %s to new parent with ID %v", subaccountTenant.ID, subaccountTenant.Parents)
 	return nil
 }
 
@@ -175,12 +178,12 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 		tenantFromDB, ok := existingTenantsMap[mapping.SubaccountID]
 		if !ok {
 			log.C(ctx).Infof("Subaccount with external id %s does not exist, will be created in the correct parent tenant", mapping.SubaccountID)
-			mapping.TenantMappingInput.Parent = parentTenants[mapping.TargetTenant].ID
+			mapping.TenantMappingInput.Parents = []string{parentTenants[mapping.TargetTenant].ExternalTenant}
 			tenantsToCreate = append(tenantsToCreate, mapping.TenantMappingInput)
 			continue
 		}
 
-		if tenantFromDB.Parent == parentTenants[mapping.TargetTenant].ID {
+		if slices.Contains(tenantFromDB.Parents, parentTenants[mapping.TargetTenant].ID) {
 			log.C(ctx).Infof("Subaccount with external id %s is already moved in global account with external id %s", tenantFromDB.ExternalTenant, mapping.TargetTenant)
 			continue
 		}
@@ -189,7 +192,29 @@ func (tmv *tenantMover) tenantsToUpsert(ctx context.Context, mappings []model.Mo
 			return nil, nil, errors.Wrapf(err, "subaccount with external id %s is part of a scenario and cannot be moved", mapping.SubaccountID)
 		}
 
-		tenantFromDB.Parent = parentTenants[mapping.TargetTenant].ID
+		parents, err := tmv.tenantStorageService.ListByIDsAndType(ctx, tenantFromDB.Parents, tenant.Account)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "while listing tenants by ids and type")
+		}
+
+		if len(parents) != 1 {
+			return nil, nil, errors.Errorf("the subaccount must have only one parent")
+		}
+
+		tenantFromDB.Parents = slices.Filter(nil, tenantFromDB.Parents, func(s string) bool {
+			return s != parents[0].ID
+		})
+		tenantFromDB.Parents = append(tenantFromDB.Parents, parentTenants[mapping.TargetTenant].ID)
+
+		btms, err := tmv.tenantStorageService.ListByIDs(ctx, tenantFromDB.Parents)
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "while listing tenants by internal ids")
+		}
+		externalParentsIDs := make([]string, 0, len(btms))
+		for _, btm := range btms {
+			externalParentsIDs = append(externalParentsIDs, btm.ExternalTenant)
+		}
+		tenantFromDB.Parents = externalParentsIDs
 		tenantsToUpdate = append(tenantsToUpdate, tenantFromDB)
 	}
 

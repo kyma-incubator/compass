@@ -8,7 +8,6 @@ type Application struct {
 	ProviderName          *string            `json:"providerName"`
 	IntegrationSystemID   *string            `json:"integrationSystemID"`
 	ApplicationTemplateID *string            `json:"applicationTemplateID"`
-	TenantBusinessTypeID  *string            `json:"tenantBusinessTypeID"`
 	Description           *string            `json:"description"`
 	Status                *ApplicationStatus `json:"status"`
 	HealthCheckURL        *string            `json:"healthCheckURL"`
@@ -27,6 +26,9 @@ func (e *Application) GetType() resource.Type {
 
 // Sentinel missing godoc
 func (e *Application) Sentinel() {}
+
+// IsFormationParticipant implements the FormationParticipant interface
+func (e *Application) IsFormationParticipant() {}
 
 // ApplicationPageExt is an extended type used by external API
 type ApplicationPageExt struct {

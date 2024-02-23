@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"k8s.io/utils/strings/slices"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -30,13 +32,15 @@ type TenantStorageService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	ListsByExternalIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
+	ListByIDsAndType(ctx context.Context, ids []string, tenantType tenant.Type) ([]*model.BusinessTenantMapping, error)
+	ListByIDs(ctx context.Context, ids []string) ([]*model.BusinessTenantMapping, error)
 }
 
 // TenantCreator takes care of retrieving tenants from external tenant registry and storing them in Director
 //
 //go:generate mockery --name=TenantCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantCreator interface {
-	FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error)
+	FetchTenants(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error)
 	TenantsToCreate(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error)
 	CreateTenants(ctx context.Context, eventsTenants []model.BusinessTenantMappingInput) error
 }
@@ -208,7 +212,7 @@ func (ts *TenantsSynchronizer) synchronizeTenants(ctx context.Context) error {
 func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTenantID, tenantID string) error {
 	tnt, err := ts.fetchFromDirector(ctx, tenantID)
 	if err != nil {
-		return errors.Wrapf(err, "while checking if tenant eith ID %s already exists", tenantID)
+		return errors.Wrapf(err, "while checking if tenant with ID %s already exists", tenantID)
 	}
 
 	if tnt != nil {
@@ -216,21 +220,21 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return nil
 	}
 
-	fetchedTenant, err := ts.creator.FetchTenant(ctx, tenantID)
+	fetchedTenants, err := ts.creator.FetchTenants(ctx, tenantID)
 	if err != nil {
 		return err
 	}
 
-	if fetchedTenant == nil && parentTenantID == "" {
+	if len(fetchedTenants) == 0 && parentTenantID == "" {
 		log.C(ctx).Infof("Tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
 		return apperrors.NewEmptyParentIDErrorWithMessage(fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID))
 	}
-	if fetchedTenant == nil {
+	if len(fetchedTenants) == 0 {
 		log.C(ctx).Infof("Tenant with ID %s was not found, it will be stored lazily", tenantID)
 		fetchedTenant := model.BusinessTenantMappingInput{
 			Name:           tenantID,
 			ExternalTenant: tenantID,
-			Parent:         parentTenantID,
+			Parents:        []string{parentTenantID},
 			Subdomain:      "",
 			Region:         "",
 			Type:           string(tenant.Subaccount),
@@ -238,21 +242,18 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		}
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
-	if fetchedTenant.Region != "" {
-		fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
-	}
-	parentTenantID = fetchedTenant.Parent
-	if len(parentTenantID) == 0 {
-		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
+
+	for _, fetchedTenant := range fetchedTenants {
+		if fetchedTenant.Region != "" {
+			fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+		}
+
+		if len(fetchedTenant.Parents) == 0 && fetchedTenant.Type != string(tenant.CostObject) {
+			return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
+		}
 	}
 
-	parent, err := ts.fetchFromDirector(ctx, fetchedTenant.Parent)
-	if err != nil {
-		return errors.Wrapf(err, "while checking if parent tenant with ID %s exists", fetchedTenant.Parent)
-	}
-
-	fetchedTenant.Parent = parent.ID
-	return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{*fetchedTenant})
+	return ts.creator.CreateTenants(ctx, fetchedTenants)
 }
 
 func (ts *TenantsSynchronizer) fetchFromDirector(ctx context.Context, tenantID string) (*model.BusinessTenantMapping, error) {
@@ -305,11 +306,6 @@ func (ts *TenantsSynchronizer) createTenants(ctx context.Context, currentTenants
 	// create missing parent tenants
 	tenantsToCreate := missingParentTenants(currentTenants, newTenants, ts.config.TenantProvider, fullRegionName)
 	for _, eventTenant := range newTenants {
-		// use internal ID of parent for pre-existing targetParentTenants
-		if parentGUID, ok := currentTenants[eventTenant.Parent]; ok {
-			eventTenant.Parent = parentGUID
-		}
-
 		eventTenant.Region = fullRegionName
 		tenantsToCreate = append(tenantsToCreate, eventTenant)
 	}
@@ -335,17 +331,13 @@ func (ts *TenantsSynchronizer) deleteTenants(ctx context.Context, currTenants ma
 func missingParentTenants(currTenants map[string]string, eventsTenants []model.BusinessTenantMappingInput, providerName, region string) []model.BusinessTenantMappingInput {
 	parentsToCreate := make([]model.BusinessTenantMappingInput, 0)
 	for _, eventTenant := range eventsTenants {
-		if len(eventTenant.Parent) > 0 {
-			if _, ok := currTenants[eventTenant.Parent]; !ok {
-				parentType := getTenantParentType(eventTenant.Type)
-				if parentType == tenant.TypeToStr(tenant.Customer) {
-					eventTenant.Parent = tenant.TrimCustomerIDLeadingZeros(eventTenant.Parent)
-				}
+		for _, p := range eventTenant.Parents {
+			if _, ok := currTenants[p]; !ok {
 				parentTenant := model.BusinessTenantMappingInput{
-					Name:           eventTenant.Parent,
-					ExternalTenant: eventTenant.Parent,
-					Parent:         "",
-					Type:           parentType,
+					Name:           p,
+					ExternalTenant: p,
+					Parents:        []string{},
+					Type:           getTenantParentType(eventTenant.Type),
 					Provider:       providerName,
 					Region:         region,
 				}
@@ -373,9 +365,9 @@ func dedupeTenants(tenants []model.BusinessTenantMappingInput) []model.BusinessT
 	tenants = make([]model.BusinessTenantMappingInput, 0, len(tenantsByExtID))
 	for _, t := range tenantsByExtID {
 		// cleaning up missingParentTenants of self referencing tenants
-		if t.ExternalTenant == t.Parent {
-			t.Parent = ""
-		}
+		t.Parents = slices.Filter(nil, t.Parents, func(s string) bool {
+			return s != t.ExternalTenant
+		})
 
 		tenants = append(tenants, t)
 	}
@@ -403,8 +395,8 @@ func getTenantsIDs(tenants ...[]model.BusinessTenantMappingInput) []string {
 	var currentTenantsIDs []string
 	for _, tenantsList := range tenants {
 		for _, t := range tenantsList {
-			if len(t.Parent) > 0 {
-				currentTenantsIDs = append(currentTenantsIDs, t.Parent)
+			if len(t.Parents) > 0 {
+				currentTenantsIDs = append(currentTenantsIDs, t.Parents...)
 			}
 			if len(t.ExternalTenant) > 0 {
 				currentTenantsIDs = append(currentTenantsIDs, t.ExternalTenant)

@@ -87,8 +87,7 @@ done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
 POSTGRES_CONTAINER="test-postgres"
-# Using v12 because the DB Dump file headers are not compatible with Postgres v11.
-POSTGRES_VERSION="12"
+POSTGRES_VERSION="15"
 
 DB_USER="postgres"
 DB_PWD="pgsql@12345"
@@ -358,6 +357,7 @@ export APP_DESTINATION_CREATOR_CERTIFICATE_CERT_CHAIN_KEY="certificateChain"
 export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH="/regions/{region}/subaccounts/{subaccountId}/instances/{instanceId}/certificates"
 export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER="instanceId"
 export APP_ORD_AGGREGATOR_AGGREGATE_API="https://compass-gateway-internal.local.kyma.dev/ord-aggregator/aggregate"
+export APP_SYSTEM_FETCHER_SYNC_API="https://compass-gateway-internal.local.kyma.dev/system-fetcher/sync"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig
