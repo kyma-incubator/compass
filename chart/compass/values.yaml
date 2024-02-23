@@ -174,7 +174,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3674"
+      version: "PR-3680"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -202,7 +202,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3638"
+      version: "PR-3680"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3673"
+      version: "PR-3680"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
