@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/stretchr/testify/mock"
 	"io"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -78,7 +79,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.On("Delete", txtest.CtxWithDBMatcher(), whID, model.ApplicationWebhookReference).Return(nil).Once()
 				return webhookSvc
 			},
@@ -103,7 +104,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -136,7 +137,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -169,7 +170,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -202,7 +203,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.On("Delete", txtest.CtxWithDBMatcher(), whID, model.ApplicationWebhookReference).Return(testError).Once()
 				return webhookSvc
 			},
@@ -227,7 +228,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(nil, testError).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(nil, testError).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -255,7 +256,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 				oldWebhooks := modelWebhooks
 				ts := time.Now().AddDate(0, 0, -8)
 				oldWebhooks[0].CreatedAt = &ts
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(oldWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(oldWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -283,7 +284,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 				webhookSvc := &automock.WebhookService{}
 				noCredsWebhooks := modelWebhooks
 				noCredsWebhooks[0].Auth = nil
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(noCredsWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(noCredsWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -308,7 +309,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},
@@ -333,7 +334,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			},
 			WebhookSvcFn: func() *automock.WebhookService {
 				webhookSvc := &automock.WebhookService{}
-				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry"))).Return(modelWebhooks, nil).Once()
+				webhookSvc.On("ListByTypeAndLabelFilter", txtest.CtxWithDBMatcher(), model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(tenantfetchersvc.RegistryLabelKey, fmt.Sprintf("\"%s\"", tenantfetchersvc.SaaSRegistryLabelValue))).Return(modelWebhooks, nil).Once()
 				webhookSvc.AssertNotCalled(t, "Delete")
 				return webhookSvc
 			},

@@ -38,7 +38,7 @@ const (
 	SubscriptionsLabelKey = "subscriptions"
 	// PreviousSubscriptionID represents a previous subscription id. This is needed, because before introducing this change there might be subscriptions which we don't know that they existed.
 	PreviousSubscriptionID = "00000000-0000-0000-0000-000000000000"
-	// SystemFieldDiscoveryLabelKey is the key of the aoo template system field discovery label, that stores if a webhook of type SYSTEM_FIELD_DISCOVERY should be created.
+	// SystemFieldDiscoveryLabelKey is the key of the application template system field discovery label, that stores if a webhook of type SYSTEM_FIELD_DISCOVERY should be created.
 	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
 )
 
@@ -122,7 +122,7 @@ type ApplicationService interface {
 //
 //go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFieldDiscoveryEngine interface {
-	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subacountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
+	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subaccountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
 	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
 }
 

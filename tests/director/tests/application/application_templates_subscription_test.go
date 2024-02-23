@@ -122,7 +122,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
 			// webhooks with types - configuration changed and system field discovery
 			require.Len(t, appPageExt.Data[0].Webhooks, 2)
-
+			require.True(t, assertions.AssertWebhooksTypesForSystemFieldDiscoveryEngine(appPageExt.Data[0].Webhooks))
 			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 

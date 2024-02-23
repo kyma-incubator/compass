@@ -12,7 +12,7 @@ ALTER TABLE labels DROP CONSTRAINT labels_webhook_id_fk;
 
 ALTER TABLE labels DROP COLUMN webhook_id;
 
--- Drop OPEN_RESOURCE_DISCOVERY_STATIC webhook_type
+-- Drop SYSTEM_FIELD_DISCOVERY webhook_type
 
 ALTER TABLE webhooks ALTER COLUMN type TYPE VARCHAR(255);
 

@@ -1496,25 +1496,12 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 func TestRegisterApplicationFromTemplateWithSystemFieldDiscoveryLabel(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
-	nameJSONPath := "$.name-json-path"
-	displayNameJSONPath := "$.display-name-json-path"
 	appTemplateName := fixtures.CreateAppTemplateName("template")
 	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
 	regionInConfiguration := "eu-1"
 	appTmplInput.ApplicationInput.Labels["region"] = regionInConfiguration
-	appTmplInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
-		{
-			Name:        "name",
-			Description: ptr.String("name"),
-			JSONPath:    &nameJSONPath,
-		},
-		{
-			Name:        "display-name",
-			Description: ptr.String("display-name"),
-			JSONPath:    &displayNameJSONPath,
-		},
-	}
+
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	appTmplInput.Labels["global_subbacount_id"] = tenantId
@@ -1527,15 +1514,7 @@ func TestRegisterApplicationFromTemplateWithSystemFieldDiscoveryLabel(t *testing
 	require.Equal(t, tenantId, appTmpl.Labels["global_subbacount_id"])
 	require.Equal(t, true, appTmpl.Labels["systemFieldDiscovery"])
 
-	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
-		{
-			Placeholder: "name",
-			Value:       "new-name",
-		},
-		{
-			Placeholder: "display-name",
-			Value:       "new-display-name",
-		}}}
+	appFromTmpl := fixtures.FixApplicationFromTemplateInput(appTemplateName, "name", "new-name", "display-name", "new-display-name")
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
@@ -1551,10 +1530,11 @@ func TestRegisterApplicationFromTemplateWithSystemFieldDiscoveryLabel(t *testing
 	require.NotEmpty(t, outputApp.Webhooks)
 	// webhooks with types - configuration changed and system field discovery
 	require.Len(t, outputApp.Webhooks, 2)
+	require.True(t, assertions.AssertWebhooksTypesForSystemFieldDiscoveryEngine(outputApp.Webhooks))
 
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
-	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template for system field discovery engine")
 }
 
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {

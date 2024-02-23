@@ -322,8 +322,7 @@ func (r *repository) ListByTypeAndLabelFilter(ctx context.Context, webhookType m
 
 	var conditions repo.Conditions
 	if filterSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
-		conditions = append(conditions, repo.NewEqualCondition("type", webhookType))
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args), repo.NewEqualCondition("type", webhookType))
 	}
 
 	if err := r.listerGlobalOrderedByCreatedAt.ListGlobal(ctx, &entities, conditions...); err != nil {

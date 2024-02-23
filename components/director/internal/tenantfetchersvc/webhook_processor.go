@@ -19,6 +19,13 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	// RegistryLabelKey is the label key for registry label
+	RegistryLabelKey = "registry"
+	// SaaSRegistryLabelValue is the label value for saas registry label
+	SaaSRegistryLabelValue = "saas-registry"
+)
+
 // WebhookService is responsible for the service-layer Webhook operations.
 //
 //go:generate mockery --name=WebhookService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -101,7 +108,7 @@ func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context) error {
 func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context) error {
 	log.C(ctx).Infof("Starting to process webhooks with type %q", model.WebhookTypeSystemFieldDiscovery)
 
-	webhooks, err := w.listWebhooksByTypeAndLabelFilter(ctx)
+	webhooks, err := w.listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "failed listing webhooks by type %q and label", model.WebhookTypeSystemFieldDiscovery)
 	}
@@ -141,15 +148,16 @@ func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context) error {
 				break
 			}
 			if processed {
-				log.C(ctx).Infof("Successfully processed webhookd with id %q", wh.ID)
+				log.C(ctx).Infof("Successfully processed webhook with id %q", wh.ID)
 				break
 			}
+			log.C(ctx).Infof("Response for webhook with ID %q does not contain app URL", wh.ID)
 		}
 	}
 	return nil
 }
 
-func (w *WebhookProcessor) listWebhooksByTypeAndLabelFilter(ctx context.Context) ([]*model.Webhook, error) {
+func (w *WebhookProcessor) listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(ctx context.Context) ([]*model.Webhook, error) {
 	tx, err := w.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to begin a transaction for listing webhooks by type %q and label", model.WebhookTypeSystemFieldDiscovery)
@@ -157,7 +165,7 @@ func (w *WebhookProcessor) listWebhooksByTypeAndLabelFilter(ctx context.Context)
 	defer w.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhooks, err := w.webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery("registry", fmt.Sprintf("\"%s\"", "saas-registry")))
+	webhooks, err := w.webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(RegistryLabelKey, fmt.Sprintf("\"%s\"", SaaSRegistryLabelValue)))
 	if err != nil {
 		return nil, err
 	}
