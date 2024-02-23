@@ -280,7 +280,6 @@ func NewExistsConditionForSubQuery(subQuery string, args []interface{}) Conditio
 }
 
 type existsCondition struct {
-	field       string
 	parenthesis string
 	args        []interface{}
 }

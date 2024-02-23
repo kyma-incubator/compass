@@ -709,12 +709,10 @@ func successfulFormationAssignmentRepo() *automock.FormationAssignmentRepository
 }
 
 func failingFormationAssignmentRepo() *automock.FormationAssignmentRepository {
-
 	formationAssignmentRepo := unusedFormationAssignmentRepo()
 	formationAssignmentRepo.On("GetGlobalByID",
 		mock.Anything, formationAssignmentID).Return(nil, testErr)
 	return formationAssignmentRepo
-
 }
 
 func successfulTenantRepo(tenantIDs []string) func() *automock.TenantRepo {

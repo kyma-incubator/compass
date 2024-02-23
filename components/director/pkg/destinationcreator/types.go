@@ -75,10 +75,12 @@ type DestinationInfo struct {
 	URL                string
 }
 
+// ConstructCorrelationIDsString creates a comma-separated string based on given correlation IDs array
 func ConstructCorrelationIDsString(correlationIDs []string) string {
 	return strings.Join(correlationIDs, correlationIDDelimiter)
 }
 
+// DeconstructCorrelationIDs splits a string containing comma-separated correlation IDs into an array
 func DeconstructCorrelationIDs(correlationIDs string) []string {
 	return strings.Split(correlationIDs, correlationIDDelimiter)
 }
