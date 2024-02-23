@@ -19,10 +19,6 @@ type TenantRepository struct {
 func (_m *TenantRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Get")
-	}
-
 	var r0 *model.BusinessTenantMapping
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
@@ -48,10 +44,6 @@ func (_m *TenantRepository) Get(ctx context.Context, id string) (*model.Business
 // GetByExternalTenant provides a mock function with given fields: ctx, externalTenant
 func (_m *TenantRepository) GetByExternalTenant(ctx context.Context, externalTenant string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, externalTenant)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByExternalTenant")
-	}
 
 	var r0 *model.BusinessTenantMapping
 	var r1 error

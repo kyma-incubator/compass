@@ -162,27 +162,27 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3638"
+      version: "PR-3656"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3638"
+      version: "PR-3656"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3638"
+      version: "PR-3656"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3672"
+      version: "PR-3656"
       name: compass-director
     hydrator:
       dir: dev/incubator/
       version: "PR-3677"
       name: compass-hydrator
     ias_adapter:
-      dir: prod/incubator/
-      version: "v20240112-68df17f1"
+      dir: dev/incubator/
+      version: "PR-3661"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -198,11 +198,11 @@ global:
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3638"
+      version: "PR-3656"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3638"
+      version: "PR-3656"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -210,11 +210,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3668"
+      version: "PR-3656"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3573"
+      dir: prod/incubator/
+      version: "v20240123-eabe5df7"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3659"
+      version: "PR-3656"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3659"
+      version: "PR-3678"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false

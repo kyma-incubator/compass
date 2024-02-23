@@ -35,16 +35,19 @@ var (
 	samlAssertionSingleDestDetails = fixSAMLAssertionDestinationDetails()
 	clientCertAuthDestDetails      = fixClientCertAuthDestinationDetails()
 	oauth2ClientCredsDestDetails   = fixOAuth2ClientCredsDestinationDetails()
+	oauth2mTLSDestDetails          = fixOAuth2mTLSDestinationDetails()
 
 	basicDestInfo             = fixDestinationInfo(basicDestDetails.Authentication, basicDestDetails.Type, basicDestDetails.URL)
 	samlDestInfo              = fixDestinationInfo(samlAssertionSingleDestDetails.Authentication, samlAssertionSingleDestDetails.Type, samlAssertionSingleDestDetails.URL)
 	clientCertDestInfo        = fixDestinationInfo(clientCertAuthDestDetails.Authentication, clientCertAuthDestDetails.Type, clientCertAuthDestDetails.URL)
 	oauth2ClientCredsDestInfo = fixDestinationInfo(oauth2ClientCredsDestDetails.Authentication, oauth2ClientCredsDestDetails.Type, oauth2ClientCredsDestDetails.URL)
+	oauth2mTLSDestInfo        = fixDestinationInfo(oauth2mTLSDestDetails.Authentication, oauth2mTLSDestDetails.Type, oauth2mTLSDestDetails.URL)
 
 	basicAuthCreds                   = fixBasicAuthCreds(basicDestURL, basicDestUser, basicDestPassword)
 	samlAssertionAuthCreds           = fixSAMLAssertionAuthCreds(samlAssertionDestURL)
 	samlAssertionAuthCredsWithoutURL = &operators.SAMLAssertionAuthentication{}
 	oauth2ClientCreds                = fixOAuth2ClientCreds(oauth2ClientCredsURL, oauth2ClientCredsTokenURL, oauth2ClientCredsClientID, oauth2ClientCredsClientSecret)
+	oauth2mTLSCreds                  = fixOAuth2mTLSCreds(oauth2mTLSURL, oauth2mTLSTokenURL, oauth2mTLSClientID)
 
 	createResp                   = fixHTTPResponse(http.StatusCreated, "")
 	createRespWithConflict       = fixHTTPResponse(http.StatusConflict, "")
@@ -1694,6 +1697,324 @@ func Test_CreateOauth2ClientCredentialsDestinations(t *testing.T) {
 			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
 
 			destInfo, err := svc.CreateOAuth2ClientCredentialsDestinations(emptyCtx, testCase.destinationDetails, oauth2ClientCreds, testCase.formationAssignment, testCase.correlationIDs, 0, false)
+			if testCase.expectedErrMessage != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.expectedErrMessage)
+				require.Nil(t, destInfo)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.expectedDestinationInfo, destInfo)
+			}
+		})
+	}
+}
+
+func Test_CreateOauth2mTLSDestinations(t *testing.T) {
+	oauth2DestDetailsWithInvalidAuth := fixOAuth2mTLSDestinationDetails()
+	oauth2DestDetailsWithInvalidAuth.Authentication = invalidDestAuthType
+
+	oauth2DestDetailsWithInvalidBaseURL := fixOAuth2mTLSDestinationDetails()
+	oauth2DestDetailsWithInvalidBaseURL.URL = ":wrong"
+
+	oauth2DestDetailsWithURLOnlyWithScheme := fixOAuth2mTLSDestinationDetails()
+	oauth2DestDetailsWithURLOnlyWithScheme.URL = "https://"
+
+	oauth2DestDetailsWithURLOnlyWithPath := fixOAuth2mTLSDestinationDetails()
+	oauth2DestDetailsWithURLOnlyWithPath.URL = testURLPath
+
+	oauth2DestDetailsWithoutName := fixOAuth2mTLSDestinationDetails()
+	oauth2DestDetailsWithoutName.Name = ""
+
+	testCases := []struct {
+		name                    string
+		destinationDetails      operators.Destination
+		expectedDestinationInfo *destinationcreatorpkg.DestinationInfo
+		formationAssignment     *model.FormationAssignment
+		correlationIDs          []string
+		httpClient              func() *automock.HttpClient
+		labelRepoFn             func() *automock.LabelRepository
+		tenantRepoFn            func() *automock.TenantRepository
+		expectedErrMessage      string
+	}{
+		{
+			name:                    "Success",
+			destinationDetails:      oauth2mTLSDestDetails,
+			expectedDestinationInfo: oauth2mTLSDestInfo,
+			formationAssignment:     faWithSourceAppAndTargetApp,
+			correlationIDs:          testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+		},
+		{
+			name:                    "Success with empty correlation IDs",
+			destinationDetails:      oauth2mTLSDestDetails,
+			expectedDestinationInfo: oauth2mTLSDestInfo,
+			formationAssignment:     faWithSourceAppAndTargetApp,
+			correlationIDs:          emptyCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+		},
+		{
+			name:                "Error while getting region and get external tenant fail",
+			destinationDetails:  oauth2mTLSDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("while getting region label for tenant with ID: %s: while getting tenant by external ID: %q", destinationExternalSubaccountID, destinationExternalSubaccountID),
+		},
+		{
+			name:                "Error while building url and region is empty",
+			destinationDetails:  oauth2mTLSDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(lblWithEmptyValue, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "The provided region and/or subaccount for the URL couldn't be empty",
+		},
+		{
+			name:                "Error while calculating url and parse url fail",
+			destinationDetails:  oauth2DestDetailsWithInvalidBaseURL,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "missing protocol scheme",
+		},
+		{
+			name:                "Error while calculating url when it has only scheme",
+			destinationDetails:  oauth2DestDetailsWithURLOnlyWithScheme,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "The provided URL in the destination details has only scheme",
+		},
+		{
+			name:                    "Success while calculating url and it has only path",
+			destinationDetails:      oauth2DestDetailsWithURLOnlyWithPath,
+			expectedDestinationInfo: fixDestinationInfo(oauth2DestDetailsWithURLOnlyWithPath.Authentication, oauth2DestDetailsWithURLOnlyWithPath.Type, fmt.Sprintf("%s%s", oauth2mTLSURL, testURLPath)),
+			formationAssignment:     faWithSourceAppAndTargetApp,
+			correlationIDs:          testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+		},
+		{
+			name:                "Error when preparing oauth2 request body fail",
+			destinationDetails:  oauth2DestDetailsWithInvalidAuth,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("The provided authentication type: %s in the destination details is invalid. It should be %s", invalidDestAuthType, destinationcreatorpkg.AuthTypeOAuth2mTLS),
+		},
+		{
+			name:                "Error when validation of request body fails",
+			destinationDetails:  oauth2DestDetailsWithoutName,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "while validating oauth2 mTLS destination request body",
+		},
+		{
+			name:                "Error when executing remote oauth2 mTLS destination request fail",
+			destinationDetails:  oauth2mTLSDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(nil, testErr).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("while creating inbound oauth2 mTLS destination with name: %q in the destination service: %s", oauth2mTLSDestName, testErr.Error()),
+		},
+		{
+			name:                    "Success while executing remote basic destination request and the status code is conflict",
+			destinationDetails:      oauth2mTLSDestDetails,
+			expectedDestinationInfo: oauth2mTLSDestInfo,
+			formationAssignment:     faWithSourceAppAndTargetApp,
+			correlationIDs:          testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Once()
+				client.On("Do", requestThatHasMethod(http.MethodDelete)).Return(deleteResp, nil).Once()
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createResp, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(1)
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(3)
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Times(3)
+				return tenantRepo
+			},
+		},
+		{
+			name:                "Error while executing remote basic destination request and maximum depth is reached",
+			destinationDetails:  oauth2mTLSDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Times(3)
+				client.On("Do", requestThatHasMethod(http.MethodDelete)).Return(deleteResp, nil).Twice()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Times(2)
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Times(5)
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Times(5)
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("Destination creator service retry limit: %d is exceeded", destinationcreator.DepthLimit),
+		},
+		{
+			name:                "Error while executing remote basic destination request in case of conflict and delete destination fail",
+			destinationDetails:  oauth2mTLSDestDetails,
+			formationAssignment: faWithSourceAppAndTargetApp,
+			correlationIDs:      testCorrelationIDs,
+			httpClient: func() *automock.HttpClient {
+				client := &automock.HttpClient{}
+				client.On("Do", requestThatHasMethod(http.MethodPost)).Return(createRespWithConflict, nil).Once()
+				return client
+			},
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("ListForObject", emptyCtx, testTenantID, model.ApplicationLabelableObject, testTargetID).Return(subaccountnLbl, nil).Once()
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(nil, testErr).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: fmt.Sprintf("while getting tenant by external ID: %q: %s", destinationExternalSubaccountID, testErr.Error()),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			httpClient := fixUnusedHTTPClient()
+			if testCase.httpClient != nil {
+				httpClient = testCase.httpClient()
+			}
+
+			labelRepo := fixUnusedLabelRepo()
+			if testCase.labelRepoFn != nil {
+				labelRepo = testCase.labelRepoFn()
+			}
+
+			tenantRepo := fixUnusedTenantRepo()
+			if testCase.tenantRepoFn != nil {
+				tenantRepo = testCase.tenantRepoFn()
+			}
+			defer mock.AssertExpectationsForObjects(t, httpClient, labelRepo, tenantRepo)
+
+			svc := destinationcreator.NewService(httpClient, destConfig, nil, nil, nil, labelRepo, tenantRepo)
+
+			destInfo, err := svc.CreateOAuth2mTLSDestinations(emptyCtx, testCase.destinationDetails, oauth2mTLSCreds, testCase.formationAssignment, testCase.correlationIDs, 0, false)
 			if testCase.expectedErrMessage != "" {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), testCase.expectedErrMessage)

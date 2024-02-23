@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -31,8 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -341,8 +338,6 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 		return nil, errors.Wrapf(err, "while calculating application templates mappings")
 	}
 
-	calculateSortedTemplateMappingKeys()
-
 	return templateRenderer, nil
 }
 
@@ -494,7 +489,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	tenantConverter := tenant.NewConverter()
-	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -523,7 +517,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -554,7 +547,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	uidSvc := uid.NewService()
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
@@ -622,7 +614,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrapf(err, "while reload templates")
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -748,17 +740,4 @@ func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapp
 	}
 
 	return selectFilter
-}
-
-func calculateSortedTemplateMappingKeys() {
-	templateMappingKeys := make([]systemfetcher.TemplateMappingKey, 0, len(systemfetcher.ApplicationTemplates))
-	for key := range systemfetcher.ApplicationTemplates {
-		templateMappingKeys = append(templateMappingKeys, key)
-	}
-
-	sort.Slice(templateMappingKeys, func(i, j int) bool {
-		return templateMappingKeys[i].Label < templateMappingKeys[j].Label
-	})
-
-	systemfetcher.SortedTemplateMappingKeys = templateMappingKeys
 }

@@ -5,6 +5,7 @@ package automock
 import (
 	context "context"
 
+	systemfetcher "github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -25,6 +26,11 @@ func (_m *SystemFetcherService) ProcessTenant(ctx context.Context, tenantID stri
 	}
 
 	return r0
+}
+
+// SetTemplateRenderer provides a mock function with given fields: templateRenderer
+func (_m *SystemFetcherService) SetTemplateRenderer(templateRenderer systemfetcher.TemplateRenderer) {
+	_m.Called(templateRenderer)
 }
 
 // NewSystemFetcherService creates a new instance of SystemFetcherService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
