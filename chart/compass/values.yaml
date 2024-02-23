@@ -222,8 +222,8 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20240216-f8c59f01"
+      dir: dev/incubator/
+      version: "PR-3675"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
