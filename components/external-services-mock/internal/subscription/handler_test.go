@@ -85,7 +85,6 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		TestConsumerAccountID:              "consumerAccountID",
 		TestConsumerSubaccountID:           "consumberSubaccountID",
 		TestConsumerTenantID:               "consumerTenantID",
-		TestCustomerID:                     "customerID",
 		PropagatedProviderSubaccountHeader: "X-Propagated-Provider",
 		SubscriptionProviderAppNameValue:   "subscriptionProviderAppNameValue",
 		StandardFlow:                       standardFlow,

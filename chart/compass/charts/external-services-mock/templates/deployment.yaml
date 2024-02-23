@@ -163,8 +163,6 @@ spec:
                 value: {{ .Values.global.tests.subscription.tenants.consumerSubaccountID }}
               - name: APP_TENANT_CONFIG_TEST_COST_OBJECT_ID
                 value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
-              - name: APP_TENANT_CONFIG_TEST_CUSTOMER_ID
-                value: {{ .Values.global.tests.subscription.tenants.customerID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_TENANT_ID
                 value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
               - name: APP_TENANT_CONFIG_TEST_CONSUMER_ACCOUNT_ID_TENANT_HIERARCHY
