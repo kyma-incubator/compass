@@ -289,11 +289,15 @@ func constructSubaccountTenant(ctx context.Context, jsonPayload, name, subdomain
 
 // Returns id of the fetched tenant, since there are multiple possible names for the ID field
 func determineTenantID(jsonPayload string, mapping TenantFieldMapping) (string, error) {
-	if gjson.Get(jsonPayload, mapping.IDField).Exists() {
+	id := gjson.Get(jsonPayload, mapping.IDField)
+	globalAccountGUID := gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField)
+	subaccountID := gjson.Get(jsonPayload, mapping.SubaccountIDField)
+
+	if id.Exists() && id.String() != "" {
 		return gjson.Get(jsonPayload, mapping.IDField).String(), nil
-	} else if gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField).Exists() {
+	} else if globalAccountGUID.Exists() && globalAccountGUID.String() != "" {
 		return gjson.Get(jsonPayload, mapping.GlobalAccountGUIDField).String(), nil
-	} else if gjson.Get(jsonPayload, mapping.SubaccountIDField).Exists() {
+	} else if subaccountID.Exists() && subaccountID.String() != "" {
 		return gjson.Get(jsonPayload, mapping.SubaccountIDField).String(), nil
 	}
 	return "", errors.Errorf("Missing or invalid format of the ID field")
