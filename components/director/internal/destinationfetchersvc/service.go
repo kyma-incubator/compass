@@ -249,7 +249,6 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				continue
 			}
 			bundles, err := d.BundleRepo.ListByDestination(ctxWithTransact, tenant, destination)
-
 			if err != nil {
 				log.C(ctxWithTransact).WithError(err).Errorf(
 					"Failed to fetch bundle for system '%s', url '%s', correlation id '%s', tenant id '%s'",
@@ -432,7 +431,10 @@ func (d *DestinationService) fetchBundlesByFormationAssignment(ctx context.Conte
 
 		appID := formationAssignment.Target
 		bundles, err = d.BundleRepo.ListByApplicationAndCorrelationIDs(ctxWithTransact, tenantID, appID, correlationIDs)
-
+		if err != nil {
+			log.C(ctxWithTransact).WithError(err).Errorf("Failed to list bundles by application ID %q with correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
+			return err
+		}
 		return nil
 	})
 

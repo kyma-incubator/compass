@@ -18,10 +18,11 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"

@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	destination1Name    = "mys4_1"
 	exampleDestination1 = `{
         "Name": "mys4_1",
         "Type": "HTTP",
