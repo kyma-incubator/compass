@@ -12,6 +12,7 @@ import (
 	"strings"
 	"testing"
 
+	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
@@ -108,7 +109,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{"tenant"})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{{Authenticator: authenticatorName, Subdomain: "tenant"}})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -159,7 +160,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -207,7 +208,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -272,7 +273,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -341,7 +342,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w1, reqWithVars1)
 
 		resp1 := w1.Result()
@@ -397,7 +398,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownClient, nil, authenticators, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownClient, nil, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -431,7 +432,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, authenticators, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -467,7 +468,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, authenticators, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -503,7 +504,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, authenticators, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -537,7 +538,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -571,7 +572,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -605,7 +606,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -636,7 +637,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(reqDataMock, nil).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -660,7 +661,7 @@ func TestHandler(t *testing.T) {
 		reqDataParserMock := &automock.ReqDataParser{}
 		reqDataParserMock.On("Parse", mock.Anything).Return(oathkeeper.ReqData{}, mockErr).Once()
 
-		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []string{})
+		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, nil, nil, nil, []cfg.AuthenticatorSubdomainMapping{})
 		req = mux.SetURLVars(req, map[string]string{"authenticator": "auth"})
 		handler.ServeHTTP(w, req)
 
@@ -674,7 +675,7 @@ func TestHandler(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, target, strings.NewReader(""))
 		w := httptest.NewRecorder()
 
-		handler := authnmappinghandler.NewHandler(nil, nil, nil, nil, nil, []string{})
+		handler := authnmappinghandler.NewHandler(nil, nil, nil, nil, nil, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()
@@ -714,7 +715,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 
 		handler.ServeHTTP(w, reqWithVars)
 
@@ -767,7 +768,7 @@ func TestHandler(t *testing.T) {
 
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, reqWithVars)
 
 		resp := w.Result()
@@ -806,7 +807,7 @@ func TestHandler(t *testing.T) {
 		verifierMock := &automock.TokenVerifier{}
 		handler := authnmappinghandler.NewHandler(ctx, reqDataParserMock, mockedWellKnownConfigClient, func(_ context.Context, _ authnmappinghandler.OpenIDMetadata) authnmappinghandler.TokenVerifier {
 			return verifierMock
-		}, authenticators, []string{})
+		}, authenticators, []cfg.AuthenticatorSubdomainMapping{})
 		handler.ServeHTTP(w, req)
 
 		resp := w.Result()

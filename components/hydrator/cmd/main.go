@@ -97,7 +97,7 @@ type config struct {
 
 	TenantSubstitutionLabelKey string `envconfig:"default=customerId"`
 
-	InitialLoadVerifiersForSubdomains []string `envconfig:"optional"`
+	InitialSubdomainsForAuthenticators []cfg.AuthenticatorSubdomainMapping `envconfig:"optional"`
 
 	Log log.Config
 }
@@ -187,7 +187,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, internalDirectorClientProvider, cfg.JWKSSyncPeriod)
 
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
-	authnMappingHandlerFunc := authnmappinghandler.NewHandler(ctx, oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators, cfg.InitialLoadVerifiersForSubdomains)
+	authnMappingHandlerFunc := authnmappinghandler.NewHandler(ctx, oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators, cfg.InitialSubdomainsForAuthenticators)
 
 	logger.Infof("Registering Tenant Mapping endpoint on %s...", cfg.Handler.TenantMappingEndpoint)
 	tenantMappingHandlerFunc, err := getTenantMappingHandlerFunc(authenticators, internalDirectorClientProvider, internalGatewayClientProvider, cfg.StaticGroupsSrc, cfgProvider, cfg.ConsumerClaimsKeys, metricsCollector, cfg.TenantSubstitutionLabelKey)

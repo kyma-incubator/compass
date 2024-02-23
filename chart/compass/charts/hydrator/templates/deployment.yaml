@@ -76,8 +76,8 @@ spec:
               value: /config/config.yaml
             - name: APP_REVOCATION_CONFIG_MAP_NAME
               value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
-            - name: APP_INITIAL_LOAD_VERIFIERS_FOR_SUBDOMAINS
-              value: "{{ .Values.global.hydrator.initialLoadVerifiersForSubdomains }}"
+            - name: APP_INITIAL_SUBDOMAINS_FOR_AUTHENTICATORS
+              value: "{{ .Values.global.hydrator.initialSubdomainsForAuthenticators }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.global.hydrator.metrics.port }}"
             - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
