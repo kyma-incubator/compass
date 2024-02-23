@@ -37,3 +37,10 @@ func (d *DestinationInput) Validate() error {
 
 	return nil
 }
+
+func (d *DestinationInput) HasValidIdentifiers() bool {
+	hasSystemIDAndType := d.XSystemTenantID != "" && d.XSystemType != ""
+	hasNameAndURL := d.XSystemBaseURL != "" && d.XSystemTenantName != ""
+
+	return hasSystemIDAndType || hasNameAndURL
+}

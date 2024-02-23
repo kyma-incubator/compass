@@ -248,6 +248,24 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 					destinationFromService.Name, tenant)
 				continue
 			}
+
+			if !destination.HasValidIdentifiers() {
+				bundles, err := d.fetchBundlesByFormationAssignment(ctxWithTransact, tenant, destination.Name, destination.XCorrelationID)
+				if err != nil {
+					log.C(ctxWithTransact).WithError(err).Errorf("Failed to fetch bundles for tenant id '%s', destination name '%s' and correlation IDs '%s'", tenant, destination.Name, destination.XCorrelationID)
+					return err
+				}
+
+				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
+					len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
+
+				if err = d.processBundles(ctx, bundles, destination, tenant, revision); err != nil {
+					return err
+				}
+
+				continue
+			}
+
 			bundles, err := d.BundleRepo.ListByDestination(ctxWithTransact, tenant, destination)
 			if err != nil {
 				log.C(ctxWithTransact).WithError(err).Errorf(
@@ -256,29 +274,12 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				return err
 			}
 
-			if len(bundles) == 0 {
-				log.C(ctxWithTransact).Infof("Found 0 bundles found for system '%s', url '%s', correlation id '%s'",
-					destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
+			log.C(ctxWithTransact).Infof("Found 0 bundles found for system '%s', url '%s', correlation id '%s'", destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 
-				bundles, err = d.fetchBundlesByFormationAssignment(ctxWithTransact, tenant, destination.Name, destination.XCorrelationID)
-				if err != nil {
-					log.C(ctxWithTransact).WithError(err).Errorf("Failed to fetch bundles for tenant id '%s', destination name '%s' and correlation IDs '%s'", tenant, destination.Name, destination.XCorrelationID)
-					return err
-				}
-
-				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
-					len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
+			if err = d.processBundles(ctx, bundles, destination, tenant, revision); err != nil {
+				return err
 			}
 
-			for _, bundle := range bundles {
-				id := d.UUIDSvc.Generate()
-				if err := d.DestinationRepo.Upsert(ctxWithTransact, destination, id, tenant, bundle.ID, revision); err != nil {
-					log.C(ctxWithTransact).WithError(err).Errorf(
-						"Failed to insert destination with name '%s' for bundle '%s' and tenant '%s' to DB",
-						destination.Name, bundle.ID, tenant)
-					return err
-				}
-			}
 		}
 		return nil
 	})
@@ -305,6 +306,20 @@ func (d *DestinationService) walkthroughPages(
 			log.C(ctx).Debugf("Found %d pages of destinations in tenant '%s'", resp.pageCount, tenantID)
 		})
 	}
+	return nil
+}
+
+func (d *DestinationService) processBundles(ctx context.Context, bundles []*model.Bundle, destination model.DestinationInput, tenant, revision string) error {
+	for _, bundle := range bundles {
+		id := d.UUIDSvc.Generate()
+		if err := d.DestinationRepo.Upsert(ctx, destination, id, tenant, bundle.ID, revision); err != nil {
+			log.C(ctx).WithError(err).Errorf(
+				"Failed to insert destination with name '%s' for bundle '%s' and tenant '%s' to DB",
+				destination.Name, bundle.ID, tenant)
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -408,35 +423,29 @@ func (d *DestinationService) getRegionLabel(ctx context.Context, tenantID string
 }
 
 func (d *DestinationService) fetchBundlesByFormationAssignment(ctx context.Context, tenantID, destinationName, correlationIDs string) ([]*model.Bundle, error) {
-	var bundles []*model.Bundle
+	destination, err := d.DestinationRepo.GetDestinationByNameAndTenant(ctx, destinationName, tenantID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to fetch region for tenant '%s'", tenantID)
+		return nil, err
+	}
 
-	transactionErr := d.transaction(ctx, func(ctxWithTransact context.Context) error {
-		var err error
-		destination, err := d.DestinationRepo.GetDestinationByNameAndTenant(ctxWithTransact, destinationName, tenantID)
-		if err != nil {
-			log.C(ctxWithTransact).WithError(err).Errorf("Failed to fetch region for tenant '%s'", tenantID)
-			return err
-		}
+	if destination.FormationAssignmentID == nil {
+		log.C(ctx).Infof("Destination with ID %q and name %q is missing a FormationAssignmentID. Cannot determine the application.", destination.ID, destinationName)
+		return nil, nil
+	}
 
-		if destination.FormationAssignmentID == nil {
-			log.C(ctxWithTransact).Infof("Destination with ID %q and name %q is missing a FormationAssignmentID. Cannot determine the application.", destination.ID, destinationName)
-			return nil
-		}
+	formationAssignment, err := d.FormationAssignmentRepo.GetGlobalByID(ctx, *destination.FormationAssignmentID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to fetch formation assignment with ID %q for tenant %q", *destination.FormationAssignmentID, tenantID)
+		return nil, err
+	}
 
-		formationAssignment, err := d.FormationAssignmentRepo.GetGlobalByID(ctx, *destination.FormationAssignmentID)
-		if err != nil {
-			log.C(ctxWithTransact).WithError(err).Errorf("Failed to fetch formation assignment with ID %q for tenant %q", *destination.FormationAssignmentID, tenantID)
-			return err
-		}
+	appID := formationAssignment.Target
+	bundles, err := d.BundleRepo.ListByApplicationAndCorrelationIDs(ctx, tenantID, appID, correlationIDs)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to list bundles by application ID %q with correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
+		return nil, err
+	}
 
-		appID := formationAssignment.Target
-		bundles, err = d.BundleRepo.ListByApplicationAndCorrelationIDs(ctxWithTransact, tenantID, appID, correlationIDs)
-		if err != nil {
-			log.C(ctxWithTransact).WithError(err).Errorf("Failed to list bundles by application ID %q with correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
-			return err
-		}
-		return nil
-	})
-
-	return bundles, transactionErr
+	return bundles, nil
 }
