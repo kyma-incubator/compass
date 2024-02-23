@@ -258,9 +258,8 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 			}
 
 			if len(bundles) == 0 {
-				log.C(ctxWithTransact).Infof("No bundles found for system '%s', url '%s', correlation id '%s'",
+				log.C(ctxWithTransact).Infof("Found 0 bundles found for system '%s', url '%s', correlation id '%s'",
 					destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
-				continue
 
 				bundles, err = d.fetchBundlesByFormationAssignment(ctxWithTransact, tenant, destination.Name, destination.XCorrelationID)
 				if err != nil {
@@ -269,9 +268,6 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				}
 
 				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
-					len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
-			} else {
-				log.C(ctxWithTransact).Infof("Found %d bundles for system '%s', url '%s', correlation id '%s'",
 					len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 			}
 

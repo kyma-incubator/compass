@@ -35,11 +35,5 @@ func (d *DestinationInput) Validate() error {
 		return errors.New("missing destination correlation id")
 	}
 
-	hasSystemIDAndType := d.XSystemTenantID != "" && d.XSystemType != ""
-	hasNameAndURL := d.XSystemBaseURL != "" && d.XSystemTenantName != ""
-
-	if !hasSystemIDAndType && !hasNameAndURL {
-		return errors.New("missing destination tenant information")
-	}
 	return nil
 }
