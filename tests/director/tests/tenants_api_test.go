@@ -45,7 +45,7 @@ func TestQueryTenantsSearch(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 
-	tenantSearchTerm := tenant.TestDefaultCustomerTenant
+	tenantSearchTerm := tenant.TestDeleteApplicationIfInScenario
 	getTenantsRequest := fixtures.FixTenantsSearchRequest(tenantSearchTerm)
 	actualTenantPage := graphql.TenantPage{}
 
