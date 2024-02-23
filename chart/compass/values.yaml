@@ -170,7 +170,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3656"
+      version: "PR-3680"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -190,11 +190,11 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3662"
+      version: "PR-3680"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3609"
+      version: "PR-3680"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
