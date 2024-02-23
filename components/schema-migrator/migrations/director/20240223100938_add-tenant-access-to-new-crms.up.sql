@@ -19,6 +19,7 @@ CREATE INDEX IF NOT EXISTS formation_assignments_source_idx ON formation_assignm
 
 CREATE INDEX IF NOT EXISTS formation_assignments_target_idx ON formation_assignments (target);
 
+ALTER TABLE business_tenant_mappings DROP CONSTRAINT IF EXISTS external_tenant_not_null_not_empty;
 ALTER TABLE business_tenant_mappings
     ADD CONSTRAINT external_tenant_not_null_not_empty
         CHECK (external_tenant IS NOT NULL AND external_tenant != '');
