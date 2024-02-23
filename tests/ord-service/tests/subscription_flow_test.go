@@ -249,8 +249,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 
-		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentIDForRuntimeProvider(stdT, ctx, secondaryTenant, consumerApp.ID, formation.ID)
-
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName)
@@ -371,7 +369,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
-		verifyFormationDetails(stdT, respBody, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentIDForRuntimeProvider(stdT, ctx, secondaryTenant, consumerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Get(respBody, "value.0"), formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
@@ -629,19 +628,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
 
-		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formation.ID, 200)
-		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, secondaryTenant, listFormationAssignmentsRequest)
-		assignments := assignmentsPage.Data
-		require.NotEmpty(t, assignments)
-		expectedFormationDetailsAssignmentID := ""
-		for _, assignment := range assignments {
-			if assignment.Source == consumerApp.ID && assignment.Target == providerApp.ID {
-				expectedFormationDetailsAssignmentID = assignment.ID
-				break
-			}
-		}
-		require.NotEmpty(stdT, expectedFormationDetailsAssignmentID)
-
 		stdT.Logf("Assign provider application with id %q to formation %s", providerApp.ID, noDiscoveryConsumptionFormationName)
 		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
 		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
@@ -692,7 +678,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", consumerApp.ID), headers)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
-		verifyFormationDetails(stdT, respBody, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentIDForAppTemplateProvider(stdT, ctx, secondaryTenant, consumerApp.ID, providerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Result{Raw: respBody}, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
@@ -868,8 +855,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 
-		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentIDForRuntimeProvider(stdT, ctx, secondaryTenant, consumerApp.ID, formation.ID)
-
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
 		defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, secondaryTenant, noDiscoveryConsumptionFormationName)
@@ -994,7 +979,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
-		verifyFormationDetails(stdT, respBody, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentIDForRuntimeProvider(stdT, ctx, secondaryTenant, consumerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Get(respBody, "value.0"), formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
@@ -1118,8 +1104,24 @@ func getExpectedFormationDetailsAssignmentIDForRuntimeProvider(t require.Testing
 	return expectedFormationDetailsAssignmentID
 }
 
-func verifyFormationDetails(stdT *testing.T, respBody, expectedFormationID, expectedFormationAssignmentID, expectedFormationTemplateID string) {
-	require.Equal(stdT, expectedFormationID, gjson.Get(respBody, "value.0.formationDetails.formationId").String())
-	require.Equal(stdT, expectedFormationAssignmentID, gjson.Get(respBody, "value.0.formationDetails.assignmentId").String())
-	require.Equal(stdT, expectedFormationTemplateID, gjson.Get(respBody, "value.0.formationDetails.formationTypeId").String())
+func getExpectedFormationDetailsAssignmentIDForAppTemplateProvider(t require.TestingT, ctx context.Context, tenantID, consumerAppID, providerAppID, formationID string) string {
+	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+	assignments := assignmentsPage.Data
+	require.NotEmpty(t, assignments)
+	expectedFormationDetailsAssignmentID := ""
+	for _, assignment := range assignments {
+		if assignment.Source == consumerAppID && assignment.Target == providerAppID {
+			expectedFormationDetailsAssignmentID = assignment.ID
+			break
+		}
+	}
+	require.NotEmpty(t, expectedFormationDetailsAssignmentID)
+	return expectedFormationDetailsAssignmentID
+}
+
+func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expectedFormationID, expectedFormationAssignmentID, expectedFormationTemplateID string) {
+	require.Equal(stdT, expectedFormationID, systemInstance.Get("formationDetails.formationId").String())
+	require.Equal(stdT, expectedFormationAssignmentID, systemInstance.Get("formationDetails.assignmentId").String())
+	require.Equal(stdT, expectedFormationTemplateID, systemInstance.Get("formationDetails.formationTypeId").String())
 }
