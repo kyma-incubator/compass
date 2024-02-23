@@ -245,7 +245,7 @@ FROM webhooks w
 CREATE OR REPLACE VIEW listening_applications
             (id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp,
              system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace,
-             labels, tags, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels, tenant_business_type_id,
+             labels, tags, ready, created_at, updated_at, deleted_at, error, correlation_ids, documentation_labels,
              webhook_type)
 AS
 SELECT a.id,
@@ -271,7 +271,6 @@ SELECT a.id,
        a.error,
        a.correlation_ids,
        a.documentation_labels,
-       a.tenant_business_type_id,
        w.type
 FROM applications a
          JOIN webhooks w on w.app_id = a.id or w.app_template_id = a.app_template_id;
