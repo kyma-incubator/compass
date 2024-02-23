@@ -88,11 +88,6 @@ func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCach
 		return nil, err
 	}
 
-	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
-	if err != nil {
-		return nil, err
-	}
-
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	if err != nil {
@@ -101,12 +96,10 @@ func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCach
 
 	certCache := NewCertificateCache()
 	secretManagers := map[string]Manager{
-		parsedCertSecret.Name:       k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
-		parsedExtSvcCertSecret.Name: k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace),
+		parsedCertSecret.Name: k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
 	}
 	secretNames := map[string]CredentialType{
-		parsedCertSecret.Name:       CertificateCredential,
-		parsedExtSvcCertSecret.Name: CertificateCredential,
+		parsedCertSecret.Name: CertificateCredential,
 	}
 
 	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
@@ -249,13 +242,6 @@ func ParseCertificate(ctx context.Context, secretData map[string][]byte, config 
 
 	if existsCertKey && existsKeyKey {
 		return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
-	}
-
-	extSvcCertChainBytes, existsExtSvcCertKey := secretData[config.ExtSvcClientCertCertKey]
-	extSvcPrivateKeyBytes, existsExtSvcKeyKey := secretData[config.ExtSvcClientCertKeyKey]
-
-	if existsExtSvcCertKey && existsExtSvcKeyKey {
-		return cert.ParseCertificateBytes(extSvcCertChainBytes, extSvcPrivateKeyBytes)
 	}
 
 	return nil, errors.New("There is no certificate data provided")

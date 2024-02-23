@@ -18,9 +18,10 @@ package main
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"net/http"
 	"os"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	httpbroker "github.com/kyma-incubator/compass/components/system-broker/pkg/http"
@@ -124,15 +125,10 @@ func main() {
 		ExternalClientCertSecret:  cfg.ExternalClient.CertSecret,
 		ExternalClientCertCertKey: cfg.ExternalClient.CertKey,
 		ExternalClientCertKeyKey:  cfg.ExternalClient.KeyKey,
-
-		ExtSvcClientCertSecret:  cfg.ExtSvcClient.CertSecret,
-		ExtSvcClientCertCertKey: cfg.ExtSvcClient.CertKey,
-		ExtSvcClientCertKeyKey:  cfg.ExtSvcClient.KeyKey,
 	})
 	fatalOnError(errors.Wrapf(err, "Failed to initialize certificate loader"))
 
 	httpMTLSClient := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExternalClient.CertSecretName)
-	httpExtSvcMtlsCluent := utils.PrepareMtlsClient(cfg.HttpClient, certCache, cfg.ExtSvcClient.CertSecretName)
 
 	directorClient, err := director.NewClient(cfg.Director.OperationEndpoint, cfg.GraphQLClient, internalGatewayHTTPClient)
 	fatalOnError(err)
@@ -143,7 +139,7 @@ func main() {
 		status.NewManager(mgr.GetClient()),
 		k8s.NewClient(mgr.GetClient()),
 		directorClient,
-		webhookclient.NewClient(securedHTTPClient, httpMTLSClient, httpExtSvcMtlsCluent),
+		webhookclient.NewClient(securedHTTPClient, httpMTLSClient),
 		collector)
 
 	if err = controller.SetupWithManager(mgr); err != nil {

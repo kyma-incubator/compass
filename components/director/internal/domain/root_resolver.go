@@ -130,7 +130,7 @@ func NewRootResolver(
 	featuresConfig features.Config,
 	metricsCollector *metrics.Collector,
 	retryHTTPExecutor *retry.HTTPExecutor,
-	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient, securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient *http.Client,
+	httpClient, internalFQDNHTTPClient, internalGatewayHTTPClient, securedHTTPClient, mtlsHTTPClient *http.Client,
 	selfRegConfig config.SelfRegConfig,
 	tokenLength int,
 	hydraURL *url.URL,
@@ -260,7 +260,7 @@ func NewRootResolver(
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectTenantBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)

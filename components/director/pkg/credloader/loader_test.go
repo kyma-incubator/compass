@@ -50,10 +50,7 @@ func Test_CertificateLoaderWatch(t *testing.T) {
 	config := credloader.CertConfig{
 		ExternalClientCertSecret:  "namespace/resource-name",
 		ExternalClientCertCertKey: "tls.crt",
-		ExternalClientCertKeyKey:  "tls.key",
-		ExtSvcClientCertSecret:    "namespace/resource-name",
-		ExtSvcClientCertCertKey:   "tls.crt",
-		ExtSvcClientCertKeyKey:    "tls.key"}
+		ExternalClientCertKeyKey:  "tls.key"}
 
 	t.Run("should insert secret data on add event", func(t *testing.T) {
 		// given
@@ -272,14 +269,6 @@ func Test_CertificateParsing(t *testing.T) {
 			Name:       "Successfully get certificate from cache",
 			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
 			Cfg:        config,
-		},
-		{
-			Name:       "Successfully get ext svc certificate from cache",
-			SecretData: map[string][]byte{secretCertKey: certBytes, secretKeyKey: keyBytes},
-			Cfg: credloader.CertConfig{
-				ExtSvcClientCertCertKey: "tls.crt",
-				ExtSvcClientCertKeyKey:  "tls.key",
-			},
 		},
 		{
 			Name:             "Error when secret data is empty",

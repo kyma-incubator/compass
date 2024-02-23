@@ -26,21 +26,21 @@ func NewExecutorProvider(executors map[Type]Executor) *Provider {
 }
 
 // NewDefaultExecutorProvider returns a new access strategy executor provider with the default static type <-> executor mapping
-func NewDefaultExecutorProvider(certCache credloader.CertCache, externalClientCertSecretName, extSvcClientCertSecretName string) *Provider {
+func NewDefaultExecutorProvider(certCache credloader.CertCache, externalClientCertSecretName string) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
 			OpenAccessStrategy:    &openAccessStrategyExecutor{},
-			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, nil, externalClientCertSecretName, extSvcClientCertSecretName),
+			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, nil, externalClientCertSecretName),
 		},
 	}
 }
 
 // NewExecutorProviderWithTenant returns a new access strategy executor provider by given tenant provider function
-func NewExecutorProviderWithTenant(certCache credloader.CertCache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName, extSvcClientCertSecretName string) *Provider {
+func NewExecutorProviderWithTenant(certCache credloader.CertCache, tenantProviderFunc func(ctx context.Context) (string, error), externalClientCertSecretName string) *Provider {
 	return &Provider{
 		executors: map[Type]Executor{
 			OpenAccessStrategy:    &openAccessStrategyExecutor{},
-			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, tenantProviderFunc, externalClientCertSecretName, extSvcClientCertSecretName),
+			CMPmTLSAccessStrategy: NewCMPmTLSAccessStrategyExecutor(certCache, tenantProviderFunc, externalClientCertSecretName),
 		},
 	}
 }
