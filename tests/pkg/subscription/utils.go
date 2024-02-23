@@ -128,23 +128,6 @@ func CreateSubscription(t *testing.T, conf Config, httpClient *http.Client, appT
 	t.Logf("Successfully created subscription between consumer with subaccount id: %q and tenant id: %q, and provider with name: %q, id: %q and subaccount id: %q", subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, appTmpl.Name, appTmpl.ID, subscriptionProviderSubaccountID)
 }
 
-func ConfigureCostObjectUsage(t *testing.T, httpClient *http.Client, subscriptionToken, subscriptionUrl, parentType, parentID string) {
-	apiPath := fmt.Sprintf("/api/v1/configure/tenant-type-id?useParentType=%s&useParentID=%s", parentType, parentID)
-	configureReq, err := http.NewRequest(http.MethodPut, subscriptionUrl+apiPath, nil)
-	require.NoError(t, err)
-	configureReq.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", subscriptionToken))
-
-	t.Logf("Setting tenant parent of type %s with id %s", parentType, parentID)
-	resp, err := httpClient.Do(configureReq)
-	defer func() {
-		if err := resp.Body.Close(); err != nil {
-			t.Logf("Could not close response body %s", err)
-		}
-	}()
-	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, resp.StatusCode, fmt.Sprintf("actual status code %d is different from the expected one: %d.", resp.StatusCode, http.StatusOK))
-}
-
 func ConfigureTenantTypeAndID(t *testing.T, httpClient *http.Client, subscriptionToken, subscriptionUrl, parentType, parentID string) {
 	apiPath := fmt.Sprintf("/api/v1/configure/tenant-type-id?useParentType=%s&useParentID=%s", parentType, parentID)
 	configureReq, err := http.NewRequest(http.MethodPut, subscriptionUrl+apiPath, nil)
