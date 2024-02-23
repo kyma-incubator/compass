@@ -18,6 +18,8 @@ import (
 const (
 	internalTnt = "internalTenant"
 	externalTnt = "externalTnt"
+	region      = "test-region"
+	fakeRegion  = "fake-region"
 )
 
 var (
@@ -29,7 +31,7 @@ var (
 		SaasRegTokenURLPath:     "url",
 		SaasRegURLPath:          "saas_registry_url",
 		RegionToSaasRegConfig: map[string]config.SaasRegConfig{
-			"test-region": {
+			region: {
 				ClientID:        "client_id",
 				ClientSecret:    "client_secret",
 				TokenURL:        "https://test-url-second.com",
@@ -48,15 +50,17 @@ func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
 		Name                           string
 		Config                         config.SystemFieldDiscoveryEngineConfig
 		Input                          model.ApplicationRegisterInput
+		Region                         string
 		systemFieldDiscoveryLabelValue bool
 		ExpectedWebhooks               []*model.WebhookInput
 		ExpectedLabelValue             bool
 	}{
 		{
-			Name:                           "Label is true",
+			Name:                           "Label is true and region is present",
 			Config:                         testConfig,
 			systemFieldDiscoveryLabelValue: true,
 			Input:                          appInput,
+			Region:                         region,
 			ExpectedWebhooks: []*model.WebhookInput{{
 				Type: model.WebhookTypeSystemFieldDiscovery,
 				URL:  str.Ptr("https://saas_registry_url/saas-manager/v1/service/subscriptions?includeIndirectSubscriptions=true&tenantId=subaccountID"),
@@ -73,9 +77,19 @@ func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
 			ExpectedLabelValue: true,
 		},
 		{
-			Name:                           "Label is false",
+			Name:                           "Label is true and region is not present",
 			Config:                         testConfig,
 			Input:                          appInput,
+			Region:                         fakeRegion,
+			systemFieldDiscoveryLabelValue: false,
+			ExpectedWebhooks:               []*model.WebhookInput{},
+			ExpectedLabelValue:             false,
+		},
+		{
+			Name:                           "Label is false and region is present",
+			Config:                         testConfig,
+			Input:                          appInput,
+			Region:                         region,
 			systemFieldDiscoveryLabelValue: false,
 			ExpectedWebhooks:               []*model.WebhookInput{},
 			ExpectedLabelValue:             false,
@@ -87,7 +101,7 @@ func Test_EnrichApplicationWebhookIfNeeded(t *testing.T) {
 			engine, err := systemfielddiscoveryengine.NewSystemFieldDiscoveryEngine(testCase.Config, nil, nil, nil)
 			require.NoError(t, err)
 
-			webhooks, labelValue := engine.EnrichApplicationWebhookIfNeeded(context.TODO(), testCase.Input, testCase.systemFieldDiscoveryLabelValue, "test-region", "subaccountID", "appTemplateName", "appName")
+			webhooks, labelValue := engine.EnrichApplicationWebhookIfNeeded(context.TODO(), testCase.Input, testCase.systemFieldDiscoveryLabelValue, testCase.Region, "subaccountID", "appTemplateName", "appName")
 
 			require.Equal(t, testCase.ExpectedWebhooks, webhooks)
 			require.Equal(t, testCase.ExpectedLabelValue, labelValue)
