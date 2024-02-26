@@ -42,7 +42,7 @@ const (
 // Consumer missing godoc
 type Consumer struct {
 	ConsumerID    string `json:"ConsumerID"`
-	Type          `json:"ConsumerType"`
+	Tye          `json:"ConsumerType"`
 	Flow          oathkeeper.AuthFlow `json:"Flow"`
 	OnBehalfOf    string              `json:"onBehalfOf"`
 	Region        string              `json:"region"`
