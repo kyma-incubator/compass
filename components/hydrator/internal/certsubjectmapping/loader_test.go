@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -19,7 +21,7 @@ import (
 
 var (
 	validSubject         = "C=DE, OU=Compass Clients, OU=Region, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=unit-tests, CN=unit-test-compass"
-	validConsumerType    = inputvalidation.RuntimeType
+	validConsumerType    = consumer.Runtime
 	validTntAccessLevels = []string{inputvalidation.GlobalAccessLevel}
 )
 
@@ -38,7 +40,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 	certSubjectMapping := &graphql.CertificateSubjectMapping{
 		ID:                 testID,
 		Subject:            validSubject,
-		ConsumerType:       validConsumerType,
+		ConsumerType:       string(validConsumerType),
 		InternalConsumerID: &internalConsumerID,
 		TenantAccessLevels: validTntAccessLevels,
 	}
@@ -187,7 +189,7 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 			name: "Success",
 			input: certsubjectmapping.SubjectConsumerTypeMapping{
 				Subject:            validSubject,
-				ConsumerType:       validConsumerType,
+				ConsumerType:       string(validConsumerType),
 				TenantAccessLevels: validTntAccessLevels,
 			},
 		},
@@ -208,7 +210,7 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 			name: "Error when the tenant access levels are unsupported",
 			input: certsubjectmapping.SubjectConsumerTypeMapping{
 				Subject:            validSubject,
-				ConsumerType:       validConsumerType,
+				ConsumerType:       string(validConsumerType),
 				TenantAccessLevels: invalidTntAccessLevels,
 			},
 			expectedErrMsg: fmt.Sprintf("tenant access level %s is not valid", invalidTntAccessLevels[0]),
