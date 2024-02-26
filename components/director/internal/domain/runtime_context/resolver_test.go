@@ -171,8 +171,8 @@ func TestResolver_CreateRuntimeContext(t *testing.T) {
 			c := testCase.Consumer
 			if c == nil {
 				c = &consumer.Consumer{
-					ConsumerID:   runtimeID,
-					Type: consumer.Runtime,
+					ConsumerID: runtimeID,
+					Type:       consumer.Runtime,
 				}
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
@@ -337,8 +337,8 @@ func TestResolver_UpdateRuntimeContext(t *testing.T) {
 			c := testCase.Consumer
 			if c == nil {
 				c = &consumer.Consumer{
-					ConsumerID:   runtimeID,
-					Type: consumer.Runtime,
+					ConsumerID: runtimeID,
+					Type:       consumer.Runtime,
 				}
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)
@@ -483,8 +483,8 @@ func TestResolver_DeleteRuntimeContext(t *testing.T) {
 			c := testCase.Consumer
 			if c == nil {
 				c = &consumer.Consumer{
-					ConsumerID:   runtimeID,
-					Type: consumer.Runtime,
+					ConsumerID: runtimeID,
+					Type:       consumer.Runtime,
 				}
 			}
 			ctx := consumer.SaveToContext(context.TODO(), *c)

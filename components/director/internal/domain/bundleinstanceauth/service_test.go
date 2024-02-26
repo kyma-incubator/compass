@@ -397,8 +397,8 @@ func TestService_Create(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	consumerEntity := consumer.Consumer{
-		ConsumerID:   testRuntimeID,
-		Type: consumer.Runtime,
+		ConsumerID: testRuntimeID,
+		Type:       consumer.Runtime,
 	}
 	ctx = consumer.SaveToContext(ctx, consumerEntity)
 
@@ -612,8 +612,8 @@ func TestService_CreateBundleInstanceAuth(t *testing.T) {
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 
 	consumerEntity := consumer.Consumer{
-		ConsumerID:   testRuntimeID,
-		Type: consumer.Runtime,
+		ConsumerID: testRuntimeID,
+		Type:       consumer.Runtime,
 	}
 	ctx = consumer.SaveToContext(ctx, consumerEntity)
 
