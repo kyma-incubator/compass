@@ -77,10 +77,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
 	t.Logf("Successfully created formation: %s", formationName)
 
-	t.Logf("Assign application to formation %s", formationName)
 	assignToFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
 	defer unassignFromFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
-	t.Logf("Successfully assigned application to formation %s", formationName)
 
 	// Self register runtime
 	runtimeInput := graphql.RuntimeRegisterInput{
@@ -239,15 +237,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
-		stdT.Logf("Assign application to formation %s", consumerFormationName)
-		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
 		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -256,15 +250,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
 		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
 
-		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -539,10 +529,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
-		stdT.Logf("Assign application to formation %s", consumerFormationName)
-		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -551,10 +539,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
 		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
 
-		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -621,15 +607,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Assign the provider application to the formation
-		stdT.Logf("Assign provider application with id %q to formation %s", providerApp.ID, consumerFormationName)
-		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
-		stdT.Logf("Assign provider application with id %q to formation %s", providerApp.ID, noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
@@ -841,15 +823,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
-		stdT.Logf("Assign application to formation %s", consumerFormationName)
-		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -858,15 +836,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
 		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
 
-		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -1056,8 +1030,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 }
 
 func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
+	t.Logf("Assigning %s with ID: %s to formation: %s", objectType, objectID, formationName)
 	assignReq := fixtures.FixAssignFormationRequest(objectID, objectType, formationName)
 	executeGQLRequest(t, ctx, assignReq, formationName, tenantID)
+	t.Logf("Successfully assigned %s with ID: %s to formation: %s", objectType, objectID, formationName)
 }
 
 func unassignFromFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {

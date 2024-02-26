@@ -10,13 +10,13 @@ import (
 type ConsumerType string
 
 const (
-	// Runtime missing godoc
+	// Runtime represents a runtime consumer type
 	Runtime ConsumerType = "Runtime"
 	// ExternalCertificate missing godoc
 	ExternalCertificate ConsumerType = "External Certificate"
-	// Application missing godoc
+	// Application represents an application consumer type
 	Application ConsumerType = "Application"
-	// IntegrationSystem missing godoc
+	// IntegrationSystem represents an integration system consumer type
 	IntegrationSystem ConsumerType = "Integration System"
 	// User missing godoc
 	User ConsumerType = "Static User"
@@ -24,7 +24,7 @@ const (
 	SuperAdmin ConsumerType = "Super Admin"
 	// TechnicalClient is a consumer type that is used by Atom
 	TechnicalClient ConsumerType = "Technical Client"
-	// BusinessIntegration missing godoc
+	// BusinessIntegration is a consumer type that is used by Business Integration operator
 	BusinessIntegration ConsumerType = "Business Integration"
 	// ManagedApplicationProviderOperator is a consumer type that is used by Managed Application Provider operator
 	ManagedApplicationProviderOperator ConsumerType = "Managed Application Provider Operator"

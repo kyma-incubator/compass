@@ -2,6 +2,7 @@ package inputvalidation_test
 
 import (
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"testing"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -117,7 +118,7 @@ func TestCertMappingConsumerTypeValidator_Validate(t *testing.T) {
 		},
 		{
 			Name:  "Valid when the consumer type is supported",
-			Input: inputvalidation.RuntimeType,
+			Input: consumer.Runtime,
 			Valid: true,
 		},
 		{

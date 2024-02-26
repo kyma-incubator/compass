@@ -1,6 +1,7 @@
 package inputvalidation
 
 import (
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
@@ -9,46 +10,23 @@ import (
 )
 
 const (
-	// RuntimeType represents a runtime consumer type
-	RuntimeType = "Runtime"
-	// IntegrationSystemType represents a integration system consumer type
-	IntegrationSystemType = "Integration System"
-	// ApplicationType represents an application consumer type
-	ApplicationType = "Application"
-	// SuperAdminType represents a super admin consumer type, mainly used in local setup and E2E tests
-	SuperAdminType = "Super Admin"
-	// BusinessIntegrationType represents a business integration consumer type
-	BusinessIntegrationType = "Business Integration"
-	// ManagedApplicationProviderOperatorType represents a managed application provider operator consumer type
-	ManagedApplicationProviderOperatorType = "Managed Application Provider Operator"
-	// ManagedApplicationConsumerType represents a managed application consumer type
-	ManagedApplicationConsumerType = "Managed Application Consumer"
-	// LandscapeResourceOperatorType represents a landscape resource operator consumer type
-	LandscapeResourceOperatorType = "Landscape Resource Operator"
-	// TenantDiscoveryOperatorType represents a tenant discovery operator consumer type
-	TenantDiscoveryOperatorType = "Tenant Discovery Operator"
-	// InstanceCreator is a consumer type that is used by Instance Creator operator
-	InstanceCreator = "Instance Creator"
-	// TechnicalClient represents a technical client consumer type
-	TechnicalClient = "Technical Client"
-
 	// GlobalAccessLevel is an access level that is not tied to a specific tenant entity but rather it's used globally
 	GlobalAccessLevel = "global"
 )
 
 // SupportedConsumerTypes is a map of all supported consumer types
-var SupportedConsumerTypes = map[string]bool{
-	RuntimeType:                            true,
-	IntegrationSystemType:                  true,
-	ApplicationType:                        true,
-	SuperAdminType:                         true,
-	BusinessIntegrationType:                true,
-	ManagedApplicationProviderOperatorType: true,
-	ManagedApplicationConsumerType:         true,
-	LandscapeResourceOperatorType:          true,
-	TenantDiscoveryOperatorType:            true,
-	InstanceCreator:                        true,
-	TechnicalClient:                        true,
+var SupportedConsumerTypes = map[consumer.ConsumerType]bool{
+	consumer.Runtime:                            true,
+	consumer.IntegrationSystem:                  true,
+	consumer.Application:                        true,
+	consumer.SuperAdmin:                         true,
+	consumer.BusinessIntegration:                true,
+	consumer.ManagedApplicationProviderOperator: true,
+	consumer.ManagedApplicationConsumer:         true,
+	consumer.LandscapeResourceOperator:          true,
+	consumer.TenantDiscoveryOperator:            true,
+	consumer.InstanceCreator:                    true,
+	consumer.TechnicalClient:                    true,
 }
 
 // SupportedAccessLevels is a map of all supported tenant access levels
@@ -60,7 +38,7 @@ var SupportedAccessLevels = map[string]bool{
 	string(tenantEntity.Folder):        true,
 	string(tenantEntity.ResourceGroup): true,
 	string(tenantEntity.CostObject):    true,
-	string(GlobalAccessLevel):          true,
+	GlobalAccessLevel:                  true,
 }
 
 type certMappingSubjectValidator struct{}
@@ -73,7 +51,7 @@ var IsValidCertSubject = &certMappingSubjectValidator{}
 // IsValidConsumerType is a custom validation rule that validates certificate subject mapping's consumer type input
 var IsValidConsumerType = &certMappingConsumerTypeValidator{}
 
-// AreTenantAccessLevelsValid  is a custom validation rule that validates certificate subject mapping's tenant access levels input
+// AreTenantAccessLevelsValid is a custom validation rule that validates certificate subject mapping's tenant access levels input
 var AreTenantAccessLevelsValid = &certMappingTenantAccessLevelValidator{}
 
 func (v *certMappingSubjectValidator) Validate(value interface{}) error {
@@ -123,7 +101,7 @@ func (v certMappingConsumerTypeValidator) Validate(value interface{}) error {
 		return nil
 	}
 
-	if !SupportedConsumerTypes[consumerType] {
+	if !SupportedConsumerTypes[consumer.ConsumerType(consumerType)] {
 		return errors.Errorf("consumer type %s is not valid", consumerType)
 	}
 
