@@ -722,7 +722,6 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	headers := map[string][]string{applicationTenantIDHeaderKey: {localTenantID}}
-	//headers := map[string][]string{applicationTenantIDHeaderKey: {localTenantID}, "tenant": {tenantID}} // todo::: delete
 	// Make a request to the ORD service with http client containing custom certificate and application tenant ID header
 	t.Log("Getting application using custom certificate and appplicationTenantId header before a formation is created...")
 	respBody := makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
@@ -755,12 +754,17 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	t.Log("Getting application using custom certificate and appplicationTenantId header after formation is created...")
 	respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 	require.Len(t, gjson.Get(respBody, "value").Array(), 2)
-	require.Equal(t, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
-	t.Log("Successfully fetched system instance details using custom certificate and application tenant ID header")
 
-	//// todo::: delete
-	//respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", consumerApp.ID), headers)
-	//require.Equal(t, consumerApp.Name, gjson.Get(respBody, "title").String())
+	isSystemFound := false
+	for _, element := range gjson.Get(respBody, "value").Array() {
+		systemName := gjson.Get(element.String(), "title")
+		if consumerApp.Name == systemName.String() {
+			isSystemFound = true
+			break
+		}
+	}
+	require.Equal(t, true, isSystemFound)
+	t.Log("Successfully fetched system instance details using custom certificate and application tenant ID header")
 }
 
 func assertEqualAPIDefinitions(t *testing.T, expectedAPIDefinitions []*directorSchema.APIDefinitionInput, actualAPIDefinitions string, apisMap map[string]directorSchema.APIDefinitionInput, client *http.Client, headers map[string][]string) {
