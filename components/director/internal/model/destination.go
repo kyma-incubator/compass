@@ -38,6 +38,7 @@ func (d *DestinationInput) Validate() error {
 	return nil
 }
 
+// HasValidIdentifiers checks if the destination has either one of the pairs: XSystemTenantID and XSystemType, or XSystemBaseURL and XSystemTenantName
 func (d *DestinationInput) HasValidIdentifiers() bool {
 	hasSystemIDAndType := d.XSystemTenantID != "" && d.XSystemType != ""
 	hasNameAndURL := d.XSystemBaseURL != "" && d.XSystemTenantName != ""
