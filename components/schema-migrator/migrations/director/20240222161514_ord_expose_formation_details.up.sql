@@ -1,5 +1,7 @@
 BEGIN;
 
+DROP VIEW IF EXISTS tenants_apps;
+
 CREATE OR REPLACE VIEW tenants_apps
             (tenant_id, formation_id, id, name, description, status_condition, status_timestamp, healthcheck_url,
              integration_system_id, provider_name, base_url, labels, tags, ready, created_at, updated_at, deleted_at,
