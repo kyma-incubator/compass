@@ -54,7 +54,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 	}
 
 	certSubjcetMappingPageWithoutPageInfo := &graphql.CertificateSubjectMappingPage{
-		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping},
+		Data:       []*graphql.CertificateSubjectMapping{certSubjectMapping},
 		TotalCount: 1,
 	}
 

@@ -1,8 +1,9 @@
 package inputvalidation
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"

@@ -2,8 +2,9 @@ package inputvalidation_test
 
 import (
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
