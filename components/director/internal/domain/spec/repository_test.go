@@ -741,8 +741,8 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT api_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $1)) GROUP BY api_def_id ORDER BY api_def_id ASC`),
-				Args:     []driver.Value{tenant},
+				Query:    regexp.QuoteMeta(`SELECT api_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE api_def_id IS NOT NULL AND (id IN (SELECT id FROM api_specifications_tenants WHERE tenant_id = $1)) AND api_def_id IN ($2, $3) GROUP BY api_def_id ORDER BY api_def_id ASC`),
+				Args:     []driver.Value{tenant, firstRefID, secondRefID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 1).AddRow(secondRefID, 1)}
@@ -786,8 +786,8 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT event_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $1)) GROUP BY event_def_id ORDER BY event_def_id ASC`),
-				Args:     []driver.Value{tenant},
+				Query:    regexp.QuoteMeta(`SELECT event_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE event_def_id IS NOT NULL AND (id IN (SELECT id FROM event_specifications_tenants WHERE tenant_id = $1)) AND event_def_id IN ($2, $3) GROUP BY event_def_id ORDER BY event_def_id ASC`),
+				Args:     []driver.Value{tenant, firstRefID, secondRefID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 1).AddRow(secondRefID, 1)}
@@ -831,8 +831,8 @@ func TestRepository_ListByReferenceObjectIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT capability_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE capability_def_id IS NOT NULL AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $1)) GROUP BY capability_def_id ORDER BY capability_def_id ASC`),
-				Args:     []driver.Value{tenant},
+				Query:    regexp.QuoteMeta(`SELECT capability_def_id AS id, COUNT(*) AS total_count FROM public.specifications WHERE capability_def_id IS NOT NULL AND (id IN (SELECT id FROM capability_specifications_tenants WHERE tenant_id = $1)) AND capability_def_id IN ($2, $3) GROUP BY capability_def_id ORDER BY capability_def_id ASC`),
+				Args:     []driver.Value{tenant, firstRefID, secondRefID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(firstRefID, 1).AddRow(secondRefID, 1)}
