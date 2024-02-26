@@ -25,6 +25,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -175,9 +177,9 @@ func main() {
 		exitOnError(err, "error while closing the connection to the database")
 	}()
 
-	webhookProcessor := tenantfetcher.NewWebhookProcessor(transact, webhookSvc, tenantSvc, appSvc, webhookClient, cfg.WebhookProcessorElectionConfig, cfg.WebhookProcessorJobInterval, cfg.SystemFieldDiscoveryWebhookPartialProcessing, cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+	webhookProcessor := webhookprocessor.NewWebhookProcessor(transact, webhookSvc, tenantSvc, appSvc, webhookClient, cfg.WebhookProcessorElectionConfig, cfg.WebhookProcessorJobInterval, cfg.SystemFieldDiscoveryWebhookPartialProcessing, cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
 	go func() {
-		if err := webhookProcessor.StartWebhookProcessorJob(ctx, tenantfetcher.SaaSRegistryLabelValue); err != nil {
+		if err := webhookProcessor.StartWebhookProcessorJob(ctx, webhookprocessor.SaaSRegistryLabelValue); err != nil {
 			log.C(ctx).WithError(err).Error("Failed to run WebhookProcessorJob. Stopping app...")
 			cancel()
 		}

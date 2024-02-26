@@ -1,9 +1,10 @@
-package tenantfetchersvc
+package webhookprocessor
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
@@ -15,7 +16,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	directorresource "github.com/kyma-incubator/compass/components/director/pkg/resource"
-	pkgwebhook "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	"github.com/pkg/errors"
 )
 
@@ -25,6 +25,16 @@ const (
 	// SaaSRegistryLabelValue is the label value for saas registry label
 	SaaSRegistryLabelValue = "saas-registry"
 )
+
+// subscription represents subscription object in a saas-manager response payload.
+type subscription struct {
+	AppURL string `json:"url"`
+}
+
+// subscriptionsResponse represents collection of all subscription objects in a saas-manager response payload.
+type subscriptionsResponse struct {
+	Subscriptions []subscription `json:"subscriptions"`
+}
 
 // WebhookService is responsible for the service-layer Webhook operations.
 //
@@ -129,7 +139,7 @@ func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context, registryName str
 			continue
 		}
 
-		respBody, err := pkgwebhook.ExecuteSystemFieldDiscoveryWebhook(ctx, w.webhookClient, wh)
+		respBody, err := еxecuteSystemFieldDiscoveryWebhook(ctx, w.webhookClient, wh)
 		if err != nil {
 			log.C(ctx).Errorf(errors.Wrapf(err, "failed executing webhook with id %q and type %q", wh.ID, model.WebhookTypeSystemFieldDiscovery).Error())
 			continue
@@ -137,7 +147,7 @@ func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context, registryName str
 
 		switch registryName {
 		case SaaSRegistryLabelValue:
-			var response pkgwebhook.SubscriptionsResponse
+			var response subscriptionsResponse
 			if err = json.Unmarshal(respBody, &response); err != nil {
 				log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
 				continue
@@ -176,7 +186,7 @@ func (w *WebhookProcessor) listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(
 	return webhooks, tx.Commit()
 }
 
-func (w *WebhookProcessor) processSubscription(ctx context.Context, subscription pkgwebhook.Subscription, webhook *model.Webhook) (bool, error) {
+func (w *WebhookProcessor) processSubscription(ctx context.Context, subscription subscription, webhook *model.Webhook) (bool, error) {
 	if subscription.AppURL == "" {
 		return false, nil
 	}
@@ -209,6 +219,41 @@ func (w *WebhookProcessor) processSubscription(ctx context.Context, subscription
 	}
 
 	return true, tx.Commit()
+}
+
+func еxecuteSystemFieldDiscoveryWebhook(ctx context.Context, client *http.Client, webhook *model.Webhook) ([]byte, error) {
+	webhookURL := webhook.URL
+	if webhookURL == nil {
+		return nil, errors.Errorf("URL is missing for webhook with id %q", webhook.ID)
+	}
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, *webhookURL, nil)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while creating request for webhook with id %q", webhook.ID)
+	}
+
+	req = req.WithContext(ctx)
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrapf(err, "error while executing request for webhook with id %q and URL %q", webhook.ID, *webhookURL)
+	}
+
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			log.C(ctx).Error(err, "Failed to close HTTP response body")
+		}
+	}()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.Errorf("unexpected status code: expected: %d, but got: %d", http.StatusOK, resp.StatusCode)
+	}
+
+	respBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to parse HTTP response body")
+	}
+
+	return respBody, nil
 }
 
 func saveCredentialsToContext(ctx context.Context, webhook *model.Webhook) (context.Context, error) {
