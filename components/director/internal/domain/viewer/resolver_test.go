@@ -17,7 +17,7 @@ import (
 func TestResolver_Viewer(t *testing.T) {
 	cons := consumer.Consumer{
 		ConsumerID:   uuid.New().String(),
-		ConsumerType: consumer.Application,
+		Type: consumer.Application,
 	}
 	expectedViewer := graphql.Viewer{
 		ID:   cons.ConsumerID,
@@ -43,7 +43,7 @@ func TestResolver_Viewer(t *testing.T) {
 		ctx := context.TODO()
 		invalidConsumer := consumer.Consumer{
 			ConsumerID:   uuid.New().String(),
-			ConsumerType: "",
+			Type: "",
 		}
 		ctx = consumer.SaveToContext(ctx, invalidConsumer)
 		resolver := viewer.NewViewerResolver()

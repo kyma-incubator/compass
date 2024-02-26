@@ -18,8 +18,6 @@ func Test_Clientset(t *testing.T) {
 
 	clientSet := NewConnectorClientSet(WithSkipTLSVerify(true))
 
-	// ctx := context.WithValue(context.Background(), authentication.ConsumerType, "Application")
-	// ctx = context.WithValue(ctx, authentication.TenantKey, "tenant")
 	ctx := context.TODO()
 
 	// when

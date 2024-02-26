@@ -276,7 +276,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
 	}
 	consumerID := consumerInfo.ConsumerID
-	consumerType := consumerInfo.ConsumerType
+	consumerType := consumerInfo.Type
 	log.C(ctx).Infof("Consumer with ID: %q and type: %q is trying to update formation with ID: %q", consumerID, consumerType, formationID)
 
 	tx, err := a.transact.Begin()
@@ -322,7 +322,7 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
 	}
 	consumerID := consumerInfo.ConsumerID
-	consumerType := consumerInfo.ConsumerType
+	consumerType := consumerInfo.Type
 
 	tx, err := a.transact.Begin()
 	if err != nil {

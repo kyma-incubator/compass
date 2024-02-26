@@ -16,7 +16,7 @@ const (
 )
 
 // SupportedConsumerTypes is a map of all supported consumer types
-var SupportedConsumerTypes = map[consumer.ConsumerType]bool{
+var SupportedConsumerTypes = map[consumer.Type]bool{
 	consumer.Runtime:                            true,
 	consumer.IntegrationSystem:                  true,
 	consumer.Application:                        true,
@@ -102,7 +102,7 @@ func (v certMappingConsumerTypeValidator) Validate(value interface{}) error {
 		return nil
 	}
 
-	if !SupportedConsumerTypes[consumer.ConsumerType(consumerType)] {
+	if !SupportedConsumerTypes[consumer.Type(consumerType)] {
 		return errors.Errorf("consumer type %s is not valid", consumerType)
 	}
 

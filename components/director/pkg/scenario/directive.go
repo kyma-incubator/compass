@@ -83,8 +83,8 @@ func (d *directive) HasScenario(ctx context.Context, _ interface{}, next graphql
 		return nil, err
 	}
 
-	if consumerInfo.ConsumerType != consumer.Runtime {
-		log.C(ctx).Debugf("Consumer type %v is not of type %v. Skipping verification directive...", consumerInfo.ConsumerType, consumer.Runtime)
+	if consumerInfo.Type != consumer.Runtime {
+		log.C(ctx).Debugf("Consumer type %v is not of type %v. Skipping verification directive...", consumerInfo.Type, consumer.Runtime)
 		return next(ctx)
 	}
 	log.C(ctx).Infof("Attempting to verify that the requesting runtime is in scenario with the owning application entity")

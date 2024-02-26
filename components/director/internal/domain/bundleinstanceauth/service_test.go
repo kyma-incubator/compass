@@ -398,7 +398,7 @@ func TestService_Create(t *testing.T) {
 
 	consumerEntity := consumer.Consumer{
 		ConsumerID:   testRuntimeID,
-		ConsumerType: consumer.Runtime,
+		Type: consumer.Runtime,
 	}
 	ctx = consumer.SaveToContext(ctx, consumerEntity)
 
@@ -613,7 +613,7 @@ func TestService_CreateBundleInstanceAuth(t *testing.T) {
 
 	consumerEntity := consumer.Consumer{
 		ConsumerID:   testRuntimeID,
-		ConsumerType: consumer.Runtime,
+		Type: consumer.Runtime,
 	}
 	ctx = consumer.SaveToContext(ctx, consumerEntity)
 

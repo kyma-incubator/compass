@@ -169,7 +169,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	externalTnt := "external-tnt"
 	IntSysConsumer := consumer.Consumer{
 		ConsumerID:   "consumerID",
-		ConsumerType: consumer.IntegrationSystem,
+		Type: consumer.IntegrationSystem,
 		Flow:         oathkeeper.OAuth2Flow,
 	}
 

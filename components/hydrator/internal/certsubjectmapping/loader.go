@@ -61,7 +61,7 @@ func (s *SubjectConsumerTypeMapping) Validate() error {
 		return errors.New("subject is not provided")
 	}
 
-	if !inputvalidation.SupportedConsumerTypes[consumer.ConsumerType(s.ConsumerType)] {
+	if !inputvalidation.SupportedConsumerTypes[consumer.Type(s.ConsumerType)] {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 

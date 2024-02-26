@@ -545,7 +545,7 @@ func (r *queryResolver) Applications(ctx context.Context, filter []*graphql.Labe
 		return nil, err
 	}
 
-	if consumerInfo.ConsumerType == consumer.Runtime {
+	if consumerInfo.Type == consumer.Runtime {
 		log.C(ctx).Debugf("Consumer type is of type %v. Filtering response based on scenarios...", consumer.Runtime)
 		return r.app.ApplicationsForRuntime(ctx, consumerInfo.ConsumerID, first, after)
 	}
