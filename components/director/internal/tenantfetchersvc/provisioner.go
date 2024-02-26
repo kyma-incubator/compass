@@ -20,6 +20,7 @@ type DirectorGraphQLClient interface {
 	UpdateTenant(ctx context.Context, id string, tenant graphql.BusinessTenantMappingInput) error
 	SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload string) error
 	UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionPayload string) error
+	ExistsTenantByExternalID(ctx context.Context, tenantID string) (bool, error)
 }
 
 // TenantConverter expects tenant converter implementation
@@ -74,9 +75,23 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 
 // ProvisionTenants provisions tenants according to their type
 func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
-	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
+	var newBusinessTenantMappings = []model.BusinessTenantMappingInput{}
+	requestedBusinessTenantMappingInputs := p.tenantsFromRequest(*request)
+	for _, currentBusinessTenantMappingInput := range requestedBusinessTenantMappingInputs {
+		exists, err := p.gqlClient.ExistsTenantByExternalID(ctx, currentBusinessTenantMappingInput.ExternalTenant)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			newBusinessTenantMappings = append(newBusinessTenantMappings, currentBusinessTenantMappingInput)
+		}
+	}
 
-	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
+	if len(newBusinessTenantMappings) > 0 {
+		tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(newBusinessTenantMappings)
+		return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
+	}
+	return nil
 }
 
 func (p *provisioner) tenantsFromRequest(request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
