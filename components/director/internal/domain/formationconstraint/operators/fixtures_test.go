@@ -43,6 +43,7 @@ const (
 	samlAssertionDestName     = "saml-assertion-name"
 	clientCertAuthDestName    = "client-cert-auth-dest-name"
 	oauth2ClientCredsDestName = "oauth2-client-creds-name"
+	oauth2mTLSDestName        = "oauth2-mTLS-name"
 	destinationURL            = "http://test-url"
 	destinationType           = destinationcreatorpkg.TypeHTTP
 	destinationProxyType      = destinationcreatorpkg.ProxyTypeInternet
@@ -54,6 +55,8 @@ const (
 	oauth2ClientCredsDestTokenServiceURL = "http://test-token-url"
 	oauth2ClientCredsDestClientID        = "test-client-id"
 	oauth2ClientCredsDestClientSecret    = "test-client-secret"
+	oauth2mTLSDestTokenServiceURL        = "http://test-token-url-mTLS"
+	oauth2mTLSDestClientID               = "test-client-id-mTLS"
 
 	// Other
 	formationConstraintName = "test constraint"
@@ -117,34 +120,48 @@ var (
 
 // Destination Creator variables
 var (
-	invalidFAConfig              = json.RawMessage("invalid-destination-config")
+	emptyConfig                  = json.RawMessage("{}")
+	invalidFAConfig              = json.RawMessage("invalid-Destination-config")
 	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"oauth2ClientCredentials":{"destinations":[{"url":"%s","name":"%s"}]},"oauth2mtls":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, oauth2ClientCredsDestName, destinationURL, oauth2mTLSDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+	)
+
+	destsConfigValueRawJSONDeprecatedKey = json.RawMessage(
 		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"oauth2ClientCredentials":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, oauth2ClientCredsDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
+
 	destsReverseConfigValueRawJSON = json.RawMessage(
-		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}},"outboundCommunication":{"basicAuthentication":{"url":"%s","username":"%s","password":"%s"},"samlAssertion":{"url":"%s"},"clientCertificateAuthentication":{"url":"%s"},"oauth2ClientCredentials":{"url":"%s","tokenServiceURL":"%s","clientId":"%s","clientSecret":"%s"}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, basicDestUser, basicDestPassword, destinationURL, destinationURL, destinationURL, oauth2ClientCredsDestTokenServiceURL, oauth2ClientCredsDestClientID, oauth2ClientCredsDestClientSecret, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}},"outboundCommunication":{"basicAuthentication":{"url":"%s","username":"%s","password":"%s"},"samlAssertion":{"url":"%s"},"clientCertificateAuthentication":{"url":"%s"},"oauth2ClientCredentials":{"url":"%s","tokenServiceURL":"%s","clientId":"%s","clientSecret":"%s"},"oauth2mtls":{"url":"%s","tokenServiceURL":"%s","clientId":"%s"}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, basicDestName, destinationURL, basicDestUser, basicDestPassword, destinationURL, destinationURL, destinationURL, oauth2ClientCredsDestTokenServiceURL, oauth2ClientCredsDestClientID, oauth2ClientCredsDestClientSecret, destinationURL, oauth2mTLSDestTokenServiceURL, oauth2mTLSDestClientID, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 
 	destsConfigWithSAMLCertDataRawJSON = json.RawMessage(
-		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"certificate":"cert-chain-data","assertionIssuer":"assertionIssuerValue","destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"samlAssertion":{"certificate":"cert-chain-data","assertionIssuer":"assertionIssuerValue","destinations":[{"url":"%s","name":"%s"}]},"clientCertificateAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s"}]}`, destinationURL, samlAssertionDestName, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 
 	destsConfigWithClientCertauthCertDataRawJSON = json.RawMessage(
-		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"clientCertificateAuthentication":{"certificate":"cert-chain-data","destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authentication":"%s"}]}`, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"clientCertificateAuthentication":{"certificate":"cert-chain-data","destinations":[{"url":"%s","name":"%s"}]},"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s"}]}`, destinationURL, clientCertAuthDestName, destinationURL, basicDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
 	)
 
-	statusReportWithConfigAndReadyState  = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigValueRawJSON)
-	statusReportWitInvalidConfig         = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), invalidFAConfig)
-	statusRportWitSAMLCertData           = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithSAMLCertDataRawJSON)
-	statusRportWitClientCertAuthCertData = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithClientCertauthCertDataRawJSON)
+	destsConfigWithOauth2mTLSCertDataRawJSON = json.RawMessage(
+		fmt.Sprintf(`{"credentials":{"inboundCommunication":{"basicAuthentication":{"destinations":[{"url":"%s","name":"%s"}]},"oauth2ClientCredentials":{"destinations":[{"url":"%s","name":"%s"}]},"oauth2mtls":{"certificate":"cert-chain-data","destinations":[{"url":"%s","name":"%s"}]}}},"destinations":[{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s"}]}`, destinationURL, basicDestName, destinationURL, oauth2ClientCredsDestName, destinationURL, oauth2mTLSDestName, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)),
+	)
+
+	statusReportWithConfigAndReadyState                             = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigValueRawJSON)
+	statusReportWithConfigAndReadyStateWithDeprecatedDestinationKey = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigValueRawJSONDeprecatedKey)
+	statusReportWitInvalidConfig                                    = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), invalidFAConfig)
+	statusRportWitSAMLCertData                                      = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithSAMLCertDataRawJSON)
+	statusRportWitClientCertAuthCertData                            = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithClientCertauthCertDataRawJSON)
+	statusRportWitOauth2mTLSCertData                                = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithOauth2mTLSCertDataRawJSON)
 
 	fa                           = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
+	faDeprecatedDestinationKey   = fixFormationAssignmentWithConfig(destsConfigValueRawJSONDeprecatedKey)
 	reverseFa                    = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
 	faWithInitialState           = fixFormationAssignmentWithState(model.InitialAssignmentState)
 	faWithInvalidConfig          = fixFormationAssignmentWithConfig(invalidFAConfig)
 	faWithSAMLCertData           = fixFormationAssignmentWithConfig(destsConfigWithSAMLCertDataRawJSON)
 	faWithClientCertAuthCertData = fixFormationAssignmentWithConfig(destsConfigWithClientCertauthCertDataRawJSON)
+	faWithOauth2mTLSCertData     = fixFormationAssignmentWithConfig(destsConfigWithOauth2mTLSCertDataRawJSON)
 
 	faConfigWithDifferentStructure = fixFormationAssignmentWithConfig(configWithDifferentStructure)
 
@@ -156,10 +173,12 @@ var (
 		FAMemoryAddress: faWithInitialState.GetAddress(),
 	}
 
-	inputWithAssignmentWithSAMLCertData           = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation, statusRportWitSAMLCertData)
-	inputWithAssignmentWithClientCertAuthCertData = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation, statusRportWitClientCertAuthCertData)
-	inputForAssignNotificationStatusReturned      = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyState)
-	//inputForAssignNotificationStatusReturnedWithReverse                 = fixDestinationCreatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fa, reverseFa, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyState)
+	inputWithAssignmentWithSAMLCertData                                  = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithSAMLCertData, preNotificationStatusReturnedLocation, statusRportWitSAMLCertData)
+	inputWithAssignmentWithClientCertAuthCertData                        = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithClientCertAuthCertData, preNotificationStatusReturnedLocation, statusRportWitClientCertAuthCertData)
+	inputWithAssignmentWithOauth2mTLSCertData                            = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithOauth2mTLSCertData, preNotificationStatusReturnedLocation, statusRportWitOauth2mTLSCertData)
+	inputForAssignNotificationStatusReturned                             = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyState)
+	inputForAssignNotificationStatusReturnedWithDeprecatedDestinationKey = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faDeprecatedDestinationKey, preNotificationStatusReturnedLocation, statusReportWithConfigAndReadyStateWithDeprecatedDestinationKey)
+
 	inputForAssignNotificationStatusReturnedWithCertSvcKeyStore         = fixDestinationCreatorInputWithAssignmentMemoryAddressAndCertSvcKeystore(model.AssignFormation, fa, preNotificationStatusReturnedLocation, true, statusReportWithConfigAndReadyState)
 	inputForAssignNotificationStatusReturnedWithInvalidFAConfig         = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, faWithInvalidConfig, preNotificationStatusReturnedLocation, statusReportWitInvalidConfig)
 	inputForAssignSendNotificationWithoutReverseAssignmentMemoryAddress = fixDestinationCreatorInputWithAssignmentMemoryAddress(model.AssignFormation, fa, preSendNotificationLocation, statusReportWithConfigAndReadyState)
@@ -399,18 +418,13 @@ func fixDestinationCreatorInputWithAssignmentMemoryAddressAndCertSvcKeystore(ope
 	}
 }
 
-func fixDesignTimeDestination() operators.Destination {
-	return operators.Destination{
-		Name:           designTimeDestName,
-		Type:           string(destinationType),
-		ProxyType:      string(destinationProxyType),
-		Authentication: string(destinationNoAuthn),
-		URL:            destinationURL,
-	}
+func fixDesignTimeDestination() operators.DestinationRaw {
+	return operators.DestinationRaw{
+		Destination: json.RawMessage(fmt.Sprintf(`{"url":"%s","name":"%s","type":"%s","proxyType":"%s","authenticationType":"%s"}`, destinationURL, designTimeDestName, string(destinationType), string(destinationProxyType), string(destinationNoAuthn)))}
 }
 
-func fixDesignTimeDestinations() []operators.Destination {
-	return []operators.Destination{
+func fixDesignTimeDestinations() []operators.DestinationRaw {
+	return []operators.DestinationRaw{
 		fixDesignTimeDestination(),
 	}
 }
@@ -436,6 +450,12 @@ func fixClientCertAuthDestinations() []operators.Destination {
 func fixOAuth2ClientCredsDestinations() []operators.Destination {
 	return []operators.Destination{
 		fixDestination(oauth2ClientCredsDestName, destinationURL),
+	}
+}
+
+func fixOAuth2mTLSDestinations() []operators.Destination {
+	return []operators.Destination{
+		fixDestination(oauth2mTLSDestName, destinationURL),
 	}
 }
 
@@ -472,6 +492,14 @@ func fixOAuth2ClientCreds() *operators.OAuth2ClientCredentialsAuthentication {
 		TokenServiceURL: oauth2ClientCredsDestTokenServiceURL,
 		ClientID:        oauth2ClientCredsDestClientID,
 		ClientSecret:    oauth2ClientCredsDestClientSecret,
+	}
+}
+
+func fixOAuth2mTLSAuthn() *operators.OAuth2mTLSAuthentication {
+	return &operators.OAuth2mTLSAuthentication{
+		URL:             destinationURL,
+		TokenServiceURL: oauth2mTLSDestTokenServiceURL,
+		ClientID:        oauth2mTLSDestClientID,
 	}
 }
 

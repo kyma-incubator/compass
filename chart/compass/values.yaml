@@ -147,6 +147,9 @@ global:
     - name: TestIsolatedAccount
       id: ded8eca9-12b9-4076-9458-9deabff87bd8
       type: account
+    - name: TestSystemFetcherOnNewGA
+      id: 44dfe415-4847-4feb-8580-ecb07958347d
+      type: account
   tenantsLabels:
     - tenantID: 818005d6-9264-4abb-af4c-29c754630a7d # TestTenantSubstitutionSubaccount
       key: customerId
@@ -159,31 +162,31 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3656"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3656"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3656"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3624"
+      version: "PR-3656"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3677"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3577"
+      version: "PR-3661"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3610"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
@@ -191,27 +194,27 @@ global:
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3577"
+      version: "PR-3609"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3656"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3573"
+      version: "PR-3656"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-120"
+      version: "PR-122"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3592"
+      version: "PR-3656"
       name: compass-schema-migrator
     system_broker:
-      dir: dev/incubator/
-      version: "PR-3573"
+      dir: prod/incubator/
+      version: "v20240123-eabe5df7"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -543,6 +546,7 @@ global:
     certSubjectMappingResyncInterval: "3s"
     subjectConsumerMappingConfig: '[{"consumer_type": "Super Admin", "tenant_access_levels": ["customer", "account","subaccount", "global", "organization", "folder", "resource-group", "cost-object"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}, {"consumer_type": "Integration System", "tenant_access_levels": ["account","subaccount"], "subject": "C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=integration-system-test"}, {"consumer_type": "Technical Client", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=technical-client-test"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=instance-creator"}, {"consumer_type": "Instance Creator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=instance-creator"}, {"consumer_type":  "Landscape Resource Operator", "tenant_access_levels": ["global"], "subject": "C=DE, L=local, O=SAP SE, OU=SAP Cloud Platform Clients, OU=Region, OU=47b4575a-f102-414a-8398-2d973ad65f3a, CN=landscape_resource_operator"}]'
     certificateDataHeader: "Certificate-Data"
+    initialSubdomainsForAuthenticators: ""
     consumerClaimsKeys:
       clientIDKey: "client_id"
       tenantIDKey: "tenantid"
@@ -1101,9 +1105,12 @@ global:
     name: "system-fetcher"
     port: 3000
     prefix: /system-fetcher
+    syncEndpoint: /sync
     job:
       schedulePeriod: 60m
       isSchedulable: true
+    client:
+      timeout: "30s"
     lease:
       lockname: systemfetcherlease
     authentication:
@@ -1202,6 +1209,9 @@ global:
           idField: "id"
           nameField: "name"
           customerIdField: "customerId"
+          costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1229,6 +1239,9 @@ global:
           idField: "guid"
           nameField: "displayName"
           customerIdField: "customerId"
+          costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           subdomainField: "subdomain"
           licenseTypeField: "licenseType"
           discriminatorField: ""
@@ -1499,6 +1512,8 @@ global:
         - "formation:write"
         - "formation:global_write"
         - "formation:global_read"
+      tenant_discovery_operator:
+        - "application:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"

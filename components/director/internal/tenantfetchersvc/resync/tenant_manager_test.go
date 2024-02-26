@@ -2,7 +2,10 @@ package resync_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
+
+	"github.com/tidwall/gjson"
 
 	domaintenant "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -44,8 +47,8 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", "", tenant.Account, &testLicenseType)
 	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", "", tenant.Account, nil)
 
-	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant1))
-	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant2))
+	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant1, ""))
+	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant2, ""))
 
 	pageOneQueryParams := resync.QueryParams{
 		"pageSize":  "1",
@@ -224,7 +227,7 @@ func TestTenantManager_TenantsToCreate(t *testing.T) {
 				client := &automock.EventAPIClient{}
 				busTenantWithoutSubdomain := busTenant1
 				busTenantWithoutSubdomain.Subdomain = ""
-				event := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, cfg.RegionalAPIConfigs[centralRegion].TenantFieldMapping, busTenant1))
+				event := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, cfg.RegionalAPIConfigs[centralRegion].TenantFieldMapping, busTenant1, ""))
 				client.On("FetchTenantEventsPage", ctx, resync.CreatedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 				client.On("FetchTenantEventsPage", ctx, resync.UpdatedAccountType, pageOneQueryParams).Return(nil, nil).Once()
 
@@ -429,8 +432,8 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 	busTenant1 := fixBusinessTenantMappingInput("1", provider, "subdomain-1", "", "", tenant.Account, &testLicenseType)
 	busTenant2 := fixBusinessTenantMappingInput("2", provider, "subdomain-2", "", "", tenant.Account, nil)
 
-	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant1))
-	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant2))
+	event1 := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant1, ""))
+	event2 := fixEvent(t, "GlobalAccount", busTenant2.ExternalTenant, eventFieldsFromTenant(tenant.Account, jobConfig.APIConfig.TenantFieldMapping, busTenant2, ""))
 
 	pageOneQueryParams := resync.QueryParams{
 		"pageSize":  "1",
@@ -550,7 +553,7 @@ func TestTenantManager_TenantsToDelete(t *testing.T) {
 				client := &automock.EventAPIClient{}
 				busTenantWithoutSubdomain := busTenant1
 				busTenantWithoutSubdomain.Subdomain = ""
-				event := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, cfg.RegionalAPIConfigs[centralRegion].TenantFieldMapping, busTenant1))
+				event := fixEvent(t, "GlobalAccount", busTenant1.ExternalTenant, eventFieldsFromTenant(tenant.Account, cfg.RegionalAPIConfigs[centralRegion].TenantFieldMapping, busTenant1, ""))
 				client.On("FetchTenantEventsPage", ctx, resync.DeletedAccountType, pageOneQueryParams).Return(fixTenantEventsResponse(eventsToJSONArray(event), 1, 1, cfg.APIConfig.TenantFieldMapping, cfg.APIConfig.MovedSubaccountsFieldMapping, cfg.TenantProvider), nil).Once()
 
 				details := map[string]resync.EventAPIClient{
@@ -729,8 +732,14 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 
 	jobConfig := configForTenantType(tenant.Account)
 
-	busTenant := fixBusinessTenantMappingInput("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType)
-	event := fixEvent(t, "Subaccount", busTenant.Parents[0], eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant))
+	costObjectID := "id-here"
+	costObjectType := "type"
+	eventAdditionalFields := fmt.Sprintf(`{"costObjectId": "%s", "costObjectType": "%s"}`, costObjectID, costObjectType)
+	busTenant := fixBusinessTenantMappingInputWithCostObjectID("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType, &costObjectID)
+	costObjTenant := fixBusinessTenantMappingInputWithCostObjectType("id-here", provider, "", "", "", tenant.CostObject, &testLicenseType, &costObjectType)
+	costObjTenant.Parents = []string{}
+
+	event := fixEvent(t, "Subaccount", busTenant.Parents[0], eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant, eventAdditionalFields))
 
 	queryParams := resync.QueryParams{
 		"pageSize": "1",
@@ -745,7 +754,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 		directorClientFn  func() *automock.DirectorGraphQLClient
 		universalClientFn func(resync.JobConfig) *automock.EventAPIClient
 		regionalDetailsFn func(resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient)
-		expectedTenant    *model.BusinessTenantMappingInput
+		expectedTenant    []model.BusinessTenantMappingInput
 		expectedErrMsg    string
 	}{
 		{
@@ -769,7 +778,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			regionalDetailsFn: func(cfg resync.JobConfig) (map[string]resync.EventAPIClient, []*automock.EventAPIClient) {
 				return nil, nil
 			},
-			expectedTenant: &busTenant,
+			expectedTenant: []model.BusinessTenantMappingInput{busTenant, costObjTenant},
 		},
 		{
 			name: "Success when tenant is found from regional client",
@@ -795,7 +804,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 
 				return details, []*automock.EventAPIClient{client}
 			},
-			expectedTenant: &busTenant,
+			expectedTenant: []model.BusinessTenantMappingInput{busTenant, costObjTenant},
 		},
 		{
 			name: "[Temporary] Success when tenant is not found",
@@ -842,13 +851,14 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 			manager, err := resync.NewTenantsManager(cfg, directorClient, universalClient, regionalDetails, tenantConverter)
 			require.NoError(t, err)
 
-			actualTenant, err := manager.FetchTenant(ctx, busTenant.ExternalTenant)
+			actualTenant, err := manager.FetchTenants(ctx, busTenant.ExternalTenant)
 			if len(tc.expectedErrMsg) > 0 {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), tc.expectedErrMsg)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tc.expectedTenant, actualTenant)
+
+				require.ElementsMatch(t, tc.expectedTenant, actualTenant)
 			}
 		})
 	}
@@ -870,18 +880,21 @@ func configForTenantType(tenantType tenant.Type) resync.JobConfig {
 	centralRegionCfg := &resync.EventsAPIConfig{
 		APIEndpointsConfig: resync.APIEndpointsConfig{},
 		TenantFieldMapping: resync.TenantFieldMapping{
-			EventsField:            "events",
-			NameField:              "name",
-			IDField:                "id",
-			GlobalAccountGUIDField: "globalAccountGUID",
-			SubaccountIDField:      "subaccountId",
-			CustomerIDField:        "customerId",
-			SubdomainField:         "subdomain",
-			DetailsField:           "eventData",
-			EntityIDField:          "entityId",
-			EntityTypeField:        "type",
-			RegionField:            "region",
-			LicenseTypeField:       "licenseType",
+			EventsField:                   "events",
+			NameField:                     "name",
+			IDField:                       "id",
+			GlobalAccountGUIDField:        "globalAccountGUID",
+			SubaccountIDField:             "subaccountId",
+			CustomerIDField:               "customerId",
+			CostObjectIDField:             "costObject",
+			SubaccountCostObjectIDField:   "costObjectId",
+			SubaccountCostObjectTypeField: "costObjectType",
+			SubdomainField:                "subdomain",
+			DetailsField:                  "eventData",
+			EntityIDField:                 "entityId",
+			EntityTypeField:               "type",
+			RegionField:                   "region",
+			LicenseTypeField:              "licenseType",
 		},
 		MovedSubaccountsFieldMapping: resync.MovedSubaccountsFieldMapping{
 			SubaccountID: "subaccountId",
@@ -922,7 +935,7 @@ func configForTenantType(tenantType tenant.Type) resync.JobConfig {
 	}
 }
 
-func eventFieldsFromTenant(tenantType tenant.Type, tenantFieldMapping resync.TenantFieldMapping, tenantInput model.BusinessTenantMappingInput) map[string]string {
+func eventFieldsFromTenant(tenantType tenant.Type, tenantFieldMapping resync.TenantFieldMapping, tenantInput model.BusinessTenantMappingInput, additionalEventFields string) map[string]string {
 	fields := map[string]string{
 		tenantFieldMapping.IDField:        tenantInput.ExternalTenant,
 		tenantFieldMapping.NameField:      tenantInput.Name,
@@ -931,6 +944,10 @@ func eventFieldsFromTenant(tenantType tenant.Type, tenantFieldMapping resync.Ten
 	}
 	if tenantInput.LicenseType != nil {
 		fields[tenantFieldMapping.LicenseTypeField] = *tenantInput.LicenseType
+	}
+	if additionalEventFields != "" {
+		fields[tenantFieldMapping.SubaccountCostObjectIDField] = gjson.Get(additionalEventFields, tenantFieldMapping.SubaccountCostObjectIDField).String()
+		fields[tenantFieldMapping.SubaccountCostObjectTypeField] = gjson.Get(additionalEventFields, tenantFieldMapping.SubaccountCostObjectTypeField).String()
 	}
 
 	switch tenantType {

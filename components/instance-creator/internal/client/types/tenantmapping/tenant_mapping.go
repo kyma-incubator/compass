@@ -37,12 +37,12 @@ type Context struct {
 type ReceiverTenant struct {
 	Region        string          `json:"deploymentRegion"`
 	SubaccountID  string          `json:"subaccountId"`
+	AssignmentID  string          `json:"uclAssignmentId"`
 	Configuration json.RawMessage `json:"configuration"`
 }
 
 // AssignedTenant is a structure used to JSON decode the assignedTenant in the Body
 type AssignedTenant struct {
-	AssignmentID  string          `json:"uclAssignmentId"`
 	Configuration json.RawMessage `json:"configuration"`
 }
 
@@ -87,13 +87,7 @@ func (rt ReceiverTenant) Validate() error {
 	return validation.ValidateStruct(&rt,
 		validation.Field(&rt.Region, validation.Required.Error("ReceiverTenant Region must be provided")),
 		validation.Field(&rt.SubaccountID, validation.Required.Error("ReceiverTenant SubaccountID must be provided")),
-	)
-}
-
-// Validate validates the Body's AssignedTenant
-func (at AssignedTenant) Validate() error {
-	return validation.ValidateStruct(&at,
-		validation.Field(&at.AssignmentID, validation.Required.Error("AssignedTenant AssignmentID must be provided")),
+		validation.Field(&rt.AssignmentID, validation.Required.Error("ReceiverTenant AssignmentID must be provided")),
 	)
 }
 
@@ -102,9 +96,6 @@ func (b Body) Validate() error {
 	return validation.ValidateStruct(&b,
 		validation.Field(&b.ReceiverTenant, validation.By(func(interface{}) error {
 			return b.ReceiverTenant.Validate()
-		})),
-		validation.Field(&b.AssignedTenant, validation.By(func(interface{}) error {
-			return b.AssignedTenant.Validate()
 		})),
 		validation.Field(&b.Context,
 			validation.By(func(interface{}) error {

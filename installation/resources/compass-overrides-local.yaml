@@ -158,6 +158,9 @@ global:
           discriminatorValue: ""
           entityTypeField: "type"
           idField: "guid"
+          costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           nameField: "displayName"
           tenantEventsField: "events"
           totalPagesField: "totalPages"
@@ -209,6 +212,8 @@ global:
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
           labelsField: "labels"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"

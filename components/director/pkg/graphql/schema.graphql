@@ -608,6 +608,8 @@ input BusinessTenantMappingInput {
 	provider: String!
 	licenseType: String
 	customerId: String
+	costObjectId: String
+	costObjectType: String
 }
 
 input CSRFTokenCredentialRequestAuthInput {
@@ -1012,7 +1014,6 @@ type Application {
 	integrationSystemID: ID
 	applicationTemplateID: ID
 	applicationTemplate: ApplicationTemplate @hasScopes(path: "graphql.field.application.application_template")
-	tenantBusinessType: TenantBusinessType
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
@@ -1318,6 +1319,8 @@ type Formation {
 	Aggregated formation status
 	"""
 	status: FormationStatus!
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignment {
@@ -1332,6 +1335,8 @@ type FormationAssignment {
 	value: String
 	configuration: String
 	error: String
+	lastStateChangeTimestamp: Timestamp
+	lastNotificationSentTimestamp: Timestamp
 }
 
 type FormationAssignmentPage implements Pageable {
@@ -1587,12 +1592,6 @@ type TenantAccess {
 	resourceType: TenantAccessObjectType!
 	resourceID: ID!
 	owner: Boolean!
-}
-
-type TenantBusinessType {
-	id: ID!
-	code: String!
-	name: String!
 }
 
 type TenantPage implements Pageable {

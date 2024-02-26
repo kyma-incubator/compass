@@ -72,11 +72,11 @@ func (_m *DestinationCreatorService) CreateClientCertificateDestination(ctx cont
 }
 
 // CreateDesignTimeDestinations provides a mock function with given fields: ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation
-func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.Destination, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
+func (_m *DestinationCreatorService) CreateDesignTimeDestinations(ctx context.Context, destinationDetails operators.DestinationRaw, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *model.FormationAssignment, uint8, bool) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, operators.DestinationRaw, *model.FormationAssignment, uint8, bool) error); ok {
 		r0 = rf(ctx, destinationDetails, formationAssignment, depth, skipSubaccountValidation)
 	} else {
 		r0 = ret.Error(0)
@@ -104,6 +104,36 @@ func (_m *DestinationCreatorService) CreateOAuth2ClientCredentialsDestinations(c
 
 	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
 		r1 = rf(ctx, destinationDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// CreateOAuth2mTLSDestinations provides a mock function with given fields: ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation
+func (_m *DestinationCreatorService) CreateOAuth2mTLSDestinations(ctx context.Context, destinationDetails operators.Destination, oauth2MTLSAuthentication *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, depth uint8, skipSubaccountValidation bool) (*destinationcreator.DestinationInfo, error) {
+	ret := _m.Called(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateOAuth2mTLSDestinations")
+	}
+
+	var r0 *destinationcreator.DestinationInfo
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, uint8, bool) (*destinationcreator.DestinationInfo, error)); ok {
+		return rf(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, uint8, bool) *destinationcreator.DestinationInfo); ok {
+		r0 = rf(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*destinationcreator.DestinationInfo)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, uint8, bool) error); ok {
+		r1 = rf(ctx, destinationDetails, oauth2MTLSAuthentication, formationAssignment, correlationIDs, depth, skipSubaccountValidation)
 	} else {
 		r1 = ret.Error(1)
 	}

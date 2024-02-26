@@ -8,7 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/stretchr/testify/require"
@@ -111,8 +114,10 @@ var (
 	runtimeTypeDisplayName = str.Ptr("display name")
 	defaultTime            = time.Time{}
 
-	emptyCtx = context.Background()
-	testErr  = errors.New("Test error")
+	emptyCtx          = context.Background()
+	testErr           = errors.New("Test error")
+	unauthorizedError = apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	notFoundError     = apperrors.NewNotFoundError(resource.FormationAssignment, FormationAssignmentID)
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{

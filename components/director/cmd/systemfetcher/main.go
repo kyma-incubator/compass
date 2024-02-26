@@ -10,6 +10,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -26,8 +30,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -46,7 +48,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation"
-	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/signal"
 
@@ -327,14 +328,14 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
 	}
 
-	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while calculating application templates mappings")
-	}
-
 	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating template renderer")
+	}
+
+	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping, templateRenderer)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while calculating application templates mappings")
 	}
 
 	return templateRenderer, nil
@@ -488,7 +489,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	tenantConverter := tenant.NewConverter()
-	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -517,7 +517,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -548,7 +547,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	uidSvc := uid.NewService()
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
@@ -616,7 +614,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrapf(err, "while reload templates")
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -637,8 +635,8 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
-	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping, renderer systemfetcher.TemplateRenderer) error {
+	applicationTemplates := make(map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping)
 
 	tx, err := transact.Begin()
 	if err != nil {
@@ -654,12 +652,39 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
-		lbl, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
+		templateMappingKey := systemfetcher.TemplateMappingKey{}
+
+		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: lbl})
+		regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
+		if hasRegionLabel {
+			regionValue, ok := regionModel.Value.(string)
+			if !ok {
+				return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
+			}
+
+			templateMappingKey.Region = regionValue
+		}
+
+		systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
+		appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
+		if !ok {
+			continue
+		}
+
+		for _, systemRoleValue := range appTemplateLblFilterArr {
+			systemRoleStrValue, ok := systemRoleValue.(string)
+			if !ok {
+				continue
+			}
+
+			templateMappingKey.Label = systemRoleStrValue
+
+			applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
+		}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}

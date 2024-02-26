@@ -5,8 +5,14 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"sort"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
+	mockery "github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -107,9 +113,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Success with template mappings", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1')"
+		templateMappingKey := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
 
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -121,6 +131,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
+
 		mock.bodiesToReturn = [][]byte{[]byte(`[{
 			"displayName": "name1",
 			"productDescription": "description",
@@ -143,11 +154,136 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.Equal(t, systems[1].TemplateID, "")
 	})
 
+	t.Run("Success with regional template mappings", func(t *testing.T) {
+		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
+		templateMappingKey1 := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "us10",
+		}
+		templateMappingKey2 := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "us20",
+		}
+		appTemplate1 := &model.ApplicationTemplate{
+			ID: "id-1",
+		}
+		appTemplate2 := &model.ApplicationTemplate{
+			ID: "id-2",
+		}
+
+		appRegisterInput1 := &model.ApplicationRegisterInput{
+			Labels: map[string]interface{}{
+				selfregmanager.RegionLabel: "us10",
+			},
+		}
+		appRegisterInput2 := &model.ApplicationRegisterInput{
+			Labels: map[string]interface{}{
+				selfregmanager.RegionLabel: "us20",
+			},
+		}
+
+		s1 := systemfetcher.System{
+			SystemPayload: map[string]interface{}{
+				"displayName":            "name1",
+				"productDescription":     "description",
+				"baseUrl":                "url",
+				"infrastructureProvider": "provider1",
+				"key":                    "type1",
+				"regionKey":              "us10",
+			},
+			TemplateID:      "",
+			StatusCondition: "",
+		}
+
+		s2 := systemfetcher.System{
+			SystemPayload: map[string]interface{}{
+				"displayName":            "name2",
+				"productDescription":     "description",
+				"baseUrl":                "url",
+				"infrastructureProvider": "provider1",
+				"key":                    "type2",
+			},
+			TemplateID:      "",
+			StatusCondition: "",
+		}
+
+		renderer := &automock.TemplateRenderer{}
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, s1, appTemplate1, false).Return(appRegisterInput1, nil)
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, s2, appTemplate2, false).Return(appRegisterInput2, nil)
+		// GenerateAppRegisterInput is mainly used to resolve the label placeholder for the application.
+		// When given the appTemplate2 it should resolve the label to the system's payload "regionKey": "us10" and that is why the appRegisterInput1 is expected to be returned
+		renderer.On("GenerateAppRegisterInput", mockery.Anything, s1, appTemplate2, false).Return(appRegisterInput1, nil).Maybe()
+
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey1: {
+				AppTemplate: appTemplate1,
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: []interface{}{"type1"},
+					},
+					selfregmanager.RegionLabel: {
+						Key:   selfregmanager.RegionLabel,
+						Value: templateMappingKey1.Region,
+					},
+				},
+				Renderer: renderer,
+			},
+			templateMappingKey2: {
+				AppTemplate: appTemplate2,
+				Labels: map[string]*model.Label{
+					labelFilter: {
+						Key:   labelFilter,
+						Value: []interface{}{"type1"},
+					},
+					selfregmanager.RegionLabel: {
+						Key:   selfregmanager.RegionLabel,
+						Value: templateMappingKey2.Region,
+					},
+				},
+				Renderer: renderer,
+			},
+		}
+
+		systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
+			"type1": {
+				ID:                syncTimestampID,
+				LastSyncTimestamp: time.Date(2023, 5, 2, 20, 30, 0, 0, time.UTC).UTC(),
+			},
+		}
+
+		mock.bodiesToReturn = [][]byte{[]byte(`[{
+			"displayName": "name1",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type1",
+			"regionKey": "us10"
+		}, {
+			"displayName": "name2",
+			"productDescription": "description",
+			"baseUrl": "url",
+			"infrastructureProvider": "provider1",
+			"key": "type2"
+		}]`)}
+		mock.callNumber = 0
+		mock.pageCount = 1
+		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, systemSynchronizationTimestamps)
+		require.NoError(t, err)
+		require.Len(t, systems, 2)
+		require.Equal(t, "id-1", systems[0].TemplateID)
+		require.Equal(t, "", systems[1].TemplateID)
+	})
+
 	t.Run("Success with template mappings and SystemSynchronizationTimestamps exist", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
+		templateMappingKey := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
 
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -159,7 +295,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 				},
 			},
 		}
-
 		systemSynchronizationTimestamps := map[string]systemfetcher.SystemSynchronizationTimestamp{
 			"type1": {
 				ID:                syncTimestampID,
@@ -191,9 +326,12 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Success for more than one page", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1')"
-
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		templateMappingKey := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -224,8 +362,21 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1') or (key eq 'type2') or (key eq 'type3')"
-		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
-			{
+		templateMappingKey1 := systemfetcher.TemplateMappingKey{
+			Label:  "type1",
+			Region: "",
+		}
+		templateMappingKey2 := systemfetcher.TemplateMappingKey{
+			Label:  "type2",
+			Region: "",
+		}
+		templateMappingKey3 := systemfetcher.TemplateMappingKey{
+			Label:  "type3",
+			Region: "",
+		}
+
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
+			templateMappingKey1: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -236,7 +387,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					},
 				},
 			},
-			{
+			templateMappingKey2: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type2",
 				},
@@ -247,7 +398,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					},
 				},
 			},
-			{
+			templateMappingKey3: {
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type3",
 				},
@@ -290,6 +441,9 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	})
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {
+		mock.expectedFilterCriteria = ""
+		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{}
+
 		mock.callNumber = 0
 		mock.pageCount = 1
 		mock.statusCodeToReturn = http.StatusBadRequest
@@ -326,7 +480,7 @@ func fixHTTPClient(t *testing.T) (*mockData, string) {
 	}
 	mux.HandleFunc("/fetch", func(w http.ResponseWriter, r *http.Request) {
 		filter := r.URL.Query().Get("$filter")
-		require.Equal(t, mock.expectedFilterCriteria, filter)
+		require.True(t, compareStrings(mock.expectedFilterCriteria, filter))
 
 		requests = append(requests, filter)
 		w.Header().Set("Content-Type", "application/json")
@@ -383,4 +537,14 @@ func fixSystemsWithTbt() []systemfetcher.System {
 			StatusCondition: model.ApplicationStatusConditionInitial,
 		},
 	}
+}
+
+func compareStrings(s1, s2 string) bool {
+	tokens1 := strings.Split(s1, " or ")
+	tokens2 := strings.Split(s2, " or ")
+
+	sort.Strings(tokens1)
+	sort.Strings(tokens2)
+
+	return strings.Join(tokens1, " or ") == strings.Join(tokens2, " or ")
 }

@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -256,16 +258,25 @@ func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.
 	if fa == nil && f != nil {
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation with ID: %s", f.ID)
 		f.SetLastNotificationSentTimestamp(time.Now())
-		if updateErr := ns.formationRepo.Update(ctx, f); updateErr != nil {
-			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation with ID: %s", f.ID)
+		if err := ns.formationRepo.Update(ctx, f); err != nil {
+			if webhookNotificationReq.GetOperation() == model.DeleteFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
+				return nil
+			}
+			return errors.Wrapf(err, "while updating last notification sent timestamp for formation with ID: %s", f.ID)
 		}
 	}
 
 	if fa != nil {
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation assignment with ID: %s", fa.ID)
 		fa.SetLastNotificationSentTimestamp(time.Now())
-		if updateErr := ns.formationAssignmentRepo.Update(ctx, fa); updateErr != nil {
-			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)
+		if err := ns.formationAssignmentRepo.Update(ctx, fa); err != nil {
+			// That covers the case when we send two unassign notifications to one participant
+			// and the response of the first notification is returned and processed, which deletes the formation assignment,
+			// while the second notification still hasn't been sent.
+			if webhookNotificationReq.GetOperation() == model.UnassignFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
+				return nil
+			}
+			return errors.Wrapf(err, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)
 		}
 	}
 

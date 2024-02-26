@@ -37,11 +37,12 @@ type automaticScenarioAssignmentService interface {
 
 //go:generate mockery --exported --name=destinationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type destinationService interface {
-	CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []Destination, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
+	CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []DestinationRaw, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 	CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []Destination, basicAuthenticationCredentials BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []Destination, samlAssertionAuthCredentials *SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []Destination, clientCertAuthCredentials *ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []Destination, oauth2ClientCredsCredentials *OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
+	CreateOAuth2mTLSDestinations(ctx context.Context, destinationsDetails []Destination, oauth2mTLSCredentials *OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error
 	DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error
 }
 
