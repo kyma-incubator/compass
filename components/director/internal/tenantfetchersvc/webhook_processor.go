@@ -87,13 +87,13 @@ func NewWebhookProcessor(transact persistence.Transactioner, webhookSvc WebhookS
 }
 
 // StartWebhookProcessorJob starts webhook processor job.
-func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context) error {
+func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context, registryName string) error {
 	resyncJob := cronjob.CronJob{
 		Name: "WebhookProcessorJob",
 		Fn: func(jobCtx context.Context) {
 			log.C(jobCtx).Info("Starting WebhookProcessorJob...")
 
-			if err := w.ProcessWebhooks(ctx); err != nil {
+			if err := w.ProcessWebhooks(ctx, registryName); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of WebhookProcessorJob %v", err)
 			}
 
@@ -105,10 +105,10 @@ func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context) error {
 }
 
 // ProcessWebhooks processes webhooks
-func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context) error {
+func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context, registryName string) error {
 	log.C(ctx).Infof("Starting to process webhooks with type %q", model.WebhookTypeSystemFieldDiscovery)
 
-	webhooks, err := w.listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(ctx)
+	webhooks, err := w.listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(ctx, registryName)
 	if err != nil {
 		return errors.Wrapf(err, "failed listing webhooks by type %q and label", model.WebhookTypeSystemFieldDiscovery)
 	}
@@ -135,29 +135,32 @@ func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context) error {
 			continue
 		}
 
-		var response pkgwebhook.SubscriptionsResponse
-		if err = json.Unmarshal(respBody, &response); err != nil {
-			log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
-			continue
+		switch registryName {
+		case SaaSRegistryLabelValue:
+			var response pkgwebhook.SubscriptionsResponse
+			if err = json.Unmarshal(respBody, &response); err != nil {
+				log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
+				continue
+			}
+			for _, subscription := range response.Subscriptions {
+				processed, err := w.processSubscription(ctx, subscription, wh)
+				if err != nil {
+					log.C(ctx).Errorf(errors.Wrapf(err, "failed processing subscription for webhook with id %q and type %q", wh.ID, model.WebhookTypeSystemFieldDiscovery).Error())
+					break
+				}
+				if processed {
+					log.C(ctx).Infof("Successfully processed webhook with id %q", wh.ID)
+					break
+				}
+				log.C(ctx).Infof("Response for webhook with ID %q does not contain app URL", wh.ID)
+			}
 		}
 
-		for _, subscription := range response.Subscriptions {
-			processed, err := w.processSubscription(ctx, subscription, wh)
-			if err != nil {
-				log.C(ctx).Errorf(errors.Wrapf(err, "failed processing subscription for webhook with id %q and type %q", wh.ID, model.WebhookTypeSystemFieldDiscovery).Error())
-				break
-			}
-			if processed {
-				log.C(ctx).Infof("Successfully processed webhook with id %q", wh.ID)
-				break
-			}
-			log.C(ctx).Infof("Response for webhook with ID %q does not contain app URL", wh.ID)
-		}
 	}
 	return nil
 }
 
-func (w *WebhookProcessor) listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(ctx context.Context) ([]*model.Webhook, error) {
+func (w *WebhookProcessor) listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(ctx context.Context, registryName string) ([]*model.Webhook, error) {
 	tx, err := w.transact.Begin()
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to begin a transaction for listing webhooks by type %q and label", model.WebhookTypeSystemFieldDiscovery)
@@ -165,7 +168,7 @@ func (w *WebhookProcessor) listWebhooksBySystemFieldDiscoveryTypeAndLabelFilter(
 	defer w.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	webhooks, err := w.webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(RegistryLabelKey, fmt.Sprintf("\"%s\"", SaaSRegistryLabelValue)))
+	webhooks, err := w.webhookSvc.ListByTypeAndLabelFilter(ctx, model.WebhookTypeSystemFieldDiscovery, labelfilter.NewForKeyWithQuery(RegistryLabelKey, fmt.Sprintf("\"%s\"", registryName)))
 	if err != nil {
 		return nil, err
 	}

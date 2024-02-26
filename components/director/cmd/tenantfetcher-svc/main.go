@@ -177,7 +177,7 @@ func main() {
 
 	webhookProcessor := tenantfetcher.NewWebhookProcessor(transact, webhookSvc, tenantSvc, appSvc, webhookClient, cfg.WebhookProcessorElectionConfig, cfg.WebhookProcessorJobInterval, cfg.SystemFieldDiscoveryWebhookPartialProcessing, cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
 	go func() {
-		if err := webhookProcessor.StartWebhookProcessorJob(ctx); err != nil {
+		if err := webhookProcessor.StartWebhookProcessorJob(ctx, tenantfetcher.SaaSRegistryLabelValue); err != nil {
 			log.C(ctx).WithError(err).Error("Failed to run WebhookProcessorJob. Stopping app...")
 			cancel()
 		}

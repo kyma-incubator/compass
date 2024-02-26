@@ -30,7 +30,7 @@ const (
 	externalTenantID = "externalTestTenant"
 )
 
-func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
+func TestWebhookProcessor_ProcessWebhooksForSaasRegistry(t *testing.T) {
 	testError = errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testError)
 
@@ -357,7 +357,7 @@ func TestWebhookProcessor_ProcessWebhooks(t *testing.T) {
 			webhookClient := testCase.WebhookClient
 
 			webhookProcessor := tenantfetchersvc.NewWebhookProcessor(tx, webhookSvc, tenantSvc, appSvc, webhookClient, cronjob.ElectionConfig{}, 0, true, 7)
-			err := webhookProcessor.ProcessWebhooks(context.TODO())
+			err := webhookProcessor.ProcessWebhooks(context.TODO(), "saas-registry")
 
 			if testCase.ExpectedError != nil {
 				require.Error(t, err)
