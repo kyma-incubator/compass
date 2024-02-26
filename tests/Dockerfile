@@ -24,7 +24,7 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connectivity-ad
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/bench -o director.bench && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./ord-service/bench -o ord-service.bench && \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./instance-creator/tests -o instance-creator.test
 
 FROM alpine:3.19
