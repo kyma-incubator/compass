@@ -404,7 +404,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig, buildUrl(cfg.ExternalURL, "/secured/oauth/token"))
+	// using "/cert/token" for client ID for oauth2mTLS destinations as this is the path for getting token with cert from external services mock and cfg.OAuthConfig.ClientID for client ID as this is the client ID the token endpoint expects
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig, buildUrl(cfg.ExternalURL, "/cert/token"), cfg.OAuthConfig.ClientID)
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
