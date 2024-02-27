@@ -2,6 +2,7 @@ package systemfielddiscoveryengine_test
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -116,10 +117,10 @@ func Test_CreateLabelForApplicationWebhook(t *testing.T) {
 	uuid := "647af599-7f2d-485c-a63b-615b5ff6daf1"
 	ctx := fixCtxWithTenant()
 	labelInput := &model.LabelInput{
-		Key:        systemfielddiscoveryengine.RegistryLabelKey,
+		Key:        webhookprocessor.RegistryLabelKey,
 		ObjectID:   webhookID,
 		ObjectType: model.WebhookLabelableObject,
-		Value:      systemfielddiscoveryengine.SaaSRegistryLabelValue,
+		Value:      webhookprocessor.SaaSRegistryLabelValue,
 	}
 	modelWebhook := &model.Webhook{ID: webhookID}
 

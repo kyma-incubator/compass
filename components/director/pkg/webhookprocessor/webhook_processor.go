@@ -24,6 +24,8 @@ const (
 	RegistryLabelKey = "registry"
 	// SaaSRegistryLabelValue is the label value for saas registry label
 	SaaSRegistryLabelValue = "saas-registry"
+	// SystemFieldDiscoveryLabelKey is the label key of the application template system field discovery label, that stores if a webhook of type SYSTEM_FIELD_DISCOVERY should be created.
+	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
 )
 
 // subscription represents subscription object in a saas-manager response payload.
@@ -114,7 +116,7 @@ func (w *WebhookProcessor) StartWebhookProcessorJob(ctx context.Context, registr
 	return cronjob.RunCronJob(ctx, w.webhookProcessorElectionConfig, resyncJob)
 }
 
-// ProcessWebhooks processes webhooks
+// ProcessWebhooks processes all webhooks which are of type SYSTEM_FIELD_DISCOVERY and have a label based on the registryName param.
 func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context, registryName string) error {
 	log.C(ctx).Infof("Starting to process webhooks with type %q", model.WebhookTypeSystemFieldDiscovery)
 

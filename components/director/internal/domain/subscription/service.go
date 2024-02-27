@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -38,8 +39,6 @@ const (
 	SubscriptionsLabelKey = "subscriptions"
 	// PreviousSubscriptionID represents a previous subscription id. This is needed, because before introducing this change there might be subscriptions which we don't know that they existed.
 	PreviousSubscriptionID = "00000000-0000-0000-0000-000000000000"
-	// SystemFieldDiscoveryLabelKey is the key of the application template system field discovery label, that stores if a webhook of type SYSTEM_FIELD_DISCOVERY should be created.
-	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -494,16 +493,16 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	var systemFieldDiscoveryLabelIsTrue bool
-	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, SystemFieldDiscoveryLabelKey)
+	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, webhookprocessor.SystemFieldDiscoveryLabelKey)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return "", err
 	} else {
 		if apperrors.IsNotFoundError(err) {
-			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", SystemFieldDiscoveryLabelKey, appTemplate.ID)
+			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
 		} else {
 			systemFieldDiscoveryValue, ok := systemFieldDiscoveryLabel.Value.(bool)
 			if !ok {
-				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", SystemFieldDiscoveryLabelKey, appTemplate.ID)
+				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
 			} else {
 				appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscoveryValue, region, subscribedSubaccountID, appTemplate.Name, subscribedAppName)
 			}

@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 	"regexp"
 	"strings"
 
@@ -38,10 +39,9 @@ import (
 )
 
 const (
-	systemFieldDiscoveryLabelKey = "systemFieldDiscovery"
-	globalSubaccountIDLabelKey   = "global_subaccount_id"
-	sapProviderName              = "SAP"
-	displayNameLabelKey          = "displayName"
+	globalSubaccountIDLabelKey = "global_subaccount_id"
+	sapProviderName            = "SAP"
+	displayNameLabelKey        = "displayName"
 )
 
 // ApplicationTemplateService missing godoc
@@ -1028,14 +1028,14 @@ func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Con
 		return "", "", false, nil
 	}
 
-	if systemFieldDiscoveryLabel, exists := appTemplateLabels[systemFieldDiscoveryLabelKey]; exists {
+	if systemFieldDiscoveryLabel, exists := appTemplateLabels[webhookprocessor.SystemFieldDiscoveryLabelKey]; exists {
 		systemFieldDiscoveryValue, ok = systemFieldDiscoveryLabel.Value.(bool)
 		if !ok {
-			log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", systemFieldDiscoveryLabelKey, appTemplateID)
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplateID)
 			return "", "", false, nil
 		}
 	} else {
-		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", systemFieldDiscoveryLabelKey, appTemplateID)
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplateID)
 		return "", "", false, nil
 	}
 
