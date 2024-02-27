@@ -311,7 +311,9 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 		return "", err
 	}
 
-	r.syncSystemsForTenant(ctx, id)
+	if tenant.Type == tenantpkg.TypeToStr(tenantpkg.Account) || tenant.Type == tenantpkg.TypeToStr(tenantpkg.Customer) {
+		r.syncSystemsForTenant(ctx, id)
+	}
 
 	return id, nil
 }
