@@ -78,7 +78,7 @@ type OAuth2mTLSDestination struct {
 	TokenServiceURL     string `json:"tokenServiceURL"`
 	TokenServiceURLType string `json:"tokenServiceURLType"`
 	ClientID            string `json:"clientId"`
-	KeyStoreLocation    string `json:"keyStoreLocation"`
+	KeyStoreLocation    string `json:"tokenService.KeyStoreLocation"`
 }
 
 func (c *OAuth2mTLSDestination) GetType() string {

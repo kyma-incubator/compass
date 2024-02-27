@@ -8,6 +8,8 @@ import (
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
 	mock "github.com/stretchr/testify/mock"
 
+	pkgtenant "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	resource "github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
@@ -317,7 +319,7 @@ func (_m *BusinessTenantMappingService) UpsertLabel(ctx context.Context, tenantI
 }
 
 // UpsertMany provides a mock function with given fields: ctx, tenantInputs
-func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
+func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]pkgtenant.Type, error) {
 	_va := make([]interface{}, len(tenantInputs))
 	for _i := range tenantInputs {
 		_va[_i] = tenantInputs[_i]
@@ -327,16 +329,16 @@ func (_m *BusinessTenantMappingService) UpsertMany(ctx context.Context, tenantIn
 	_ca = append(_ca, _va...)
 	ret := _m.Called(_ca...)
 
-	var r0 []string
+	var r0 map[string]pkgtenant.Type
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) ([]string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) (map[string]pkgtenant.Type, error)); ok {
 		return rf(ctx, tenantInputs...)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) []string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, ...model.BusinessTenantMappingInput) map[string]pkgtenant.Type); ok {
 		r0 = rf(ctx, tenantInputs...)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]string)
+			r0 = ret.Get(0).(map[string]pkgtenant.Type)
 		}
 	}
 
