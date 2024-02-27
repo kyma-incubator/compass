@@ -250,6 +250,8 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 			}
 
 			if !destination.HasValidIdentifiers() {
+				log.C(ctxWithTransact).Warnf("Destination with name %q for tenant %s does not have system identifiers.", destination.Name, tenant)
+
 				bundles, err := d.fetchBundlesByFormationAssignment(ctxWithTransact, tenant, destination.Name, destination.XCorrelationID)
 				if err != nil {
 					log.C(ctxWithTransact).WithError(err).Errorf("Failed to fetch bundles for tenant id '%s', destination name '%s' and correlation IDs '%s'", tenant, destination.Name, destination.XCorrelationID)
@@ -259,7 +261,7 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
 					len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 
-				if err = d.processBundles(ctx, bundles, destination, tenant, revision); err != nil {
+				if err = d.upsertBundles(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
 					return err
 				}
 
@@ -276,10 +278,9 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 
 			log.C(ctxWithTransact).Infof("Found 0 bundles found for system '%s', url '%s', correlation id '%s'", destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 
-			if err = d.processBundles(ctx, bundles, destination, tenant, revision); err != nil {
+			if err = d.upsertBundles(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
 				return err
 			}
-
 		}
 		return nil
 	})
@@ -309,7 +310,7 @@ func (d *DestinationService) walkthroughPages(
 	return nil
 }
 
-func (d *DestinationService) processBundles(ctx context.Context, bundles []*model.Bundle, destination model.DestinationInput, tenant, revision string) error {
+func (d *DestinationService) upsertBundles(ctx context.Context, bundles []*model.Bundle, destination model.DestinationInput, tenant, revision string) error {
 	for _, bundle := range bundles {
 		id := d.UUIDSvc.Generate()
 		if err := d.DestinationRepo.Upsert(ctx, destination, id, tenant, bundle.ID, revision); err != nil {
@@ -425,26 +426,26 @@ func (d *DestinationService) getRegionLabel(ctx context.Context, tenantID string
 func (d *DestinationService) fetchBundlesByFormationAssignment(ctx context.Context, tenantID, destinationName, correlationIDs string) ([]*model.Bundle, error) {
 	destination, err := d.DestinationRepo.GetDestinationByNameAndTenant(ctx, destinationName, tenantID)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Failed to fetch region for tenant '%s'", tenantID)
-		return nil, err
+		log.C(ctx).WithError(err).Errorf("Failed get destination by name %q and tenant %q", destinationName, tenantID)
+		return nil, errors.Wrapf(err, "while getting desination by name %q and tenant %q", destinationName, tenantID)
 	}
 
 	if destination.FormationAssignmentID == nil {
-		log.C(ctx).Infof("Destination with ID %q and name %q is missing a FormationAssignmentID. Cannot determine the application.", destination.ID, destinationName)
+		log.C(ctx).Warnf("Destination with ID %q and name %q is missing a FormationAssignmentID. Cannot determine the application.", destination.ID, destinationName)
 		return nil, nil
 	}
 
 	formationAssignment, err := d.FormationAssignmentRepo.GetGlobalByID(ctx, *destination.FormationAssignmentID)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to fetch formation assignment with ID %q for tenant %q", *destination.FormationAssignmentID, tenantID)
-		return nil, err
+		return nil, errors.Wrapf(err, "while getting a formation assignment with ID %q", *destination.FormationAssignmentID)
 	}
 
 	appID := formationAssignment.Target
 	bundles, err := d.BundleRepo.ListByApplicationAndCorrelationIDs(ctx, tenantID, appID, correlationIDs)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to list bundles by application ID %q with correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing bundle by application ID %q and correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
 	}
 
 	return bundles, nil
