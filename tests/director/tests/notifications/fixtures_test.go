@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 	"net/url"
@@ -361,7 +360,7 @@ func assertOAuth2ClientCredsDestination(t *testing.T, client *clients.Destinatio
 
 func assertOAuth2mTLSDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2mTLSDestinationName, oauth2mTLSCertName, oauth2mTLSDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
 	oauth2mTLSDestBytes := client.FindDestinationByName(t, serviceURL, oauth2mTLSDestinationName, authToken, "", http.StatusOK)
-	spew.Dump(oauth2mTLSDestBytes)
+
 	var oauth2mTLSDest esmdestinationcreator.DestinationSvcOAuth2mTLSDestResponse
 	err := json.Unmarshal(oauth2mTLSDestBytes, &oauth2mTLSDest)
 	require.NoError(t, err)

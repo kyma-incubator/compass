@@ -13,8 +13,8 @@ import (
 var (
 	certificateSAMLAssertionDestinationPrefix       = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	certificateSAMLBearerAssertionDestinationPrefix = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLBearerAssertion)
-	certificateClientCertificateDestinationPrefix = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeClientCertificate)
-	certificateOAuth2mTLSDestinationPrefix        = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2mTLS)
+	certificateClientCertificateDestinationPrefix   = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeClientCertificate)
+	certificateOAuth2mTLSDestinationPrefix          = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2mTLS)
 )
 
 // Validator validates destination creator request body
