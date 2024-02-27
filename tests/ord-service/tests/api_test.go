@@ -713,7 +713,8 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
 
-	consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumer-app", conf.ApplicationTypeLabelKey, string(util.ApplicationTypeC4C), tenantID)
+	consumerAppType := string(util.ApplicationTypeC4C)
+	consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumer-app", conf.ApplicationTypeLabelKey, consumerAppType, tenantID)
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &consumerApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, consumerApp.ID)
@@ -728,7 +729,6 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	require.Empty(t, gjson.Get(respBody, "value").Array())
 	t.Log("No system instance details are returned due to missing formation")
 
-	consumerAppType := string(util.ApplicationTypeC4C)
 	formationTmplName := "e2e-test-formation-template-system-discovery"
 	t.Logf("Creating formation template for the provider application tempalаte type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 	var ft directorSchema.FormationTemplate // needed so the 'defer' can be above the formation template creation
