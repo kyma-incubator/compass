@@ -143,7 +143,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				notificationStatusReport.Configuration = config
 			}
 
-			if oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication; oauth2mTLSDetails != nil && len(oauth2mTLSDetails.Destinations) > 0 {
+			if oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2mTLSAuthentication; oauth2mTLSDetails != nil && len(oauth2mTLSDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d oauth2mTLS destination details in the configuration response", len(oauth2mTLSDetails.Destinations))
 
 				if oauth2mTLSDetails.Certificate != nil && *oauth2mTLSDetails.Certificate != "" {
@@ -239,11 +239,11 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 		}
 
-		oauth2MTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2MTLSAuthentication
-		oauth2MTLSCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2MTLSAuthentication
-		if oauth2MTLSDetails != nil && oauth2MTLSCreds != nil && len(oauth2MTLSDetails.Destinations) > 0 {
-			log.C(ctx).Infof("There is/are %d inbound oauth2 mTLS destination(s) details available in the configuration", len(oauth2MTLSDetails.Destinations))
-			if err := e.destinationSvc.CreateOAuth2mTLSDestinations(ctx, oauth2MTLSDetails.Destinations, oauth2MTLSCreds, formationAssignment, oauth2MTLSDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
+		oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2mTLSAuthentication
+		oauth2mTLSCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2mTLSAuthentication
+		if oauth2mTLSDetails != nil && oauth2mTLSCreds != nil && len(oauth2mTLSDetails.Destinations) > 0 {
+			log.C(ctx).Infof("There is/are %d inbound oauth2 mTLS destination(s) details available in the configuration", len(oauth2mTLSDetails.Destinations))
+			if err := e.destinationSvc.CreateOAuth2mTLSDestinations(ctx, oauth2mTLSDetails.Destinations, oauth2mTLSCreds, formationAssignment, oauth2mTLSDetails.CorrelationIDs, di.SkipSubaccountValidation); err != nil {
 				return false, errors.Wrap(err, "while creating oauth2 mTLS destinations")
 			}
 		}
@@ -399,7 +399,7 @@ type OutboundCommunicationCredentials struct {
 	OAuth2SAMLBearerAssertionAuthentication *OAuth2SAMLBearerAssertionAuthentication `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertAuthentication                *ClientCertAuthentication                `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsAuthentication   *OAuth2ClientCredentialsAuthentication   `json:"oauth2ClientCredentials,omitempty"`
-	OAuth2MTLSAuthentication                *OAuth2mTLSAuthentication                `json:"oauth2mtls,omitempty"`
+	OAuth2mTLSAuthentication                *OAuth2mTLSAuthentication                `json:"oauth2mtls,omitempty"`
 }
 
 // NoAuthentication represents outbound communication without any authentication
@@ -459,7 +459,7 @@ type InboundCommunicationDetails struct {
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
-	OAuth2MTLSAuthentication               *InboundOAuth2mTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
+	OAuth2mTLSAuthentication               *InboundOAuth2mTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication
