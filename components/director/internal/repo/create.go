@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"strings"
 	"time"
 
@@ -87,7 +86,6 @@ func (c *universalCreator) Create(ctx context.Context, resourceType resource.Typ
 	if ok && entity.GetCreatedAt().IsZero() { // This zero check is needed to mock the Create tests
 		now := time.Now()
 		entity.SetCreatedAt(now)
-		spew.Dump(entity.GetReady())
 		if entity.GetReady() != false {
 			entity.SetReady(true)
 		}
