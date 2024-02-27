@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
@@ -28,7 +29,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error)
+	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error)
 	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, externalTenantIDs []string) error
@@ -269,7 +270,7 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
 
-	tenantIDs, err := r.srv.UpsertMany(ctx, tenants...)
+	tenantsMap, err := r.srv.UpsertMany(ctx, tenants...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while writing new tenants")
 	}
@@ -278,7 +279,13 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 		return nil, err
 	}
 
-	r.syncSystemsForTenants(ctx, tenantIDs)
+	tenantIDs := make([]string, 0, len(tenantsMap))
+	for tenantID, tenantType := range tenantsMap {
+		tenantIDs = append(tenantIDs, tenantID)
+		if tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer {
+			r.syncSystemsForTenant(ctx, tenantID)
+		}
+	}
 
 	return tenantIDs, nil
 }
@@ -404,12 +411,6 @@ func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantID string) {
 	log.C(ctx).Infof("Calling sync systems API with TenantID %q", tenantID)
 	if err := r.systemFetcherClient.Sync(ctx, tenantID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API with TenantID %q", tenantID)
-	}
-}
-
-func (r *Resolver) syncSystemsForTenants(ctx context.Context, tenantIDs []string) {
-	for _, tenantID := range tenantIDs {
-		r.syncSystemsForTenant(ctx, tenantID)
 	}
 }
 
