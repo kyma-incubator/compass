@@ -104,6 +104,7 @@ func TestHandler_SubscribeAndUnsubscribe(t *testing.T) {
 		ConsumerTenantIDProperty:                                  "consumerTenantIdProperty",
 		SubscriptionProviderAppNameProperty:                       "subscriptionProviderAppNameProperty",
 		SubscriptionIDProperty:                                    "subscriptionIDProperty",
+		CustomerIDProperty:                                        "customerIDProperty",
 		DependentServiceInstancesInfoProperty:                     "dependentServiceInstancesInfoProperty",
 		DependentServiceInstancesInfoAppIDProperty:                "dependentServiceInstancesInfoAppIDProperty",
 		DependentServiceInstancesInfoAppNameProperty:              "dependentServiceInstancesInfoAppNameProperty",
