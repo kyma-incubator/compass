@@ -141,14 +141,13 @@ func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context, registryName str
 			continue
 		}
 
-		respBody, err := еxecuteSystemFieldDiscoveryWebhook(ctx, w.webhookClient, wh)
+		respBody, err := executeSystemFieldDiscoveryWebhook(ctx, w.webhookClient, wh)
 		if err != nil {
 			log.C(ctx).Errorf(errors.Wrapf(err, "failed executing webhook with id %q and type %q", wh.ID, model.WebhookTypeSystemFieldDiscovery).Error())
 			continue
 		}
 
-		switch registryName {
-		case SaaSRegistryLabelValue:
+		if registryName == SaaSRegistryLabelValue {
 			var response subscriptionsResponse
 			if err = json.Unmarshal(respBody, &response); err != nil {
 				log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
@@ -167,7 +166,6 @@ func (w *WebhookProcessor) ProcessWebhooks(ctx context.Context, registryName str
 				log.C(ctx).Infof("Response for webhook with ID %q does not contain app URL", wh.ID)
 			}
 		}
-
 	}
 	return nil
 }
@@ -223,7 +221,7 @@ func (w *WebhookProcessor) processSubscription(ctx context.Context, subscription
 	return true, tx.Commit()
 }
 
-func еxecuteSystemFieldDiscoveryWebhook(ctx context.Context, client *http.Client, webhook *model.Webhook) ([]byte, error) {
+func executeSystemFieldDiscoveryWebhook(ctx context.Context, client *http.Client, webhook *model.Webhook) ([]byte, error) {
 	webhookURL := webhook.URL
 	if webhookURL == nil {
 		return nil, errors.Errorf("URL is missing for webhook with id %q", webhook.ID)

@@ -3,6 +3,7 @@ package systemfielddiscoveryengine
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"

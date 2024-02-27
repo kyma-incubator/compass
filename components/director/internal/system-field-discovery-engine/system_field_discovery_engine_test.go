@@ -2,8 +2,9 @@ package systemfielddiscoveryengine_test
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"

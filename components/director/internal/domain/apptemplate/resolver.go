@@ -5,9 +5,10 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 	"regexp"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 
 	"github.com/tidwall/gjson"
 
