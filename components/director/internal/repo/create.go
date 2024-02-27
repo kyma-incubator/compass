@@ -86,7 +86,7 @@ func (c *universalCreator) Create(ctx context.Context, resourceType resource.Typ
 	if ok && entity.GetCreatedAt().IsZero() { // This zero check is needed to mock the Create tests
 		now := time.Now()
 		entity.SetCreatedAt(now)
-		if entity.GetReady() != false {
+		if entity.GetReady() {
 			entity.SetReady(true)
 		}
 		entity.SetError(NewValidNullableString(""))
