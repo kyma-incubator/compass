@@ -27,13 +27,13 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
+	cfg "github.com/kyma-incubator/compass/components/hydrator/internal/config"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/authenticator"
 
 	"golang.org/x/oauth2"
 
 	"github.com/gorilla/mux"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 
 	"github.com/tidwall/gjson"
 
@@ -108,8 +108,8 @@ func DefaultTokenVerifierProvider(ctx context.Context, metadata OpenIDMetadata) 
 }
 
 // NewHandler constructs the AuthenticationMappingHandler
-func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config) *Handler {
-	return &Handler{
+func NewHandler(ctx context.Context, reqDataParser ReqDataParser, httpClient *http.Client, tokenVerifierProvider TokenVerifierProvider, authenticators []authenticator.Config, initialSubdomainsForAuthenticators []cfg.AuthenticatorSubdomainMapping) *Handler {
+	handler := &Handler{
 		reqDataParser:         reqDataParser,
 		httpClient:            httpClient,
 		tokenVerifierProvider: tokenVerifierProvider,
@@ -117,6 +117,8 @@ func NewHandler(reqDataParser ReqDataParser, httpClient *http.Client, tokenVerif
 		verifiersMutex:        sync.RWMutex{},
 		authenticators:        authenticators,
 	}
+	handler.loadVerifiers(ctx, initialSubdomainsForAuthenticators)
+	return handler
 }
 
 type authenticationError struct {
@@ -324,6 +326,59 @@ func (h *Handler) getOpenIDConfig(ctx context.Context, issuerURL string) (*http.
 	}
 
 	return resp, nil
+}
+
+func (h *Handler) loadVerifiers(ctx context.Context, initialSubdomainsForAuthenticators []cfg.AuthenticatorSubdomainMapping) {
+	for _, subdomainAuthenticatorMapping := range initialSubdomainsForAuthenticators {
+		authenticatorName := subdomainAuthenticatorMapping.Authenticator
+		issuerSubdomain := subdomainAuthenticatorMapping.Subdomain
+		var authConfig *authenticator.Config
+		for i, authn := range h.authenticators {
+			if authn.Name == authenticatorName {
+				authConfig = &h.authenticators[i]
+				break
+			}
+		}
+		if authConfig == nil {
+			log.C(ctx).Infof("could not find authenticator with name %q in order to load subdomain %q", authenticatorName, issuerSubdomain)
+			continue
+		}
+		for _, issuer := range authConfig.TrustedIssuers {
+			protocol := "https"
+			if len(issuer.Protocol) > 0 {
+				protocol = issuer.Protocol
+			}
+			issuerURL := fmt.Sprintf("%s://%s.%s%s", protocol, issuerSubdomain, issuer.DomainURL, "/oauth/token")
+
+			log.C(ctx).Infof("Verifier for issuer %q not found. Attempting to construct new verifier from well-known endpoint", issuerURL)
+			resp, err := h.getOpenIDConfig(ctx, issuerURL)
+			if err != nil {
+				log.C(ctx).Errorf("error while getting OpenIDCOnfig for issuer %q: %s", issuerURL, err)
+				continue
+			}
+
+			if resp.StatusCode != http.StatusOK {
+				log.C(ctx).Errorf("error for issuer %q: %s", issuerURL, handleResponseError(ctx, resp))
+				continue
+			}
+
+			var m OpenIDMetadata
+			if err := json.NewDecoder(resp.Body).Decode(&m); err != nil {
+				log.C(ctx).Errorf("while decoding body of response for issuer %q: %s", issuerURL, err)
+				continue
+			}
+
+			defer httputils.Close(ctx, resp.Body)
+
+			verifier := h.tokenVerifierProvider(ctx, m)
+
+			h.verifiersMutex.Lock()
+			h.verifiers[issuerURL] = verifier
+			h.verifiersMutex.Unlock()
+
+			log.C(ctx).Infof("Successfully constructed verifier for issuer %q", issuerURL)
+		}
+	}
 }
 
 func (h *Handler) getAuthenticatorConfig(matchedAuthenticatorName string, payload []byte) (*authenticator.Config, error) {

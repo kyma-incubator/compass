@@ -73,14 +73,28 @@ func TestPgRepository_Upsert(t *testing.T) {
 					WithArgs(testExternal, tenantEntity.Inactive).
 					WillReturnRows(rowsToReturn)
 
-				parentRowsToReturn := fixSQLTenantParentsRows(parentRows)
+				parentRow := []sqlTenantParentsRow{
+					{tenantID: testID, parentID: testParentID2},
+				}
+				parentRowsToReturn := fixSQLTenantParentsRows(parentRow)
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
-				for _, row := range parentRows {
-					dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
-						WithArgs(fixTenantParentCreateArgs(row.tenantID, row.parentID)...).WillReturnResult(driver.ResultNoRows)
+
+				tenantAccesses := fixTenantAccesses()
+				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
+					WithArgs(testID, testParentID).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+				for topLvlEntity := range resource.TopLevelEntities {
+					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+						continue
+					}
+					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+						WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+					dbMock.ExpectExec(fixInsertTenantAccessesQuery()).
+						WithArgs(testID, testParentID, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
 				}
+
 				return db, dbMock
 			},
 			Input:                *tenantMappingModel,
@@ -134,16 +148,19 @@ func TestPgRepository_Upsert(t *testing.T) {
 					WithArgs(testExternal, tenantEntity.Inactive).
 					WillReturnRows(rowsToReturn)
 
-				parentRowsToReturn := fixSQLTenantParentsRows(parentRows)
+				parentRow := []sqlTenantParentsRow{
+					{tenantID: testID, parentID: testParentID2},
+				}
+				parentRowsToReturn := fixSQLTenantParentsRows(parentRow)
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
-					WithArgs(fixTenantParentCreateArgs(parentRows[0].tenantID, parentRows[0].parentID)...).WillReturnError(testError)
+					WithArgs(testID, testParentID).WillReturnError(testError)
 				return db, dbMock
 			},
 			Input:                *tenantMappingModel,
-			ExpectedErrorMessage: fmt.Sprintf("while creating tenant parent mapping for tenant with id %s", testID),
+			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", testID, testParentID),
 		},
 		{
 			Name: "Error while getting tenant by external ID",
@@ -2560,7 +2577,7 @@ func TestPgRepository_Update(t *testing.T) {
 				return db, dbMock
 			},
 			Input:                newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
-			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", testID, testParentID2),
+			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", testID, testParentID2),
 		},
 		{
 			Name: "Fail while listing parent tenants by external ID",
