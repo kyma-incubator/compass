@@ -381,13 +381,13 @@ func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
 // It creates or updates the subdomain, region, and customerId labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
+func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error) {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.UnsafeCreate)
 }
 
 // UpsertMany creates all provided tenants if they do not exist. If they do exist, they are internally updated.
 // It creates or updates the subdomain, region, and customerId labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
+func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error) {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.Upsert)
 }
 
@@ -446,7 +446,7 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	return tenantID, nil
 }
 
-func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) ([]string, error) {
+func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) (map[string]tenantpkg.Type, error) {
 	tenants, err := s.MultipleToTenantMapping(ctx, tenantInputs)
 	if err != nil {
 		return nil, err
@@ -457,7 +457,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 	costObjectIDs := tenantCostObjectIDs(tenantInputs)
 	costObjectTypes := tenantCostObjectTypes(tenantInputs)
 
-	tenantIDs := make([]string, 0, len(tenants))
+	tenantsMap := make(map[string]tenantpkg.Type)
 
 	for tenantIdx, tenant := range tenants {
 		subdomain := ""
@@ -487,7 +487,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		}
 
 		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
-		tenantIDs = append(tenantIDs, tenantID)
+		tenantsMap[tenantID] = tenant.Type
 		if tenantID != tenant.ID {
 			for i := tenantIdx; i < len(tenants); i++ {
 				if slices.Contains(tenants[i].Parents, tenant.ID) {
@@ -501,7 +501,7 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		}
 	}
 
-	return tenantIDs, nil
+	return tenantsMap, nil
 }
 
 func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID, costObjectID, costObjectType string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
