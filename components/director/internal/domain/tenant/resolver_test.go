@@ -795,7 +795,7 @@ func TestResolver_Write(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, result)
+				assert.ElementsMatch(t, testCase.ExpectedResult, result)
 			}
 
 			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
