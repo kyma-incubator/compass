@@ -391,7 +391,11 @@ rules:
   - apiGroups: ["*"]
     resources: ["secrets"]
     resourceNames: ["{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"]
-    verbs: ["get"]
+    verbs: ["get", "watch"]
+  - apiGroups: ["*"]
+    resources: ["secrets"]
+    resourceNames: ["{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"]
+    verbs: ["get", "watch"]
   - apiGroups: ["*"]
     resources: ["secrets"]
     resourceNames: ["{{ .Values.global.tests.subscription.externalClientCertTestSecretName }}"]
@@ -436,7 +440,7 @@ roleRef:
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: {{ .Chart.Name }}-e2e-instance-creator-client-cert
+  name: {{ .Chart.Name }}-e2e-{{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
   namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
   labels:
     app: {{ $.Chart.Name }}
@@ -451,6 +455,6 @@ subjects:
     namespace: {{ .Values.global.tests.namespace }}
 roleRef:
   kind: Role
-  name: instance-creator-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  name: {{ .Values.global.instanceCreatorCertConfiguration.secrets.instanceCreatorClientCertSecret.name }}
   apiGroup: rbac.authorization.k8s.io
 {{ end }}

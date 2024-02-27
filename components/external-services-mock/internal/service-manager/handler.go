@@ -64,6 +64,7 @@ func NewServiceManagerHandler(c Config) *Handler {
 func (h *Handler) HandleServiceOfferingsList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service offerings endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -97,6 +98,7 @@ func (h *Handler) HandleServiceOfferingsList(writer http.ResponseWriter, r *http
 func (h *Handler) HandleServicePlansList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service plans endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -130,6 +132,7 @@ func (h *Handler) HandleServicePlansList(writer http.ResponseWriter, r *http.Req
 func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service instances List endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -181,6 +184,7 @@ func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http
 func (h *Handler) HandleServiceInstanceGet(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service instances Get endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -232,6 +236,7 @@ func (h *Handler) HandleServiceInstanceGet(writer http.ResponseWriter, r *http.R
 func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service instances Create endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -281,6 +286,7 @@ func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *htt
 func (h *Handler) HandleServiceInstanceDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service instances Delete endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -327,6 +333,7 @@ func (h *Handler) HandleServiceInstanceDelete(writer http.ResponseWriter, r *htt
 func (h *Handler) HandleServiceBindingsList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service bindings List endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -360,6 +367,7 @@ func (h *Handler) HandleServiceBindingsList(writer http.ResponseWriter, r *http.
 func (h *Handler) HandleServiceBindingGet(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service bindings Get endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -411,6 +419,7 @@ func (h *Handler) HandleServiceBindingGet(writer http.ResponseWriter, r *http.Re
 func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service bindings Create endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
@@ -460,6 +469,7 @@ func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http
 func (h *Handler) HandleServiceBindingDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	log.C(ctx).Infof("Service bindings Delete endpoint was hit...")
 
 	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {

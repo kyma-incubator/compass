@@ -219,26 +219,27 @@ func TestInstanceCreator(t *testing.T) {
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		// Redirect Operator
-		redirectedTntID := "custom-redirected-tenant-id"
+		redirectedTntID := "1234"
 		redirectPath := "/instance-creator/v1/tenantMappings/" + redirectedTntID
 		redirectURL := fmt.Sprintf("%s%s", conf.CompassExternalMTLSGatewayURL, redirectPath)
-		redirectURLTemplate := fmt.Sprintf("{\\\\\\\"path\\\\\\\":\\\\\\\"%s\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\\\\\"}", redirectURL)
 		op = operations.NewAddConstraintOperation("e2e-flow-control-operator-constraint-status-returned").
 			WithTargetOperation(graphql.TargetOperationNotificationStatusReturned).
 			WithOperator(formationconstraintpkg.AsynchronousFlowControlOperator).
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType1).
-			WithInputTemplate(fmt.Sprintf("{\\\"url_template\\\": \\\"%s\\\",\\\"url\\\": \\\"%s\\\",{{ if .NotificationStatusReport }}\\\"notification_status_report_memory_address\\\":{{ .NotificationStatusReport.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate, redirectURL)).
+			WithInputTemplate(fmt.Sprintf("{\\\"url_template\\\": \\\"{\\\\\\\"path\\\\\\\":\\\\\\\"%s\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"PATCH\\\\\\\"}\\\",{{ if .NotificationStatusReport }}\\\"notification_status_report_memory_address\\\":{{ .NotificationStatusReport.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURL)).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
+		redirectURLTemplate := fmt.Sprintf("{\\\\\\\"path\\\\\\\":\\\\\\\"%s\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\\\\\"}", redirectURL)
+		redirectInputTemplate := fmt.Sprintf("{\\\"should_redirect\\\": {{ if and .ReverseFormationAssignment .ReverseFormationAssignment.Value (contains .ReverseFormationAssignment.Value \\\"serviceInstances\\\") }}true{{else}}false{{end}},\\\"url_template\\\": \\\"%s\\\",{{ if .Webhook }}\\\"webhook_memory_address\\\":{{ .Webhook.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate)
 		op = operations.NewAddConstraintOperation("e2e-flow-control-operator-constraint-send-notification").
 			WithTargetOperation(graphql.TargetOperationSendNotification).
 			WithOperator(formationconstraintpkg.AsynchronousFlowControlOperator).
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType1).
-			WithInputTemplate(fmt.Sprintf("{\\\"url_template\\\": \\\"%s\\\",\\\"url\\\": \\\"%s\\\",{{ if .Webhook }}\\\"webhook_memory_address\\\":{{ .Webhook.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate, redirectURL)).
+			WithInputTemplate(redirectInputTemplate).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
