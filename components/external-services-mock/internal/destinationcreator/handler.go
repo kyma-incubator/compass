@@ -97,8 +97,6 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		destinationRequestBody = &ClientCertificateAuthDestRequestBody{}
 	case destinationcreatorpkg.AuthTypeOAuth2ClientCredentials:
 		destinationRequestBody = &OAuth2ClientCredsDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeOAuth2mTLS:
-		destinationRequestBody = &OAuth2MTLSDestRequestBody{}
 
 	default:
 		err := errors.Errorf("The provided destination authentication type: %s is invalid", authTypeResult.String())
