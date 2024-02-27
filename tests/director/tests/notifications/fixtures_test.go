@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"io"
 	"net/http"
 	"net/url"
@@ -358,8 +359,9 @@ func assertOAuth2ClientCredsDestination(t *testing.T, client *clients.Destinatio
 	}
 }
 
-func assertOAuth2mTLSDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
+func assertOAuth2mTLSDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2mTLSDestinationName, oauth2mTLSCertName, oauth2mTLSDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
 	oauth2mTLSDestBytes := client.FindDestinationByName(t, serviceURL, oauth2mTLSDestinationName, authToken, "", http.StatusOK)
+	spew.Dump(oauth2mTLSDestBytes)
 	var oauth2mTLSDest esmdestinationcreator.DestinationSvcOAuth2mTLSDestResponse
 	err := json.Unmarshal(oauth2mTLSDestBytes, &oauth2mTLSDest)
 	require.NoError(t, err)
@@ -370,6 +372,7 @@ func assertOAuth2mTLSDestination(t *testing.T, client *clients.DestinationClient
 	require.Equal(t, oauth2mTLSDestinationURL, oauth2mTLSDest.DestinationConfiguration.URL)
 	require.Equal(t, directordestinationcreator.AuthTypeOAuth2ClientCredentials, oauth2mTLSDest.DestinationConfiguration.Authentication)
 	require.Equal(t, directordestinationcreator.ProxyTypeInternet, oauth2mTLSDest.DestinationConfiguration.ProxyType)
+	require.Equal(t, oauth2mTLSCertName+directordestinationcreator.JavaKeyStoreFileExtension, oauth2mTLSDest.DestinationConfiguration.KeyStoreLocation)
 
 	for i := 0; i < expectedNumberOfAuthTokens; i++ {
 		require.NotEmpty(t, oauth2mTLSDest.AuthTokens)
