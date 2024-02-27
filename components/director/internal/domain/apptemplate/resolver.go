@@ -479,7 +479,7 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 		return nil, err
 	}
 
-	region, subaccountID, systemFieldDiscovery, err := r.areSystemFieldDiscoveryPrerequisitesAvailable(ctx, appCreateInputModel, appTemplate.ID)
+	region, subaccountID, systemFieldDiscovery, err := r.areSystemFieldDiscoveryPrerequisitesAvailable(ctx, appTemplate.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -998,24 +998,25 @@ func extractRegionPlaceholder(placeholders []model.ApplicationTemplatePlaceholde
 	return regionPlaceholder, nil
 }
 
-// region label for application and global_subaccount_id and systemFieldDiscovery labels for app template must exist
-func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, appTemplateID string) (string, string, bool, error) {
+// region, global_subaccount_id and systemFieldDiscovery labels for app template must exist
+func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appTemplateID string) (string, string, bool, error) {
 	var regionValue, subaccountIDValue string
 	var systemFieldDiscoveryValue, ok bool
-	if regionLabel, exists := appCreateInputModel.Labels[selfregmanager.RegionLabel]; exists {
-		regionValue, ok = regionLabel.(string)
-		if !ok {
-			log.C(ctx).Infof("%s label for Application with Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplateID)
-			return "", "", false, nil
-		}
-	} else {
-		log.C(ctx).Infof("%s label for Application with Application Template with ID %s is missing", selfregmanager.RegionLabel, appTemplateID)
-		return "", "", false, nil
-	}
 
 	appTemplateLabels, err := r.appTemplateSvc.ListLabels(ctx, appTemplateID)
 	if err != nil {
 		return "", "", false, errors.Errorf("error while listing labels for Application Template with ID %s", appTemplateID)
+	}
+
+	if regionLabel, exists := appTemplateLabels[selfregmanager.RegionLabel]; exists {
+		regionValue, ok = regionLabel.Value.(string)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplateID)
+			return "", "", false, nil
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", selfregmanager.RegionLabel, appTemplateID)
+		return "", "", false, nil
 	}
 
 	if subaccountIDLabel, exists := appTemplateLabels[globalSubaccountIDLabelKey]; exists {
