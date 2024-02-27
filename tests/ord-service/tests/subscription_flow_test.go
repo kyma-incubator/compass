@@ -328,6 +328,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		require.Len(t, rtmExt.RuntimeContexts.Data, 1)
+		require.NotEmpty(t, rtmExt.RuntimeContexts.Data[0].ID)
+		rtCtx := rtmExt.RuntimeContexts.Data[0]
+
 		// Create destination that matches to the created bundle
 		region := conf.SubscriptionConfig.SelfRegRegion
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
@@ -359,6 +363,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Get(respBody, "value.0"), formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
@@ -658,6 +664,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", consumerApp.ID), headers)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, providerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Result{Raw: respBody}, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
@@ -918,6 +926,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		require.Len(t, rtmExt.RuntimeContexts.Data, 1)
+		require.NotEmpty(t, rtmExt.RuntimeContexts.Data[0].ID)
+		rtCtx := rtmExt.RuntimeContexts.Data[0]
+
 		// Create destination that matches to the created bundle
 		region := conf.SubscriptionConfig.SelfRegRegion
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
@@ -949,6 +961,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Get(respBody, "value.0"), formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
@@ -1056,4 +1070,26 @@ func fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(name strin
 	input.ApplicationInput.BaseURL = str.Ptr(fmt.Sprintf(baseURLTemplate, "{{subdomain}}", "{{region}}"))
 	input.Placeholders = append(input.Placeholders, &graphql.PlaceholderDefinitionInput{Name: "subdomain"}, &graphql.PlaceholderDefinitionInput{Name: "region"})
 	return input
+}
+
+func getExpectedFormationDetailsAssignmentID(t require.TestingT, ctx context.Context, tenantID, sourceID, targetID, formationID string) string {
+	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+	assignments := assignmentsPage.Data
+	require.NotEmpty(t, assignments)
+	expectedFormationDetailsAssignmentID := ""
+	for _, assignment := range assignments {
+		if assignment.Source == sourceID && assignment.Target == targetID {
+			expectedFormationDetailsAssignmentID = assignment.ID
+			break
+		}
+	}
+	require.NotEmpty(t, expectedFormationDetailsAssignmentID)
+	return expectedFormationDetailsAssignmentID
+}
+
+func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expectedFormationID, expectedFormationAssignmentID, expectedFormationTemplateID string) {
+	require.Equal(stdT, expectedFormationID, systemInstance.Get("formationDetails.formationId").String())
+	require.Equal(stdT, expectedFormationAssignmentID, systemInstance.Get("formationDetails.assignmentId").String())
+	require.Equal(stdT, expectedFormationTemplateID, systemInstance.Get("formationDetails.formationTypeId").String())
 }

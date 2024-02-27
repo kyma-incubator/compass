@@ -45,6 +45,7 @@ const (
 	assignmentIDKey               = "assignment_id"
 	currentWaveHashKey            = "current_wave_hash"
 	reverseKey                    = "reverse"
+	destinationsKey               = "destinations"
 
 	locationHeader             = "Location"
 	contentTypeHeaderKey       = "Content-Type"
@@ -337,6 +338,17 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 	})
 	if err != nil {
 		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while deleting service instances for auth methods"))
+		return
+	}
+
+	log.C(ctx).Debugf("Removing assigned tenant destinations from inbound communication...")
+	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
+	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
+		assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", assignedTenantInboundCommunicationPath, auth.Str, destinationsKey))
+		return err == nil
+	})
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while deleting destinations for auth methods"))
 		return
 	}
 
