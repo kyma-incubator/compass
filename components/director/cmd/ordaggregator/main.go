@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -138,6 +139,7 @@ type config struct {
 	TenantMappingConfigPath                  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
+	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
 
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig
@@ -368,7 +370,7 @@ func main() {
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
-	validationClient := ord.NewValidationClient("http://localhost:8080", http.DefaultClient) // TODO env variable or const?
+	validationClient := ord.NewValidationClient(fmt.Sprintf("http://localhost:%s", cfg.APIMetadataValidatorPort), http.DefaultClient)
 	documentValidator := ord.NewDocumentValidator(validationClient)
 	documentSanitizer := ord.NewDocumentSanitizer()
 
@@ -474,12 +476,6 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 }
 
-// 1. Runtime error - Expected failed operation +
-// 2. Runtime error in ProcessingError - Expected fail operation +
-// 3. Runtime error = nil, ValidationErrors with Errors - Expected fail operation +
-// 4. Runtime error = nil, ValidationErrors with Warnings only - Expected completed operation +
-// 5. Runtime error = nil, len(ValidationErrors)==0 - Expected completed operation +
-
 func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *ord.OperationsProcessor) (string, error) {
 	op, errGetOperation := opManager.GetOperation(ctx)
 	if errGetOperation != nil {
@@ -509,7 +505,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 			return op.ID, processingError
 		}
 
-		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && thereAreValidationErrorsWithErrSeverity(processingError.ValidationErrors)) {
+		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && validationErrorsWithErrorSeverityExist(processingError.ValidationErrors)) {
 			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
 				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 				return op.ID, errMarkAsFailed
@@ -531,7 +527,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	return op.ID, nil
 }
 
-func thereAreValidationErrorsWithErrSeverity(errors []*ord.ValidationError) bool {
+func validationErrorsWithErrorSeverityExist(errors []*ord.ValidationError) bool {
 	for _, e := range errors {
 		if e.Severity == ord.ErrorSeverity {
 			return true

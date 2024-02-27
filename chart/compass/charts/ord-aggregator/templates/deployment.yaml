@@ -166,6 +166,8 @@ spec:
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
             - name: APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS
               value: {{ .Values.global.ordAggregator.tenantMappingConfiguration | quote }}
+            - name: APP_API_METADATA_VALIDATOR_PORT
+              value: "{{ $.Values.global.ordAggregator.metadataValidator.port }}"
           command:
             - "/bin/sh"
           args:
@@ -203,3 +205,7 @@ spec:
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: {{ $.Values.global.ordAggregator.metadataValidator.port }}
+      {{ if eq $.Values.global.ordAggregator.metadataValidator.setImagePullSecrets true }}
+      imagePullSecrets:
+        - name: api-validator-secret
+      {{end}}

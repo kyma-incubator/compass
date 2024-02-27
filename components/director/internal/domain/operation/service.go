@@ -201,7 +201,7 @@ func (s *service) ListAllByType(ctx context.Context, opType model.OperationType)
 }
 
 type customError struct {
-	ErrorMsg error
+	ErrorMsg error `json:"message"`
 }
 
 // OperationError represents an error from operation processing.
