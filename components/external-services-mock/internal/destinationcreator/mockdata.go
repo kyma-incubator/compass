@@ -127,7 +127,7 @@ var FindAPIOAuth2ClientCredsDestResponseTemplate = `
   ]
 }`
 
-var FindAPIOAuth2MTLSDestResponseTemplate = `
+var FindAPIOAuth2mTLSDestResponseTemplate = `
 {
     "owner": {
         "SubaccountId": "%s",

@@ -13,8 +13,8 @@ import (
 var (
 	certificateSAMLAssertionDestinationPrefix       = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLAssertion)
 	certificateSAMLBearerAssertionDestinationPrefix = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeSAMLBearerAssertion)
-	certificateClientCertificateDestinationPrefix   = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeClientCertificate)
-	certificateOAuth2MTLSDestinationPrefix          = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2mTLS)
+	certificateClientCertificateDestinationPrefix = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeClientCertificate)
+	certificateOAuth2mTLSDestinationPrefix        = fmt.Sprintf("%s-", destinationcreatorpkg.AuthTypeOAuth2mTLS)
 )
 
 // Validator validates destination creator request body
@@ -75,8 +75,8 @@ type OAuth2ClientCredsDestinationRequestBody struct {
 	TokenServiceURLType string `json:"tokenServiceURLType,omitempty"`
 }
 
-// OAuth2MTLSDestinationRequestBody contains the necessary fields for the destination request body with authentication type OAuth2mTLS
-type OAuth2MTLSDestinationRequestBody struct {
+// OAuth2mTLSDestinationRequestBody contains the necessary fields for the destination request body with authentication type OAuth2mTLS
+type OAuth2mTLSDestinationRequestBody struct {
 	BaseDestinationRequestBody
 	TokenServiceURL     string `json:"tokenServiceURL"`
 	ClientID            string `json:"clientId"`
@@ -157,7 +157,7 @@ func (b *OAuth2ClientCredsDestinationRequestBody) Validate() error {
 }
 
 // Validate validates that the AuthTypeBasic request body contains the required fields, and they are valid
-func (b *OAuth2MTLSDestinationRequestBody) Validate() error {
+func (b *OAuth2mTLSDestinationRequestBody) Validate() error {
 	return validation.ValidateStruct(b,
 		validation.Field(&b.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 		validation.Field(&b.URL, validation.Required),

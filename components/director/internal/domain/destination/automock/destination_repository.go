@@ -19,6 +19,10 @@ type DestinationRepository struct {
 func (_m *DestinationRepository) DeleteByDestinationNameAndAssignmentID(ctx context.Context, destinationName string, formationAssignmentID string, tenantID string) error {
 	ret := _m.Called(ctx, destinationName, formationAssignmentID, tenantID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteByDestinationNameAndAssignmentID")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
 		r0 = rf(ctx, destinationName, formationAssignmentID, tenantID)
@@ -32,6 +36,10 @@ func (_m *DestinationRepository) DeleteByDestinationNameAndAssignmentID(ctx cont
 // GetDestinationByNameAndTenant provides a mock function with given fields: ctx, destinationName, tenantID
 func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Context, destinationName string, tenantID string) (*model.Destination, error) {
 	ret := _m.Called(ctx, destinationName, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetDestinationByNameAndTenant")
+	}
 
 	var r0 *model.Destination
 	var r1 error
@@ -59,6 +67,10 @@ func (_m *DestinationRepository) GetDestinationByNameAndTenant(ctx context.Conte
 func (_m *DestinationRepository) ListByAssignmentID(ctx context.Context, formationAssignmentID string) ([]*model.Destination, error) {
 	ret := _m.Called(ctx, formationAssignmentID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByAssignmentID")
+	}
+
 	var r0 []*model.Destination
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Destination, error)); ok {
@@ -84,6 +96,10 @@ func (_m *DestinationRepository) ListByAssignmentID(ctx context.Context, formati
 // UpsertWithEmbeddedTenant provides a mock function with given fields: ctx, _a1
 func (_m *DestinationRepository) UpsertWithEmbeddedTenant(ctx context.Context, _a1 *model.Destination) error {
 	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertWithEmbeddedTenant")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Destination) error); ok {
