@@ -164,6 +164,16 @@ spec:
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
             - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
+            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING
+              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessing }}"
+            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
+              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessMaxDays }}"
+            - name: APP_WEBHOOK_PROCESSOR_JOB_INTERVAL
+              value: "{{ .Values.global.tenantFetcher.webhookProcessorJobInterval }}"
+            - name: APP_ELECTION_LEASE_LOCK_NAME
+              value: {{ .Values.global.tenantFetcher.lease.lockname | quote }}
+            - name: APP_ELECTION_LEASE_LOCK_NAMESPACE
+              value: {{ .Release.Namespace }}
             {{- if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}
