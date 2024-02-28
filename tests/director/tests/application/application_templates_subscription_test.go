@@ -80,7 +80,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
-		appTemplateInput.Labels["systemFieldDiscovery"] = true
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
@@ -105,7 +104,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
-		t.Run("Application is created successfully in consumer subaccount as a result of subscription and system field discovery webhook is created", func(t *testing.T) {
+		t.Run("Application is created successfully in consumer subaccount as a result of subscription", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 
@@ -116,10 +115,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			// THEN
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
 
-			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
-			// webhooks with types - configuration changed and system field discovery
-			require.Len(t, appPageExt.Data[0].Webhooks, 2)
-			require.True(t, assertions.AssertWebhooksTypesForSystemFieldDiscoveryEngine(appPageExt.Data[0].Webhooks))
 			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 
@@ -441,6 +436,95 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.Len(t, actualAppPage.Data, 1)
 			require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
 			require.Equal(t, expectedBaseURL, *actualAppPage.Data[0].BaseURL)
+		})
+	})
+}
+
+func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT *testing.T) {
+	t := testingx.NewT(baseT)
+	ctx := context.Background()
+
+	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
+	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
+	subscriptionConsumerTenantID := conf.TestConsumerTenantID
+
+	httpClient := &http.Client{
+		Timeout: 10 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
+		},
+	}
+
+	// We need an externally issued cert with a subject that is not part of the access level mappings
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig, true)
+	appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
+
+	t.Run("When creating app template with a certificate", func(stdT *testing.T) {
+		t := testingx.NewT(stdT)
+		// GIVEN
+
+		// Create Application Template
+		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription")
+		appTemplateInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+		for i := range appTemplateInput.Placeholders {
+			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
+		}
+		appTemplateInput.Labels["systemFieldDiscovery"] = true
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appTmpl.ID)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
+
+		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(stdT, ok)
+		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
+
+		deps, err := json.Marshal([]string{selfRegLabelValue})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
+		require.NoError(stdT, err)
+		response, err := httpClient.Do(depConfigureReq)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				stdT.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.NoError(stdT, err)
+		require.Equal(stdT, http.StatusOK, response.StatusCode)
+
+		t.Run("Application is created successfully in consumer subaccount as a result of subscription and system field discovery webhook is created", func(t *testing.T) {
+			//GIVEN
+			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
+
+			// WHEN
+			defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
+			subscription.CreateSubscription(t, conf.SubscriptionConfig, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
+
+			// THEN
+			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
+
+			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
+			// webhooks with types - configuration changed and system field discovery
+			require.Len(t, appPageExt.Data[0].Webhooks, 2)
+			require.True(t, assertions.AssertWebhooksTypesForSystemFieldDiscoveryEngine(appPageExt.Data[0].Webhooks))
+			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 		})
 	})
 }
