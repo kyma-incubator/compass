@@ -68,7 +68,7 @@ func TestSystemFetcherClient_Sync(t *testing.T) {
 			client.SetHTTPClient(mockClient)
 
 			// WHEN
-			err := client.Sync(ctx, tenantID)
+			err := client.Sync(ctx, tenantID, true)
 
 			// THEN
 			if test.ExpectedErr != nil {

@@ -282,7 +282,7 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 	tenantIDs := make([]string, 0, len(tenantsMap))
 	for tenantID, tenantType := range tenantsMap {
 		tenantIDs = append(tenantIDs, tenantID)
-		if tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer {
+		if r.isSyncableTenant(tenantType) {
 			r.syncSystemsForTenant(ctx, tenantID)
 		}
 	}
@@ -311,7 +311,7 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 		return "", err
 	}
 
-	if tenant.Type == tenantpkg.TypeToStr(tenantpkg.Account) || tenant.Type == tenantpkg.TypeToStr(tenantpkg.Customer) {
+	if r.isSyncableTenant(tenantpkg.StrToType(tenant.Type)) {
 		r.syncSystemsForTenant(ctx, id)
 	}
 
@@ -411,7 +411,7 @@ func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx
 
 func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantID string) {
 	log.C(ctx).Infof("Calling sync systems API with TenantID %q", tenantID)
-	if err := r.systemFetcherClient.Sync(ctx, tenantID); err != nil {
+	if err := r.systemFetcherClient.Sync(ctx, tenantID, true); err != nil {
 		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API with TenantID %q", tenantID)
 	}
 }
@@ -508,4 +508,8 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 	log.C(ctx).Infof("Successfully removed access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 
 	return output, nil
+}
+
+func (r *Resolver) isSyncableTenant(tenantType tenantpkg.Type) bool {
+	return tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer
 }
