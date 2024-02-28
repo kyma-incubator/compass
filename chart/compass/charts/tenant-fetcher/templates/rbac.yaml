@@ -30,6 +30,16 @@ rules:
     resources: ["configmaps"]
     resourceNames: [{{ $configmapName }}]
     verbs: ["get", "update"]
+  - apiGroups:
+      - "coordination.k8s.io"
+    resources:
+      - leases
+    verbs:
+      - create
+      - delete
+      - get
+      - patch
+      - update
 ---
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
