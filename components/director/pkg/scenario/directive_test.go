@@ -42,7 +42,7 @@ func TestHasScenario(t *testing.T) {
 	t.Run("consumer is of type user, should proceed with next resolver", func(t *testing.T) {
 		// GIVEN
 		directive := scenario.NewDirective(nil, nil, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.User})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.User})
 		dummyResolver := &dummyResolver{}
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, "", "")
@@ -54,7 +54,7 @@ func TestHasScenario(t *testing.T) {
 	t.Run("consumer is of type application, should proceed with next resolver", func(t *testing.T) {
 		// GIVEN
 		directive := scenario.NewDirective(nil, nil, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Application})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.Application})
 		dummyResolver := &dummyResolver{}
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, "", "")
@@ -66,7 +66,7 @@ func TestHasScenario(t *testing.T) {
 	t.Run("consumer is of type integration system, should proceed with next resolver", func(t *testing.T) {
 		// GIVEN
 		directive := scenario.NewDirective(nil, nil, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.IntegrationSystem})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.IntegrationSystem})
 		dummyResolver := &dummyResolver{}
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, "", "")
@@ -78,7 +78,7 @@ func TestHasScenario(t *testing.T) {
 	t.Run("could not extract tenant from context, should return error", func(t *testing.T) {
 		// GIVEN
 		directive := scenario.NewDirective(nil, nil, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.Runtime})
 		dummyResolver := &dummyResolver{}
 		// WHEN
 		res, err := directive.HasScenario(ctx, nil, dummyResolver.SuccessResolve, "", "")
@@ -105,7 +105,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: runtimeID})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.Runtime, ConsumerID: runtimeID})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "Application",
@@ -143,7 +143,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, nil, bndlRepo, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
@@ -180,7 +180,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, nil, nil, bndlAuthRepo)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
@@ -218,7 +218,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "Application",
@@ -258,7 +258,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, nil, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "Application",
@@ -302,7 +302,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
@@ -348,7 +348,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, nil)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
@@ -399,7 +399,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, bndlAuthRepo)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",
@@ -452,7 +452,7 @@ func TestHasScenario(t *testing.T) {
 		defer mockedTransactioner.AssertExpectations(t)
 
 		directive := scenario.NewDirective(mockedTransactioner, lblRepo, bndlRepo, bndlAuthRepo)
-		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, ConsumerType: consumer.Runtime})
+		ctx := context.WithValue(context.TODO(), consumer.ConsumerKey, consumer.Consumer{ConsumerID: runtimeID, Type: consumer.Runtime})
 		ctx = context.WithValue(ctx, tenant.TenantContextKey, tenant.TenantCtx{InternalID: tenantID})
 		rCtx := &graphql.FieldContext{
 			Object:   "BundleInstanceAuth",

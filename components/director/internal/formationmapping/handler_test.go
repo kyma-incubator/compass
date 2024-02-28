@@ -145,7 +145,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{ConsumerType: consumer.Application}),
+			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{Type: consumer.Application}),
 			expectedErrOutput:  "state: cannot be blank",
 		},
 		{
@@ -155,7 +155,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 				State:         model.InitialAssignmentState,
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{ConsumerType: consumer.Application}),
+			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{Type: consumer.Application}),
 			expectedErrOutput:  "state: must be a valid value",
 		},
 		{

@@ -137,6 +137,12 @@ func (h *handler) performSystemFetcherAggregation(ctx context.Context, payload A
 		return
 	}
 
+	if payload.SkipReschedule {
+		log.C(ctx).Debugf("Skipping reschedule for tenant with ID %q.", payload.TenantID)
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+
 	if err = h.opMgr.RescheduleOperation(ctx, operation.ID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to reschedule operation with ID %s", operation.ID)
 		return

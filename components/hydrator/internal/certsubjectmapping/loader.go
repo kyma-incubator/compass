@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+
 	"github.com/avast/retry-go/v4"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -59,7 +61,7 @@ func (s *SubjectConsumerTypeMapping) Validate() error {
 		return errors.New("subject is not provided")
 	}
 
-	if !inputvalidation.SupportedConsumerTypes[s.ConsumerType] {
+	if !inputvalidation.SupportedConsumerTypes[consumer.Type(s.ConsumerType)] {
 		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
 	}
 

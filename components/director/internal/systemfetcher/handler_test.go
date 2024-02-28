@@ -49,7 +49,7 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 		ExpectedStatusCode         int
 	}{
 		{
-			Name:            "Success - operation already exists",
+			Name:            "Success - operation already exists, reschedule",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			OperationManagerFn: func() *automock.OperationsManager {
 				opManager := &automock.OperationsManager{}
@@ -62,6 +62,23 @@ func TestHandler_ScheduleAggregationForSystemFetcherData(t *testing.T) {
 			},
 			RequestBody: systemfetcher.AggregationResource{
 				TenantID: tenantID,
+			},
+			ExpectedStatusCode: http.StatusOK,
+		},
+		{
+			Name:            "Success - operation already exists, skip reschedule",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			OperationManagerFn: func() *automock.OperationsManager {
+				opManager := &automock.OperationsManager{}
+				opManager.On("FindOperationByData", mock.Anything, systemfetcher.NewSystemFetcherOperationData(tenantID)).Return(&model.Operation{ID: operationID}, nil).Once()
+				return opManager
+			},
+			BusinessTenantMappingSvcFn: func() *automock.BusinessTenantMappingService {
+				return &automock.BusinessTenantMappingService{}
+			},
+			RequestBody: systemfetcher.AggregationResource{
+				TenantID:       tenantID,
+				SkipReschedule: true,
 			},
 			ExpectedStatusCode: http.StatusOK,
 		},

@@ -937,11 +937,11 @@ func TestAuthenticator_NSAdapterHandler(t *testing.T) {
 
 func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 	tokenClaims := struct {
-		Tenant       string                `json:"tenant"`
-		Scopes       string                `json:"scopes"`
-		ConsumerID   string                `json:"consumerID"`
-		ConsumerType consumer.ConsumerType `json:"consumerType"`
-		OnBehalfOf   string                `json:"onBehalfOf"`
+		Tenant       string        `json:"tenant"`
+		Scopes       string        `json:"scopes"`
+		ConsumerID   string        `json:"consumerID"`
+		ConsumerType consumer.Type `json:"consumerType"`
+		OnBehalfOf   string        `json:"onBehalfOf"`
 		jwt.StandardClaims
 	}{
 		Scopes:       scopes,
@@ -963,11 +963,11 @@ func createNotSingedToken(t *testing.T, tenant string, scopes string) string {
 
 func createTokenWithSigningMethod(t *testing.T, tenant string, scopes string, key jwk.Key, keyID *string, isSigningKeyAvailable bool) string {
 	tokenClaims := struct {
-		Tenant       string                `json:"tenant"`
-		Scopes       string                `json:"scopes"`
-		ConsumerID   string                `json:"consumerID"`
-		ConsumerType consumer.ConsumerType `json:"consumerType"`
-		OnBehalfOf   string                `json:"onBehalfOf"`
+		Tenant       string        `json:"tenant"`
+		Scopes       string        `json:"scopes"`
+		ConsumerID   string        `json:"consumerID"`
+		ConsumerType consumer.Type `json:"consumerType"`
+		OnBehalfOf   string        `json:"onBehalfOf"`
 		jwt.StandardClaims
 	}{
 		Scopes:       scopes,

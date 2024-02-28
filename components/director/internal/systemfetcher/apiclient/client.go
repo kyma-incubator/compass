@@ -20,7 +20,8 @@ type SystemFetcherClient struct {
 }
 
 type aggregationResource struct {
-	TenantID string `json:"tenantID"`
+	TenantID       string `json:"tenantID"`
+	SkipReschedule bool   `json:"skipReschedule"`
 }
 
 // NewSystemFetcherClient creates new system fetcher client
@@ -47,10 +48,11 @@ func (c *SystemFetcherClient) SetHTTPClient(client *http.Client) {
 }
 
 // Sync call to system fetcher on dmand API
-func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string) error {
+func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string, skipReschedule bool) error {
 	log.C(ctx).Debugf("Call to sync systems API with TenantID %q started", tenantID)
 	syncData := aggregationResource{
-		TenantID: tenantID,
+		TenantID:       tenantID,
+		SkipReschedule: skipReschedule,
 	}
 	marshalledSyncData, err := json.Marshal(syncData)
 	if err != nil {

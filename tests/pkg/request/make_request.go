@@ -1,7 +1,7 @@
 package request
 
 import (
-	"io/ioutil"
+	"io"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
@@ -43,7 +43,7 @@ func MakeRequestWithHeadersAndStatusExpect(t require.TestingT, httpClient *http.
 		}
 	}
 
-	body, err := ioutil.ReadAll(response.Body)
+	body, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
 
 	return string(body)
