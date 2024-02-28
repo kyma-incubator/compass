@@ -3,6 +3,7 @@ package graphqlclient
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
 
@@ -22,6 +23,11 @@ type GraphQLClient interface {
 // Director is an GraphQLClient implementation
 type Director struct {
 	client GraphQLClient
+}
+
+// TenantResponse represents Tenant object from GraphQL response
+type TenantResponse struct {
+	Result *graphql.Tenant `json:"result"`
 }
 
 // NewDirector creates new director with given client
@@ -105,4 +111,30 @@ func (d *Director) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 		return errors.Wrap(err, "while executing gql mutation")
 	}
 	return nil
+}
+
+// ExistsTenantByExternalID makes graphql query to check if tenant exists
+func (d *Director) ExistsTenantByExternalID(ctx context.Context, tenantID string) (bool, error) {
+	query := fmt.Sprintf(`query { result: tenantByInternalID(id: "%s") { id internalID name type parents labels }}`, tenantID)
+	var res TenantResponse
+	gRequest := gcli.NewRequest(query)
+
+	if err := d.client.Run(ctx, gRequest, &res); err != nil {
+		if d.isGQLNotFoundError(err) {
+			return false, nil
+		}
+		return false, errors.Wrap(err, "while executing gql query")
+	}
+
+	return true, nil
+}
+
+func (d *Director) isGQLNotFoundError(err error) bool {
+	err = errors.Cause(err)
+
+	if err == nil {
+		return false
+	}
+
+	return strings.Contains(err.Error(), "Object not found")
 }
