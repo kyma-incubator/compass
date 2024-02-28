@@ -764,6 +764,22 @@ func AssertNoErrorForOtherThanNotFound(t require.TestingT, err error) {
 	}
 }
 
+func AssertWebhooksTypesForSystemFieldDiscoveryEngine(webhooks []graphql.Webhook) bool {
+	containsConfigurationChangedWh := false
+	containsSystemFieldDiscoveryWh := false
+
+	for _, wh := range webhooks {
+		switch wh.Type {
+		case graphql.WebhookTypeConfigurationChanged:
+			containsConfigurationChangedWh = true
+		case graphql.WebhookTypeSystemFieldDiscovery:
+			containsSystemFieldDiscoveryWh = true
+		}
+	}
+
+	return containsConfigurationChangedWh && containsSystemFieldDiscoveryWh
+}
+
 func urlsAreIdentical(url1, url2 *string) bool {
 	identical := url1 == url2
 	if !identical {

@@ -163,6 +163,8 @@ type config struct {
 
 	SelfRegConfig configprovider.SelfRegConfig
 
+	SystemFieldDiscoveryEngineConfig configprovider.SystemFieldDiscoveryEngineConfig
+
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
@@ -308,6 +310,7 @@ func main() {
 		mtlsHTTPClient,
 		extSvcMtlsHTTPClient,
 		cfg.SelfRegConfig,
+		cfg.SystemFieldDiscoveryEngineConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
 		accessStrategyExecutorProvider,
