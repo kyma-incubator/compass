@@ -22,27 +22,27 @@ func TestToViewer(t *testing.T) {
 	}{
 		{
 			Name:     "Convert to Runtime",
-			Input:    consumer.Consumer{ConsumerID: id, ConsumerType: consumer.Runtime},
+			Input:    consumer.Consumer{ConsumerID: id, Type: consumer.Runtime},
 			Expected: graphql.Viewer{ID: id, Type: graphql.ViewerTypeRuntime},
 		},
 		{
 			Name:     "Convert To Application",
-			Input:    consumer.Consumer{ConsumerID: id, ConsumerType: consumer.Application},
+			Input:    consumer.Consumer{ConsumerID: id, Type: consumer.Application},
 			Expected: graphql.Viewer{ID: id, Type: graphql.ViewerTypeApplication},
 		},
 		{
 			Name:     "Convert To Integration System",
-			Input:    consumer.Consumer{ConsumerID: id, ConsumerType: consumer.IntegrationSystem},
+			Input:    consumer.Consumer{ConsumerID: id, Type: consumer.IntegrationSystem},
 			Expected: graphql.Viewer{ID: id, Type: graphql.ViewerTypeIntegrationSystem},
 		},
 		{
 			Name:     "Convert To User",
-			Input:    consumer.Consumer{ConsumerID: id, ConsumerType: consumer.User},
+			Input:    consumer.Consumer{ConsumerID: id, Type: consumer.User},
 			Expected: graphql.Viewer{ID: id, Type: graphql.ViewerTypeUser},
 		},
 		{
 			Name:        "Error while converting",
-			Input:       consumer.Consumer{ConsumerType: "Janusz"},
+			Input:       consumer.Consumer{Type: "Janusz"},
 			ExpectedErr: true,
 		},
 	}

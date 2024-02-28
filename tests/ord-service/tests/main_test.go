@@ -20,6 +20,7 @@ import (
 	"context"
 	"os"
 	"testing"
+	"time"
 
 	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
@@ -70,8 +71,10 @@ type config struct {
 	SaaSAppNameLabelKey                 string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	DestinationAPIConfig                clients.DestinationServiceAPIConfig
 	DestinationsConfig                  cfg.DestinationsConfig
-	DestinationConsumerSubdomainMtls    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
-	ExternalClientCertSecretName        string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	DestinationConsumerSubdomainMtls    string        `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
+	ExternalClientCertSecretName        string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	CertSubjectMappingResyncInterval    time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
+	ApplicationTemplateProductLabel     string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 }
 
 var conf config
