@@ -431,11 +431,7 @@ func getClaimsForRuntimeConsumerProviderFlow(consumerTenant, consumerExternalTen
 	return getClaimsForConsumerProviderFlow(consumer.Runtime, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID)
 }
 
-func getClaimsForIntegrationSystemConsumerProviderFlow(consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) idtokenclaims.Claims {
-	return getClaimsForConsumerProviderFlow(consumer.IntegrationSystem, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID)
-}
-
-func getClaimsForConsumerProviderFlow(consumerType consumer.ConsumerType, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) idtokenclaims.Claims {
+func getClaimsForConsumerProviderFlow(consumerType consumer.Type, consumerTenant, consumerExternalTenant, consumerID, providerTenant, providerExtTenant, scopes, region, clientID string) idtokenclaims.Claims {
 	return idtokenclaims.Claims{
 		Tenant: map[string]string{
 			tenantmapping.ConsumerTenantKey:         consumerTenant,

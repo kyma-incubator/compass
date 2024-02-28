@@ -138,12 +138,12 @@ func (h *Handler) Handler() func(next http.Handler) http.Handler {
 					return
 				}
 
-				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID REDACTED_%x and type %q", sha256.Sum256([]byte(consumerInfo.ConsumerID)), consumerInfo.ConsumerType)
+				log.C(ctx).Infof("Will proceed without rewriting the request body. Bundles are adopted for consumer with ID REDACTED_%x and type %q", sha256.Sum256([]byte(consumerInfo.ConsumerID)), consumerInfo.Type)
 
 				next.ServeHTTP(w, r)
 
 				if strings.Contains(strings.ToLower(body), "bundle") &&
-					(consumerInfo.ConsumerType == consumer.Runtime || consumerInfo.ConsumerType == consumer.ExternalCertificate) {
+					(consumerInfo.Type == consumer.Runtime || consumerInfo.Type == consumer.ExternalCertificate) {
 					if err := h.labelRuntimeWithBundlesParam(ctx, consumerInfo); err != nil {
 						log.C(ctx).WithError(err).Errorf("Error labelling runtime with %q: %v", usesBundlesLabel, err)
 					}
@@ -224,7 +224,7 @@ func (h *Handler) labelRuntimeWithBundlesParam(ctx context.Context, consumerInfo
 		Key:        usesBundlesLabel,
 		Value:      "true",
 		ObjectID:   consumerInfo.ConsumerID,
-		ObjectType: model.LabelableObject(consumerInfo.ConsumerType),
+		ObjectType: model.LabelableObject(consumerInfo.Type),
 	}); err != nil {
 		return errors.Wrapf(err, "while upserting %q label", usesBundlesLabel)
 	}

@@ -168,9 +168,9 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 	IntSysConsumer := consumer.Consumer{
-		ConsumerID:   "consumerID",
-		ConsumerType: consumer.IntegrationSystem,
-		Flow:         oathkeeper.OAuth2Flow,
+		ConsumerID: "consumerID",
+		Type:       consumer.IntegrationSystem,
+		Flow:       oathkeeper.OAuth2Flow,
 	}
 
 	ctx := context.TODO()

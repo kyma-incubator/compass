@@ -253,9 +253,9 @@ func TestUpdate_Handler(t *testing.T) {
 	}
 }
 
-func createRequestWithClaims(id string, consumerType consumer.ConsumerType, flow oathkeeper.AuthFlow) *http.Request {
+func createRequestWithClaims(id string, consumerType consumer.Type, flow oathkeeper.AuthFlow) *http.Request {
 	req := http.Request{}
-	apiConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumerType, Flow: flow}
+	apiConsumer := consumer.Consumer{ConsumerID: id, Type: consumerType, Flow: flow}
 	ctxWithConsumerInfo := consumer.SaveToContext(context.TODO(), apiConsumer)
 	return req.WithContext(ctxWithConsumerInfo)
 }

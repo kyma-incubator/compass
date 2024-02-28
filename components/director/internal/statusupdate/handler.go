@@ -61,13 +61,13 @@ func (u *update) Handler() func(next http.Handler) http.Handler {
 			consumerID := consumerInfo.ConsumerID
 
 			if consumerInfo.Flow == oathkeeper.OneTimeTokenFlow {
-				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.ConsumerType, consumerID)
+				logger.Infof("AuthFlow is %s. Will not update status of %s with ID: %s", consumerInfo.Flow, consumerInfo.Type, consumerID)
 				next.ServeHTTP(w, r)
 				return
 			}
 
 			var object WithStatusObject
-			switch consumerInfo.ConsumerType {
+			switch consumerInfo.Type {
 			case consumer.Application:
 				object = Applications
 			case consumer.Runtime:

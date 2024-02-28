@@ -162,7 +162,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3656"
+      version: "PR-3683"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
@@ -178,7 +178,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3677"
+      version: "PR-3683"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -206,7 +206,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-124"
+      version: "PR-123"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3679"
+      version: "PR-3683"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -551,7 +551,7 @@ global:
       clientIDKey: "client_id"
       tenantIDKey: "tenantid"
       userNameKey: "user_name"
-      subdomainKey: "subdomain"
+      subdomainKey: "subdomain" # used only in local setup
     http:
       client:
         skipSSLValidation: false
