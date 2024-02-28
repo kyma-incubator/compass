@@ -798,7 +798,6 @@ func fixModelApplicationCreateInput(name string) model.ApplicationRegisterInput 
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
-		Labels:         map[string]interface{}{"region": "cf-eu-1"},
 	}
 }
 
@@ -807,7 +806,7 @@ func fixModelApplicationWithManagedLabelCreateInput(name, managedLabel string) m
 		Name:           name,
 		Description:    &testDescription,
 		HealthCheckURL: &testURL,
-		Labels:         map[string]interface{}{application.ManagedLabelKey: managedLabel, "key": "value", "region": "cf-eu-1"},
+		Labels:         map[string]interface{}{application.ManagedLabelKey: managedLabel, "key": "value"},
 	}
 }
 

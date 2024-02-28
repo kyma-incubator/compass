@@ -1630,8 +1630,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	jsonAppCreateInput := fixJSONApplicationCreateInput(testName)
 	modelAppCreateInput := fixModelApplicationCreateInput(testName)
 	modelAppWithLabelCreateInput := fixModelApplicationWithManagedLabelCreateInput(testName, "false")
-	modelAppWithLabelCreateInput.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
-		Type: model.WebhookTypeSystemFieldDiscovery})
 	modelAppWithManagedTrueLabelCreateInput := fixModelApplicationWithManagedLabelCreateInput(testName, "true")
 	gqlAppCreateInput := fixGQLApplicationCreateInput(testName)
 	gqlAppCreateWithManagedTrueLabelInput := fixGQLApplicationCreateWithManagedTrueLabelInput(testName, "true")
@@ -1646,6 +1644,9 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 		},
 		"systemFieldDiscovery": {
 			Value: true,
+		},
+		"region": {
+			Value: region,
 		},
 	}
 	modelApplication := fixModelApplication(testID, testName)
@@ -1695,7 +1696,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
+				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
+					Type: model.WebhookTypeSystemFieldDiscovery})
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -1712,7 +1716,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery,
 				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return systemFieldDiscoveryEngine
 			},
@@ -2070,7 +2074,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return("", testError).Once()
+				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
+				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
+					Type: model.WebhookTypeSystemFieldDiscovery})
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return("", testError).Once()
 				return appSvc
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
@@ -2085,7 +2092,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery,
 				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
 				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
 				return systemFieldDiscoveryEngine
 			},
@@ -2112,7 +2119,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
+				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
+					Type: model.WebhookTypeSystemFieldDiscovery})
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appSvc
 			},
@@ -2128,7 +2138,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery,
 				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return systemFieldDiscoveryEngine
 			},
@@ -2155,7 +2165,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
+				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
+					Type: model.WebhookTypeSystemFieldDiscovery})
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
 				return appSvc
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
@@ -2170,7 +2183,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery,
 				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(testError).Once()
 				return systemFieldDiscoveryEngine
 			},
@@ -2197,7 +2210,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
+				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
+					Type: model.WebhookTypeSystemFieldDiscovery})
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -2213,7 +2229,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery,
 				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
 				return systemFieldDiscoveryEngine
 			},
