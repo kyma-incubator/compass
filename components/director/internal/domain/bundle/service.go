@@ -220,7 +220,7 @@ func (s *service) ListByApplicationIDs(ctx context.Context, applicationIDs []str
 	}
 
 	// override the default instance auth only for runtime consumers
-	if consumerInfo.ConsumerType != consumer.Runtime {
+	if consumerInfo.Type != consumer.Runtime {
 		return bundlePages, nil
 	}
 

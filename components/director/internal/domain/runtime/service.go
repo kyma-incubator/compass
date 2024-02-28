@@ -277,7 +277,7 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		return errors.Wrapf(err, "while loading consumer")
 	}
 
-	isConsumerIntegrationSystem := consumerInfo.ConsumerType == consumer.IntegrationSystem
+	isConsumerIntegrationSystem := consumerInfo.Type == consumer.IntegrationSystem
 	if isConsumerIntegrationSystem {
 		in.ApplicationNamespace = &s.kymaApplicationNamespaceValue
 	}

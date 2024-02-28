@@ -19,7 +19,7 @@ func TestMapSystemAuthToConsumerType(t *testing.T) {
 	testCases := []struct {
 		name            string
 		sysAuthRefInput model.SystemAuthReferenceObjectType
-		expected        consumer.ConsumerType
+		expected        consumer.Type
 		expectedErr     error
 	}{
 		{
