@@ -432,7 +432,7 @@ func (b FormationAssignmentRequestBody) Validate(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "while fetching consumer info from context")
 	}
-	consumerType := consumerInfo.ConsumerType
+	consumerType := consumerInfo.Type
 
 	var fieldRules []*validation.FieldRules
 	fieldRules = append(
@@ -469,7 +469,7 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 			return false, err
 		}
 
-		if consumerInfo.ConsumerType != consumer.InstanceCreator {
+		if consumerInfo.Type != consumer.InstanceCreator {
 			return false, nil
 		}
 	}
@@ -793,7 +793,7 @@ func isStateSupportedForOperation(ctx context.Context, state model.FormationAssi
 		return isSupportedForOperation
 	}
 
-	if consumerInfo.ConsumerType == consumer.BusinessIntegration {
+	if consumerInfo.Type == consumer.BusinessIntegration {
 		isSupportedForOperation = isSupportedForOperation || (operation == model.AssignFormation && state == model.InitialAssignmentState)
 	}
 

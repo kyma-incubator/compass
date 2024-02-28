@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -300,6 +302,27 @@ func (r *repository) ListByWebhookType(ctx context.Context, webhookType model.We
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("type", webhookType),
+	}
+
+	if err := r.listerGlobalOrderedByCreatedAt.ListGlobal(ctx, &entities, conditions...); err != nil {
+		return nil, err
+	}
+
+	return convertToWebhooks(entities, r)
+}
+
+// ListByTypeAndLabelFilter retrieves all webhooks which have the given webhook type and matching on the given label filters
+func (r *repository) ListByTypeAndLabelFilter(ctx context.Context, webhookType model.WebhookType, filter []*labelfilter.LabelFilter) ([]*model.Webhook, error) {
+	var entities Collection
+
+	filterSubquery, args, err := label.FilterQueryGlobal(model.WebhookLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	var conditions repo.Conditions
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args), repo.NewEqualCondition("type", webhookType))
 	}
 
 	if err := r.listerGlobalOrderedByCreatedAt.ListGlobal(ctx, &entities, conditions...); err != nil {

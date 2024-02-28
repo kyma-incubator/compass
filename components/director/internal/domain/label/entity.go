@@ -15,6 +15,7 @@ type Entity struct {
 	RuntimeID        sql.NullString `db:"runtime_id"`
 	RuntimeContextID sql.NullString `db:"runtime_context_id"`
 	AppTemplateID    sql.NullString `db:"app_template_id"`
+	WebhookID        sql.NullString `db:"webhook_id"`
 	Value            string         `db:"value"`
 	Version          int            `db:"version"`
 }
@@ -32,6 +33,8 @@ func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 		return resource.Runtime, e.RuntimeID.String
 	} else if e.RuntimeContextID.Valid {
 		return resource.RuntimeContext, e.RuntimeContextID.String
+	} else if e.WebhookID.Valid {
+		return resource.Webhook, e.WebhookID.String
 	}
 	return resource.Tenant, e.TenantID.String
 }

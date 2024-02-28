@@ -81,6 +81,7 @@ type config struct {
 	ExternalServicesMockMtlsSecuredURL  string        `envconfig:"APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
 	GlobalSubaccountIDLabelKey          string        `envconfig:"APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY"`
 	CertSubjectMappingResyncInterval    time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
+	ApplicationTemplateProductLabel     string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 }
 
 var conf config

@@ -560,7 +560,10 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 	tenantModelsWithLicense := []model.BusinessTenantMapping{*newModelBusinessTenantMappingWithLicense(testID, "test1", str.Ptr(testLicenseType)),
 		newModelBusinessTenantMappingWithLicense(testID, "test2", str.Ptr(testLicenseType)).WithExternalTenant("external2")}
 
-	expectedResult := []string{testID, testID}
+	expectedResult := map[string]tenantEntity.Type{
+		testID: tenantEntity.Account,
+	}
+
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID)
@@ -581,7 +584,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		LabelUpsertSvcFn    func() *automock.LabelUpsertService
 		UIDSvcFn            func() *automock.UIDService
 		ExpectedError       error
-		ExpectedResult      []string
+		ExpectedResult      map[string]tenantEntity.Type
 	}
 
 	testCases := []testCase{
@@ -619,7 +622,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedError:    nil,
-			ExpectedResult:   []string{testInternalParentID, testID},
+			ExpectedResult:   map[string]tenantEntity.Type{testInternalParentID: tenantEntity.Customer, testID: tenantEntity.Account},
 		},
 		{
 			Name:         "Success when parent tenant organization exists with another ID",
@@ -643,7 +646,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedError:    nil,
-			ExpectedResult:   []string{testInternalParentID, testID},
+			ExpectedResult:   map[string]tenantEntity.Type{testInternalParentID: tenantEntity.Folder, testID: tenantEntity.Organization},
 		},
 		{
 			Name:         "Success when subdomain should be added",
@@ -731,7 +734,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				return svc
 			},
 			ExpectedError:  nil,
-			ExpectedResult: expectedResult,
+			ExpectedResult: map[string]tenantEntity.Type{testID: tenantEntity.Subaccount},
 		},
 		{
 			Name:         "Error when subdomain label setting fails",

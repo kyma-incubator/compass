@@ -246,6 +246,8 @@ spec:
                 secretKeyRef:
                   name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
