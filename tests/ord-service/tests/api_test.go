@@ -22,6 +22,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"net/http"
 	urlpkg "net/url"
@@ -699,9 +700,9 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	t.Logf("app ID: %q", application.ID)
 
 	// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
-	consumerType := "Managed Application Provider Operator" // should be a valid consumer type
-	tenantAccessLevels := []string{"global"}                // should be a valid tenant access level
-	internalConsumerID := appTmpl.ID                        // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
+	consumerType := string(consumer.ManagedApplicationProviderOperator)
+	tenantAccessLevels := []string{"global"} // should be a valid tenant access level
+	internalConsumerID := appTmpl.ID         // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 	certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
 
 	csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
