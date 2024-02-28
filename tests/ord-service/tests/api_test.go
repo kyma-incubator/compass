@@ -756,15 +756,20 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	require.Len(t, gjson.Get(respBody, "value").Array(), 2)
 
 	isSystemFound := false
+	var systemInstanceDetails gjson.Result
 	for _, element := range gjson.Get(respBody, "value").Array() {
 		systemName := gjson.Get(element.String(), "title")
 		if consumerApp.Name == systemName.String() {
 			isSystemFound = true
+			systemInstanceDetails = element
 			break
 		}
 	}
 	require.Equal(t, true, isSystemFound)
 	t.Log("Successfully fetched system instance details using custom certificate and application tenant ID header")
+
+	expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(t, ctx, tenantID, consumerApp.ID, application.ID, formation.ID)
+	verifyFormationDetails(t, systemInstanceDetails, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 }
 
 func assertEqualAPIDefinitions(t *testing.T, expectedAPIDefinitions []*directorSchema.APIDefinitionInput, actualAPIDefinitions string, apisMap map[string]directorSchema.APIDefinitionInput, client *http.Client, headers map[string][]string) {
