@@ -6,8 +6,8 @@ require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/go-openapi/runtime v0.26.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240228064444-feb322751ba8
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228064444-feb322751ba8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228074947-02a81b1e3bf8
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.8.4
