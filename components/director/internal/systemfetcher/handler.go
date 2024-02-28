@@ -27,8 +27,8 @@ type OperationsManager interface {
 
 // AggregationResource holds id of tenant for systems fetching
 type AggregationResource struct {
-	TenantID       string `json:"tenantID"`
-	SkipReschedule bool   `json:"skipReschedule"`
+	TenantIDs      []string `json:"tenantIDs"`
+	SkipReschedule bool     `json:"skipReschedule"`
 }
 
 type handler struct {
@@ -61,13 +61,13 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 		return
 	}
 
-	if payload.TenantID == "" {
+	if len(payload.TenantIDs) == 0 {
 		log.C(ctx).Error("Invalid data provided for System Fetcher aggregation")
-		http.Error(writer, "Invalid payload, Tenant ID is not provided.", http.StatusBadRequest)
+		http.Error(writer, "Invalid payload, TenantIDs is not provided or it is empty.", http.StatusBadRequest)
 		return
 	}
 
-	log.C(ctx).Infof("Rescheduling system fetcher data aggregation for tenant with id %q", payload.TenantID)
+	log.C(ctx).Infof("Rescheduling system fetcher data aggregation for tenants %v", payload.TenantIDs)
 	writer.WriteHeader(http.StatusAccepted)
 
 	h.workerPool <- struct{}{}
@@ -77,34 +77,40 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 			<-h.workerPool
 		}()
 
-		h.performSystemFetcherAggregation(ctx, payload)
+		h.scheduleOperations(ctx, payload)
 	}()
 }
 
-func (h *handler) performSystemFetcherAggregation(ctx context.Context, payload AggregationResource) {
-	operation, err := h.opMgr.FindOperationByData(ctx, NewSystemFetcherOperationData(payload.TenantID))
+func (h *handler) scheduleOperations(ctx context.Context, payload AggregationResource) {
+	for _, tenantID := range payload.TenantIDs {
+		h.scheduleOperation(ctx, tenantID, payload.SkipReschedule)
+	}
+}
+
+func (h *handler) scheduleOperation(ctx context.Context, tenantID string, skipReschedule bool) {
+	operation, err := h.opMgr.FindOperationByData(ctx, NewSystemFetcherOperationData(tenantID))
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			log.C(ctx).WithError(err).Error("Loading Operation for System Fetcher data aggregation failed")
 			return
 		}
 
-		log.C(ctx).Infof("Operation with TenantID %q does not exist. Trying to create...", payload.TenantID)
+		log.C(ctx).Infof("Operation with TenantID %q does not exist. Trying to create...", tenantID)
 
-		businessTenantMapping, err := h.getBusinessTenantMappingByID(ctx, payload.TenantID)
+		businessTenantMapping, err := h.getBusinessTenantMappingByID(ctx, tenantID)
 		if err != nil {
 			if !apperrors.IsNotFoundError(err) {
-				log.C(ctx).WithError(err).Errorf("Getting tenant by internal id %q failed", payload.TenantID)
+				log.C(ctx).WithError(err).Errorf("Getting tenant by internal id %q failed", tenantID)
 				return
 			}
 
-			businessTenantMapping, err = h.getBusinessTenantMappingByExternalID(ctx, payload.TenantID)
+			businessTenantMapping, err = h.getBusinessTenantMappingByExternalID(ctx, tenantID)
 			if err != nil {
 				if apperrors.IsNotFoundError(err) {
-					log.C(ctx).WithError(err).Errorf("External tenant with id %q not found", payload.TenantID)
+					log.C(ctx).WithError(err).Errorf("External tenant with id %q not found", tenantID)
 					return
 				}
-				log.C(ctx).WithError(err).Errorf("Getting external tenant with id %q failed", payload.TenantID)
+				log.C(ctx).WithError(err).Errorf("Getting external tenant with id %q failed", tenantID)
 				return
 			}
 		}
@@ -132,14 +138,8 @@ func (h *handler) performSystemFetcherAggregation(ctx context.Context, payload A
 		return
 	}
 
-	if payload.SkipReschedule {
-		log.C(ctx).Debugf("SkipReschedule is true. Skipping reschedule for tenant with ID %q.", payload.TenantID)
-		return
-	}
-
-	if payload.SkipReschedule {
-		log.C(ctx).Debugf("Skipping reschedule for tenant with ID %q.", payload.TenantID)
-		writer.WriteHeader(http.StatusOK)
+	if skipReschedule {
+		log.C(ctx).Debugf("SkipReschedule is true. Skipping reschedule for tenant with ID %q.", tenantID)
 		return
 	}
 

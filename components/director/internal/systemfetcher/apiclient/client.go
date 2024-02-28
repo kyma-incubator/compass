@@ -20,8 +20,8 @@ type SystemFetcherClient struct {
 }
 
 type aggregationResource struct {
-	TenantID       string `json:"tenantID"`
-	SkipReschedule bool   `json:"skipReschedule"`
+	TenantIDs      []string `json:"tenantIDs"`
+	SkipReschedule bool     `json:"skipReschedule"`
 }
 
 // NewSystemFetcherClient creates new system fetcher client
@@ -48,10 +48,10 @@ func (c *SystemFetcherClient) SetHTTPClient(client *http.Client) {
 }
 
 // Sync call to system fetcher on dmand API
-func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string, skipReschedule bool) error {
-	log.C(ctx).Debugf("Call to sync systems API with TenantID %q started", tenantID)
+func (c *SystemFetcherClient) Sync(ctx context.Context, tenantIDs []string, skipReschedule bool) error {
+	log.C(ctx).Debugf("Call to sync systems API for Tenants %v started", tenantIDs)
 	syncData := aggregationResource{
-		TenantID:       tenantID,
+		TenantIDs:      tenantIDs,
 		SkipReschedule: skipReschedule,
 	}
 	marshalledSyncData, err := json.Marshal(syncData)
@@ -65,20 +65,17 @@ func (c *SystemFetcherClient) Sync(ctx context.Context, tenantID string, skipRes
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	log.C(ctx).Debugf("Executing remote request to sync systems API with TenantID %q", tenantID)
+	log.C(ctx).Debugf("Executing remote request to sync systems API for Tenants %v", tenantIDs)
 	resp, err := c.client.Do(req)
 	if err != nil {
 		return errors.Wrap(err, "while executing request to system fetcher")
 	}
 
-	log.C(ctx).Debugf("Remote request to sync systems API with TenantID %q completed with status code %d", tenantID, resp.StatusCode)
-	if resp.StatusCode != http.StatusOK {
-		if resp.StatusCode == http.StatusNotAcceptable {
-			return errors.Errorf("on-demand system sync is disabled - returned status code %d while calling sync API with TenantID %q", resp.StatusCode, tenantID)
-		}
-		return errors.Errorf("received unexpected status code %d while calling sync API with TenantID %q", resp.StatusCode, tenantID)
+	log.C(ctx).Debugf("Remote request to sync systems API for Tenants %v completed with status code %d", tenantIDs, resp.StatusCode)
+	if resp.StatusCode != http.StatusAccepted {
+		return errors.Errorf("received unexpected status code %d while calling sync API for Tenants %v", resp.StatusCode, tenantIDs)
 	}
 
-	log.C(ctx).Debugf("Call to sync systems API with TenantID %q completed", tenantID)
+	log.C(ctx).Debugf("Call to sync systems API for Tenants %v completed", tenantIDs)
 	return nil
 }
