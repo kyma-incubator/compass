@@ -7,7 +7,7 @@ import (
 
 // SystemFieldDiscoveryEngineConfig is configuration for the system field discovery engine
 type SystemFieldDiscoveryEngineConfig struct {
-	SaasRegSecretPath string `envconfig:"APP_SELF_REGISTER_SECRET_PATH"`
+	SaasRegSecretPath string `envconfig:"APP_SELF_REGISTER_SAAS_APP_SECRET_PATH"`
 	OauthTokenPath    string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
 
 	SaasRegClientIDPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH"`
