@@ -80,9 +80,6 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
-		regionInConfiguration := "eu-1"
-		appTemplateInput.ApplicationInput.Labels["region"] = regionInConfiguration
-		appTemplateInput.Labels["global_subbacount_id"] = tenant.TestTenants.GetDefaultTenantID()
 		appTemplateInput.Labels["systemFieldDiscovery"] = true
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)

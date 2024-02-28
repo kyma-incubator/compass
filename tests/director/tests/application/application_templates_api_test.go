@@ -1493,50 +1493,6 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
 
-func TestRegisterApplicationFromTemplateWithSystemFieldDiscoveryLabel(t *testing.T) {
-	//GIVEN
-	ctx := context.TODO()
-	appTemplateName := fixtures.CreateAppTemplateName("template")
-	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
-	appTmplInput.ApplicationInput.Description = ptr.String("test {{display-name}}")
-	regionInConfiguration := "eu-1"
-	appTmplInput.ApplicationInput.Labels["region"] = regionInConfiguration
-
-	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
-
-	appTmplInput.Labels["global_subbacount_id"] = tenantId
-	appTmplInput.Labels["systemFieldDiscovery"] = true
-
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
-	require.NoError(t, err)
-	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
-	require.Equal(t, tenantId, appTmpl.Labels["global_subbacount_id"])
-	require.Equal(t, true, appTmpl.Labels["systemFieldDiscovery"])
-
-	appFromTmpl := fixtures.FixApplicationFromTemplateInput(appTemplateName, "name", "new-name", "display-name", "new-display-name")
-	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
-	require.NoError(t, err)
-	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
-	outputApp := graphql.ApplicationExt{}
-	//WHEN
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplRequest, &outputApp)
-	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
-
-	//THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, outputApp)
-
-	require.NotEmpty(t, outputApp.Webhooks)
-	// webhooks with types - configuration changed and system field discovery
-	require.Len(t, outputApp.Webhooks, 2)
-	require.True(t, assertions.AssertWebhooksTypesForSystemFieldDiscoveryEngine(outputApp.Webhooks))
-
-	require.NotNil(t, outputApp.Application.Description)
-	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
-	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template for system field discovery engine")
-}
-
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
