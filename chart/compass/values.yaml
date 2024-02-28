@@ -162,11 +162,11 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3683"
+      version: "PR-3665"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3656"
+      version: "PR-3665"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
@@ -178,7 +178,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3683"
+      version: "PR-3665"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -186,7 +186,7 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3610"
+      version: "PR-3665"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
@@ -198,7 +198,7 @@ global:
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3656"
+      version: "PR-3665"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
@@ -210,11 +210,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3679"
+      version: "PR-3665"
       name: compass-schema-migrator
     system_broker:
-      dir: prod/incubator/
-      version: "v20240123-eabe5df7"
+      dir: dev/incubator/
+      version: "PR-3665"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3686"
+      version: "PR-3665"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -329,6 +329,7 @@ global:
           clientSecretMapping: '{{ printf "\"%s\":\"client_secret\"" .Values.global.director.selfRegister.clientSecretPath }}'
           urlMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.director.selfRegister.urlPath .Release.Namespace (.Values.service.port | toString) }}'
           tokenURLMapping: '{{ printf "\"%s\":\"https://%s.%s:%s\"" .Values.global.director.selfRegister.tokenUrlPath .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName (.Values.service.certPort | toString) }}'
+          saasRegistryURLMapping: '{{ printf "\"%s\":\"https://saas-registry-url\"" .Values.global.director.selfRegister.saasRegistryURLPath }}'
           x509CertificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientCertPath .Values.global.connector.caCertificate }}'
           x509KeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientKeyPath .Values.global.connector.caKey }}'
       oauthTokenPath: "/cert/token"
@@ -342,6 +343,7 @@ global:
       requestBodyPattern: '{"key": "%s"}'
       saasAppNameLabelKey: "CMPSaaSAppName"
       saasAppNamePath: "localSaaSAppNamePath"
+      saasRegistryURLPath: "localSaaSRegistryPath"
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
@@ -910,6 +912,11 @@ global:
     host: compass-tenant-fetcher.compass-system.svc.cluster.local
     prefix: /tenants
     port: 3000
+    systemFieldDiscoveryWebhookPartialProcessing: true
+    systemFieldDiscoveryWebhookPartialProcessMaxDays: 7
+    webhookProcessorJobInterval: 3m
+    lease:
+      lockname: tenantfetcherlease
     xsappNamePath: "xsappname"
     omitDependenciesParamName: ""
     omitDependenciesParamValue: ""

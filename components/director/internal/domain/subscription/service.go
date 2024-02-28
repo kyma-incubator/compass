@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -88,6 +90,7 @@ type ApplicationTemplateService interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error)
 	PrepareApplicationCreateInputJSON(appTemplate *model.ApplicationTemplate, values model.ApplicationFromTemplateInputValues) (string, error)
+	GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error)
 }
 
 // ApplicationTemplateConverter missing godoc
@@ -110,9 +113,17 @@ type ApplicationConverter interface {
 //
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
-	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
 	Delete(ctx context.Context, id string) error
+}
+
+// SystemFieldDiscoveryEngine is responsible for system field discovery operations
+//
+//go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SystemFieldDiscoveryEngine interface {
+	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subaccountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
+	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
 }
 
 type service struct {
@@ -125,6 +136,7 @@ type service struct {
 	appTemplateConv              ApplicationTemplateConverter
 	appSvc                       ApplicationService
 	uidSvc                       uidService
+	systemFieldDiscoveryEngine   SystemFieldDiscoveryEngine
 	globalSubaccountIDLabelKey   string
 	subscriptionLabelKey         string
 	runtimeTypeLabelKey          string
@@ -132,7 +144,7 @@ type service struct {
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
-func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appTemplateConv ApplicationTemplateConverter, appSvc ApplicationService, uidService uidService,
+func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appTemplateConv ApplicationTemplateConverter, appSvc ApplicationService, uidService uidService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine,
 	globalSubaccountIDLabelKey, subscriptionLabelKey, runtimeTypeLabelKey, subscriptionProviderLabelKey string) *service {
 	return &service{
 		runtimeSvc:                   runtimeSvc,
@@ -144,6 +156,7 @@ func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tena
 		appTemplateConv:              appTemplateConv,
 		appSvc:                       appSvc,
 		uidSvc:                       uidService,
+		systemFieldDiscoveryEngine:   systemFieldDiscoveryEngine,
 		globalSubaccountIDLabelKey:   globalSubaccountIDLabelKey,
 		subscriptionLabelKey:         subscriptionLabelKey,
 		runtimeTypeLabelKey:          runtimeTypeLabelKey,
@@ -480,13 +493,36 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.LocalTenantID = &consumerTenantID
 	}
 
+	var systemFieldDiscoveryLabelIsTrue bool
+	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, webhookprocessor.SystemFieldDiscoveryLabelKey)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return "", err
+	} else {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
+		} else {
+			systemFieldDiscoveryValue, ok := systemFieldDiscoveryLabel.Value.(bool)
+			if !ok {
+				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
+			} else {
+				appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscoveryValue, region, subscribedSubaccountID, appTemplate.Name, subscribedAppName)
+			}
+		}
+	}
+
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
-	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
+	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
 	}
-
 	log.C(ctx).Infof("Successfully created an Application with id %q and name %q from Application Template with name %q", appID, subscribedAppName, appTemplate.Name)
+
+	if systemFieldDiscoveryLabelIsTrue {
+		if err := s.systemFieldDiscoveryEngine.CreateLabelForApplicationWebhook(ctx, appID); err != nil {
+			return "", err
+		}
+	}
+
 	return appID, nil
 }
 

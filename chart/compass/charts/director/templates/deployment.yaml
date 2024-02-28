@@ -217,6 +217,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_NAME_PATH
               value: {{ .Values.global.director.selfRegister.saasAppNamePath }}
+            - name: APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH
+              value: {{ .Values.global.director.selfRegister.saasRegistryURLPath }}
             - name: APP_SELF_REGISTER_PATH
               value: {{ .Values.global.director.selfRegister.path }}
             - name: APP_SELF_REGISTER_NAME_QUERY_PARAM
