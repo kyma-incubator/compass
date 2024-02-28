@@ -68,7 +68,7 @@ func (s *service) Create(ctx context.Context, bundleID string, in model.BundleIn
 	}
 
 	var runtimeID *string
-	if con.ConsumerType == consumer.Runtime || con.ConsumerType == consumer.ExternalCertificate {
+	if con.Type == consumer.Runtime || con.Type == consumer.ExternalCertificate {
 		runtimeID = &con.ConsumerID
 	}
 

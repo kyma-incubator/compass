@@ -143,7 +143,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 				notificationStatusReport.Configuration = config
 			}
 
-			if oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2mTLSAuthentication; oauth2mTLSDetails != nil && len(oauth2mTLSDetails.Destinations) > 0 {
+			if oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2mTLSAuthenticationDetails; oauth2mTLSDetails != nil && len(oauth2mTLSDetails.Destinations) > 0 {
 				log.C(ctx).Infof("There is/are %d oauth2mTLS destination details in the configuration response", len(oauth2mTLSDetails.Destinations))
 
 				if oauth2mTLSDetails.Certificate != nil && *oauth2mTLSDetails.Certificate != "" {
@@ -239,7 +239,7 @@ func (e *ConstraintEngine) DestinationCreator(ctx context.Context, input Operato
 			}
 		}
 
-		oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2mTLSAuthentication
+		oauth2mTLSDetails := assignmentConfig.Credentials.InboundCommunicationDetails.OAuth2mTLSAuthenticationDetails
 		oauth2mTLSCreds := reverseAssignmentConfig.Credentials.OutboundCommunicationCredentials.OAuth2mTLSAuthentication
 		if oauth2mTLSDetails != nil && oauth2mTLSCreds != nil && len(oauth2mTLSDetails.Destinations) > 0 {
 			log.C(ctx).Infof("There is/are %d inbound oauth2 mTLS destination(s) details available in the configuration", len(oauth2mTLSDetails.Destinations))
@@ -459,7 +459,7 @@ type InboundCommunicationDetails struct {
 	OAuth2SAMLBearerAssertionDetails       *InboundOAuth2SAMLBearerAssertionDetails `json:"oauth2SamlBearerAssertion,omitempty"`
 	ClientCertificateAuthenticationDetails *InboundClientCertAuthenticationDetails  `json:"clientCertificateAuthentication,omitempty"`
 	OAuth2ClientCredentialsDetails         *InboundOAuth2ClientCredentialsDetails   `json:"oauth2ClientCredentials,omitempty"`
-	OAuth2mTLSAuthentication               *InboundOAuth2mTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
+	OAuth2mTLSAuthenticationDetails        *InboundOAuth2mTLSAuthenticationDetails  `json:"oauth2mtls,omitempty"`
 }
 
 // InboundBasicAuthenticationDetails represents inbound communication configuration details for basic authentication

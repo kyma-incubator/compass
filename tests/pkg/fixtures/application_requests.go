@@ -44,9 +44,9 @@ func FixSampleApplicationRegisterInputWithApplicationNamespace(placeholder, appN
 	return sampleInput
 }
 
-func FixSampleApplicationRegisterInput(placeholder string) graphql.ApplicationRegisterInput {
+func FixSampleApplicationRegisterInput(appName string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
-		Name:         placeholder,
+		Name:         appName,
 		ProviderName: ptr.String("compass"),
 	}
 }
