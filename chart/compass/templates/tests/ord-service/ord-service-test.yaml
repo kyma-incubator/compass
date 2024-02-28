@@ -209,6 +209,10 @@ spec:
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

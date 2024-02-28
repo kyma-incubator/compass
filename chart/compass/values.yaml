@@ -206,7 +206,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-124"
+      version: "PR-123"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -553,7 +553,7 @@ global:
       clientIDKey: "client_id"
       tenantIDKey: "tenantid"
       userNameKey: "user_name"
-      subdomainKey: "subdomain"
+      subdomainKey: "subdomain" # used only in local setup
     http:
       client:
         skipSSLValidation: false
