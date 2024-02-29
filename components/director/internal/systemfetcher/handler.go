@@ -26,7 +26,8 @@ type OperationsManager interface {
 
 // AggregationResource holds id of tenant for systems fetching
 type AggregationResource struct {
-	TenantID string `json:"tenantID"`
+	TenantID       string `json:"tenantID"`
+	SkipReschedule bool   `json:"skipReschedule"`
 }
 
 type handler struct {
@@ -150,6 +151,12 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 		// Notify OperationProcessors for new operation
 		h.onDemandChannel <- opID
 
+		writer.WriteHeader(http.StatusOK)
+		return
+	}
+
+	if payload.SkipReschedule {
+		log.C(ctx).Debugf("Skipping reschedule for tenant with ID %q.", payload.TenantID)
 		writer.WriteHeader(http.StatusOK)
 		return
 	}

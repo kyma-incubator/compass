@@ -200,7 +200,6 @@ type config struct {
 	TenantMappingCallbackURL string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 
 	ApplicationTemplateProductLabel string `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 }
@@ -288,11 +287,10 @@ func main() {
 	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	mtlsHTTPClient := authpkg.PrepareMTLSClientWithSSLValidation(cfg.ClientTimeout, certCache, cfg.SkipSSLValidation, cfg.ExternalClientCertSecretName)
-	extSvcMtlsHTTPClient := authpkg.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 	rootResolver, err := domain.NewRootResolver(
 		&normalizer.DefaultNormalizator{},
 		transact,
@@ -308,7 +306,6 @@ func main() {
 		internalGatewayHTTPClient,
 		securedHTTPClient,
 		mtlsHTTPClient,
-		extSvcMtlsHTTPClient,
 		cfg.SelfRegConfig,
 		cfg.SystemFieldDiscoveryEngineConfig,
 		cfg.OneTimeToken.Length,
@@ -334,12 +331,12 @@ func main() {
 			HasScopes:                     scope.NewDirective(cfgProvider, &scope.HasScopesErrorProvider{}).VerifyScopes,
 			Sanitize:                      scope.NewDirective(cfgProvider, &scope.SanitizeErrorProvider{}).VerifyScopes,
 			Validate:                      inputvalidation.NewDirective().Validate,
-			SynchronizeApplicationTenancy: applicationtenancy.NewDirective(transact, tenant.NewService(tenant.NewRepository(tenant.NewConverter()), uid.NewService(), tenant.NewConverter()), applicationSvc(transact, cfg, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping)).SynchronizeApplicationTenancy,
+			SynchronizeApplicationTenancy: applicationtenancy.NewDirective(transact, tenant.NewService(tenant.NewRepository(tenant.NewConverter()), uid.NewService(), tenant.NewConverter()), applicationSvc(transact, cfg, securedHTTPClient, mtlsHTTPClient, certCache, ordWebhookMapping)).SynchronizeApplicationTenancy,
 		},
 	}
 
 	executableSchema := graphql.NewExecutableSchema(gqlCfg)
-	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, tenantMappingConfig, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, extSvcMtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.GlobalSubaccountIDLabelKey, cfg.Features.TokenPrefix)
+	claimsValidator := claims.NewValidator(transact, runtimeSvc(transact, cfg, tenantMappingConfig, httpClient, mtlsHTTPClient), runtimeCtxSvc(transact, cfg, httpClient, mtlsHTTPClient), appTemplateSvc(), applicationSvc(transact, cfg, httpClient, mtlsHTTPClient, certCache, ordWebhookMapping), intSystemSvc(), cfg.Features.SubscriptionProviderLabelKey, cfg.Features.GlobalSubaccountIDLabelKey, cfg.Features.TokenPrefix)
 
 	logger.Infof("Registering GraphQL endpoint on %s...", cfg.APIEndpoint)
 	authMiddleware := mp_authenticator.New(httpClient, cfg.JWKSEndpoint, cfg.AllowJWTSigningNone, cfg.ClientIDHTTPHeaderKey, claimsValidator)
@@ -445,8 +442,8 @@ func main() {
 	logger.Infof("Registering info endpoint...")
 	mainRouter.HandleFunc(cfg.InfoConfig.APIEndpoint, info.NewInfoHandler(ctx, cfg.InfoConfig, certCache))
 
-	fmAuthMiddleware := createFormationMappingAuthenticator(transact, cfg, cfg.DestinationCreatorConfig, appRepo, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
-	fmHandler := createFormationMappingHandler(transact, appRepo, cfg, cfg.DestinationCreatorConfig, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	fmAuthMiddleware := createFormationMappingAuthenticator(transact, cfg, cfg.DestinationCreatorConfig, appRepo, securedHTTPClient, mtlsHTTPClient)
+	fmHandler := createFormationMappingHandler(transact, appRepo, cfg, cfg.DestinationCreatorConfig, securedHTTPClient, mtlsHTTPClient)
 
 	asyncFormationAssignmentStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
 	asyncFormationAssignmentStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationAssignmentHandler()) // order is important
@@ -706,7 +703,7 @@ func appUpdaterFunc(appRepo application.ApplicationRepository) operation.Resourc
 	}
 }
 
-func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingConfig map[string]interface{}, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) claims.RuntimeService {
+func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingConfig map[string]interface{}, securedHTTPClient, mtlsHTTPClient *http.Client) claims.RuntimeService {
 	uidSvc := uid.NewService()
 
 	asaConverter := scenarioassignment.NewConverter()
@@ -749,7 +746,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -781,7 +778,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 	return runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookService(tenantMappingConfig, cfg.TenantMappingCallbackURL), runtimeContextSvc, cfg.Features.ProtectedLabelPattern, cfg.Features.ImmutableLabelPattern, cfg.Features.RuntimeTypeLabelKey, cfg.Features.KymaRuntimeTypeLabelValue, cfg.Features.KymaApplicationNamespaceValue, cfg.Features.KymaAdapterWebhookMode, cfg.Features.KymaAdapterWebhookType, cfg.Features.KymaAdapterWebhookURLTemplate, cfg.Features.KymaAdapterWebhookInputTemplate, cfg.Features.KymaAdapterWebhookHeaderTemplate, cfg.Features.KymaAdapterWebhookOutputTemplate)
 }
 
-func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) claims.RuntimeCtxService {
+func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient *http.Client) claims.RuntimeCtxService {
 	uidSvc := uid.NewService()
 
 	runtimeContextConverter := runtimectx.NewConverter()
@@ -832,7 +829,7 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
 	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -883,7 +880,7 @@ func appTemplateSvc() claims.ApplicationTemplateService {
 	return apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, appRepo, timeSvc)
 }
 
-func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client, certCache credloader.CertCache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {
+func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPClient, mtlsHTTPClient *http.Client, certCache credloader.CertCache, ordWebhookMapping []application.ORDWebhookMapping) claims.ApplicationService {
 	uidSvc := uid.NewService()
 	authConverter := auth.NewConverter()
 	webhookConverter := webhook.NewConverter(authConverter)
@@ -919,7 +916,7 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	apiConverter := api.NewConverter(versionConverter, specConverter)
 	apiRepo := api.NewRepository(apiConverter)
 	specRepo := spec.NewRepository(specConverter)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, securedHTTPClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, securedHTTPClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceConv := bundlereferences.NewConverter()
 	bundleReferenceRepo := bundlereferences.NewRepository(bundleReferenceConv)
@@ -964,7 +961,7 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	formationAssignmentConv := formationassignment.NewConverter()
 	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
@@ -994,7 +991,7 @@ func intSystemSvc() claims.IntegrationSystemService {
 	return integrationsystem.NewService(intSysRepo, uid.NewService())
 }
 
-func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg config, destinationCreatorConfig *destinationcreator.Config, appRepo application.ApplicationRepository, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) *formationmapping.Authenticator {
+func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg config, destinationCreatorConfig *destinationcreator.Config, appRepo application.ApplicationRepository, securedHTTPClient, mtlsHTTPClient *http.Client) *formationmapping.Authenticator {
 	uidSvc := uid.NewService()
 
 	formationAssignmentConv := formationassignment.NewConverter()
@@ -1027,7 +1024,7 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	destinationRepo := destination.NewRepository(destinationConv)
 	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -1065,7 +1062,7 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	return formationmapping.NewFormationMappingAuthenticator(transact, formationAssignmentSvc, runtimeRepo, runtimeContextRepo, appRepo, appTemplateRepo, labelRepo, formationRepo, formationTemplateRepo, tenantRepo, cfg.SubscriptionConfig.GlobalSubaccountIDLabelKey, cfg.FormationMappingCfg.UCLCertOUSubaccountID)
 }
 
-func createFormationMappingHandler(transact persistence.Transactioner, appRepo application.ApplicationRepository, cfg config, destinationCreatorConfig *destinationcreator.Config, securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient *http.Client) *formationmapping.Handler {
+func createFormationMappingHandler(transact persistence.Transactioner, appRepo application.ApplicationRepository, cfg config, destinationCreatorConfig *destinationcreator.Config, securedHTTPClient, mtlsHTTPClient *http.Client) *formationmapping.Handler {
 	uidSvc := uid.NewService()
 
 	formationAssignmentConv := formationassignment.NewConverter()
@@ -1107,7 +1104,7 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	destinationRepo := destination.NewRepository(destinationConv)
 	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient, extSvcMtlsHTTPClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
