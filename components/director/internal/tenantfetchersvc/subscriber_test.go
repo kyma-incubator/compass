@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	testError = errors.New("test error")
+	testError       = errors.New("test error")
 )
 
 func TestSubscribeRegionalTenant(t *testing.T) {
@@ -63,13 +63,16 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		{
 			Name: "Succeeds",
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
+				tenantsIDs := make(map[string]bool)
+				tenantsIDs[tenantExtID] = true
 				provisioner := &automock.TenantProvisioner{}
-				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant).Return(nil).Once()
+				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantsIDs).Return(nil).Once()
 				return provisioner
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
 				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, regionalTenant.SubscriptionProviderAppName, "").Return(nil).Once()
+				directorClient.On("ExistsTenantByExternalID", context.TODO(), tenantExtID).Return(false, nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -77,12 +80,16 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		{
 			Name: "Returns error when tenant creation fails",
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
+				tenantsIDs := make(map[string]bool)
+				tenantsIDs[tenantExtID] = true
 				provisioner := &automock.TenantProvisioner{}
-				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant).Return(testError).Once()
+				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantsIDs).Return(testError).Once()
 				return provisioner
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
-				return &automock.DirectorGraphQLClient{}
+				directorClient := &automock.DirectorGraphQLClient{}
+				directorClient.On("ExistsTenantByExternalID", context.TODO(), tenantExtID).Return(false, nil).Once()
+				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
 			ExpectedErrorOutput:       testError.Error(),
@@ -90,13 +97,16 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 		{
 			Name: "Returns error when cannot subscribe tenant",
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
+				tenantsIDs := make(map[string]bool)
+				tenantsIDs[tenantExtID] = true
 				provisioner := &automock.TenantProvisioner{}
-				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant).Return(nil).Once()
+				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantsIDs).Return(nil).Once()
 				return provisioner
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
 				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, regionalTenant.SubscriptionProviderAppName, "").Return(testError).Once()
+				directorClient.On("ExistsTenantByExternalID", context.TODO(), tenantExtID).Return(false, nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,

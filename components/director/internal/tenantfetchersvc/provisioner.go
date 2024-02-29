@@ -74,7 +74,20 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 }
 
 // ProvisionTenants provisions tenants according to their type
-func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
+func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest, newTenantsIDs map[string]bool) error {
+	var newBusinessTenantMappings = []model.BusinessTenantMappingInput{}
+	requestedBusinessTenantMappingInputs := p.tenantsFromRequest(*request)
+	for _, currentBusinessTenantMappingInput := range requestedBusinessTenantMappingInputs {
+		if newTenantsIDs[currentBusinessTenantMappingInput.ExternalTenant] {
+			newBusinessTenantMappings = append(newBusinessTenantMappings, currentBusinessTenantMappingInput)
+		}
+	}
+
+	if len(newBusinessTenantMappings) > 0 {
+		tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(newBusinessTenantMappings)
+		return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
+	}
+
 	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
 	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 }

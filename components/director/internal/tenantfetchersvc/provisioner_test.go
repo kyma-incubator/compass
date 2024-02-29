@@ -90,6 +90,8 @@ var (
 		Region:                 tenantRegion,
 		SubscriptionLcenseType: testLicenseType,
 	}
+
+	emptyTenantsIDs = make(map[string]bool)
 )
 
 func TestProvisioner_CreateRegionalTenant(t *testing.T) {
@@ -169,7 +171,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 			provisioner := tenantfetchersvc.NewTenantProvisioner(directorClient, tenantConverter, testProviderName)
 
 			// WHEN
-			err := provisioner.ProvisionTenants(ctx, testCase.Request)
+			err := provisioner.ProvisionTenants(ctx, testCase.Request, emptyTenantsIDs)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {

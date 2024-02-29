@@ -8,7 +8,7 @@ import (
 //
 //go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantProvisioner interface {
-	ProvisionTenants(context.Context, *TenantSubscriptionRequest) error
+	ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest, newTenantsIDs map[string]bool) error
 }
 
 type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
@@ -28,7 +28,19 @@ func NewSubscriber(directorClient DirectorGraphQLClient, provisioner TenantProvi
 
 // Subscribe subscribes tenant to appTemplate/runtime. If the tenant does not exist it will be created
 func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error {
-	if err := s.provisioner.ProvisionTenants(ctx, tenantSubscriptionRequest); err != nil {
+	newTenantsIDs := make(map[string]bool)
+	tenantIDs := s.tenantIDsFromRequest(*tenantSubscriptionRequest)
+	for _, currentTenantID := range tenantIDs {
+		exists, err := s.gqlClient.ExistsTenantByExternalID(ctx, currentTenantID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			newTenantsIDs[currentTenantID] = true
+		}
+	}
+
+	if err := s.provisioner.ProvisionTenants(ctx, tenantSubscriptionRequest, newTenantsIDs); err != nil {
 		return err
 	}
 
@@ -49,4 +61,25 @@ func (s *subscriber) applySubscriptionChange(ctx context.Context, subscriptionPr
 		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionPayload)
 	}
 	return err
+}
+
+func (s *subscriber) tenantIDsFromRequest(request TenantSubscriptionRequest) []string {
+	tenants := make([]string, 0, 3)
+	customerID := request.CustomerTenantID
+	accountID := request.AccountTenantID
+	costObjectID := request.CostObjectTenantID
+
+	if len(customerID) > 0 {
+		tenants = append(tenants, customerID)
+	}
+
+	if len(accountID) > 0 {
+		tenants = append(tenants, accountID)
+	}
+
+	if len(costObjectID) > 0 {
+		tenants = append(tenants, costObjectID)
+	}
+
+	return tenants
 }
