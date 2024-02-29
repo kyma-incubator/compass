@@ -1761,7 +1761,7 @@ func verifyIntegrationDependenciesEntitiesVisibilityViaGraphql(t *testing.T, cli
 }
 
 func getGlobalResourcesNumber(ctx context.Context, t *testing.T, httpClient *http.Client) (int, int) {
-	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, testConfig.ExternalClientCertSecretName, testConfig.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProvider := accessstrategy.NewDefaultExecutorProvider(certCache, testConfig.ExternalClientCertSecretName)
 	ordClient := NewGlobalRegistryClient(httpClient, accessStrategyExecutorProvider)
 
 	products, vendors, err := ordClient.GetGlobalProductsAndVendorsNumber(ctx, testConfig.GlobalRegistryURL)

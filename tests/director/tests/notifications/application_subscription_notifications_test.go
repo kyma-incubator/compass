@@ -433,12 +433,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			oauth2ClientCredsDestinationClientSecret := conf.ProviderDestinationConfig.ClientSecret
 			oauth2mTLSDestinationName := "e2e-oauth2mTLS-destination-name"
 			oauth2mTLSDestinationURL := "http://e2e-oauth2mTLS-url-example.com"
-			oauth2mTLSDestinationTokenURL := conf.ExternalServicesMockMtlsSecuredURL + "/secured/oauth/token"
-			oauth2mTLSDestinationClientID := conf.ProviderDestinationConfig.ClientID
+			oauth2mTLSDestinationTokenURL := conf.ExternalServicesMockMtlsSecuredURL + "/cert/token"
+			oauth2mTLSDestinationClientID := conf.ProviderClientID
 
 			samlAssertionDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeSAMLAssertion, assignmentWithDestDetails.ID)
 			clientCertAuthDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeClientCertificate, assignmentWithDestDetails.ID)
 			clientCertAuthDestinationCertName = clientCertAuthDestinationCertName[:directordestinationcreator.MaxDestinationNameLength] // due to the longer client cert auth destination prefix we exceed the maximum length of the name, that's why we truncate it
+			oauth2mTLSDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeOAuth2mTLS, assignmentWithDestDetails.ID)
 
 			// NoAuthentication destination on 'provider' subaccount level
 			// OAuth2ClientCredentials destination on 'provider' subaccount level
@@ -534,7 +535,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, conf.TestConsumerSubaccountID, destinationConsumerWithInstanceToken, consumerUserTokenHeader, map[string]bool{samlAssertionDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", conf.TestConsumerSubaccountID, destinationConsumerToken, map[string]bool{clientCertAuthDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			assertOAuth2ClientCredsDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2ClientCredsDestinationName, oauth2ClientCredsDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
-			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
+			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)

@@ -990,7 +990,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
-			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID)
+			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID, false)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -2574,6 +2574,117 @@ func TestService_UpdateBaseURL(t *testing.T) {
 
 			// WHEN
 			err := svc.UpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_UpdateBaseURLAndReadyState(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+	ctxErr := errors.New("while loading tenant from context: cannot read tenant from context")
+
+	id := "foo"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	conditionTimestamp := time.Now()
+	updatedBaseURL := "http://compass.kyma.local"
+
+	var applicationModelBefore *model.Application
+	var applicationModelAfter *model.Application
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	resetModels := func() {
+		appName := "initial"
+		description := "description"
+		url := "url.com"
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, nil, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelBefore.Ready = false
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, &updatedBaseURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter.Ready = true
+	}
+
+	resetModels()
+
+	testCases := []struct {
+		Name               string
+		AppRepoFn          func() *automock.ApplicationRepository
+		Input              model.ApplicationUpdateInput
+		InputID            string
+		TargetURL          string
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				return repo
+			},
+			InputID:            id,
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when application update failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
+				repo.AssertNotCalled(t, "Update")
+				return repo
+			},
+			InputID:            id,
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when tenant is not in the context",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "GetByID")
+
+				return repo
+			},
+			InputID:            id,
+			Context:            context.Background(),
+			ExpectedErrMessage: ctxErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			resetModels()
+			appRepo := testCase.AppRepoFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			err := svc.UpdateBaseURLAndReadyState(testCase.Context, testCase.InputID, updatedBaseURL, true)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

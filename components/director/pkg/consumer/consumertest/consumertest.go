@@ -11,7 +11,7 @@ import (
 func CtxWithRuntimeConsumerMatcher() interface{} {
 	return mock.MatchedBy(func(ctx context.Context) bool {
 		consumerFromCtx, err := consumer.LoadFromContext(ctx)
-		return err == nil && consumerFromCtx.ConsumerType == consumer.Runtime
+		return err == nil && consumerFromCtx.Type == consumer.Runtime
 	})
 }
 

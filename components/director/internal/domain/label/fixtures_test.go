@@ -16,7 +16,7 @@ const (
 	tenantID = "b91b59f7-2563-40b2-aba9-fef726037aa3"
 )
 
-var fixColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "runtime_context_id", "app_template_id", "key", "value", "version"}
+var fixColumns = []string{"id", "tenant_id", "app_id", "runtime_id", "runtime_context_id", "app_template_id", "key", "value", "version", "webhook_id"}
 
 func fixModelLabel(objectType model.LabelableObject) *model.Label {
 	return fixModelLabelWithID(labelID, key, objectType)
@@ -56,6 +56,7 @@ func fixEntityLabelWithRefID(id, key string, objectType model.LabelableObject, r
 	var runtimeCtxID sql.NullString
 	var runtimeID sql.NullString
 	var appTmplID sql.NullString
+	var webhookID sql.NullString
 	switch objectType {
 	case model.RuntimeContextLabelableObject:
 		runtimeCtxID = sql.NullString{String: refID, Valid: true}
@@ -67,6 +68,8 @@ func fixEntityLabelWithRefID(id, key string, objectType model.LabelableObject, r
 		tenant = sql.NullString{String: tenantID, Valid: true}
 	case model.AppTemplateLabelableObject:
 		appTmplID = sql.NullString{String: refID, Valid: true}
+	case model.WebhookLabelableObject:
+		webhookID = sql.NullString{String: refID, Valid: true}
 	}
 
 	return &label.Entity{
@@ -78,6 +81,7 @@ func fixEntityLabelWithRefID(id, key string, objectType model.LabelableObject, r
 		AppTemplateID:    appTmplID,
 		RuntimeContextID: runtimeCtxID,
 		RuntimeID:        runtimeID,
+		WebhookID:        webhookID,
 		Version:          42,
 	}
 }

@@ -235,6 +235,8 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Subscribe).Methods(http.MethodPost)
 	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("/api/v1/configure/tenant-type-id"), subHandler.ConfigureTenantTypeAndID).Methods(http.MethodPut)
+	router.HandleFunc(fmt.Sprintf("/api/v1/configure/tenant-type-id"), subHandler.ResetTenantTypeAndID).Methods(http.MethodDelete)
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
 	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
@@ -402,7 +404,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig, buildUrl(cfg.ExternalURL, "/secured/oauth/token"))
+	// using "/cert/token" for client ID for oauth2mTLS destinations as this is the path for getting token with cert from external services mock and cfg.OAuthConfig.ClientID for client ID as this is the client ID the token endpoint expects
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig, buildUrl(cfg.ExternalURL, "/cert/token"), cfg.OAuthConfig.ClientID)
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)

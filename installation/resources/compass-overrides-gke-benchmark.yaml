@@ -35,10 +35,6 @@ global:
         manage: true
       publicPrivateKeysSecret:
         manage: true
-  extSvcCertConfiguration:
-    secrets:
-      extSvcCertSvcSecret:
-        manage: true
   instanceCreatorCertConfiguration:
     secrets:
       instanceCreatorSvcSecret:

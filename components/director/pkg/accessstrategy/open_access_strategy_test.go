@@ -15,7 +15,6 @@ import (
 
 const (
 	externalClientCertSecretName = "resource-name1"
-	extSvcClientCertSecretName   = "resource-name2"
 )
 
 func TestOpenAccessStrategy(t *testing.T) {
@@ -31,7 +30,7 @@ func TestOpenAccessStrategy(t *testing.T) {
 	})
 
 	cerCache := credloader.NewCertificateCache()
-	provider := accessstrategy.NewDefaultExecutorProvider(cerCache, externalClientCertSecretName, extSvcClientCertSecretName)
+	provider := accessstrategy.NewDefaultExecutorProvider(cerCache, externalClientCertSecretName)
 	executor, err := provider.Provide(accessstrategy.OpenAccessStrategy)
 	require.NoError(t, err)
 	headers := &sync.Map{}

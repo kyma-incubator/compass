@@ -1034,7 +1034,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 	}{
 		{
 			Name:         "Success",
-			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
+			ConsumerInfo: consumer.Consumer{Type: consumer.IntegrationSystem, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("ListByApplicationIDs", consumertest.CtxWithConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
@@ -1047,7 +1047,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		},
 		{
 			Name:         "Success with runtime consumer type when there are no auths",
-			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: consumerID},
+			ConsumerInfo: consumer.Consumer{Type: consumer.Runtime, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("ListByApplicationIDs", consumertest.CtxWithRuntimeConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
@@ -1064,7 +1064,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		},
 		{
 			Name:         "Success with runtime consumer type when there are auths for bundle",
-			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: consumerID},
+			ConsumerInfo: consumer.Consumer{Type: consumer.Runtime, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("ListByApplicationIDs", consumertest.CtxWithRuntimeConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
@@ -1081,7 +1081,7 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		},
 		{
 			Name:         "Return error when fail to list bundle instance auths",
-			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.Runtime, ConsumerID: consumerID},
+			ConsumerInfo: consumer.Consumer{Type: consumer.Runtime, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("ListByApplicationIDs", consumertest.CtxWithRuntimeConsumerMatcher(), tenantID, appIDs, 2, after).Return(bundlePages, nil).Once()
@@ -1097,21 +1097,21 @@ func TestService_ListByApplicationIDs(t *testing.T) {
 		},
 		{
 			Name:               "Return error when page size is less than 1",
-			ConsumerInfo:       consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
+			ConsumerInfo:       consumer.Consumer{Type: consumer.IntegrationSystem, ConsumerID: consumerID},
 			PageSize:           0,
 			ExpectedResult:     bundlePages,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
 			Name:               "Return error when page size is bigger than 200",
-			ConsumerInfo:       consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
+			ConsumerInfo:       consumer.Consumer{Type: consumer.IntegrationSystem, ConsumerID: consumerID},
 			PageSize:           201,
 			ExpectedResult:     bundlePages,
 			ExpectedErrMessage: "page size must be between 1 and 200",
 		},
 		{
 			Name:         "Returns error when Bundle listing failed",
-			ConsumerInfo: consumer.Consumer{ConsumerType: consumer.IntegrationSystem, ConsumerID: consumerID},
+			ConsumerInfo: consumer.Consumer{Type: consumer.IntegrationSystem, ConsumerID: consumerID},
 			RepositoryFn: func() *automock.BundleRepository {
 				repo := &automock.BundleRepository{}
 				repo.On("ListByApplicationIDs", consumertest.CtxWithConsumerMatcher(), tenantID, appIDs, 2, after).Return(nil, testErr).Once()
