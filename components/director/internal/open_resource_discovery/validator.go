@@ -16,7 +16,7 @@ import (
 //
 //go:generate mockery --name=Validator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Validator interface {
-	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error)
+	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string, ruleset string) ([]*ValidationError, error)
 }
 
 // DocumentValidator validates the ORD documents
@@ -32,12 +32,12 @@ func NewDocumentValidator(client ValidatorClient) Validator {
 }
 
 // Validate validates all ORD documents with the API Metadata Validator and checks resource duplications and entity relations
-func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, documentsAsString []string) ([]*ValidationError, error) {
+func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, documentsAsString []string, ruleset string) ([]*ValidationError, error) {
 	var combinedValidationErrors []*ValidationError
 
 	for i := range documents {
 		log.C(ctx).Info("Validate document with API Metadata Validator")
-		errorsFromAPIMetadataValidator, err := v.client.Validate(ctx, "sap:base:v1", documentsAsString[i])
+		errorsFromAPIMetadataValidator, err := v.client.Validate(ctx, ruleset, documentsAsString[i])
 		if err != nil {
 			return nil, errors.Wrap(err, "error while validating document with API Metadata validator")
 		}

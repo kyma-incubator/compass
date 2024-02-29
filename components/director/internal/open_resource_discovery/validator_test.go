@@ -16,7 +16,7 @@ import (
 func TestDocumentValidator_Validate(t *testing.T) {
 	validatorClientCallWithoutValidationErrors := func() *automock.ValidatorClient {
 		clientValidator := &automock.ValidatorClient{}
-		clientValidator.On("Validate", mock.Anything, policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, nil)
+		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{}, nil)
 		return clientValidator
 	}
 
@@ -38,7 +38,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			Name: "Runtime error from API Metadata Validator",
 			ClientValidatorFn: func() *automock.ValidatorClient {
 				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", mock.Anything, policyLevelBase, mock.Anything).Return([]ord.ValidationResult{}, errors.New("Test runtime error"))
+				clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{}, errors.New("Test runtime error"))
 				return clientValidator
 			},
 			InputDocument:        fmt.Sprintf(ordDocument, baseURL),
@@ -49,7 +49,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			Name: "Validation errors only with severity level Error",
 			ClientValidatorFn: func() *automock.ValidatorClient {
 				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", mock.Anything, policyLevelBase, mock.Anything).Return(validationResultsErrorSeverity, nil)
+				clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return(validationResultsErrorSeverity, nil)
 				return clientValidator
 			},
 			InputDocument:            fmt.Sprintf(ordDocument, baseURL),
@@ -60,7 +60,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			Name: "Validation errors with severity level Warning",
 			ClientValidatorFn: func() *automock.ValidatorClient {
 				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", mock.Anything, policyLevelBase, mock.Anything).Return(validationResultsWarningSeverity, nil)
+				clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return(validationResultsWarningSeverity, nil)
 				return clientValidator
 			},
 			InputDocument:            fmt.Sprintf(ordDocument, baseURL),
@@ -107,7 +107,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				return
 			}
 
-			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument})
+			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument}, "")
 
 			if test.ExpectedRuntimeError != nil {
 				require.Error(t, err)

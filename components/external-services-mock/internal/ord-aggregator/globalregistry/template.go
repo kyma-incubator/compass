@@ -110,7 +110,7 @@ const ordDocument = `{
 	{
 		"ordId": "sap:product:SAPMasterDataIntegration:",
 		"title": "SAP Master Data Integration",
-		"shortDescription": "SAP Master Data Integration provide and manage generic replication to keep consistent view on master data.",
+		"shortDescription": "It provides and manages generic replication to keep consistent view on master data.",
 		"vendor": "sap:vendor:SAP:"
 	}
   ],

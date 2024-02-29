@@ -1093,9 +1093,11 @@ global:
     maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
     metadataValidator:
+      enabled: "false"
       setImagePullSecrets: false
-      image: cpa-docker.int.repositories.cloud.sap/api-metadata-validator-server
+      image: ""
       version: 3.5.5
+      host: ""
       port: 8080
     tenantMappingConfiguration: '{}'
     parallelOperationProcessors: 10

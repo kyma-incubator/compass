@@ -14,25 +14,25 @@ type Validator struct {
 	mock.Mock
 }
 
-// Validate provides a mock function with given fields: ctx, documents, baseURL, globalResourcesOrdIDs, docsString
-func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ord.ValidationError, error) {
-	ret := _m.Called(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
+// Validate provides a mock function with given fields: ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset
+func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string, ruleset string) ([]*ord.ValidationError, error) {
+	ret := _m.Called(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
 
 	var r0 []*ord.ValidationError
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string) ([]*ord.ValidationError, error)); ok {
-		return rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
+	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string) ([]*ord.ValidationError, error)); ok {
+		return rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string) []*ord.ValidationError); ok {
-		r0 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
+	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string) []*ord.ValidationError); ok {
+		r0 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*ord.ValidationError)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []*ord.Document, string, map[string]bool, []string) error); ok {
-		r1 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString)
+	if rf, ok := ret.Get(1).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string) error); ok {
+		r1 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
 	} else {
 		r1 = ret.Error(1)
 	}

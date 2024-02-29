@@ -88,7 +88,6 @@ const (
 	publicVisibility = "public"
 	products         = `["sap:product:S4HANA_OD:"]`
 	releaseStatus    = "active"
-	policyLevelBase  = "sap:base:v1"
 )
 
 const ordDocument = `{

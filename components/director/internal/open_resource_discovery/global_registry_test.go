@@ -80,7 +80,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 
 	successfulDocumentValidatorFn := func() *automock.Validator {
 		docValidator := &automock.Validator{}
-		docValidator.On("Validate", mock.Anything, []*ord.Document{fixGlobalRegistryORDDocument()}, baseURL, map[string]bool{}, []string{}).Return(nil, nil)
+		docValidator.On("Validate", mock.Anything, []*ord.Document{fixGlobalRegistryORDDocument()}, baseURL, map[string]bool{}, []string{}, "sap:base:v1").Return(nil, nil)
 		return docValidator
 	}
 
@@ -160,7 +160,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.Vendors[0].OrdID = "invalid-ord-id"
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}).Run(func(args mock.Arguments) {
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}, "sap:base:v1").Run(func(args mock.Arguments) {
 					docs := args.Get(1).([]*ord.Document)
 					docs[0].Vendors = docs[0].Vendors[1:]
 				}).Return([]*ord.ValidationError{{OrdID: "ordId", Description: "ordId: must be in a valid format."}}, nil)
@@ -182,7 +182,7 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.ConsumptionBundles = fixORDDocument().ConsumptionBundles
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}).Return(nil, errors.New("global registry supports only vendors and products"))
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}, "sap:base:v1").Return(nil, errors.New("global registry supports only vendors and products"))
 				return docValidator
 			},
 			clientFn: func() *automock.Client {

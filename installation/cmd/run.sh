@@ -94,6 +94,12 @@ do
             shift # past argument
             shift # past value
         ;;
+        --api-metadata-validator-image)
+            checkInputParameterValue "${2}"
+            API_METADATA_VALIDATOR_IMAGE="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -118,6 +124,12 @@ function set_oidc_config() {
   fi
 }
 
+function set_api_metadata_validator_image() {
+  yq -i ".global.ordAggregator.metadataValidator.enabled = \"$1\"" "$PATH_TO_VALUES"
+  yq -i ".global.ordAggregator.metadataValidator.image = \"$2\"" "$PATH_TO_VALUES"
+  yq -i ".global.ordAggregator.metadataValidator.host = \"$3\"" "$PATH_TO_VALUES"
+}
+
 # NOTE: Only one trap per script is supported.
 function cleanup_trap() {
   if [[ -f "$K3D_CA" ]]; then
@@ -132,6 +144,7 @@ function cleanup_trap() {
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
+    set_api_metadata_validator_image false "" ""
   fi
   pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
@@ -166,6 +179,17 @@ function patchJWKS() {
   "$KUBECTL" get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | "$KUBECTL" apply -f -
   echo "Request Authentication resources were successfully patched"
 }
+
+echo "API Metadata Validator image:"
+# read api_metadata_validator_image
+echo ${API_METADATA_VALIDATOR_IMAGE}
+
+
+if [[ -n ${API_METADATA_VALIDATOR_IMAGE} ]]; then
+echo "yes"
+  set_api_metadata_validator_image true $API_METADATA_VALIDATOR_IMAGE "http://localhost"
+fi
+
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
@@ -302,3 +326,6 @@ fi
 
 echo "Adding Compass entries to /etc/hosts..."
 $SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"
+
+# sed -i '' 's|validatorIsEnabled: true|validatorIsEnabled: false|g' "${PATH_TO_VALUES}"
+# sed -i '' 's|image: '"$api_metadata_validator_image"'|image: image-name|g' "${PATH_TO_VALUES}"

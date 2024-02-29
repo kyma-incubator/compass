@@ -351,7 +351,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 	}
 
 	log.C(ctx).Infof("Validating ORD documents for resource with ID %s", resource.ID)
-	validationErrors, err := s.documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString)
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString, "")
 	if err != nil {
 		return validationErrors, err
 	}

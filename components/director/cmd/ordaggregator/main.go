@@ -5,6 +5,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+
 	"net"
 	"net/http"
 	"os"
@@ -139,6 +140,7 @@ type config struct {
 	TenantMappingConfigPath                  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
+	APIMetadataValidatorHost                 string `envconfig:"APP_API_METADATA_VALIDATOR_HOST,optional"`
 	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
 
 	MetricsConfig           ord.MetricsConfig
@@ -370,7 +372,13 @@ func main() {
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
-	validationClient := ord.NewValidationClient(fmt.Sprintf("http://localhost:%s", cfg.APIMetadataValidatorPort), http.DefaultClient)
+	apiValidatorURL := fmt.Sprintf("%s:%s", cfg.APIMetadataValidatorHost, cfg.APIMetadataValidatorPort)
+
+	if cfg.APIMetadataValidatorHost == "" {
+		apiValidatorURL = ""
+	}
+
+	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient)
 	documentValidator := ord.NewDocumentValidator(validationClient)
 	documentSanitizer := ord.NewDocumentSanitizer()
 
