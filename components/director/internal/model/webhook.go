@@ -63,6 +63,8 @@ const (
 	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
 	// WebhookTypeFormationLifecycle represents a webhook that is called when lifecycle event (creation/deletion) of formation occurs
 	WebhookTypeFormationLifecycle WebhookType = "FORMATION_LIFECYCLE"
+	// WebhookTypeSystemFieldDiscovery represents a webhook that is called to enrich an application information
+	WebhookTypeSystemFieldDiscovery WebhookType = "SYSTEM_FIELD_DISCOVERY"
 )
 
 // WebhookMode represents the mode of the webhook.

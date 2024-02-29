@@ -217,6 +217,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_NAME_PATH
               value: {{ .Values.global.director.selfRegister.saasAppNamePath }}
+            - name: APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH
+              value: {{ .Values.global.director.selfRegister.saasRegistryURLPath }}
             - name: APP_SELF_REGISTER_PATH
               value: {{ .Values.global.director.selfRegister.path }}
             - name: APP_SELF_REGISTER_NAME_QUERY_PARAM
@@ -243,14 +245,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
             - name: APP_FETCH_TENANT_URL
               value: {{ tpl .Values.global.director.fetchTenantEndpoint $ | quote }}
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION

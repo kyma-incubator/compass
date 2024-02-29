@@ -135,7 +135,6 @@ type config struct {
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
 type securityConfig struct {
@@ -197,9 +196,8 @@ func main() {
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
-	extSvcMtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
+	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetching, cfg.OperationsManagerConfig)
@@ -489,7 +487,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")
@@ -556,7 +554,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -566,7 +564,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)

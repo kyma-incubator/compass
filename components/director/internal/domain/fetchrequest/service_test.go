@@ -33,7 +33,6 @@ import (
 
 const (
 	externalClientCertSecretName = "resource-name1"
-	extSvcClientCertSecretName   = "resource-name2"
 )
 
 var testErr = errors.New("test")
@@ -477,7 +476,7 @@ func TestService_HandleSpec(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			certCache := credloader.NewCertificateCache()
-			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName)
 			if testCase.ExecutorProviderFunc != nil {
 				executorProviderMock = testCase.ExecutorProviderFunc()
 			}
@@ -519,7 +518,7 @@ func TestService_HandleSpec_FailedToUpdateStatusAfterFetching(t *testing.T) {
 			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(bytes.NewBufferString("spec")),
 		}
-	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName))
+	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{
@@ -565,7 +564,7 @@ func TestService_HandleSpec_SucceedsAfterRetryMechanismIsLeveraged(t *testing.T)
 			StatusCode: http.StatusOK,
 			Body:       io.NopCloser(bytes.NewBufferString(mockSpec)),
 		}
-	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
+	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{
@@ -603,7 +602,7 @@ func TestService_HandleSpec_FailsAfterRetryMechanismIsExhausted(t *testing.T) {
 		}()
 
 		return &http.Response{StatusCode: http.StatusInternalServerError}
-	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
+	}), accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName), retry.NewHTTPExecutor(retryConfig))
 	svc.SetTimestampGen(func() time.Time { return timestamp })
 
 	modelInput := &model.FetchRequest{

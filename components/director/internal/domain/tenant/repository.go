@@ -139,7 +139,7 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapp
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
-	return btm.ID, r.tenantParentRepo.UpsertMultiple(ctx, btm.ID, item.Parents)
+	return btm.ID, r.processParents(ctx, btm.ID, item.Parents, btm.Parents)
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -336,22 +336,26 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		parentsInternalIDs = append(parentsInternalIDs, btm.ID)
 	}
 
-	parentsToAdd := slices.Filter(nil, parentsInternalIDs, func(s string) bool {
-		return !slices.Contains(tenantFromDB.Parents, s)
+	return r.processParents(ctx, model.ID, parentsInternalIDs, tenantFromDB.Parents)
+}
+
+func (r *pgRepository) processParents(ctx context.Context, tenantID string, parents, parentsFromDB []string) error {
+	parentsToAdd := slices.Filter(nil, parents, func(s string) bool {
+		return !slices.Contains(parentsFromDB, s)
 	})
 
-	parentsToRemove := slices.Filter(nil, tenantFromDB.Parents, func(s string) bool {
-		return !slices.Contains(parentsInternalIDs, s)
+	parentsToRemove := slices.Filter(nil, parentsFromDB, func(s string) bool {
+		return !slices.Contains(parents, s)
 	})
 
 	for _, p := range parentsToRemove {
-		if err := r.removeParent(ctx, p, model.ID); err != nil {
+		if err := r.removeParent(ctx, p, tenantID); err != nil {
 			return err
 		}
 	}
 
 	for _, p := range parentsToAdd {
-		if err := r.addParent(ctx, p, model.ID); err != nil {
+		if err := r.addParent(ctx, p, tenantID); err != nil {
 			return err
 		}
 	}
@@ -361,7 +365,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 
 func (r *pgRepository) addParent(ctx context.Context, internalParentID, internalChildID string) error {
 	if err := r.tenantParentRepo.Upsert(ctx, internalChildID, internalParentID); err != nil {
-		return errors.Wrapf(err, "while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", internalChildID, internalParentID)
+		return errors.Wrapf(err, "while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", internalChildID, internalParentID)
 	}
 
 	for topLevelEntity := range resource.TopLevelEntities {

@@ -189,12 +189,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: TEST_CONSUMER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.consumerAccountID }}
             - name: TEST_PROVIDER_SUBACCOUNT_ID
@@ -209,6 +203,10 @@ spec:
               value: {{ .Values.global.director.applicationTypeLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_LABEL_KEY
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
+            - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
+              value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
+              value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

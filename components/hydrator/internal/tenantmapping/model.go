@@ -23,7 +23,7 @@ type ObjectContext struct {
 	OauthClientID       string
 	ConsumerID          string
 	AuthFlow            oathkeeper.AuthFlow
-	ConsumerType        consumer.ConsumerType
+	ConsumerType        consumer.Type
 	ContextProvider     string
 }
 
@@ -42,7 +42,7 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenant *graphql.Tenant, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.ConsumerType, contextProvider string) ObjectContext {
+func NewObjectContext(tenant *graphql.Tenant, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.Type, contextProvider string) ObjectContext {
 	return ObjectContext{
 		Tenant:              tenant,
 		KeysExtra:           keysExtra,

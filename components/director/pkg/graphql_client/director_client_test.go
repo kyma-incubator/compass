@@ -250,6 +250,91 @@ func TestDirector_UpdateTenant(t *testing.T) {
 	}
 }
 
+func TestDirector_ExistsTenantByExternalID(t *testing.T) {
+	tenantID := "id1"
+	tenantInput := graphql.BusinessTenantMappingInput{
+		Name:           "0283bc56-406b-11ec-9356-0242ac130003",
+		ExternalTenant: "123",
+		Parents:        []*string{str.Ptr("")},
+		Subdomain:      str.Ptr("subdomain1"),
+		Region:         str.Ptr("region1"),
+		Type:           "account",
+		Provider:       "provider1",
+	}
+	expectedQuery := `query { result: tenantByInternalID(id: "id1") { id internalID name type parents labels }}`
+	testErr := errors.New("Test error")
+	notFoundErr := errors.New("Object not found")
+
+	testCases := []struct {
+		Name           string
+		GQLClient      func() *automock.GraphQLClient
+		TenantID       string
+		Input          graphql.BusinessTenantMappingInput
+		ExpectedResult bool
+		ExpectedErr    error
+	}{
+		{
+			Name: "Success - found",
+			GQLClient: func() *automock.GraphQLClient {
+				gqlClient := &automock.GraphQLClient{}
+				gqlClient.On("Run", mock.Anything, mock.MatchedBy(func(req *gcli.Request) bool {
+					return strings.EqualFold(removeWhitespaces(req.Query()), removeWhitespaces(expectedQuery))
+				}), mock.Anything).Return(nil)
+				return gqlClient
+			},
+			TenantID:       tenantID,
+			Input:          tenantInput,
+			ExpectedResult: true,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Success - not found",
+			GQLClient: func() *automock.GraphQLClient {
+				gqlClient := &automock.GraphQLClient{}
+				gqlClient.On("Run", mock.Anything, mock.Anything, mock.Anything).Return(notFoundErr)
+				return gqlClient
+			},
+			TenantID:       tenantID,
+			Input:          tenantInput,
+			ExpectedResult: false,
+			ExpectedErr:    nil,
+		},
+		{
+			Name: "Returns error when Run fails",
+			GQLClient: func() *automock.GraphQLClient {
+				gqlClient := &automock.GraphQLClient{}
+				gqlClient.On("Run", mock.Anything, mock.Anything, mock.Anything).Return(testErr)
+				return gqlClient
+			},
+			TenantID:       tenantID,
+			Input:          tenantInput,
+			ExpectedResult: false,
+			ExpectedErr:    errors.New("while executing gql query"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			ctx := context.TODO()
+			gqlClient := testCase.GQLClient()
+			director := graphqlclient.NewDirector(gqlClient)
+
+			//WHEN
+			found, err := director.ExistsTenantByExternalID(ctx, testCase.TenantID)
+			require.EqualValues(t, found, testCase.ExpectedResult)
+
+			//THEN
+			if testCase.ExpectedErr == nil {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			}
+		})
+	}
+}
+
 func removeWhitespaces(s string) string {
 	s = strings.ReplaceAll(s, " ", "")
 	s = strings.ReplaceAll(s, "\r", "")

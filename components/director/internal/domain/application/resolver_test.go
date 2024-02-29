@@ -1345,7 +1345,7 @@ func TestResolver_Applications_DoubleAuthFlow(t *testing.T) {
 
 	certConsumer := consumer.Consumer{
 		ConsumerID:    consumerID,
-		ConsumerType:  consumer.ExternalCertificate,
+		Type:          consumer.ExternalCertificate,
 		Flow:          oathkeeper.CertificateFlow,
 		OnBehalfOf:    onBehalfOf,
 		Region:        region,

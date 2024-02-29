@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/assert"
@@ -607,6 +609,49 @@ func TestRepository_ListByWebhookType(t *testing.T) {
 		ExpectedDBEntities:    []interface{}{whEntity},
 		MethodArgs:            []interface{}{whType},
 		MethodName:            "ListByWebhookType",
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_ListByTypeAndLabelFilter(t *testing.T) {
+	whID := "whID1"
+	whType := model.WebhookTypeSystemFieldDiscovery
+	createdAt := time.Now()
+
+	whModel := fixApplicationModelWebhook(whID, givenApplicationID(), "http://kyma.io", createdAt)
+	whModel.Type = whType
+	whEntity := fixApplicationWebhookEntityWithIDAndWebhookType(t, whID, whType, createdAt)
+	whEntity.ProxyURL = sql.NullString{}
+	filters := []*labelfilter.LabelFilter{labelfilter.NewForKey("someKey")}
+
+	q := `SELECT id, app_id, app_template_id, type, url, proxy_url, auth, runtime_id, integration_system_id, mode, correlation_id_key, retry_interval, timeout, url_template, input_template, header_template, output_template, status_template, created_at, formation_template_id FROM public.webhooks WHERE id IN (SELECT "webhook_id" FROM public.labels WHERE "webhook_id" IS NOT NULL AND "key" = $1) AND type = $2 ORDER BY created_at DESC`
+	suite := testdb.RepoListTestSuite{
+		Name: "List Webhooks by type",
+
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(q),
+				Args:     []driver.Value{"someKey", whType},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
+						AddRow(whModel.ID, givenApplicationID(), nil, whModel.Type, whModel.URL, whModel.ProxyURL, fixAuthAsAString(t), nil, nil, whModel.Mode, whModel.CorrelationIDKey, whModel.RetryInterval, whModel.Timeout, whModel.URLTemplate, whModel.InputTemplate, whModel.HeaderTemplate, whModel.OutputTemplate, whModel.StatusTemplate, whModel.CreatedAt, nil),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   webhook.NewRepository,
+		ExpectedModelEntities: []interface{}{whModel},
+		ExpectedDBEntities:    []interface{}{whEntity},
+		MethodArgs:            []interface{}{whType, filters},
+		MethodName:            "ListByTypeAndLabelFilter",
 	}
 
 	suite.Run(t)

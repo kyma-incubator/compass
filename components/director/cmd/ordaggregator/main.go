@@ -135,7 +135,6 @@ type config struct {
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 
 	TenantMappingConfigPath                  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
@@ -208,9 +207,8 @@ func main() {
 
 	securedHTTPClient := httputil.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
 	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
-	extSvcMtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	authConverter := auth.NewConverter()
@@ -314,7 +312,7 @@ func main() {
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -460,7 +458,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 			},
 		},
 	}
-	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName)
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 }
 
@@ -480,7 +478,7 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 			},
 		},
 	}
-	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName)
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 }
 

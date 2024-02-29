@@ -44,7 +44,6 @@ type Config struct {
 	Director       *director.Config      `mapstructure:"director"`
 	Webhook        *webhook.Config       `mapstructure:"webhook"`
 	ExternalClient *ExternalClientConfig `mapstructure:"external_client"`
-	ExtSvcClient   *ExtSvcClientConfig   `mapstructure:"ext_svc_client"`
 }
 
 // AppPFlags adds pflags for the Config structure and adds them in the provided set
@@ -62,7 +61,6 @@ func DefaultConfig() *Config {
 		Director:       director.DefaultConfig(),
 		Webhook:        webhook.DefaultConfig(),
 		ExternalClient: &ExternalClientConfig{},
-		ExtSvcClient:   &ExtSvcClientConfig{},
 	}
 }
 

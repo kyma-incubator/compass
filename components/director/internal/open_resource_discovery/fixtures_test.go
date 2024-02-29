@@ -75,7 +75,6 @@ const (
 	partners                  = `["microsoft:vendor:Microsoft:"]`
 
 	externalClientCertSecretName = "resource-name1"
-	extSvcClientCertSecretName   = "resource-name2"
 
 	appTemplateVersionValue = "2303"
 	appTemplateName         = "appTemplateName"
