@@ -36,7 +36,7 @@ const (
 )
 
 var (
-	testError       = errors.New("test error")
+	testError = errors.New("test error")
 )
 
 func TestSubscribeRegionalTenant(t *testing.T) {
