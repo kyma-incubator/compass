@@ -726,7 +726,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
 					arg := args.Get(1).(*model.Operation)
 					assert.Equal(t, model.OperationStatusCompleted, arg.Status)
-					assert.Equal(t, json.RawMessage(`{"error":{"ErrorMsg":{"validation_errors":null,"runtime_error":{"message":"err"}}}}`), arg.Error)
+					assert.Equal(t, json.RawMessage(`{"error":{"message":{"validation_errors":null,"runtime_error":{"message":"err"}}}}`), arg.Error)
 				})
 				return repo
 			},
