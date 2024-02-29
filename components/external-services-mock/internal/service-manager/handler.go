@@ -3,6 +3,7 @@ package service_manager
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -263,6 +264,17 @@ func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *htt
 		return
 	}
 
+	foundPlan := false
+	for _, plan := range servicePlansMock.Items {
+		if plan.ID == instance.ServicePlanID {
+			foundPlan = true
+		}
+	}
+	if !foundPlan {
+		httphelpers.RespondWithError(ctx, writer, errors.Errorf("Service plan with id %q does not exist", instance.ServicePlanID), fmt.Sprintf("Service plan with id %q does not exist", instance.ServicePlanID), correlationID, http.StatusInternalServerError)
+		return
+	}
+
 	subaccountInstancesMock := h.ServiceInstancesMap[subaccount]
 	instance.ID = uuid.NewString()
 	subaccountInstancesMock.Items = append(subaccountInstancesMock.Items, &instance)
@@ -276,6 +288,7 @@ func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *htt
 		return
 	}
 
+	writer.WriteHeader(http.StatusCreated)
 	if _, err = writer.Write(instanceJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service instance")
 		http.Error(writer, "Failed to write service instance", http.StatusInternalServerError)
@@ -448,6 +461,18 @@ func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http
 
 	subaccountBindingsMock := h.ServiceBindingsMap[subaccount]
 	binding.ID = uuid.NewString()
+	creds := BasicAuthenticationCredentials{
+		URI:      "uri",
+		Username: "username",
+		Password: "password",
+	}
+	credsMarshalled, err := json.Marshal(creds)
+	if err != nil {
+		log.C(ctx).WithError(err).Error("Failed to marshal service binding credentials")
+		http.Error(writer, "Failed to marshal service binding credentials", http.StatusInternalServerError)
+		return
+	}
+	binding.Credentials = credsMarshalled
 	subaccountBindingsMock.Items = append(subaccountBindingsMock.Items, &binding)
 	subaccountBindingsMock.NumItems++
 	h.ServiceBindingsMap[subaccount] = subaccountBindingsMock
@@ -459,6 +484,7 @@ func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http
 		return
 	}
 
+	writer.WriteHeader(http.StatusCreated)
 	if _, err = writer.Write(bindingJSON); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to write service binding")
 		http.Error(writer, "Failed to write service binding", http.StatusInternalServerError)
@@ -537,12 +563,16 @@ type ServicePlansMock struct {
 }
 
 var (
+	featureFlagsCatalogName = "feature-flags"
+	featureFlagsOfferingID  = "feature-flags-id"
+	featureFlagsPlan        = "standard"
+
 	serviceOfferingsMock = ServiceOfferingsMock{
 		NumItems: 2,
 		Items: []*ServiceOfferingMock{
 			{
-				ID:          "first-service-offering-id",
-				CatalogName: "first-service-offering-test",
+				ID:          featureFlagsOfferingID,
+				CatalogName: featureFlagsCatalogName,
 			},
 			{
 				ID:          "second-service-offering-id",
@@ -556,8 +586,8 @@ var (
 		Items: []*ServicePlanMock{
 			{
 				ID:                "1",
-				CatalogName:       "first-catalog-name",
-				ServiceOfferingId: "first-service-offering-id",
+				CatalogName:       featureFlagsPlan,
+				ServiceOfferingId: featureFlagsOfferingID,
 			},
 			{
 				ID:                "2",
@@ -595,6 +625,13 @@ type ServiceBindingMock struct {
 type ServiceBindingsMock struct {
 	NumItems int                   `json:"num_items"`
 	Items    []*ServiceBindingMock `json:"items"`
+}
+
+// BasicAuthenticationCredentials represents a service binding credentials for basic authentication
+type BasicAuthenticationCredentials struct {
+	URI      string `json:"uri"`
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 func validateAuthorization(ctx context.Context, r *http.Request) error {

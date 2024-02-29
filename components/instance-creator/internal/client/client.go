@@ -200,6 +200,9 @@ func (c *client) CreateResource(ctx context.Context, region, subaccountID string
 	}
 
 	err = json.Unmarshal(body, &resource)
+	fmt.Println("-------")
+	fmt.Println(string(body))
+	fmt.Println("-------")
 	if err != nil {
 		return "", errors.Errorf("failed to unmarshal %s: %v", resource.GetResourceType(), err)
 	}
