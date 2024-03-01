@@ -1266,7 +1266,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, consumerTenantID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(nil).Once()
 
 				return systemFieldDiscoveryEngine
@@ -1316,7 +1316,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, consumerTenantID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(nil).Once()
 
 				return systemFieldDiscoveryEngine
@@ -1574,7 +1574,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, consumerTenantID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(nil).Once()
 
 				return systemFieldDiscoveryEngine
@@ -1839,7 +1839,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, consumerTenantID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
 
 				return systemFieldDiscoveryEngine
@@ -1894,7 +1894,7 @@ func TestSubscribeTenantToApplication(t *testing.T) {
 				newWebhooks := modelAppCreateInputWithLabels.Webhooks
 				newWebhooks = append(newWebhooks, &model.WebhookInput{
 					Type: model.WebhookTypeSystemFieldDiscovery})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, subaccountTenantExtID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
+				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", ctxWithTenantMatcher(subaccountTenantInternalID), modelAppCreateInputWithLabels, systemFieldDiscoveryLabelIsTrue, tenantRegionWithPrefix, consumerTenantID, modelAppTemplate.Name, subscriptionAppName).Return(newWebhooks, true).Once()
 				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", ctxWithTenantMatcher(subaccountTenantInternalID), appTmplID).Return(testError).Once()
 
 				return systemFieldDiscoveryEngine

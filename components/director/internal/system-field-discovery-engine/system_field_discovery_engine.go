@@ -54,7 +54,7 @@ func NewSystemFieldDiscoveryEngine(cfg config.SystemFieldDiscoveryEngineConfig, 
 }
 
 // EnrichApplicationWebhookIfNeeded enriches application webhook input with webhook of type 'SYSTEM_FIELD_DISCOVERY' if needed
-func (s *systemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subaccountID, appTemplateName, appName string) ([]*model.WebhookInput, bool) {
+func (s *systemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, tenantID, appTemplateName, appName string) ([]*model.WebhookInput, bool) {
 	if _, regionExists := s.cfg.RegionToSaasRegConfig[region]; !regionExists {
 		log.C(ctx).Warnf("Region %q is not present into the saas reg configuration for application with name %q", region, appName)
 		return appCreateInputModel.Webhooks, false
@@ -62,7 +62,7 @@ func (s *systemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx contex
 
 	if systemFieldDiscovery {
 		log.C(ctx).Infof("Application Template with name %q has label systemFieldDiscovery with value %t and region %q is present into the configuration. Enriching the application with name %q with webhook of type %q", appTemplateName, systemFieldDiscovery, region, appName, model.WebhookTypeSystemFieldDiscovery)
-		appCreateInputModel.Webhooks = s.enrichWithWebhook(appCreateInputModel.Webhooks, region, subaccountID)
+		appCreateInputModel.Webhooks = s.enrichWithWebhook(appCreateInputModel.Webhooks, region, tenantID)
 		log.C(ctx).Infof("Successfully enriched Application with name %q with webhook of type %q", appName, model.WebhookTypeSystemFieldDiscovery)
 	}
 
@@ -95,10 +95,10 @@ func (s *systemFieldDiscoveryEngine) CreateLabelForApplicationWebhook(ctx contex
 	return nil
 }
 
-func (s *systemFieldDiscoveryEngine) enrichWithWebhook(modelInputWebhooks []*model.WebhookInput, region, subaccountID string) []*model.WebhookInput {
+func (s *systemFieldDiscoveryEngine) enrichWithWebhook(modelInputWebhooks []*model.WebhookInput, region, tenantID string) []*model.WebhookInput {
 	modelInputWebhooks = append(modelInputWebhooks, &model.WebhookInput{
 		Type: model.WebhookTypeSystemFieldDiscovery,
-		URL:  str.Ptr(fmt.Sprintf("%s/saas-manager/v1/service/subscriptions?includeIndirectSubscriptions=true&tenantId=%s", s.cfg.RegionToSaasRegConfig[region].SaasRegistryURL, subaccountID)),
+		URL:  str.Ptr(fmt.Sprintf("%s/saas-manager/v1/service/subscriptions?includeIndirectSubscriptions=true&tenantId=%s", s.cfg.RegionToSaasRegConfig[region].SaasRegistryURL, tenantID)),
 		Auth: &model.AuthInput{
 			Credential: &model.CredentialDataInput{
 				Oauth: &model.OAuthCredentialDataInput{

@@ -505,7 +505,7 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 			if !ok {
 				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
 			} else {
-				appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscoveryValue, region, subscribedSubaccountID, appTemplate.Name, subscribedAppName)
+				appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscoveryValue, region, consumerTenantID, appTemplate.Name, subscribedAppName)
 			}
 		}
 	}
