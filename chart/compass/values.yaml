@@ -170,7 +170,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: prod/incubator/
-      version: "v20240228-1aa9e02b"
+      version: "v20240228-bbf7843b"
       name: compass-pairing-adapter
     director:
       dir: prod/incubator/
@@ -190,7 +190,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: prod/incubator/
-      version: "v20240228-1aa9e02b"
+      version: "v20240228-bbf7843b"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: prod/incubator/
