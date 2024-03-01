@@ -43,17 +43,15 @@ import (
 const emptyBody = `{}`
 
 type client struct {
-	httpClient       *http.Client
-	mtlsClient       *http.Client
-	extSvcMtlsClient *http.Client
+	httpClient *http.Client
+	mtlsClient *http.Client
 }
 
 // NewClient creates a new webhook client
-func NewClient(httpClient *http.Client, mtlsClient, extSvcMtlsClient *http.Client) *client {
+func NewClient(httpClient *http.Client, mtlsClient *http.Client) *client {
 	return &client{
-		httpClient:       httpClient,
-		mtlsClient:       mtlsClient,
-		extSvcMtlsClient: extSvcMtlsClient,
+		httpClient: httpClient,
+		mtlsClient: mtlsClient,
 	}
 }
 
@@ -205,11 +203,7 @@ func (c *client) executeRequestWithCorrectClient(ctx context.Context, req *http.
 		log.C(ctx).Infof("Authentication configuration is available in the webhook with ID: %q", webhook.ID)
 		if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.CMPmTLSAccessStrategy) {
 			log.C(ctx).Infof("Access strategy: %q is used in the webhook authentication configuration", accessstrategy.CMPmTLSAccessStrategy)
-			if resp, err := c.mtlsClient.Do(req); err != nil {
-				return c.extSvcMtlsClient.Do(req)
-			} else {
-				return resp, err
-			}
+			return c.mtlsClient.Do(req)
 		} else if str.PtrStrToStr(webhook.Auth.AccessStrategy) == string(accessstrategy.OpenAccessStrategy) {
 			log.C(ctx).Infof("Access strategy: %q is used in the webhook authentication configuration", accessstrategy.OpenAccessStrategy)
 			return c.httpClient.Do(req)

@@ -261,7 +261,7 @@ func TestDirector_ExistsTenantByExternalID(t *testing.T) {
 		Type:           "account",
 		Provider:       "provider1",
 	}
-	expectedQuery := `query { result: tenantByInternalID(id: "id1") { id internalID name type parents labels }}`
+	expectedQuery := `query { result: tenantByExternalID(id: "id1") { id internalID name type parents labels }}`
 	testErr := errors.New("Test error")
 	notFoundErr := errors.New("Object not found")
 

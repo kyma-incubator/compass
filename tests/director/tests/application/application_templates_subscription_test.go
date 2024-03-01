@@ -6,12 +6,13 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 

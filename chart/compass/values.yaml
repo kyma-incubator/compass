@@ -170,7 +170,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3680"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -190,11 +190,11 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3680"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3609"
+      version: "PR-3680"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -202,11 +202,11 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3680"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-123"
+      version: "PR-125"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3692"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -329,7 +329,6 @@ global:
           clientSecretMapping: '{{ printf "\"%s\":\"client_secret\"" .Values.global.director.selfRegister.clientSecretPath }}'
           urlMapping: '{{ printf "\"%s\":\"http://compass-external-services-mock.%s.svc.cluster.local:%s\"" .Values.global.director.selfRegister.urlPath .Release.Namespace (.Values.service.port | toString) }}'
           tokenURLMapping: '{{ printf "\"%s\":\"https://%s.%s:%s\"" .Values.global.director.selfRegister.tokenUrlPath .Values.global.externalServicesMock.certSecuredHost .Values.global.ingress.domainName (.Values.service.certPort | toString) }}'
-          saasRegistryURLMapping: '{{ printf "\"%s\":\"https://saas-registry-url\"" .Values.global.director.selfRegister.saasRegistryURLPath }}'
           x509CertificateMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientCertPath .Values.global.connector.caCertificate }}'
           x509KeyMapping: '{{ printf "\"%s\":\"%s\"" .Values.global.director.selfRegister.clientKeyPath .Values.global.connector.caKey }}'
       oauthTokenPath: "/cert/token"
@@ -993,41 +992,6 @@ global:
     preInstallJob:
       enabled: false
       name: "external-certificate-pre-install"
-      certValidity: "7"
-      clientCertRetryAttempts: "8"
-  extSvcCertConfiguration:
-    issuerLocality: "local,local2" # In local setup we have manually created connector CA certificate with 'local' Locality property
-    subjectPattern: "/C=DE/O=SAP SE/OU=SAP Cloud Platform Clients/OU=Region/OU=%s/L=%s/CN=%s"
-    ouCertSubaccountID: "f8075207-1478-4a80-bd26-24a4785a2bfd"
-    commonName: "compass"
-    locality: "local"
-    certSvcApiPath: "/cert"
-    tokenPath: "/cert/token"
-    secrets:
-      extSvcCertSvcSecret:
-        manage: false
-        name: "ext-svc-cert-svc-secret"
-        clientIdKey: client-id
-        clientSecretKey: client-secret
-        oauthUrlKey: url
-        csrEndpointKey: csr-endpoint
-        clientCert: client-cert
-        clientKey: client-key
-        skipSSLValidationFlag: "-k"
-      extSvcClientCertSecret:
-        name: "ext-svc-client-certificate"
-        namespace: compass-system
-        certKey: tls.crt
-        keyKey: tls.key
-    rotationCronjob:
-      name: "ext-svc-certificate-rotation"
-      schedule: "*/1 * * * *" # Executes every minute
-      certValidity: "7"
-      clientCertRetryAttempts: "8"
-      containerName: "ext-svc-certificate-rotation"
-    preInstallJob:
-      enabled: false
-      name: "ext-svc-certificate-pre-install"
       certValidity: "7"
       clientCertRetryAttempts: "8"
   instanceCreatorCertConfiguration:

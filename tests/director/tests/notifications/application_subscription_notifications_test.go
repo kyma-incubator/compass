@@ -535,7 +535,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, conf.TestConsumerSubaccountID, destinationConsumerWithInstanceToken, consumerUserTokenHeader, map[string]bool{samlAssertionDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", conf.TestConsumerSubaccountID, destinationConsumerToken, map[string]bool{clientCertAuthDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			assertOAuth2ClientCredsDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2ClientCredsDestinationName, oauth2ClientCredsDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
-			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName,oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
+			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
