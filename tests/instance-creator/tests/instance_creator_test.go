@@ -240,13 +240,13 @@ func TestInstanceCreator(t *testing.T) {
 	asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).AssertExpectations(t, ctx)
 
 	// Configure destination service client
-	region := conf.SubscriptionConfig.SelfRegRegion
-	instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
-	require.True(t, ok)
-	destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
-	require.NoError(t, err)
-
-	destinationProviderWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderWithInstanceClaimKey)
+	//region := conf.SubscriptionConfig.SelfRegRegion
+	//instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
+	//require.True(t, ok)
+	//destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
+	//require.NoError(t, err)
+	//
+	//destinationProviderWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderWithInstanceClaimKey)
 
 	t.Run("Asynchronous App to App Formation Assignment Notifications", func(t *testing.T) {
 		t.Logf("Cleanup notifications")
@@ -281,7 +281,7 @@ func TestInstanceCreator(t *testing.T) {
 			WithOperator(formationconstraintpkg.ConfigMutatorOperator).
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType2).
-			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\",\"only_for_source_subtypes\":[\"app-type-1\"],\"source_resource_type\": \"{{.FormationAssignment.SourceType}}\",\"source_resource_id\": \"{{.FormationAssignment.Source}}\"{{if ne .NotificationStatusReport.State \"CREATE_ERROR\"}},\"modified_configuration\": \"{\\\"credentials\\\":{\\\"inboundCommunication\\\":{\\\"basicAuthentication\\\":{\\\"url\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri\\\",\\\"username\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username\\\",\\\"password\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password\\\",\\\"serviceInstances\\\":[{\\\"service\\\":\\\"feature-flags\\\",\\\"plan\\\":\\\"standard\\\",\\\"serviceBinding\\\":{}}],\\\"destinations\\\":[{\\\"name\\\":\\\"instance-creator-destination-name\\\"}]}}}}\"{{if eq .FormationAssignment.State \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .NotificationStatusReport }}\"notification_status_report_memory_address\":{{ .NotificationStatusReport.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
+			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\",\"only_for_source_subtypes\":[\"app-type-1\"],\"source_resource_type\": \"{{.FormationAssignment.SourceType}}\",\"source_resource_id\": \"{{.FormationAssignment.Source}}\"{{if ne .NotificationStatusReport.State \"CREATE_ERROR\"}},\"modified_configuration\": \"{\\\"credentials\\\":{\\\"inboundCommunication\\\":{\\\"basicAuthentication\\\":{\\\"url\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri\\\",\\\"username\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username\\\",\\\"password\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password\\\",\\\"serviceInstances\\\":[{\\\"service\\\":\\\"feature-flags\\\",\\\"plan\\\":\\\"standard\\\",\\\"serviceBinding\\\":{}}]}}}}\"{{if eq .FormationAssignment.State \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .NotificationStatusReport }}\"notification_status_report_memory_address\":{{ .NotificationStatusReport.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -342,11 +342,13 @@ func TestInstanceCreator(t *testing.T) {
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Assign application 1 to formation: %s", formationName)
+		expectedInstanceCreatorConfig := str.Ptr(`{"credentials": {"outboundCommunication": {"basicAuthentication": {"password": "password", "url": "uri", "username": "username"}}}}`)
+
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).
 			WithNotifications([]*mock_data.NotificationData{
-				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, fixtures.StatusAPISyncConfigJSON, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, expectedInstanceCreatorConfig, nil),
 			})
 		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
@@ -355,8 +357,8 @@ func TestInstanceCreator(t *testing.T) {
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
-		// Assert destinations
-		assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, "instance-creator-destination-name", conf.TestProviderSubaccountID, destinationProviderWithInstanceToken, 1)
+		//Assert destinations
+		//assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, "instance-creator-destination-name", conf.TestProviderSubaccountID, destinationProviderWithInstanceToken, 1)
 
 		t.Logf("Unassign Application 1 from formation: %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)

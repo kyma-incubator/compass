@@ -2,8 +2,6 @@ package asserters
 
 import (
 	"context"
-	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"testing"
 	"time"
 
@@ -61,9 +59,6 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(tOnce, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-		fmt.Println("--------------")
-		spew.Dump(assignmentsPage)
-		fmt.Println("--------------")
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
 			tOnce.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
 			return
