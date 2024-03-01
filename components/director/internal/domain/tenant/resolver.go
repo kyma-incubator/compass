@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
