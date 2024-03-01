@@ -245,7 +245,7 @@ func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 			Value: []*graphql.PlaceholderDefinitionInput{},
 			ApplicationTemplateInputProvider: func() graphql.ApplicationTemplateInput {
 				at := fixValidApplicationTemplateInput()
-				at.ApplicationInput.Description = str.Ptr(fmt.Sprintf("%s", testPlaceholderName))
+				at.ApplicationInput.Description = str.Ptr(testPlaceholderName)
 				return at
 			},
 			Valid: true,
@@ -261,7 +261,7 @@ func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 			Value: nil,
 			ApplicationTemplateInputProvider: func() graphql.ApplicationTemplateInput {
 				at := fixValidApplicationTemplateInput()
-				at.ApplicationInput.Description = str.Ptr(fmt.Sprintf("%s", testPlaceholderName))
+				at.ApplicationInput.Description = str.Ptr(testPlaceholderName)
 				return at
 			},
 			Valid: true,
