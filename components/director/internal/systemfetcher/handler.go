@@ -3,9 +3,10 @@ package systemfetcher
 import (
 	"context"
 	"encoding/json"
-	"github.com/pkg/errors"
 	"net/http"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"

@@ -55,7 +55,7 @@ func (c *SystemFetcherClient) Sync(ctx context.Context, tenantIDs []string, skip
 		TenantIDs:      tenantIDs,
 		SkipReschedule: skipReschedule,
 	}
-	
+
 	marshalledSyncData, err := json.Marshal(syncData)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling data for system fetcher")
