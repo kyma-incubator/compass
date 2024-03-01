@@ -71,7 +71,7 @@ spec:
             - name: APP_OPERATIONAL_MODE
               value: {{ .Values.global.systemFetcher.operationalMode }}
             - name: APP_ASYNC_REQUEST_PROCESSORS
-              value: {{ .Values.global.systemFetcher.asyncRequestProcessors }}
+              value: "{{ .Values.global.systemFetcher.asyncRequestProcessors }}"
             - name: APP_SYSTEM_INFORMATION_FETCH_TIMEOUT
               value: {{ .Values.global.systemFetcher.fetchRequestTimeout | quote }}
             - name: APP_SYSTEM_INFORMATION_ENDPOINT
