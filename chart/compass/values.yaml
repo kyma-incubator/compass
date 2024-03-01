@@ -169,8 +169,8 @@ global:
       version: "v20240228-bbf7843b"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: prod/incubator/
-      version: "v20240228-bbf7843b"
+      dir: dev/incubator/
+      version: "PR-3699"
       name: compass-pairing-adapter
     director:
       dir: prod/incubator/
@@ -191,6 +191,8 @@ global:
     instance_creator:
       dir: prod/incubator/
       version: "v20240228-bbf7843b"
+      dir: dev/incubator/
+      version: "PR-3699"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: prod/incubator/
