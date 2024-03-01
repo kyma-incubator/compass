@@ -65,6 +65,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
 				tenantsIDs := make(map[string]bool)
 				tenantsIDs[tenantExtID] = true
+				tenantsIDs[subaccountTenantExtID] = true
 				provisioner := &automock.TenantProvisioner{}
 				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantsIDs).Return(nil).Once()
 				return provisioner
@@ -73,6 +74,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				directorClient := &automock.DirectorGraphQLClient{}
 				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, regionalTenant.SubscriptionProviderAppName, "").Return(nil).Once()
 				directorClient.On("ExistsTenantByExternalID", context.TODO(), tenantExtID).Return(false, nil).Once()
+				directorClient.On("ExistsTenantByExternalID", context.TODO(), subaccountTenantExtID).Return(false, nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -82,6 +84,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
 				tenantsIDs := make(map[string]bool)
 				tenantsIDs[tenantExtID] = true
+				tenantsIDs[subaccountTenantExtID] = true
 				provisioner := &automock.TenantProvisioner{}
 				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantsIDs).Return(testError).Once()
 				return provisioner
@@ -89,6 +92,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				directorClient := &automock.DirectorGraphQLClient{}
 				directorClient.On("ExistsTenantByExternalID", context.TODO(), tenantExtID).Return(false, nil).Once()
+				directorClient.On("ExistsTenantByExternalID", context.TODO(), subaccountTenantExtID).Return(false, nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
@@ -99,6 +103,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
 				tenantsIDs := make(map[string]bool)
 				tenantsIDs[tenantExtID] = true
+				tenantsIDs[subaccountTenantExtID] = true
 				provisioner := &automock.TenantProvisioner{}
 				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant, tenantsIDs).Return(nil).Once()
 				return provisioner
@@ -107,6 +112,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 				directorClient := &automock.DirectorGraphQLClient{}
 				directorClient.On("SubscribeTenant", context.TODO(), regionalTenant.SubscriptionProviderID, regionalTenant.SubaccountTenantID, regionalTenant.ProviderSubaccountID, regionalTenant.ConsumerTenantID, regionalTenant.Region, regionalTenant.SubscriptionProviderAppName, "").Return(testError).Once()
 				directorClient.On("ExistsTenantByExternalID", context.TODO(), tenantExtID).Return(false, nil).Once()
+				directorClient.On("ExistsTenantByExternalID", context.TODO(), subaccountTenantExtID).Return(false, nil).Once()
 				return directorClient
 			},
 			TenantSubscriptionRequest: regionalTenant,
