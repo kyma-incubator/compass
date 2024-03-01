@@ -67,6 +67,7 @@ func (s *subscriber) tenantIDsFromRequest(request TenantSubscriptionRequest) []s
 	tenants := make([]string, 0, 3)
 	customerID := request.CustomerTenantID
 	accountID := request.AccountTenantID
+	subaccountID := request.SubaccountTenantID
 	costObjectID := request.CostObjectTenantID
 
 	if len(customerID) > 0 {
@@ -75,6 +76,10 @@ func (s *subscriber) tenantIDsFromRequest(request TenantSubscriptionRequest) []s
 
 	if len(accountID) > 0 {
 		tenants = append(tenants, accountID)
+	}
+
+	if len(subaccountID) > 0 {
+		tenants = append(tenants, subaccountID)
 	}
 
 	if len(costObjectID) > 0 {
