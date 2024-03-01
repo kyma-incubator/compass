@@ -40,13 +40,14 @@ type handler struct {
 }
 
 // NewSystemFetcherAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTenantMappingSvc BusinessTenantMappingService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
+func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTenantMappingSvc BusinessTenantMappingService, transact persistence.Transactioner, onDemandChannel chan string, workers chan struct{}) *handler {
 	return &handler{
 		opMgr:                    opMgr,
 		businessTenantMappingSvc: businessTenantMappingSvc,
 		transact:                 transact,
 		onDemandChannel:          onDemandChannel,
-		workerPool:               make(chan struct{}, 100)} // TODO Extract as env
+		workerPool:               workers,
+	}
 }
 
 // ScheduleAggregationForSystemFetcherData validates the payload, checks if such an operation already exists.
@@ -72,13 +73,16 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 
 	h.workerPool <- struct{}{}
 
-	go func() {
+	entry := log.LoggerFromContext(ctx)
+	opCtx := log.ContextWithLogger(context.Background(), entry)
+
+	go func(ctx context.Context) {
 		defer func() {
 			<-h.workerPool
 		}()
 
-		h.scheduleOperations(ctx, payload)
-	}()
+		h.scheduleOperations(opCtx, payload)
+	}(opCtx)
 }
 
 func (h *handler) scheduleOperations(ctx context.Context, payload AggregationResource) {

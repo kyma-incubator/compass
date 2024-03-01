@@ -1172,6 +1172,7 @@ global:
     rescheduleHangedPeriod: 1h
     maintainOperationsJobInterval: 60m
     operationProcessorsQuietPeriod: 5s
+    asyncRequestProcessors: 100
   tenantFetchers:
     job1:
       enabled: false

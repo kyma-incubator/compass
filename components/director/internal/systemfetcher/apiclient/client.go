@@ -50,10 +50,12 @@ func (c *SystemFetcherClient) SetHTTPClient(client *http.Client) {
 // Sync call to system fetcher on dmand API
 func (c *SystemFetcherClient) Sync(ctx context.Context, tenantIDs []string, skipReschedule bool) error {
 	log.C(ctx).Debugf("Call to sync systems API for Tenants %v started", tenantIDs)
+
 	syncData := aggregationResource{
 		TenantIDs:      tenantIDs,
 		SkipReschedule: skipReschedule,
 	}
+	
 	marshalledSyncData, err := json.Marshal(syncData)
 	if err != nil {
 		return errors.Wrap(err, "while marshaling data for system fetcher")
