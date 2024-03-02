@@ -47,7 +47,7 @@ func (c *SystemFetcherClient) SetHTTPClient(client *http.Client) {
 	c.client = client
 }
 
-// Sync call to system fetcher on dmand API
+// Sync call to system fetcher on demand API
 func (c *SystemFetcherClient) Sync(ctx context.Context, tenantIDs []string, skipReschedule bool) error {
 	log.C(ctx).Debugf("Call to sync systems API for Tenants %v started", tenantIDs)
 
