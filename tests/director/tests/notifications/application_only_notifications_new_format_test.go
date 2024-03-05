@@ -178,7 +178,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app1ID)
-		op := operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op := operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
@@ -255,7 +255,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1ID)
-		op := operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op := operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-{{if eq .Operation \\\"assign\\\"}}create{{else}}delete{{end}}-ready/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
@@ -306,7 +306,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-no-response/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"state\\\":\\\"{{.Body.state}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").
-			WithApplicationID(app1ID).
+			WithObjectID(app1ID).
+			WithObjectType(operations.WebhookReferenceObjectTypeApplication).
 			WithTenantID(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -411,6 +412,172 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
 
+	t.Run("Formation lifecycle asynchronous notifications and asynchronous app to app formation assignment notifications", func(t *testing.T) {
+		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+		//todo use id from ctx
+		t.Logf("Add webhook with type %q and mode: %q to application template with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, appTplID)
+		op := operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplicationTemplate, appTplID, tnt).
+			WithWebhookMode(graphql.WebhookModeAsyncCallback). //todo use single quotes
+			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-old/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
+			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"source-trust-details\\\":[{{ Join  .SourceApplicationTemplate.TrustDetails.Subjects }}],\\\"target-trust-details\\\":[{{ Join  .TargetApplicationTemplate.TrustDetails.Subjects }}] }]}").
+			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+		// in original test oauthGraphQLClient is used
+
+		t.Logf("Add webhook with type %q and mode: %q to formation template with ID %q", graphql.WebhookTypeFormationLifecycle, graphql.WebhookModeAsyncCallback, ftplID)
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeFormationLifecycle, operations.WebhookReferenceObjectTypeFormationTemplate, ftplID, tnt).
+			WithWebhookMode(graphql.WebhookModeAsyncCallback). //todo use single quotes
+			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-no-response/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}").
+			WithInputTemplate("{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}").
+			WithOutputTemplate("{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		formationName := "formation-name-from-template-with-webhook"
+		// override the formation name in the context for this test case
+		ctx = context.WithValue(ctx, context_keys.FormationNameKey, formationName)
+		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTemplateName)
+		statusAsserter := asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
+			WithFormationName(formationName).
+			WithCondition(graphql.FormationStatusConditionInProgress).
+			WithState("INITIAL")
+		createFormation := operations.NewCreateFormationOperation(tnt).
+			WithName(formationName).
+			WithFormationTemplateName(formationTemplateName).
+			WithAsserters(statusAsserter)
+
+		// Assign both applications when the formation is still in INITIAL state and validate no notifications are sent and formation assignments are in INITIAL state
+		t.Logf("Assign application 1 to formation: %s", formationName)
+		assignApp1 := operations.NewAssignAppToFormationOperation(app1ID, tnt).Operation()
+
+		t.Logf("Assign application 2 to formation: %s", formationName)
+		assignApp2 := operations.NewAssignAppToFormationOperation(app2ID, tnt).Operation()
+
+		lifecycleAsserter := asserters.NewLifecycleNotificationsAsserter(conf.ExternalServicesMockMtlsSecuredURL, certSecuredGraphQLClient, certSecuredHTTPClient).
+			WithOperation(createFormationOperation).
+			WithFormationName(formationName).
+			WithTenantID(tnt).
+			WithParentTenantID(tntParentCustomer)
+		op = operations.NewMultiOperation().
+			WithOperation(createFormation).
+			WithOperation(assignApp1).
+			WithOperation(assignApp2).
+			WithAsserters(lifecycleAsserter).
+			Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Cleanup notifications")
+		op = operations.NewCleanupNotificationsOperation().WithExternalServicesMockMtlsSecuredURL(conf.ExternalServicesMockMtlsSecuredURL).WithHTTPClient(certSecuredHTTPClient).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Update webhook with type %q and mode: %q for formation template with ID: %q", graphql.WebhookTypeFormationLifecycle, graphql.WebhookModeAsyncCallback, ftplID)
+		op = operations.NewUpdateWebhookOperation().
+			WithWebhookType(graphql.WebhookTypeFormationLifecycle).
+			WithWebhookMode(graphql.WebhookModeAsyncCallback).
+			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}").
+			WithInputTemplate("{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}").
+			WithOutputTemplate("{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").
+			WithObjectType(operations.WebhookReferenceObjectTypeFormationTemplate).
+			Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Resynchronize formation")
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
+			WithParticipant(app1ID).
+			WithParticipant(app2ID).
+			WithNotifications([]*mock_data.NotificationData{
+				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, fixtures.StatusAPIAsyncConfigJSON, nil),
+			})
+		faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+			WithUseItemsStruct(true).
+			WithAssertTrustDetails(true).
+			WithExpectedSubjects([]string{certSubjectMappingCustomSubjectWithCommaSeparator, certSubjectMappingCustomSubjectWithCommaSeparatorSecond})
+		lifecycleAsserter = asserters.NewLifecycleNotificationsAsserter(conf.ExternalServicesMockMtlsSecuredURL, certSecuredGraphQLClient, certSecuredHTTPClient).
+			WithOperation(createFormationOperation).
+			WithFormationName(formationName).
+			WithTenantID(tnt).
+			WithParentTenantID(tntParentCustomer)
+		op = operations.NewResynchronizeFormationOperation().WithTenantID(tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsAsserter, lifecycleAsserter)
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Unassign Application 1 from formation %s", formationName)
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
+		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+		// todo~~ maybe add this check in the notifications
+		//require.True(t, unassignNotificationFound, "notification for unassign app2 not found")
+
+		t.Logf("Assign application 1 to formation %s again", formationName)
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
+			WithParticipant(app1ID).
+			WithParticipant(app2ID).
+			WithNotifications([]*mock_data.NotificationData{
+				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, fixtures.StatusAPIAsyncConfigJSON, nil),
+			})
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
+		notificationsCountAsserter := asserters.NewNotificationsCountAsyncAsserter(2, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsCountAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Unassign Application 2 from formation %s", formationName)
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
+			WithParticipant(app1ID)
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)// todo~~ configure to use the new formation
+		unassignNotificationsAsserter = asserters.NewUnassignNotificationsAsserter(2, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Unassign Application 1 from formation %s", formationName)
+		emptyExpectationsBuilder := mock_data.NewFAExpectationsBuilder()
+		asserter := asserters.NewFormationAssignmentAsserter(emptyExpectationsBuilder.GetExpectations(), emptyExpectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
+		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(asserter, statusAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Cleanup notifications")
+		op = operations.NewCleanupNotificationsOperation().WithExternalServicesMockMtlsSecuredURL(conf.ExternalServicesMockMtlsSecuredURL).WithHTTPClient(certSecuredHTTPClient).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		lifecycleAsserter = asserters.NewLifecycleNotificationsAsserter(conf.ExternalServicesMockMtlsSecuredURL, certSecuredGraphQLClient, certSecuredHTTPClient).
+			WithOperation(deleteFormationOperation).
+			WithFormationName(formationName).
+			WithTenantID(tnt).
+			WithParentTenantID(tntParentCustomer)
+		formationIsDeletedAsserter := asserters.NewFormationIsDeletedAsserter(certSecuredGraphQLClient).
+			WithTenantID(tnt).
+			WithFormationName(formationName)
+		op = operations.NewDeleteFormationOperation(tnt).
+			WithName(formationName).
+			WithFormationTemplateName(formationTemplateName).
+			WithAsserters(lifecycleAsserter, formationIsDeletedAsserter)
+
+		t.Logf("Cleanup notifications")
+		op = operations.NewCleanupNotificationsOperation().WithExternalServicesMockMtlsSecuredURL(conf.ExternalServicesMockMtlsSecuredURL).WithHTTPClient(certSecuredHTTPClient).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Logf("Formation with name: %q is successfully deleted after READY status is reported on the status API", formationName)
+	})
+
 	t.Run("Contains Scenario Groups Operator", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -460,7 +627,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app1ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/with-state/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
@@ -518,7 +685,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app1ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeAsyncCallback).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{if eq .Operation \\\"assign\\\"}}async-no-config{{else}}async{{end}}/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
@@ -527,7 +694,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app2ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app2ID, tnt).
 			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/no-configuration/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
@@ -577,7 +744,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/fail/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}").
-			WithApplicationID(app2ID).
+			WithObjectID(app2ID).
+			WithObjectType(operations.WebhookReferenceObjectTypeApplication).
 			WithTenantID(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -605,7 +773,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}").
-			WithApplicationID(app2ID).
+			WithObjectID(app2ID).
+			WithObjectType(operations.WebhookReferenceObjectTypeApplication).
 			WithTenantID(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -627,7 +796,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		notificationsCountAsserter = asserters.NewNotificationsCountAsserter(2, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationsCountAsserter2 = asserters.NewNotificationsCountAsserter(2, assignOperation, app2ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewResynchronizeFormationOperation().WithTenantID(tnt).WithAsserters()
+		op = operations.NewResynchronizeFormationOperation().WithTenantID(tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsCountAsserter, notificationsCountAsserter2)
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
@@ -673,7 +842,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app2ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app2ID, tnt).
 			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/no-configuration/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}").
@@ -682,7 +851,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeAsyncCallback).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
@@ -732,7 +901,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-fail/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").
-			WithApplicationID(app1ID).
+			WithObjectID(app1ID).
+			WithObjectType(operations.WebhookReferenceObjectTypeApplication).
 			WithTenantID(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -760,7 +930,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").
 			WithOutputTemplate("{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}").
-			WithApplicationID(app1ID).
+			WithObjectID(app1ID).
+			WithObjectType(operations.WebhookReferenceObjectTypeApplication).
 			WithTenantID(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -782,7 +953,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		notificationsCountAsserter = asserters.NewNotificationsCountAsserter(2, assignOperation, app1ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationsCountAsserter2 = asserters.NewNotificationsCountAsserter(2, assignOperation, app2ID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewResynchronizeFormationOperation().WithTenantID(tnt).WithAsserters()
+		op = operations.NewResynchronizeFormationOperation().WithTenantID(tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsCountAsserter, notificationsCountAsserter2)
 
 		t.Logf("Unassign Application 2 from formation %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
@@ -802,13 +973,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
+
 	t.Run("Formation assignment notifications validating redirect operator", func(t *testing.T) {
 		cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 		defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 		webhookInputTemplate := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
 		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2ID)
-		op := operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app2ID, tnt).
+		op := operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app2ID, tnt).
 			WithWebhookMode(graphql.WebhookModeSync).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/configuration/redirect-notification/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate(webhookInputTemplate).
@@ -817,7 +989,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeAsyncCallback).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate(webhookInputTemplate).
@@ -922,7 +1094,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Add webhook with type: %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app1ID)
-		op = operations.NewAddWebhookToApplicationOperation(graphql.WebhookTypeApplicationTenantMapping, app1ID, tnt).
+		op = operations.NewAddWebhookToObjectOperation(graphql.WebhookTypeApplicationTenantMapping, operations.WebhookReferenceObjectTypeApplication, app1ID, tnt).
 			WithWebhookMode(graphql.WebhookModeAsyncCallback).
 			WithURLTemplate("{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-old/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}").
 			WithInputTemplate("{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}").

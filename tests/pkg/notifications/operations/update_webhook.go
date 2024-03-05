@@ -17,7 +17,8 @@ type UpdateWebhookOperation struct {
 	inputTemplate  string
 	urlTemplate    string
 	outputTemplate string
-	applicationID  string
+	objectID       string
+	objectType     WebhookReferenceObjectType
 	tenantID       string
 	asserters      []asserters.Asserter
 }
@@ -51,8 +52,14 @@ func (o *UpdateWebhookOperation) WithOutputTemplate(outputTemplate string) *Upda
 	return o
 }
 
-func (o *UpdateWebhookOperation) WithApplicationID(applicationID string) *UpdateWebhookOperation {
-	o.applicationID = applicationID
+func (o *UpdateWebhookOperation) WithObjectID(objectID string) *UpdateWebhookOperation {
+	o.objectID = objectID
+	return o
+}
+
+// todo~~ use this method
+func (o *UpdateWebhookOperation) WithObjectType(objectType WebhookReferenceObjectType) *UpdateWebhookOperation {
+	o.objectType = objectType
 	return o
 }
 
@@ -69,9 +76,18 @@ func (o *UpdateWebhookOperation) WithAsserters(asserters ...asserters.Asserter) 
 }
 
 func (o *UpdateWebhookOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	applicationExt := fixtures.GetApplication(t, ctx, gqlClient, o.tenantID, o.applicationID)
+	var webhooks []graphql.Webhook
+	switch o.objectType {
+	case WebhookReferenceObjectTypeApplication:
+		webhooks = fixtures.GetApplication(t, ctx, gqlClient, o.tenantID, o.objectID).Webhooks
+	case WebhookReferenceObjectTypeApplicationTemplate:
+		webhooks = fixtures.GetApplicationTemplate(t, ctx, gqlClient, o.tenantID, o.objectID).Webhooks
+	case WebhookReferenceObjectTypeFormationTemplate:
+		//todo get formation templates
+	}
+
 	var webhook graphql.Webhook
-	for _, wh := range applicationExt.Webhooks {
+	for _, wh := range webhooks {
 		if wh.Type == o.webhookType {
 			webhook = wh
 			break

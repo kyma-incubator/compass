@@ -7,13 +7,14 @@ import (
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
-	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 )
 
 type FormationStatusAsserter struct {
 	tenant                   string
+	formationName            string
+	formationState           string
 	certSecuredGraphQLClient *graphql.Client
 	condition                gql.FormationStatusCondition
 	errors                   []*gql.FormationStatusError
@@ -38,23 +39,40 @@ func (a *FormationStatusAsserter) WithErrors(errors []*gql.FormationStatusError)
 	return a
 }
 
+func (a *FormationStatusAsserter) WithFormationName(formationName string) *FormationStatusAsserter {
+	a.formationName = formationName
+	return a
+}
+
+func (a *FormationStatusAsserter) WithState(state string) *FormationStatusAsserter {
+	a.formationState = state
+	return a
+}
+
 func (a *FormationStatusAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	formationID := ctx.Value(context_keys.FormationIDKey).(string)
-	a.assertFormationStatus(t, ctx, a.tenant, formationID, gql.FormationStatus{
+	a.assertFormationStatus(t, ctx, a.tenant, formationID, a.formationName, gql.FormationStatus{
 		Condition: a.condition,
 		Errors:    a.errors,
 	})
 }
 
-func (a *FormationStatusAsserter) assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus gql.FormationStatus) {
+func (a *FormationStatusAsserter) assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID, formationName string, expectedFormationStatus gql.FormationStatus) {
 	// Get the formation with its status
-	var gotFormation gql.FormationExt
-	getFormationReq := fixtures.FixGetFormationRequest(formationID)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, a.certSecuredGraphQLClient, tenant, getFormationReq, &gotFormation)
-	require.NoError(t, err)
+	var gotFormation *gql.FormationExt
+
+	if formationName != "" {
+		gotFormation = fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, formationName, tenant)
+	} else {
+		gotFormation = fixtures.GetFormationByID(t, ctx, a.certSecuredGraphQLClient, formationID, tenant)
+	}
 
 	// Assert the status
 	require.Equal(t, expectedFormationStatus.Condition, gotFormation.Status.Condition, "Formation with ID %q is with status %q, but %q was expected", formationID, gotFormation.Status.Condition, expectedFormationStatus.Condition)
+
+	if a.formationState != "" {
+		require.Equal(t, a.formationState, gotFormation.State)
+	}
 
 	if expectedFormationStatus.Errors == nil {
 		require.Nil(t, gotFormation.Status.Errors)
