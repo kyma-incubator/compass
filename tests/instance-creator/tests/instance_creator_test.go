@@ -14,6 +14,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
@@ -24,8 +25,10 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"strings"
 	"testing"
@@ -33,14 +36,19 @@ import (
 )
 
 const (
-	assignOperation       = "assign"
 	consumerType          = "Integration System" // should be a valid consumer type
 	readyAssignmentState  = "READY"
 	emptyParentCustomerID = ""
+
+	uriKey      = "uri"
+	usernameKey = "username"
+	passwordKey = "password"
 )
 
 var (
 	tenantAccessLevels = []string{"account", "global"} // should be a valid tenant access level
+	eventuallyTimeout  = 8 * time.Second
+	eventuallyTick     = 50 * time.Millisecond
 )
 
 func TestInstanceCreator(t *testing.T) {
@@ -258,7 +266,7 @@ func TestInstanceCreator(t *testing.T) {
 			WithOperator(formationconstraintpkg.ConfigMutatorOperator).
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType2).
-			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\",\"only_for_source_subtypes\":[\"app-type-1\"],\"source_resource_type\": \"{{.FormationAssignment.SourceType}}\",\"source_resource_id\": \"{{.FormationAssignment.Source}}\"{{if ne .NotificationStatusReport.State \"CREATE_ERROR\"}},\"modified_configuration\": \"{\\\"credentials\\\":{\\\"inboundCommunication\\\":{\\\"basicAuthentication\\\":{\\\"url\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri\\\",\\\"username\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username\\\",\\\"password\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password\\\",\\\"serviceInstances\\\":[{\\\"service\\\":\\\"feature-flags\\\",\\\"plan\\\":\\\"standard\\\",\\\"serviceBinding\\\":{}}]}}}}\"{{if eq .FormationAssignment.State \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .NotificationStatusReport }}\"notification_status_report_memory_address\":{{ .NotificationStatusReport.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
+			WithInputTemplate(`{ \"tenant\":\"{{.Tenant}}\",\"only_for_source_subtypes\":[\"app-type-1\"],\"source_resource_type\": \"{{.FormationAssignment.SourceType}}\",\"source_resource_id\": \"{{.FormationAssignment.Source}}\"{{if ne .NotificationStatusReport.State \"CREATE_ERROR\"}},\"modified_configuration\": \"{\\\"credentials\\\":{\\\"inboundCommunication\\\":{\\\"basicAuthentication\\\":{\\\"uri\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri\\\",\\\"username\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username\\\",\\\"password\\\":\\\"$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password\\\",\\\"serviceInstances\\\":[{\\\"service\\\":\\\"feature-flags\\\",\\\"plan\\\":\\\"standard\\\",\\\"serviceBinding\\\":{}}]}}}}\"{{if eq .FormationAssignment.State \"INITIAL\"}},\"state\":\"CONFIG_PENDING\"{{ end }}{{ end }},\"resource_type\": \"{{.ResourceType}}\",\"resource_subtype\": \"{{.ResourceSubtype}}\",\"operation\": \"{{.Operation}}\",{{ if .NotificationStatusReport }}\"notification_status_report_memory_address\":{{ .NotificationStatusReport.GetAddress }},{{ end }}\"join_point_location\": {\"OperationName\":\"{{.Location.OperationName}}\",\"ConstraintType\":\"{{.Location.ConstraintType}}\"}}`).
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -298,26 +306,29 @@ func TestInstanceCreator(t *testing.T) {
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Assign application 1 to formation: %s", formationName)
-		expectedInstanceCreatorConfig := str.Ptr(`{"credentials": {"outboundCommunication": {"basicAuthentication": {"password": "password", "url": "uri", "username": "username"}}}}`)
-		expectedNotSubstitutedConfig := str.Ptr(`{"credentials": {"inboundCommunication": {"basicAuthentication": {"url": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri", "password": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password", "username": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username", "serviceInstances": [{"plan": "standard", "service": "feature-flags", "serviceBinding": {}}]}}}}`)
+		expectedInstanceCreatorConfig := str.Ptr(`{"credentials": {"outboundCommunication": {"basicAuthentication": {"password": "password", "uri": "uri", "username": "username"}}}}`)
+		expectedNotSubstitutedConfig := str.Ptr(`{"credentials": {"inboundCommunication": {"basicAuthentication": {"uri": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri", "password": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password", "username": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username", "serviceInstances": [{"plan": "standard", "service": "feature-flags", "serviceBinding": {}}]}}}}`)
 
-		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
-			WithParticipant(app1ID).
-			WithParticipant(app2ID).
-			WithNotifications([]*mock_data.NotificationData{
-				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, expectedInstanceCreatorConfig, nil),
-				mock_data.NewNotificationData(app1ID, app2ID, readyAssignmentState, expectedNotSubstitutedConfig, nil),
-			})
-		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
-		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationCountAsyncAsserter := asserters.NewNotificationsCountAsyncAsserter(0, assignOperation, localTenantID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationCountAsyncAsserter).Operation()
+		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			app1ID: {
+				app1ID: fixtures.AssignmentState{State: readyAssignmentState, Config: nil, Value: nil, Error: nil},
+				app2ID: fixtures.AssignmentState{State: readyAssignmentState, Config: expectedNotSubstitutedConfig, Value: nil, Error: nil},
+			},
+			app2ID: {
+				app1ID: fixtures.AssignmentState{State: readyAssignmentState, Config: expectedInstanceCreatorConfig, Value: nil, Error: nil},
+				app2ID: fixtures.AssignmentState{State: readyAssignmentState, Config: nil, Value: nil, Error: nil},
+			},
+		}
+
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
+		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formationID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
+		assertFormationStatus(t, ctx, tnt, formationID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 1 from formation: %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
-		faAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, subscriptionConsumerTenantID, appNamespace, appRegion, tnt, emptyParentCustomerID, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
@@ -332,4 +343,115 @@ func TestInstanceCreator(t *testing.T) {
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
+}
+
+func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
+	t.Logf("Asserting formation assignments with eventually...")
+	tOnce := testingx.NewOnceLogger(t)
+	require.Eventually(t, func() (isOkay bool) {
+		tOnce.Logf("Getting formation assignments...")
+		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+		if expectedAssignmentsCount != assignmentsPage.TotalCount {
+			t.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			return
+		}
+		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
+
+		assignments := assignmentsPage.Data
+		for _, assignment := range assignments {
+			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
+			if !ok {
+				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
+				return
+			}
+			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
+			if !ok {
+				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
+				return
+			}
+			if assignmentExpectation.State != assignment.State {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+				return
+			}
+			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+				return
+			}
+
+			assertConfig(tOnce, assignmentExpectation, assignment)
+		}
+
+		tOnce.Logf("Successfully asserted formation asssignments asynchronously")
+		return true
+	}, timeout, tick)
+}
+
+func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
+	// Get the formation with its status
+	t.Logf("Getting formation with ID: %q", formationID)
+	var gotFormation graphql.FormationExt
+	getFormationReq := fixtures.FixGetFormationRequest(formationID)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant, getFormationReq, &gotFormation)
+	require.NoError(t, err)
+
+	// Assert the status
+	require.Equal(t, expectedFormationStatus.Condition, gotFormation.Status.Condition, "Formation with ID %q is with status %q, but %q was expected", formationID, gotFormation.Status.Condition, expectedFormationStatus.Condition)
+
+	if expectedFormationStatus.Errors == nil {
+		require.Nil(t, gotFormation.Status.Errors)
+	} else { // assert only the Message and ErrorCode
+		require.Len(t, gotFormation.Status.Errors, len(expectedFormationStatus.Errors))
+		for _, expectedError := range expectedFormationStatus.Errors {
+			found := false
+			for _, gotError := range gotFormation.Status.Errors {
+				if gotError.ErrorCode == expectedError.ErrorCode && gotError.Message == expectedError.Message {
+					found = true
+					break
+				}
+			}
+			require.Truef(t, found, "Error %q with error code %d was not found", expectedError.Message, expectedError.ErrorCode)
+		}
+	}
+}
+
+func assertConfig(t testingx.OnceLogger, assignmentExpectation fixtures.AssignmentState, assignment *graphql.FormationAssignment) {
+	if assignmentExpectation.Config != nil && strings.Contains(*assignmentExpectation.Config, "outboundCommunication") {
+		assertSubstitutedConfig(t, *assignment.Configuration, assignment.ID) // Make sure there are uri, username and password in the configuration, and they are substituted jsonpaths
+	} else {
+		if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+			return
+		}
+	}
+}
+
+func assertSubstitutedConfig(t testingx.OnceLogger, config, assignmentID string) {
+	found := 0
+
+	var iterate func(key string, value gjson.Result)
+	iterate = func(key string, value gjson.Result) {
+		if value.IsObject() {
+			for k, v := range value.Map() {
+				iterate(k, v)
+			}
+		} else if value.IsArray() {
+			for i, el := range value.Array() {
+				strI := fmt.Sprint(i)
+				iterate(strI, el)
+			}
+		} else {
+			if (key == uriKey || key == usernameKey || key == passwordKey) && !strings.Contains(key, "$.") {
+				found++
+			}
+		}
+	}
+	iterate("", gjson.Parse(config))
+
+	// Make sure there are uri, username and password in the configuration, and they are substituted jsonpaths
+
+	if found != 3 {
+		t.Logf("The actual assignment config %s don't have substituted %q, %q and %q for assignment ID: %s", config, uriKey, usernameKey, passwordKey, assignmentID)
+		return
+	}
 }
