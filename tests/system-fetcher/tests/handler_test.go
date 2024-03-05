@@ -1525,7 +1525,7 @@ func triggerSync(t *testing.T, tenantID string) {
 		Timeout:   time.Duration(1) * time.Minute,
 	}
 
-	jsonBody := fmt.Sprintf(`{"tenantID":"%s"}`, tenantID)
+	jsonBody := fmt.Sprintf(`{"tenantIDs":["%s"]}`, tenantID)
 	sfReq, err := http.NewRequest(http.MethodPost, cfg.SystemFetcherURL+"/sync", bytes.NewBuffer([]byte(jsonBody)))
 	require.NoError(t, err)
 	sfReq.Header.Add(tenantHeader, tenantID)
@@ -1536,7 +1536,7 @@ func triggerSync(t *testing.T, tenantID string) {
 		}
 	}()
 	require.NoError(t, err)
-	require.Equal(t, http.StatusOK, sfResp.StatusCode)
+	require.Equal(t, http.StatusAccepted, sfResp.StatusCode)
 }
 
 func waitForApplicationsToBeProcessed(ctx context.Context, t *testing.T, tenantID string, expectedNumber int) {
