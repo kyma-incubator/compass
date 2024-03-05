@@ -14,7 +14,7 @@ type AddWebhookToApplicationOperation struct {
 	webhookType    graphql.WebhookType
 	webhookMode    graphql.WebhookMode
 	urlTemplate    string
-	headerTemplate string
+	headerTemplate *string
 	inputTemplate  string
 	outputTemplate string
 	applicationID  string
@@ -42,7 +42,7 @@ func (o *AddWebhookToApplicationOperation) WithURLTemplate(urlTemplate string) *
 	return o
 }
 
-func (o *AddWebhookToApplicationOperation) WithHeaderTemplate(headerTemplate string) *AddWebhookToApplicationOperation {
+func (o *AddWebhookToApplicationOperation) WithHeaderTemplate(headerTemplate *string) *AddWebhookToApplicationOperation {
 	o.headerTemplate = headerTemplate
 	return o
 }

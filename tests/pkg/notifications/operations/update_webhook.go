@@ -17,7 +17,7 @@ type UpdateWebhookOperation struct {
 	inputTemplate  string
 	urlTemplate    string
 	outputTemplate string
-	headerTemplate string
+	headerTemplate *string
 	applicationID  string
 	tenantID       string
 	asserters      []asserters.Asserter
@@ -52,7 +52,7 @@ func (o *UpdateWebhookOperation) WithOutputTemplate(outputTemplate string) *Upda
 	return o
 }
 
-func (o *UpdateWebhookOperation) WithHeaderTemplate(headerTemplate string) *UpdateWebhookOperation {
+func (o *UpdateWebhookOperation) WithHeaderTemplate(headerTemplate *string) *UpdateWebhookOperation {
 	o.headerTemplate = headerTemplate
 	return o
 }

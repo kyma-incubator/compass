@@ -25,7 +25,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-var emptyHeaderTemplate = ""
+var emptyHeaderTemplate *string = nil
 
 func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testing.T) {
 	ctx := context.Background()
@@ -499,7 +499,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		outputTemplate := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 		headerTemplate := "{\\\"Content-Type\\\": [\\\"application/json\\\"], \\\"Location\\\":[\\\"" + conf.CompassExternalMTLSGatewayURL + "/v1/businessIntegrations/{{.FormationID}}/assignments/{{.Assignment.ID}}/status\\\"]}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateAsync, inputTemplate, outputTemplate, headerTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateAsync, inputTemplate, outputTemplate, &headerTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
