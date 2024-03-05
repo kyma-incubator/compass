@@ -20,6 +20,7 @@ type DirectorGraphQLClient interface {
 	UpdateTenant(ctx context.Context, id string, tenant graphql.BusinessTenantMappingInput) error
 	SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload string) error
 	UnsubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionPayload string) error
+	ExistsTenantByExternalID(ctx context.Context, tenantID string) (bool, error)
 }
 
 // TenantConverter expects tenant converter implementation
@@ -75,7 +76,6 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 // ProvisionTenants provisions tenants according to their type
 func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
 	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
-
 	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 }
 

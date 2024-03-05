@@ -28,6 +28,30 @@ func (_m *DirectorGraphQLClient) DeleteTenants(ctx context.Context, tenants []gr
 	return r0
 }
 
+// ExistsTenantByExternalID provides a mock function with given fields: ctx, tenantID
+func (_m *DirectorGraphQLClient) ExistsTenantByExternalID(ctx context.Context, tenantID string) (bool, error) {
+	ret := _m.Called(ctx, tenantID)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, tenantID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, tenantID)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, tenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // SubscribeTenant provides a mock function with given fields: ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload
 func (_m *DirectorGraphQLClient) SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionProviderAppName string, subscriptionPayload string) error {
 	ret := _m.Called(ctx, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload)

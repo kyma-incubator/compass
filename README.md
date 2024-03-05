@@ -1,3 +1,6 @@
+## :warning: This repository has been deprecated and will be archived soon. :warning:
+
+
 <p align="center">
  <img src="https://raw.githubusercontent.com/kyma-incubator/compass/main/logo.png" width="235">
 </p>

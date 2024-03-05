@@ -4,14 +4,13 @@ go 1.20
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
-	github.com/davecgh/go-spew v1.1.1
 	github.com/google/uuid v1.3.1
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240221145235-0838aef42ce4
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20240221145235-0838aef42ce4
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240227094440-00f37fddbaba
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240227095022-a6d109ac15a9
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240221145235-0838aef42ce4
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20240123081221-34fb1f6bc126
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240228100750-f0a14a359089
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20240228074947-02a81b1e3bf8
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -34,6 +33,8 @@ require (
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
 	github.com/agnivade/levenshtein v1.1.1 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20230301143203-a9d515a09cc2 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/decred/dcrd/dcrec/secp256k1/v4 v4.2.0 // indirect
 	github.com/emicklei/go-restful/v3 v3.9.0 // indirect
 	github.com/evanphx/json-patch/v5 v5.6.0 // indirect
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
@@ -43,6 +44,7 @@ require (
 	github.com/go-openapi/jsonreference v0.20.0 // indirect
 	github.com/go-openapi/swag v0.22.3 // indirect
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
+	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
 	github.com/google/gnostic v0.5.7-v3refs // indirect
@@ -54,7 +56,14 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240123081221-34fb1f6bc126 // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228074947-02a81b1e3bf8 // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240228074947-02a81b1e3bf8 // indirect
+	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
+	github.com/lestrrat-go/httpcc v1.0.1 // indirect
+	github.com/lestrrat-go/iter v1.0.2 // indirect
+	github.com/lestrrat-go/jwx v1.2.28 // indirect
+	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect

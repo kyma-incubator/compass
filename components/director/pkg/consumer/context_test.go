@@ -14,7 +14,7 @@ func TestConsumerContext(t *testing.T) {
 	t.Run("load returns consumer previously saved in context", func(t *testing.T) {
 		// GIVEN
 		id := "223da628-3756-4bef-ab48-fb0061a4eae4"
-		givenConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumer.Runtime}
+		givenConsumer := consumer.Consumer{ConsumerID: id, Type: consumer.Runtime}
 		ctx := consumer.SaveToContext(context.TODO(), givenConsumer)
 
 		// WHEN
@@ -34,7 +34,7 @@ func TestConsumerContext(t *testing.T) {
 	t.Run("cannot override consumer accidentally", func(t *testing.T) {
 		// GIVEN
 		id := "223da628-3756-4bef-ab48-fb0061a4eae4"
-		givenConsumer := consumer.Consumer{ConsumerID: id, ConsumerType: consumer.Runtime}
+		givenConsumer := consumer.Consumer{ConsumerID: id, Type: consumer.Runtime}
 		ctx := consumer.SaveToContext(context.TODO(), givenConsumer)
 		ctx = context.WithValue(ctx, 0, "some random value")
 

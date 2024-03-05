@@ -3,6 +3,8 @@ package tenant
 import (
 	"context"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -28,7 +30,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error)
+	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error)
 	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, externalTenantIDs []string) error
@@ -269,7 +271,7 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
 
-	tenantIDs, err := r.srv.UpsertMany(ctx, tenants...)
+	tenantsMap, err := r.srv.UpsertMany(ctx, tenants...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while writing new tenants")
 	}
@@ -278,7 +280,16 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 		return nil, err
 	}
 
-	r.syncSystemsForTenants(ctx, tenantIDs)
+	tenantIDs := make([]string, 0, len(tenantsMap))
+	tenantsToSync := make([]string, 0)
+	for tenantID, tenantType := range tenantsMap {
+		tenantIDs = append(tenantIDs, tenantID)
+		if r.isSyncableTenant(tenantType) {
+			tenantsToSync = append(tenantsToSync, tenantID)
+		}
+	}
+
+	r.syncSystemsForTenant(ctx, tenantsToSync)
 
 	return tenantIDs, nil
 }
@@ -304,7 +315,9 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 		return "", err
 	}
 
-	r.syncSystemsForTenant(ctx, id)
+	if r.isSyncableTenant(tenantpkg.StrToType(tenant.Type)) {
+		r.syncSystemsForTenant(ctx, []string{id})
+	}
 
 	return id, nil
 }
@@ -400,16 +413,14 @@ func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx
 	return tr, nil
 }
 
-func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantID string) {
-	log.C(ctx).Infof("Calling sync systems API with TenantID %q", tenantID)
-	if err := r.systemFetcherClient.Sync(ctx, tenantID); err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API with TenantID %q", tenantID)
+func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantIDs []string) {
+	if len(tenantIDs) == 0 {
+		return
 	}
-}
 
-func (r *Resolver) syncSystemsForTenants(ctx context.Context, tenantIDs []string) {
-	for _, tenantID := range tenantIDs {
-		r.syncSystemsForTenant(ctx, tenantID)
+	log.C(ctx).Infof("Calling sync systems API for Tenants: %v", tenantIDs)
+	if err := r.systemFetcherClient.Sync(ctx, tenantIDs, true); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API for Tenants %v", tenantIDs)
 	}
 }
 
@@ -505,4 +516,8 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 	log.C(ctx).Infof("Successfully removed access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 
 	return output, nil
+}
+
+func (r *Resolver) isSyncableTenant(tenantType tenantpkg.Type) bool {
+	return tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer
 }

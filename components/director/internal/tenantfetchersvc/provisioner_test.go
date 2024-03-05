@@ -113,9 +113,9 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 				return tenantSvc
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
+				tenantSvc := &automock.DirectorGraphQLClient{}
 				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
 				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
-				tenantSvc := &automock.DirectorGraphQLClient{}
 				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(nil).Once()
 				return tenantSvc
 			},

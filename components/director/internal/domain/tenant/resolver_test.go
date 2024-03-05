@@ -703,6 +703,10 @@ func TestResolver_Write(t *testing.T) {
 	}
 
 	upsertedTenantsIDs := []string{"6f4a589c-ac2e-4870-acb5-5a58abc85c6a", "eace9a3a-383b-44d1-8864-7e951ac5ec06"}
+	upsertedTenantsMap := map[string]tnt.Type{
+		upsertedTenantsIDs[0]: tnt.Account,
+		upsertedTenantsIDs[1]: tnt.Account,
+	}
 
 	testCases := []struct {
 		Name           string
@@ -718,7 +722,7 @@ func TestResolver_Write(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := unusedTenantService()
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsIDs, nil).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsMap, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -761,7 +765,7 @@ func TestResolver_Write(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsIDs, nil).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsMap, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
@@ -791,7 +795,7 @@ func TestResolver_Write(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, result)
+				assert.ElementsMatch(t, testCase.ExpectedResult, result)
 			}
 
 			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)

@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping/automock"
@@ -35,7 +36,7 @@ var (
 
 	validSubject            = "C=DE, OU=Compass Clients, OU=Region, OU=ed1f789b-1a85-4a63-b360-fac9d6484544, L=validate, CN=test-compass-integration"
 	invalidSubject          = "C=DE, OU=Compass Clients, OU=Region, OU=Random-OU, L=validate, CN=test-compass-integration"
-	validConsumerType       = inputvalidation.IntegrationSystemType
+	validConsumerType       = string(consumer.IntegrationSystem)
 	validInternalConsumerID = "3bfbb60f-d67d-4657-8f9e-2d73a6b24a10"
 	validTntAccessLevels    = []string{string(tenantEntity.Account)}
 	invalidConsumerType     = "invalidConsumerType"
