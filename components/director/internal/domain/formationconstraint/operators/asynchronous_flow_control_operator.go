@@ -3,8 +3,6 @@ package operators
 import (
 	"context"
 	"encoding/json"
-	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"runtime/debug"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -64,16 +62,10 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 
 	if ri.Location.OperationName == model.NotificationStatusReturned && ri.Location.ConstraintType == model.PreOperation {
 		formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
-		fmt.Println("---------------")
-		spew.Dump(formationAssignment, err)
-		fmt.Println("---------------")
 		if err != nil {
 			return false, err
 		}
 		statusReport, err := RetrieveNotificationStatusReportPointer(ctx, ri.NotificationStatusReportMemoryAddress)
-		fmt.Println("---------------")
-		spew.Dump(statusReport, err)
-		fmt.Println("---------------")
 		if err != nil {
 			return false, err
 		}
@@ -86,9 +78,6 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				if assignmentConfig.Credentials.InboundCommunicationDetails != nil {
 					statusReport.State = string(model.ConfigPendingAssignmentState)
 				}
-				fmt.Println("---------------")
-				spew.Dump(assignmentConfig, err)
-				fmt.Println("---------------")
 			}
 			return true, nil
 		}
