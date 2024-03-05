@@ -27,23 +27,22 @@ const (
 	// ServiceBindingsPath is the path for managing Service Bindings
 	ServiceBindingsPath = "/v1/service_bindings"
 
-	ServiceOfferingType = "service offering"
-	ServicePlanType     = "service plan"
-	ServiceInstanceType = "service instance"
-	ServiceBindingType  = "service binding"
-
-	ServiceBindingIDPath  = "serviceBindingID"
+	// ServiceBindingIDPath is the url parameter for the service binding id
+	ServiceBindingIDPath = "serviceBindingID"
+	// ServiceInstanceIDPath is the url parameter for the service instance id
 	ServiceInstanceIDPath = "serviceInstanceID"
 
 	labelsPattern = `([a-zA-Z0-9_-]+) in \(\s*'([^']+)'(?:,\s*'([^']+)')*\s*\)`
 )
 
+// Config represents the service manager config
 type Config struct {
 	Path                 string `envconfig:"APP_SERVICE_MANAGER_PATH"`
 	SubaccountQueryParam string `envconfig:"APP_SERVICE_MANAGER_SUBACCOUNT_QUERY_PARAM"`
 	LabelsQueryParam     string `envconfig:"APP_SERVICE_MANAGER_LABELS_QUERY_PARAM"`
 }
 
+// Handler represents the service manager handler
 type Handler struct {
 	c Config
 
@@ -51,6 +50,7 @@ type Handler struct {
 	ServiceBindingsMap  map[string]ServiceBindingsMock  // subaccount to bindings
 }
 
+// NewServiceManagerHandler creates new service manager Handler
 func NewServiceManagerHandler(c Config) *Handler {
 	return &Handler{
 		c: c,
@@ -62,12 +62,12 @@ func NewServiceManagerHandler(c Config) *Handler {
 
 // Service Offerings
 
+// HandleServiceOfferingsList handles service offerings listing
 func (h *Handler) HandleServiceOfferingsList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service offerings endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -96,12 +96,12 @@ func (h *Handler) HandleServiceOfferingsList(writer http.ResponseWriter, r *http
 
 // Service Plans
 
+// HandleServicePlansList handles service plans listing
 func (h *Handler) HandleServicePlansList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service plans endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -130,12 +130,12 @@ func (h *Handler) HandleServicePlansList(writer http.ResponseWriter, r *http.Req
 
 // Service Instances
 
+// HandleServiceInstancesList handles service instances listing
 func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service instances List endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -182,12 +182,12 @@ func (h *Handler) HandleServiceInstancesList(writer http.ResponseWriter, r *http
 	}
 }
 
+// HandleServiceInstanceGet handles service instance get by id
 func (h *Handler) HandleServiceInstanceGet(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service instances Get endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -234,12 +234,12 @@ func (h *Handler) HandleServiceInstanceGet(writer http.ResponseWriter, r *http.R
 	}
 }
 
+// HandleServiceInstanceCreate handles service instance create
 func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service instances Create endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -296,12 +296,12 @@ func (h *Handler) HandleServiceInstanceCreate(writer http.ResponseWriter, r *htt
 	}
 }
 
+// HandleServiceInstanceDelete handles service instance delete by id
 func (h *Handler) HandleServiceInstanceDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service instances Delete endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -343,12 +343,12 @@ func (h *Handler) HandleServiceInstanceDelete(writer http.ResponseWriter, r *htt
 
 // Service Bindings
 
+// HandleServiceBindingsList handles service binding listing
 func (h *Handler) HandleServiceBindingsList(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service bindings List endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -377,12 +377,12 @@ func (h *Handler) HandleServiceBindingsList(writer http.ResponseWriter, r *http.
 	}
 }
 
+// HandleServiceBindingGet handles service binding get by id
 func (h *Handler) HandleServiceBindingGet(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service bindings Get endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -429,12 +429,12 @@ func (h *Handler) HandleServiceBindingGet(writer http.ResponseWriter, r *http.Re
 	}
 }
 
+// HandleServiceBindingCreate handles service binding create
 func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service bindings Create endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return
@@ -492,12 +492,12 @@ func (h *Handler) HandleServiceBindingCreate(writer http.ResponseWriter, r *http
 	}
 }
 
+// HandleServiceBindingDelete handles service binding delete by id
 func (h *Handler) HandleServiceBindingDelete(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 	log.C(ctx).Infof("Service bindings Delete endpoint was hit...")
 
-	// Validate that there is a bearer token
 	if err := validateAuthorization(ctx, r); err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
 		return

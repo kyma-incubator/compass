@@ -27,7 +27,7 @@ var (
 	instanceIDs = []string{"instance-id-1", "instance-id-2"}
 	bindingIDs  = []string{"binding-id-1", "binding-id-2"}
 	names       = []string{"name-1", "name-2"}
-	plans       = []string{"plan-1", "plan-2"}
+	plans       = []string{"1", "2"}
 	platforms   = []string{"platform-1", "platform-2"}
 )
 
@@ -48,7 +48,7 @@ func TestHandler_ServiceOfferingsList(t *testing.T) {
 			Subaccount:               subaccount,
 			AuthorizationToken:       token,
 			ExpectedResponseCode:     http.StatusOK,
-			ExpectedServiceOfferings: `{"num_items":2,"items":[{"id":"first-service-offering-id","catalog_name":"first-service-offering-test"},{"id":"second-service-offering-id","catalog_name":"second-service-offering-test"}]}`,
+			ExpectedServiceOfferings: `{"num_items":2,"items":[{"id":"feature-flags-id","catalog_name":"feature-flags"},{"id":"second-service-offering-id","catalog_name":"second-service-offering-test"}]}`,
 		},
 		{
 			Name:                 "Error when authorization value is empty",
@@ -130,7 +130,7 @@ func TestHandler_ServicePlansList(t *testing.T) {
 			Subaccount:           subaccount,
 			AuthorizationToken:   token,
 			ExpectedResponseCode: http.StatusOK,
-			ExpectedServicePlans: `{"num_items":2,"items":[{"id":"1","catalog_name":"first-catalog-name","service_offering_id":"first-service-offering-id"},{"id":"2","catalog_name":"second-catalog-name","service_offering_id":"second-service-offering-id"}]}`,
+			ExpectedServicePlans: `{"num_items":2,"items":[{"id":"1","catalog_name":"standard","service_offering_id":"feature-flags-id"},{"id":"2","catalog_name":"second-catalog-name","service_offering_id":"second-service-offering-id"}]}`,
 		},
 		{
 			Name:                 "Error when authorization value is empty",
@@ -606,12 +606,12 @@ func TestHandler_ServiceBindingsCreate(t *testing.T) {
 					},
 				},
 			},
-			ExpectedResponseCode: http.StatusOK,
+			ExpectedResponseCode: http.StatusCreated,
 			ExpectedNewServiceBinding: ServiceBindingMock{
 				ID:                bindingIDs[1],
 				Name:              names[1],
 				ServiceInstanceID: instanceIDs[1],
-				Credentials:       []byte(`"-----BEGIN CERTIFICATE-----\n cert \n-----END CERTIFICATE-----\n"`),
+				Credentials:       []byte(`{"uri":"uri","username":"username","password":"password"}`),
 			},
 		},
 		{
@@ -728,7 +728,7 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 				},
 			},
 			ExpectedResponseCode:     http.StatusOK,
-			ExpectedServiceInstances: `{"num_items":2,"items":[{"id":"123","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1","label-val-2"]}},{"id":"456","name":"name-2","service_plan_id":"plan-2","platform_id":"platform-2","labels":{"label-key-1":["label-val-1","label-val-2"]}}]}`,
+			ExpectedServiceInstances: `{"num_items":2,"items":[{"id":"123","name":"name-1","service_plan_id":"1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1","label-val-2"]}},{"id":"456","name":"name-2","service_plan_id":"2","platform_id":"platform-2","labels":{"label-key-1":["label-val-1","label-val-2"]}}]}`,
 		},
 		{
 			Name:               "Success - list with labels query",
@@ -757,7 +757,7 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 				},
 			},
 			ExpectedResponseCode:     http.StatusOK,
-			ExpectedServiceInstances: `{"num_items":1,"items":[{"id":"123","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1"]}}]}`,
+			ExpectedServiceInstances: `{"num_items":1,"items":[{"id":"123","name":"name-1","service_plan_id":"1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1"]}}]}`,
 		},
 		{
 			Name:               "Success - list with complex labels query",
@@ -786,7 +786,7 @@ func TestHandler_ServiceInstancesList(t *testing.T) {
 				},
 			},
 			ExpectedResponseCode:     http.StatusOK,
-			ExpectedServiceInstances: `{"num_items":1,"items":[{"id":"123","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1"],"label-key-2":["label-val-2"]}}]}`,
+			ExpectedServiceInstances: `{"num_items":1,"items":[{"id":"123","name":"name-1","service_plan_id":"1","platform_id":"platform-1","labels":{"label-key-1":["label-val-1"],"label-key-2":["label-val-2"]}}]}`,
 		},
 		{
 			Name:                     "Success - without instances",
@@ -905,7 +905,7 @@ func TestHandler_ServiceInstancesGet(t *testing.T) {
 				},
 			},
 			ExpectedResponseCode:    http.StatusOK,
-			ExpectedServiceInstance: `{"id":"instance-id-1","name":"name-1","service_plan_id":"plan-1","platform_id":"platform-1"}`,
+			ExpectedServiceInstance: `{"id":"instance-id-1","name":"name-1","service_plan_id":"1","platform_id":"platform-1"}`,
 		},
 		{
 			Name:                 "Error - service instance not found",
@@ -1152,7 +1152,7 @@ func TestHandler_ServiceInstancesCreate(t *testing.T) {
 		{
 			Name:               "Success",
 			Subaccount:         subaccount,
-			RequestBody:        `{"id": "instance-id-2", "name": "name-2", "service_plan_id": "plan-2", "platform_id": "platform-2", "labels":{"key2":["val2"]}}`,
+			RequestBody:        `{"id": "instance-id-2", "name": "name-2", "service_plan_id": "2", "platform_id": "platform-2", "labels":{"key2":["val2"]}}`,
 			AuthorizationToken: token,
 			ExistingServiceInstancesMap: map[string]ServiceInstancesMock{
 				subaccount: {
@@ -1168,7 +1168,7 @@ func TestHandler_ServiceInstancesCreate(t *testing.T) {
 					},
 				},
 			},
-			ExpectedResponseCode: http.StatusOK,
+			ExpectedResponseCode: http.StatusCreated,
 			ExpectedNewServiceInstance: ServiceInstanceMock{
 				ID:            instanceIDs[1],
 				Name:          names[1],

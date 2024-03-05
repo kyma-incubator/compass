@@ -6,12 +6,10 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	directordestinationcreator "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
-	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -38,8 +36,7 @@ const (
 	assignOperation       = "assign"
 	consumerType          = "Integration System" // should be a valid consumer type
 	readyAssignmentState  = "READY"
-	basicAuthType         = "Basic"
-	subscriptionsLabelKey = "subscriptions"
+	emptyParentCustomerID = ""
 )
 
 var (
@@ -49,12 +46,9 @@ var (
 func TestInstanceCreator(t *testing.T) {
 	ctx := context.Background()
 	tnt := conf.TestConsumerAccountID
-	tntParentCustomer := conf.TestConsumerAccountID // parent of `tenant.TestTenants.GetDefaultTenantID()` above
 
 	certSecuredHTTPClient := fixtures.FixCertSecuredHTTPClient(cc, conf.ExternalClientCertSecretName, conf.SkipSSLValidation)
 
-	//subscriptionSubdomain := conf.SelfRegisterSubdomainPlaceholderValue
-	//subscriptionConsumerAccountID := conf.TestConsumerAccountID
 	subscriptionProviderSubaccountID := conf.TestProviderSubaccountID
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 	subscriptionConsumerTenantID := conf.TestConsumerTenantID
@@ -126,9 +120,6 @@ func TestInstanceCreator(t *testing.T) {
 	app1BaseURL := "http://e2e-test-app1-base-url"
 
 	t.Logf("Create application template for type: %q", applicationType1)
-	//appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil, graphql.ApplicationStatusConditionConnected)
-	//defer appTemplateProvider.Cleanup(t, ctx, oauthGraphQLClient)
-	//appTpl := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
 	appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
 	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 	appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subscriptionConsumerSubaccountID
@@ -198,11 +189,6 @@ func TestInstanceCreator(t *testing.T) {
 	ctx = context.WithValue(ctx, context_keys.FormationTemplateIDKey, ftplID)
 	ctx = context.WithValue(ctx, context_keys.FormationTemplateNameKey, ftplID)
 
-	//t.Logf("Create application 1 from template: %q", applicationType1)
-	//appProvider1 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
-	//defer appProvider1.Cleanup(t, ctx, certSecuredGraphQLClient)
-	//app1ID := appProvider1.Provide(t, ctx, certSecuredGraphQLClient)
-
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
 	subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
@@ -238,15 +224,6 @@ func TestInstanceCreator(t *testing.T) {
 	asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
 		AssertExpectations(t, ctx)
 	asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).AssertExpectations(t, ctx)
-
-	// Configure destination service client
-	//region := conf.SubscriptionConfig.SelfRegRegion
-	//instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
-	//require.True(t, ok)
-	//destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
-	//require.NoError(t, err)
-	//
-	//destinationProviderWithInstanceToken := token.GetClientCredentialsToken(t, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderWithInstanceClaimKey)
 
 	t.Run("Asynchronous App to App Formation Assignment Notifications", func(t *testing.T) {
 		t.Logf("Cleanup notifications")
@@ -300,7 +277,7 @@ func TestInstanceCreator(t *testing.T) {
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
-		redirectURLTemplate := fmt.Sprintf("{\\\\\\\"path\\\\\\\":\\\\\\\"%s\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\\\\\"}", redirectURL)
+		redirectURLTemplate := fmt.Sprintf("{\\\\\\\"path\\\\\\\":\\\\\\\"%s\\\\\\\",\\\\\\\"method\\\\\\\":\\\\\\\"PATCH\\\\\\\"}", redirectURL)
 		redirectInputTemplate := fmt.Sprintf("{\\\"should_redirect\\\": {{ if and .ReverseFormationAssignment .ReverseFormationAssignment.Value (contains .ReverseFormationAssignment.Value \\\"serviceInstances\\\") }}true{{else}}false{{end}},\\\"url_template\\\": \\\"%s\\\",{{ if .Webhook }}\\\"webhook_memory_address\\\":{{ .Webhook.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}", redirectURLTemplate)
 		op = operations.NewAddConstraintOperation("e2e-flow-control-operator-constraint-send-notification").
 			WithTargetOperation(graphql.TargetOperationSendNotification).
@@ -308,27 +285,6 @@ func TestInstanceCreator(t *testing.T) {
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype(applicationType1).
 			WithInputTemplate(redirectInputTemplate).
-			WithTenant(tnt).Operation()
-		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
-		op.Execute(t, ctx, certSecuredGraphQLClient)
-
-		// Destination Creator
-		op = operations.NewAddConstraintOperation("e2e-destination-creator-notification-status-returned").
-			WithTargetOperation(graphql.TargetOperationNotificationStatusReturned).
-			WithOperator(formationconstraintpkg.DestinationCreator).
-			WithResourceType(graphql.ResourceTypeApplication).
-			WithResourceSubtype(applicationType2).
-			WithInputTemplate("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .NotificationStatusReport }}\\\"notification_status_report_memory_address\\\":{{ .NotificationStatusReport.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}").
-			WithTenant(tnt).Operation()
-		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
-		op.Execute(t, ctx, certSecuredGraphQLClient)
-
-		op = operations.NewAddConstraintOperation("e2e-destination-creator-send-notification").
-			WithTargetOperation(graphql.TargetOperationSendNotification).
-			WithOperator(formationconstraintpkg.DestinationCreator).
-			WithResourceType(graphql.ResourceTypeApplication).
-			WithResourceSubtype(applicationType2).
-			WithInputTemplate("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}").
 			WithTenant(tnt).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -343,77 +299,37 @@ func TestInstanceCreator(t *testing.T) {
 
 		t.Logf("Assign application 1 to formation: %s", formationName)
 		expectedInstanceCreatorConfig := str.Ptr(`{"credentials": {"outboundCommunication": {"basicAuthentication": {"password": "password", "url": "uri", "username": "username"}}}}`)
+		expectedNotSubstitutedConfig := str.Ptr(`{"credentials": {"inboundCommunication": {"basicAuthentication": {"url": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri", "password": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password", "username": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username", "serviceInstances": [{"plan": "standard", "service": "feature-flags", "serviceBinding": {}}]}}}}`)
 
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipant(app1ID).
 			WithParticipant(app2ID).
 			WithNotifications([]*mock_data.NotificationData{
 				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, expectedInstanceCreatorConfig, nil),
+				mock_data.NewNotificationData(app1ID, app2ID, readyAssignmentState, expectedNotSubstitutedConfig, nil),
 			})
 		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationsAsserter).Operation()
+		notificationCountAsyncAsserter := asserters.NewNotificationsCountAsyncAsserter(0, assignOperation, localTenantID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationCountAsyncAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
-
-		//Assert destinations
-		//assertBasicDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, "instance-creator-destination-name", conf.TestProviderSubaccountID, destinationProviderWithInstanceToken, 1)
 
 		t.Logf("Unassign Application 1 from formation: %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
 		faAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, subscriptionConsumerTenantID, appNamespace, appRegion, tnt, emptyParentCustomerID, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
 		t.Logf("Unassign Application 2 from formation: %s", formationName)
-		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
-			WithParticipant(app1ID)
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder()
 		faAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		unassignNotificationsAsserter = asserters.NewUnassignNotificationsAsserter(2, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
+		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
-}
-
-func assertBasicDestination(t *testing.T, client *clients.DestinationClient, serviceURL, basicDestinationName, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
-	basicDestBytes := client.FindDestinationByName(t, serviceURL, basicDestinationName, authToken, "", http.StatusOK)
-	var basicDest esmdestinationcreator.DestinationSvcBasicDestResponse
-	err := json.Unmarshal(basicDestBytes, &basicDest)
-	require.NoError(t, err)
-	require.Equal(t, ownerSubaccountID, basicDest.Owner.SubaccountID)
-	require.NotEmpty(t, basicDest.Owner.InstanceID)
-	require.Equal(t, basicDestinationName, basicDest.DestinationConfiguration.Name)
-	require.Equal(t, directordestinationcreator.TypeHTTP, basicDest.DestinationConfiguration.Type)
-	require.NotEmpty(t, basicDest.DestinationConfiguration.URL)
-	require.Equal(t, directordestinationcreator.AuthTypeBasic, basicDest.DestinationConfiguration.Authentication)
-	require.Equal(t, directordestinationcreator.ProxyTypeInternet, basicDest.DestinationConfiguration.ProxyType)
-
-	for i := 0; i < expectedNumberOfAuthTokens; i++ {
-		require.NotEmpty(t, basicDest.AuthTokens)
-		require.NotEmpty(t, basicDest.AuthTokens[i].Type)
-		require.Equal(t, basicAuthType, basicDest.AuthTokens[i].Type)
-		require.NotEmpty(t, basicDest.AuthTokens[i].Value)
-	}
-}
-
-func assertApplicationFromSubscription(t *testing.T, appPage graphql.ApplicationPageExt, appTemplateID string, expectedSubscriptionsCount int) {
-	require.Len(t, appPage.Data, 1)
-	application := *appPage.Data[0]
-	require.Equal(t, appTemplateID, *application.ApplicationTemplateID)
-
-	subscriptionsLabelValueInterfaceSlice, ok := application.Labels[subscriptionsLabelKey].([]interface{})
-	require.True(t, ok)
-
-	subscriptionsLabelValue := make([]string, len(subscriptionsLabelValueInterfaceSlice))
-	for i, v := range subscriptionsLabelValueInterfaceSlice {
-		subscriptionsLabelValue[i], ok = v.(string)
-		require.True(t, ok)
-	}
-	require.Len(t, subscriptionsLabelValue, expectedSubscriptionsCount)
 }

@@ -362,9 +362,8 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
+	// Service Manager handlers
 	serviceManagerHandler := service_manager.NewServiceManagerHandler(cfg.ServiceManagerConfig)
-	//serviceManagerRouter := router.PathPrefix(cfg.ServiceManagerConfig.Path).Subrouter()
-	//serviceManagerRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator)) // TODO:: Not sure what middleware to put here
 	// Service Offerings
 	router.HandleFunc(service_manager.ServiceOfferingsPath, serviceManagerHandler.HandleServiceOfferingsList).Methods(http.MethodGet)
 	// Service Plans

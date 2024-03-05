@@ -65,10 +65,7 @@ func (o *AddWebhookToApplicationOperation) WithAsserters(asserters ...asserters.
 }
 
 func (o *AddWebhookToApplicationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate)
-	if o.headerTemplate != "" {
-		applicationWebhookInput.HeaderTemplate = &o.headerTemplate
-	}
+	applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.headerTemplate)
 	wh := fixtures.AddWebhookToApplication(t, ctx, gqlClient, applicationWebhookInput, o.tenantID, o.applicationID)
 	o.webhookID = wh.ID
 
