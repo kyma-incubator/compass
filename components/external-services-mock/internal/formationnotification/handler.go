@@ -515,9 +515,6 @@ var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, formationID
 
 // Async handles asynchronous formation assignment notification requests for Assign operation using the new receiverTenant/assignedTenant request body format
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
-	fmt.Println("--------------")
-	fmt.Println("Async was hit")
-	fmt.Println("--------------")
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
 
