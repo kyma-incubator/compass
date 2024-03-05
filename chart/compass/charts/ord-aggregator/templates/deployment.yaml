@@ -38,10 +38,13 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
       {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
-      {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
+        {{ if eq .Values.global.portieris.isEnabled true }}
         - name: {{ .Values.global.portieris.imagePullSecretName }}
-      {{ end }}
+        {{ end }}
+        {{ if eq $.Values.global.ordAggregator.metadataValidator.setImagePullSecrets true }}
+        - name: api-validator-secret
+        {{ end }}
       volumes:
         - name: director-config
           configMap:
@@ -201,7 +204,3 @@ spec:
           ports:
             - containerPort: {{ $.Values.global.ordAggregator.metadataValidator.port }}
         {{end}}
-      {{ if eq $.Values.global.ordAggregator.metadataValidator.setImagePullSecrets true }}
-      imagePullSecrets:
-        - name: api-validator-secret
-      {{end}}
