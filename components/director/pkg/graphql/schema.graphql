@@ -1991,6 +1991,7 @@ type Mutation {
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
 	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	finalizeDraftFormation(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.finalizeDraftFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)

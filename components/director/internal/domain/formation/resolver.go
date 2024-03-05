@@ -32,6 +32,7 @@ type Service interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
+	FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -586,6 +587,28 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID, shouldReset)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(updatedFormation)
+}
+
+// FinalizeDraftFormation changes the formation state do initial and start processing the formation and formation assignment notifications
+func (r *Resolver) FinalizeDraftFormation(ctx context.Context, formationID string) (*graphql.Formation, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	updatedFormation, err := r.service.FinalizeDraftFormation(ctx, formationID)
 	if err != nil {
 		return nil, err
 	}
