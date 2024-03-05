@@ -69,6 +69,7 @@ type ApplicationRepository interface {
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error)
+	ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -329,6 +330,20 @@ func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Applicati
 	}
 
 	return app, nil
+}
+
+// ListByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
+func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, filter, pageSize, cursor)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing applications with local tenant id %s", localTenantID)
+	}
+
+	return apps, nil
 }
 
 // GetByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
