@@ -286,7 +286,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	labels := convertedIn.Labels
 	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
-		isSelfReg, selfRegFlowErr := r.isSelfRegFlow(labels)
+		isSelfReg, selfRegFlowErr := r.selfRegManager.IsSelfRegistrationFlow(ctx, labels)
 		if selfRegFlowErr != nil {
 			return nil, selfRegFlowErr
 		}
@@ -947,25 +947,6 @@ func (r *Resolver) buildProductLabelFilter(productLabelArr []interface{}) []*lab
 	}
 
 	return filters
-}
-
-func (r *Resolver) isSelfRegFlow(labels map[string]interface{}) (bool, error) {
-	selfRegLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
-	_, distinguishLabelExists := labels[selfRegLabelKey]
-	_, productLabelExists := labels[r.appTemplateProductLabel]
-	if !distinguishLabelExists && !productLabelExists {
-		return false, errors.Errorf("missing %q or %q label", selfRegLabelKey, r.appTemplateProductLabel)
-	}
-
-	if distinguishLabelExists && productLabelExists {
-		return false, errors.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", selfRegLabelKey, r.appTemplateProductLabel)
-	}
-
-	if distinguishLabelExists {
-		return true, nil
-	}
-
-	return false, nil
 }
 
 func isRegionPlaceholderEqualToExistingPlaceholder(inputPlaceholders, existingPlaceholders []model.ApplicationTemplatePlaceholder) (bool, error) {

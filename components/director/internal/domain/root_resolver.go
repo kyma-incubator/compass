@@ -292,7 +292,7 @@ func NewRootResolver(
 	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
 	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
 
-	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
+	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{}, appTemplateProductLabel)
 	if err != nil {
 		return nil, err
 	}

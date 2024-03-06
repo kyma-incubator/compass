@@ -44,17 +44,18 @@ type ExternalSvcCallerProvider interface {
 const RegionLabel = "region"
 
 type selfRegisterManager struct {
-	cfg            config.SelfRegConfig
-	callerProvider ExternalSvcCallerProvider
+	cfg                     config.SelfRegConfig
+	appTemplateProductLabel string
+	callerProvider          ExternalSvcCallerProvider
 }
 
 // NewSelfRegisterManager creates a new SelfRegisterManager which is responsible for doing preparation/clean-up during
 // self-registration of runtimes configured with values from cfg.
-func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider) (*selfRegisterManager, error) {
+func NewSelfRegisterManager(cfg config.SelfRegConfig, provider ExternalSvcCallerProvider, appTemplateProductLabel string) (*selfRegisterManager, error) {
 	if err := cfg.PrepareConfiguration(); err != nil {
 		return nil, errors.Wrap(err, "while preparing self register manager configuration")
 	}
-	return &selfRegisterManager{cfg: cfg, callerProvider: provider}, nil
+	return &selfRegisterManager{cfg: cfg, appTemplateProductLabel: appTemplateProductLabel, callerProvider: provider}, nil
 }
 
 // IsSelfRegistrationFlow check if self registration flow is triggered
@@ -65,12 +66,22 @@ func (s *selfRegisterManager) IsSelfRegistrationFlow(ctx context.Context, labels
 	}
 
 	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
-		if _, exists := labels[s.cfg.SelfRegisterDistinguishLabelKey]; !exists {
-			return false, errors.Errorf("missing %q label", s.cfg.SelfRegisterDistinguishLabelKey)
+		_, distinguishLabelExists := labels[s.cfg.SelfRegisterDistinguishLabelKey]
+		_, productLabelExists := labels[s.appTemplateProductLabel]
+		if !distinguishLabelExists && !productLabelExists {
+			return false, errors.Errorf("missing %q or %q label", s.cfg.SelfRegisterDistinguishLabelKey, s.appTemplateProductLabel)
 		}
 
-		return true, nil
+		if distinguishLabelExists && productLabelExists {
+			return false, errors.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", s.cfg.SelfRegisterDistinguishLabelKey, s.appTemplateProductLabel)
+		}
+
+		if distinguishLabelExists {
+			return true, nil
+		}
+		return false, nil
 	}
+
 	return false, nil
 }
 
