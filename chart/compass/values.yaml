@@ -913,7 +913,6 @@ global:
     port: 3000
     systemFieldDiscoveryWebhookPartialProcessing: true
     systemFieldDiscoveryWebhookPartialProcessMaxDays: 7
-    webhookProcessorJobInterval: 10s
     lease:
       lockname: tenantfetcherlease
     xsappNamePath: "xsappname"
@@ -1138,6 +1137,7 @@ global:
     operationProcessorsQuietPeriod: 5s
     asyncRequestProcessors: 100
   tenantFetchers:
+    webhookProcessorJobInterval: 10s
     job1:
       enabled: false
       job:
