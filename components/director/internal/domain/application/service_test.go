@@ -5510,6 +5510,100 @@ func TestService_GetBySystemNumber(t *testing.T) {
 	}
 }
 
+func TestService_ListByLocalTenantID(t *testing.T) {
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	modelApplications := fixApplicationPage([]*model.Application{fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum")})
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testError := errors.New("Test error")
+	localTenantID := "local-tenant-id"
+	filter := labelfilter.MultipleFromGraphQL([]*graphql.LabelFilter{{Key: "key", Query: str.Ptr("query")}})
+	first := 200
+	cursor := "cursor"
+
+	testCases := []struct {
+		Name           string
+		Ctx            context.Context
+		RepositoryFn   func() *automock.ApplicationRepository
+		LocalTenantID  string
+		Filter         []*labelfilter.LabelFilter
+		First          int
+		Cursor         string
+		ExptectedValue *model.ApplicationPage
+		ExpectedError  error
+	}{
+		{
+			Name: "Getting tenant from context fails",
+			Ctx:  context.TODO(),
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "ListByLocalTenantID")
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			Filter:         filter,
+			First:          first,
+			Cursor:         cursor,
+			ExptectedValue: nil,
+			ExpectedError:  errors.New("cannot read tenant from context"),
+		},
+		{
+			Name: "Repository operation fails",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, filter, first, cursor).Return(nil, testError).Once()
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			Filter:         filter,
+			First:          first,
+			Cursor:         cursor,
+			ExptectedValue: nil,
+			ExpectedError:  testError,
+		},
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, filter, first, cursor).Return(modelApplications, nil).Once()
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			Filter:         filter,
+			First:          first,
+			Cursor:         cursor,
+			ExptectedValue: modelApplications,
+			ExpectedError:  nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			appRepo := testCase.RepositoryFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			value, err := svc.ListByLocalTenantID(testCase.Ctx, testCase.LocalTenantID, testCase.Filter, testCase.First, testCase.Cursor)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			assert.Equal(t, testCase.ExptectedValue, value)
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
 func TestService_GetByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tnt"
