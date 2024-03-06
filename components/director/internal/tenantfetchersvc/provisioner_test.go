@@ -103,23 +103,27 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 		DirectorClient      func() *automock.DirectorGraphQLClient
 		TenantConverter     func() *automock.TenantConverter
 		Request             *tenantfetchersvc.TenantSubscriptionRequest
+		NewTenantsIDs       map[string]bool
 		ExpectedErrorOutput string
 	}{
 		{
 			Name: "Succeeds when parent account tenant already exists",
 			TenantConverter: func() *automock.TenantConverter {
 				tenantSvc := &automock.TenantConverter{}
-				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenant}
 				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
 				tenantSvc.On("MultipleInputToGraphQLInput", expectedTenants).Return(expectedTenantsConverted).Once()
 				return tenantSvc
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
 				tenantSvc := &automock.DirectorGraphQLClient{}
-				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenant}
 				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
 				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(nil).Once()
 				return tenantSvc
+			},
+			NewTenantsIDs: map[string]bool{
+				subaccountTenantExtID: true,
 			},
 			Request: requestWithSubaccountTenant,
 		},
@@ -127,6 +131,50 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 			Name: "Succeeds when a cost object is present",
 			TenantConverter: func() *automock.TenantConverter {
 				tenantSvc := &automock.TenantConverter{}
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenant}
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc.On("MultipleInputToGraphQLInput", expectedTenants).Return(expectedTenantsConverted).Once()
+				return tenantSvc
+			},
+			DirectorClient: func() *automock.DirectorGraphQLClient {
+				expectedTenants := []model.BusinessTenantMappingInput{subaccountTenant}
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc := &automock.DirectorGraphQLClient{}
+				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(nil).Once()
+				return tenantSvc
+			},
+			NewTenantsIDs: map[string]bool{
+				subaccountTenantExtID: true,
+			},
+			Request: requestWithCostObject,
+		},
+		{
+			Name: "Succeeds with customer when all are new",
+			TenantConverter: func() *automock.TenantConverter {
+				tenantSvc := &automock.TenantConverter{}
+				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc.On("MultipleInputToGraphQLInput", expectedTenants).Return(expectedTenantsConverted).Once()
+				return tenantSvc
+			},
+			DirectorClient: func() *automock.DirectorGraphQLClient {
+				expectedTenants := []model.BusinessTenantMappingInput{customerTenant, parentAccountTenant, subaccountTenant}
+				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
+				tenantSvc := &automock.DirectorGraphQLClient{}
+				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(nil).Once()
+				return tenantSvc
+			},
+			NewTenantsIDs: map[string]bool{
+				parentTenantExtID:     true,
+				tenantExtID:           true,
+				subaccountTenantExtID: true,
+			},
+			Request: requestWithSubaccountTenant,
+		},
+		{
+			Name: "Succeeds with cost object when all are new",
+			TenantConverter: func() *automock.TenantConverter {
+				tenantSvc := &automock.TenantConverter{}
 				expectedTenants := []model.BusinessTenantMappingInput{costObjectTenant, parentCostObjectAccountTenant, subaccountTenant}
 				expectedTenantsConverted := convertTenantsToGQLInput(expectedTenants)
 				tenantSvc.On("MultipleInputToGraphQLInput", expectedTenants).Return(expectedTenantsConverted).Once()
@@ -138,6 +186,11 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 				tenantSvc := &automock.DirectorGraphQLClient{}
 				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(nil).Once()
 				return tenantSvc
+			},
+			NewTenantsIDs: map[string]bool{
+				parentCostObjectTenantExtID: true,
+				tenantExtID:                 true,
+				subaccountTenantExtID:       true,
 			},
 			Request: requestWithCostObject,
 		},
@@ -157,6 +210,11 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 				tenantSvc.On("WriteTenants", ctx, expectedTenantsConverted).Return(testError).Once()
 				return tenantSvc
 			},
+			NewTenantsIDs: map[string]bool{
+				parentTenantExtID:     true,
+				tenantExtID:           true,
+				subaccountTenantExtID: true,
+			},
 			Request:             requestWithSubaccountTenant,
 			ExpectedErrorOutput: testError.Error(),
 		},
@@ -171,7 +229,7 @@ func TestProvisioner_CreateRegionalTenant(t *testing.T) {
 			provisioner := tenantfetchersvc.NewTenantProvisioner(directorClient, tenantConverter, testProviderName)
 
 			// WHEN
-			err := provisioner.ProvisionTenants(ctx, testCase.Request, emptyTenantsIDs)
+			err := provisioner.ProvisionTenants(ctx, testCase.Request, testCase.NewTenantsIDs)
 
 			// THEN
 			if len(testCase.ExpectedErrorOutput) > 0 {

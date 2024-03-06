@@ -87,9 +87,7 @@ func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubsc
 		tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(newBusinessTenantMappings)
 		return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 	}
-
-	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
-	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
+	return nil
 }
 
 func (p *provisioner) tenantsFromRequest(request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
