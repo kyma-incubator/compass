@@ -90,8 +90,6 @@ var (
 		Region:                 tenantRegion,
 		SubscriptionLcenseType: testLicenseType,
 	}
-
-	emptyTenantsIDs = make(map[string]bool)
 )
 
 func TestProvisioner_CreateRegionalTenant(t *testing.T) {
