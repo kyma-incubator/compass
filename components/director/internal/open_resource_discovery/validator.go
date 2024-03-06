@@ -51,7 +51,7 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 		currentDocumentErrors := v.toValidationErrors(data, errorsFromAPIMetadataValidator)
 
 		if len(currentDocumentErrors) > 0 {
-			log.C(ctx).Infof("There are %q validation errors from API Metadata Validator, deleting invalid resources from document", len(currentDocumentErrors))
+			log.C(ctx).Infof("There are %d validation errors from API Metadata Validator", len(currentDocumentErrors))
 			deleteInvalidResourcesFromDocument(documents[i], currentDocumentErrors)
 
 			combinedValidationErrors = append(combinedValidationErrors, currentDocumentErrors...)

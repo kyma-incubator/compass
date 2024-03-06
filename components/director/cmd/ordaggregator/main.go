@@ -141,6 +141,7 @@ type config struct {
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
 	APIMetadataValidatorHost                 string `envconfig:"APP_API_METADATA_VALIDATOR_HOST,optional"`
 	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
+	APIMetadataValidatorEnabled              string `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
 
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig
@@ -372,11 +373,7 @@ func main() {
 
 	apiValidatorURL := fmt.Sprintf("%s:%s", cfg.APIMetadataValidatorHost, cfg.APIMetadataValidatorPort)
 
-	if cfg.APIMetadataValidatorHost == "" {
-		apiValidatorURL = ""
-	}
-
-	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient)
+	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient, cfg.APIMetadataValidatorEnabled)
 	documentValidator := ord.NewDocumentValidator(validationClient)
 	documentSanitizer := ord.NewDocumentSanitizer()
 
@@ -498,8 +495,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
 
 		var processingError *ord.ProcessingError
-		ok := errors.As(errProcess, &processingError)
-		if !ok {
+		if ok := errors.As(errProcess, &processingError); !ok {
 			newProcessingError := &ord.ProcessingError{
 				ValidationErrors: nil,
 				RuntimeError:     &ord.RuntimeError{Message: errProcess.Error()},

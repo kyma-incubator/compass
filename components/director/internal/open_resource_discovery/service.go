@@ -49,17 +49,6 @@ const (
 	ProcessingErrorMsg = "error processing ORD documents"
 )
 
-// RuntimeError represents the message of the runtime errors
-type RuntimeError struct {
-	Message string `json:"message"`
-}
-
-// ProcessingError represents the error containing the validation and runtime errors from aggregating the ORD documents
-type ProcessingError struct {
-	ValidationErrors []*ValidationError `json:"validation_errors"`
-	RuntimeError     *RuntimeError      `json:"runtime_error"`
-}
-
 func (p *ProcessingError) Error() string {
 	return p.toJSON()
 }

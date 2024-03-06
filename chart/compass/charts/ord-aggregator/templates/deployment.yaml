@@ -43,7 +43,7 @@ spec:
         - name: {{ .Values.global.portieris.imagePullSecretName }}
         {{ end }}
         {{ if eq $.Values.global.ordAggregator.metadataValidator.setImagePullSecrets true }}
-        - name: api-validator-secret
+        - name: {{ $.Values.global.ordAggregator.metadataValidator.imagePullSecretName }}
         {{ end }}
       volumes:
         - name: director-config
@@ -165,6 +165,8 @@ spec:
               value: "{{ $.Values.global.ordAggregator.metadataValidator.host }}"
             - name: APP_API_METADATA_VALIDATOR_PORT
               value: "{{ $.Values.global.ordAggregator.metadataValidator.port }}"
+            - name: APP_API_METADATA_VALIDATOR_ENABLED
+              value: "{{ $.Values.global.ordAggregator.metadataValidator.enabled }}"
           command:
             - "/bin/sh"
           args:

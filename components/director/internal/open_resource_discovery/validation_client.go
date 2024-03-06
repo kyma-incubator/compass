@@ -38,22 +38,25 @@ type ValidationResult struct {
 
 // ValidationClient represents the client for the API Metadata Validator
 type ValidationClient struct {
-	url    string
-	client *http.Client
+	url     string
+	client  *http.Client
+	enabled string
 }
 
 // NewValidationClient returns new validation client
-func NewValidationClient(url string, client *http.Client) *ValidationClient {
+func NewValidationClient(url string, client *http.Client, enabled string) *ValidationClient {
 	return &ValidationClient{
-		url:    url,
-		client: client,
+		url:     url,
+		client:  client,
+		enabled: enabled,
 	}
 }
 
 // Validate sends request to API Metadata Validator to validate one ORD document
 func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ValidationResult, error) {
-	if vc.url == "" {
-		log.C(ctx).Info("The validation client url is empty. Skipping API Metadata Validator call..")
+	if vc.enabled == "false" {
+		log.C(ctx).Info("API Metadata Validator is not enabled. Skipping validation...")
+
 		return []ValidationResult{}, nil
 	}
 

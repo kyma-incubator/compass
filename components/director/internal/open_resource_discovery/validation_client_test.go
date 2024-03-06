@@ -57,7 +57,7 @@ func TestValidationClient_Validate(t *testing.T) {
 	f := successfulRoundTripFuncCustom(t)
 	client := NewTestClient(f)
 
-	vc := ord.NewValidationClient("http://example.com", client)
+	vc := ord.NewValidationClient("http://example.com", client, "true")
 
 	// Test the Validate method
 	results, err := vc.Validate(context.TODO(), "ruleset", "requestBody")
@@ -70,7 +70,7 @@ func TestValidationClient_Validate_ReturnsError(t *testing.T) {
 	f := errorRoundTripFunc(t)
 	client := NewTestClient(f)
 
-	vc := ord.NewValidationClient("http://example.com", client)
+	vc := ord.NewValidationClient("http://example.com", client, "true")
 
 	// Test the Validate method
 	results, err := vc.Validate(context.TODO(), "ruleset", "requestBody")

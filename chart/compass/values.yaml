@@ -1066,6 +1066,7 @@ global:
     metadataValidator:
       enabled: "false"
       setImagePullSecrets: false
+      imagePullSecretName: api-validator-secret
       image: ""
       version: 3.5.5
       host: ""

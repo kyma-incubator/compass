@@ -21,6 +21,4 @@ const (
 	ResourceTypeMetricLabel = "resource_type"
 	// CorrelationIDMetricLabel is an additional label used by ord aggregator for creating CounterVec for Prometheus
 	CorrelationIDMetricLabel = "x_request_id"
-	// SeverityLevelLabel is an additional label used by ord aggregator for setting the severity level of an error
-	SeverityLevelLabel = "severity_level"
 )

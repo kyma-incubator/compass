@@ -14,3 +14,14 @@ type ValidationError struct {
 	Type        string `json:"type"`
 	Description string `json:"description"`
 }
+
+// RuntimeError represents the message of the runtime errors
+type RuntimeError struct {
+	Message string `json:"message"`
+}
+
+// ProcessingError represents the error containing the validation and runtime errors from processing an operation
+type ProcessingError struct {
+	ValidationErrors []*ValidationError `json:"validation_errors"`
+	RuntimeError     *RuntimeError      `json:"runtime_error"`
+}

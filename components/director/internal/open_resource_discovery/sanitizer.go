@@ -36,106 +36,111 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 
 	// Use the ProxyURL for all relative link substitution except for the API's TargetURLs.
 	// They are externally consumable and we should not expose those URLs through the Proxy but rather from webhook's BaseURL
-	url := webhookBaseURL
+	baseUrl := webhookBaseURL
 	if webhookBaseProxyURL != "" {
-		url = webhookBaseProxyURL
+		baseUrl = webhookBaseProxyURL
 	}
 
 	// Rewrite relative URIs
 	for _, doc := range docs {
 		for _, pkg := range doc.Packages {
-			if pkg.PackageLinks, err = rewriteRelativeURIsInJSON(pkg.PackageLinks, url, "url"); err != nil {
+			if pkg.PackageLinks, err = rewriteRelativeURIsInJSON(pkg.PackageLinks, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if pkg.Links, err = rewriteRelativeURIsInJSON(pkg.Links, url, "url"); err != nil {
+			if pkg.Links, err = rewriteRelativeURIsInJSON(pkg.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 		}
 
 		for _, bndl := range doc.ConsumptionBundles {
-			if bndl.Links, err = rewriteRelativeURIsInJSON(bndl.Links, url, "url"); err != nil {
+			if bndl.Links, err = rewriteRelativeURIsInJSON(bndl.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJSON(bndl.CredentialExchangeStrategies, url, "callbackUrl"); err != nil {
+			if bndl.CredentialExchangeStrategies, err = rewriteRelativeURIsInJSON(bndl.CredentialExchangeStrategies, baseUrl, "callbackUrl"); err != nil {
 				return valErrors, err
 			}
 		}
 
 		for _, api := range doc.APIResources {
 			for _, definition := range api.ResourceDefinitions {
-				if !isAbsoluteURL(definition.URL) {
-					definition.URL = url + definition.URL
+				definition.URL, err = constructResourceDefinitionURL(baseUrl, definition.URL)
+				if err != nil {
+					return nil, err
 				}
 			}
-			if api.APIResourceLinks, err = rewriteRelativeURIsInJSON(api.APIResourceLinks, url, "url"); err != nil {
+			if api.APIResourceLinks, err = rewriteRelativeURIsInJSON(api.APIResourceLinks, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if api.Links, err = rewriteRelativeURIsInJSON(api.Links, url, "url"); err != nil {
+			if api.Links, err = rewriteRelativeURIsInJSON(api.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if api.ChangeLogEntries, err = rewriteRelativeURIsInJSON(api.ChangeLogEntries, url, "url"); err != nil {
+			if api.ChangeLogEntries, err = rewriteRelativeURIsInJSON(api.ChangeLogEntries, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 			if api.TargetURLs, err = rewriteRelativeURIsInJSONArray(api.TargetURLs, webhookBaseURL); err != nil {
 				return valErrors, err
 			}
-			rewriteDefaultTargetURL(api.PartOfConsumptionBundles, url)
+			if err = rewriteDefaultTargetURL(api.PartOfConsumptionBundles, baseUrl); err != nil {
+				return valErrors, err
+			}
 		}
 
 		for _, event := range doc.EventResources {
-			if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, url, "url"); err != nil {
+			if event.ChangeLogEntries, err = rewriteRelativeURIsInJSON(event.ChangeLogEntries, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if event.EventResourceLinks, err = rewriteRelativeURIsInJSON(event.EventResourceLinks, url, "url"); err != nil {
+			if event.EventResourceLinks, err = rewriteRelativeURIsInJSON(event.EventResourceLinks, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if event.Links, err = rewriteRelativeURIsInJSON(event.Links, url, "url"); err != nil {
+			if event.Links, err = rewriteRelativeURIsInJSON(event.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 			for _, definition := range event.ResourceDefinitions {
-				if !isAbsoluteURL(definition.URL) {
-					definition.URL = url + definition.URL
+				definition.URL, err = constructResourceDefinitionURL(baseUrl, definition.URL)
+				if err != nil {
+					return valErrors, err
 				}
 			}
 		}
 
 		for _, entityType := range doc.EntityTypes {
-			if entityType.ChangeLogEntries, err = rewriteRelativeURIsInJSON(entityType.ChangeLogEntries, url, "url"); err != nil {
+			if entityType.ChangeLogEntries, err = rewriteRelativeURIsInJSON(entityType.ChangeLogEntries, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
-			if entityType.Links, err = rewriteRelativeURIsInJSON(entityType.Links, url, "url"); err != nil {
+			if entityType.Links, err = rewriteRelativeURIsInJSON(entityType.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 		}
 
 		for _, capability := range doc.Capabilities {
 			for _, definition := range capability.CapabilityDefinitions {
-				if !isAbsoluteURL(definition.URL) {
-					definition.URL = url + definition.URL
+				definition.URL, err = constructResourceDefinitionURL(baseUrl, definition.URL)
+				if err != nil {
+					return valErrors, err
 				}
 			}
 
-			if capability.Links, err = rewriteRelativeURIsInJSON(capability.Links, url, "url"); err != nil {
+			if capability.Links, err = rewriteRelativeURIsInJSON(capability.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 		}
 
 		for _, integrationDependency := range doc.IntegrationDependencies {
-			if integrationDependency.Links, err = rewriteRelativeURIsInJSON(integrationDependency.Links, url, "url"); err != nil {
+			if integrationDependency.Links, err = rewriteRelativeURIsInJSON(integrationDependency.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 		}
 
 		for _, dataProduct := range doc.DataProducts {
-			if dataProduct.DataProductLinks, err = rewriteRelativeURIsInJSON(dataProduct.DataProductLinks, url, "url"); err != nil {
+			if dataProduct.DataProductLinks, err = rewriteRelativeURIsInJSON(dataProduct.DataProductLinks, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 
-			if dataProduct.ChangeLogEntries, err = rewriteRelativeURIsInJSON(dataProduct.ChangeLogEntries, url, "url"); err != nil {
+			if dataProduct.ChangeLogEntries, err = rewriteRelativeURIsInJSON(dataProduct.ChangeLogEntries, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 
-			if dataProduct.Links, err = rewriteRelativeURIsInJSON(dataProduct.Links, url, "url"); err != nil {
+			if dataProduct.Links, err = rewriteRelativeURIsInJSON(dataProduct.Links, baseUrl, "url"); err != nil {
 				return valErrors, err
 			}
 		}
@@ -293,6 +298,20 @@ func (v *DocumentSanitizer) Sanitize(docs []*Document, webhookBaseURL, webhookBa
 	return valErrors, err
 }
 
+func constructResourceDefinitionURL(baseURL, definitionURL string) (string, error) {
+	parsedBaseURL, err := url.Parse(baseURL)
+	if err != nil {
+		return "", errors.Wrap(err, "failed to parse base URL")
+	}
+
+	defURL, err := url.Parse(definitionURL)
+	if err != nil {
+		return "", err
+	}
+
+	return parsedBaseURL.ResolveReference(defURL).String(), nil
+}
+
 func newCustomValidationError(ordID, errorType, description string) *ValidationError {
 	return &ValidationError{
 		OrdID:       ordID,
@@ -396,12 +415,18 @@ func rewriteRelativeURIsInJSONArray(j json.RawMessage, baseURL string) (json.Raw
 	return rewrittenJSON, nil
 }
 
-func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, baseURL string) {
+func rewriteDefaultTargetURL(bundleRefs []*model.ConsumptionBundleReference, baseURL string) error {
 	for _, br := range bundleRefs {
-		if br.DefaultTargetURL != "" && !isAbsoluteURL(br.DefaultTargetURL) {
-			br.DefaultTargetURL = baseURL + br.DefaultTargetURL
+		if br.DefaultTargetURL != "" {
+			var err error
+			br.DefaultTargetURL, err = constructResourceDefinitionURL(baseURL, br.DefaultTargetURL)
+			if err != nil {
+				return err
+			}
 		}
 	}
+
+	return nil
 }
 
 // mergeORDLabels merges labels2 into labels1
