@@ -34,10 +34,8 @@ type OperationService interface {
 //go:generate mockery --name=BusinessTenantMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingService interface {
 	List(ctx context.Context) ([]*model.BusinessTenantMapping, error)
-	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
-	Exists(ctx context.Context, id string) error
-	ExistsByExternalTenant(ctx context.Context, externalTenant string) error
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // SystemFetcherOperationMaintainer consists of various resource services responsible for operations creation.

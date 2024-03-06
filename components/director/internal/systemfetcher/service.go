@@ -80,10 +80,11 @@ type Config struct {
 	DirectorRequestTimeout    time.Duration `envconfig:"default=30s,APP_DIRECTOR_REQUEST_TIMEOUT"`
 	DirectorSkipSSLValidation bool          `envconfig:"default=false,APP_DIRECTOR_SKIP_SSL_VALIDATION"`
 
-	EnableSystemDeletion  bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
-	OperationalMode       string `envconfig:"APP_OPERATIONAL_MODE"`
-	TemplatesFileLocation string `envconfig:"optional,APP_TEMPLATES_FILE_LOCATION"`
-	VerifyTenant          string `envconfig:"optional,APP_VERIFY_TENANT"`
+	EnableSystemDeletion   bool   `envconfig:"default=true,APP_ENABLE_SYSTEM_DELETION"`
+	OperationalMode        string `envconfig:"APP_OPERATIONAL_MODE"`
+	AsyncRequestProcessors int    `envconfig:"default=100,APP_ASYNC_REQUEST_PROCESSORS"`
+	TemplatesFileLocation  string `envconfig:"optional,APP_TEMPLATES_FILE_LOCATION"`
+	VerifyTenant           string `envconfig:"optional,APP_VERIFY_TENANT"`
 }
 
 // SystemFetcher is responsible for synchronizing the existing applications in Compass and a pre-defined external source.

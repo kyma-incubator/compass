@@ -408,7 +408,7 @@ func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager
 	logger.Infof("Registering sync endpoint...")
 	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
 		logger.Infof("Sync endpoint is enabled.")
-		handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel)
+		handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel, make(chan struct{}, cfg.SystemFetcher.AsyncRequestProcessors))
 		apiRouter.HandleFunc(syncEndpoint, handler.ScheduleAggregationForSystemFetcherData).Methods(http.MethodPost)
 	} else {
 		logger.Infof("Sync endpoint is not enabled.")

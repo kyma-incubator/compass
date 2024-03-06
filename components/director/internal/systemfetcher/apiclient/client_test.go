@@ -21,6 +21,7 @@ const (
 func TestSystemFetcherClient_Sync(t *testing.T) {
 	// GIVEN
 	ctx := context.TODO()
+	tenantIDs := []string{tenantID}
 
 	testCases := []struct {
 		Name                    string
@@ -33,12 +34,6 @@ func TestSystemFetcherClient_Sync(t *testing.T) {
 			Endpoint:                syncEndpoint,
 			SystemFetcherClientFunc: fixSystemFetcherClient,
 			ExpectedErr:             nil,
-		},
-		{
-			Name:                    "Expected error when status code is 406",
-			Endpoint:                syncEndpoint,
-			SystemFetcherClientFunc: fixErrorNotAcceptableSystemFetcherClient,
-			ExpectedErr:             errors.New("on-demand system sync is disabled"),
 		},
 		{
 			Name:                    "Error when status code is 404",
@@ -68,7 +63,7 @@ func TestSystemFetcherClient_Sync(t *testing.T) {
 			client.SetHTTPClient(mockClient)
 
 			// WHEN
-			err := client.Sync(ctx, tenantID, true)
+			err := client.Sync(ctx, tenantIDs, true)
 
 			// THEN
 			if test.ExpectedErr != nil {
@@ -85,7 +80,7 @@ func fixSystemFetcherClient() (*http.Client, func(), string) {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc(syncEndpoint, func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusAccepted)
 	})
 	ts := httptest.NewServer(mux)
 
