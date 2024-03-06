@@ -913,7 +913,7 @@ global:
     port: 3000
     systemFieldDiscoveryWebhookPartialProcessing: true
     systemFieldDiscoveryWebhookPartialProcessMaxDays: 7
-    webhookProcessorJobInterval: 3m
+    webhookProcessorJobInterval: 10s
     lease:
       lockname: tenantfetcherlease
     xsappNamePath: "xsappname"
@@ -1313,7 +1313,6 @@ global:
       missingTenantOnDemandID: "subaccount-external-tnt"
       region: "eu-1"
       region2: "eu-2"
-      webhookProcessorJobInterval: 10s
     ordAggregator:
       skipPattern: ""
       proxyApplicationTemplateName: "SAP Proxy Template"
