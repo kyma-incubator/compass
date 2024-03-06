@@ -3,6 +3,7 @@ package graphql
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -120,19 +121,12 @@ func ensureUniquePlaceholders(placeholders []*PlaceholderDefinitionInput) error 
 	return nil
 }
 
-func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationJSONInput) error {
-	placeholdersMarshalled, err := json.Marshal(appInput)
-	if err != nil {
-		return errors.Wrap(err, "while marshalling placeholders")
-	}
-
-	placeholdersString := string(placeholdersMarshalled)
-
+func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInputString string) error {
 	for _, value := range placeholders {
 		if value == nil {
 			continue
 		}
-		if !strings.Contains(placeholdersString, fmt.Sprintf("{{%s}}", value.Name)) {
+		if !strings.Contains(appInputString, fmt.Sprintf("{{%s}}", value.Name)) {
 			return errors.Errorf("application input does not use provided placeholder [name=%s]", value.Name)
 		}
 	}
@@ -140,12 +134,49 @@ func ensurePlaceholdersUsed(placeholders []*PlaceholderDefinitionInput, appInput
 	return nil
 }
 
+func ensurePlaceholdersDefined(placeholders []*PlaceholderDefinitionInput, appInputString string) error {
+	placeholdersMap := make(map[string]bool)
+	for _, placeholder := range placeholders {
+		if placeholder == nil {
+			continue
+		}
+
+		placeholdersMap[placeholder.Name] = true
+	}
+
+	re := regexp.MustCompile(`{{([^\.}]*)}}`)
+	matches := re.FindAllStringSubmatch(appInputString, -1)
+	for _, match := range matches {
+		placeholderName := match[1]
+		if placeholderName == "" {
+			return errors.New("Empty placeholder [name=] provided in the Application Input")
+		}
+
+		if _, ok := placeholdersMap[placeholderName]; !ok {
+			return errors.Errorf("Placeholder [name=%s] is used in the application input but it is not defined in the Placeholders array", placeholderName)
+		}
+	}
+
+	return nil
+}
+
 func validPlaceholders(placeholders []*PlaceholderDefinitionInput, appInput *ApplicationJSONInput) error {
-	if err := ensureUniquePlaceholders(placeholders); err != nil {
+	appInputMarshalled, err := json.Marshal(appInput)
+	if err != nil {
+		return errors.Wrap(err, "while marshalling application json input")
+	}
+
+	appInputString := string(appInputMarshalled)
+
+	if err = ensureUniquePlaceholders(placeholders); err != nil {
 		return err
 	}
-	if err := ensurePlaceholdersUsed(placeholders, appInput); err != nil {
+	if err = ensurePlaceholdersUsed(placeholders, appInputString); err != nil {
 		return err
 	}
+	if err = ensurePlaceholdersDefined(placeholders, appInputString); err != nil {
+		return err
+	}
+
 	return nil
 }

@@ -514,9 +514,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	gqlAppTemplateInputWithDifferentPlaceholdersProductLabels := fixRegionalGQLAppTemplateInputWithDifferentRegionPlaceholder(testName)
 
-	gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders := fixRegionalGQLAppTemplateInputWithProductLabel(testName, region)
-	gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders.Placeholders = []*graphql.PlaceholderDefinitionInput{}
-
 	gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion := fixRegionalGQLAppTemplateInputWithProductLabel(testName, region)
 	gqlRegionalAppTemplateInputWithProductLabelsNoAppInputJSONRegion.ApplicationInput = &graphql.ApplicationJSONInput{
 		Name:   "foo",
@@ -867,34 +864,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			ExpectedError: errors.New(`Regional Application Template input with "systemRole" label has a different "region" placeholder from the other Application Templates with the same label`),
 		},
 		{
-			Name: "Error when app template is regional but it does not have a region placeholder",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
-				appTemplateSvc.AssertNotCalled(t, "Get")
-				appTemplateSvc.AssertNotCalled(t, "ListByFilters")
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders).Return(*modelRegionalAppTemplateInputWithProductLabelsAndNoPlaceholders, nil).Once()
-				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
-				return appTemplateConv
-			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     SuccessfulWebhookSvc(gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders.Webhooks, gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(),
-			LabelSvcFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("GetByKey", txtest.CtxWithDBMatcher(), "", model.AppTemplateLabelableObject, testID, RegionKey).Return(differentRegionLabelModel, nil).Once()
-				return svc
-			},
-			Ctx:           ctxWithCertConsumer,
-			Input:         gqlRegionalAppTemplateInputWithProductLabelsNoPlaceholders,
-			ExpectedError: errors.New(`"region" placeholder should be present for regional Application Templates`),
-		},
-		{
 			Name: "Error when app template is regional and the existing application template does not have a region placeholder",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
@@ -1001,30 +970,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			Ctx:           ctxWithCertConsumer,
 			Input:         gqlGlobalAppTemplateInputWithProductLabels,
 			ExpectedError: errors.New(`Existing application template with "systemRole" label is regional. The input application template should contain a "region" label`),
-		},
-		{
-			Name: "Error when the new Application Template is regional but does not have a region placeholder",
-			TxFn: txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
-				appTemplateSvc.AssertNotCalled(t, "Get")
-				appTemplateSvc.AssertNotCalled(t, "ListByFilters")
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder).Return(*modelRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder, nil).Once()
-				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
-				return appTemplateConv
-			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     SuccessfulWebhookSvc(gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder.Webhooks, gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerThatInitiatesCleanupButNotFinishIt(),
-			LabelSvcFn:       UnusedLabelService,
-			Ctx:              ctxWithCertConsumer,
-			Input:            gqlRegionalAppTemplateInputWithProductLabelsWithoutRegionPlaceholder,
-			ExpectedError:    errors.New(`"region" placeholder should be present for regional Application Templates`),
 		},
 		{
 			Name: "Error when checking if self registered app template already exists for the given labels",
