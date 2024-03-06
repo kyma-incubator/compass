@@ -73,7 +73,7 @@ func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig Pro
 	}
 }
 
-// GetSubscriptions build and execute request to SaaS registry. This method is invoked on local setup,
+// GetSubscriptions mocks the response payload when calling SaaS registry subscriptions api. This method is invoked on local setup,
 // on real environment an external service with the same path but different host is called.
 func (h *handler) GetSubscriptions(writer http.ResponseWriter, r *http.Request) {
 	logger := log.C(r.Context())
