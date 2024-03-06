@@ -170,7 +170,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3680"
+      version: "PR-3699"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -190,7 +190,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3680"
+      version: "PR-3699"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -1136,6 +1136,7 @@ global:
     rescheduleHangedPeriod: 1h
     maintainOperationsJobInterval: 60m
     operationProcessorsQuietPeriod: 5s
+    asyncRequestProcessors: 100
   tenantFetchers:
     job1:
       enabled: false
