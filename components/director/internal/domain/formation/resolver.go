@@ -531,6 +531,8 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		switch formationState := keys[i].State; formationState {
 		case string(model.ReadyFormationState):
 			condition = graphql.FormationStatusConditionReady
+		case string(model.DraftFormationState):
+			condition = graphql.FormationStatusConditionDraft
 		case string(model.InitialFormationState), string(model.DeletingFormationState):
 			condition = graphql.FormationStatusConditionInProgress
 		case string(model.CreateErrorFormationState), string(model.DeleteErrorFormationState):
@@ -538,27 +540,29 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{Message: keys[i].Message, ErrorCode: keys[i].ErrorCode})
 		}
 
-		for _, fa := range formationAssignments {
-			if fa.IsInErrorState() {
-				condition = graphql.FormationStatusConditionError
+		if condition != graphql.FormationStatusConditionDraft {
+			for _, fa := range formationAssignments {
+				if fa.IsInErrorState() {
+					condition = graphql.FormationStatusConditionError
 
-				if fa.Error == nil {
-					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
-					continue
+					if fa.Error == nil {
+						formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
+						continue
+					}
+
+					var assignmentError formationassignment.AssignmentErrorWrapper
+					if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
+						return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
+					}
+
+					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
+						AssignmentID: &fa.ID,
+						Message:      assignmentError.Error.Message,
+						ErrorCode:    int(assignmentError.Error.ErrorCode),
+					})
+				} else if condition != graphql.FormationStatusConditionError && fa.IsInProgressState() {
+					condition = graphql.FormationStatusConditionInProgress
 				}
-
-				var assignmentError formationassignment.AssignmentErrorWrapper
-				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
-					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
-				}
-
-				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
-					AssignmentID: &fa.ID,
-					Message:      assignmentError.Error.Message,
-					ErrorCode:    int(assignmentError.Error.ErrorCode),
-				})
-			} else if condition != graphql.FormationStatusConditionError && fa.IsInProgressState() {
-				condition = graphql.FormationStatusConditionInProgress
 			}
 		}
 

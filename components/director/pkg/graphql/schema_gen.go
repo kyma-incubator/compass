@@ -5795,6 +5795,7 @@ enum FormationStatusCondition {
 	IN_PROGRESS
 	ERROR
 	READY
+	DRAFT
 }
 
 enum HealthCheckStatusCondition {
@@ -7633,7 +7634,7 @@ type Mutation {
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
 	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
-	finalizeDraftFormation(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	finalizeDraftFormation(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.finalizeDraftFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -25028,7 +25029,7 @@ func (ec *executionContext) _Mutation_finalizeDraftFormation(ctx context.Context
 			return ec.resolvers.Mutation().FinalizeDraftFormation(rctx, args["formationID"].(string))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.resynchronizeFormationNotifications")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.finalizeDraftFormation")
 			if err != nil {
 				return nil, err
 			}

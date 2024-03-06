@@ -154,6 +154,7 @@ enum FormationStatusCondition {
 	IN_PROGRESS
 	ERROR
 	READY
+	DRAFT
 }
 
 enum HealthCheckStatusCondition {
