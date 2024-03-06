@@ -21,6 +21,7 @@ const (
 
 type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
+	formationName string
 	timeout time.Duration
 	tick    time.Duration
 }
@@ -40,16 +41,29 @@ func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixt
 }
 
 func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formationID := ctx.Value(context_keys.FormationIDKey).(string)
+	var formationID string
+	if a.formationName != "" {
+		formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenantID)
+		formationID = formation.ID
+	}else {
+		formationID = ctx.Value(context_keys.FormationIDKey).(string)
+	}
 	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations)
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration) {
-	a.timeout = timeout
+func (a *FormationAssignmentsAsyncAsserter) WithFormationName(formationName string)  *FormationAssignmentsAsyncAsserter{
+	a.formationName = formationName
+	return a
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration) {
+func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration)  *FormationAssignmentsAsyncAsserter{
+	a.timeout = timeout
+	return a
+}
+
+func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration)  *FormationAssignmentsAsyncAsserter{
 	a.tick = tick
+	return a
 }
 
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {

@@ -2,7 +2,6 @@ package fixtures
 
 import (
 	"context"
-
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -15,7 +14,7 @@ import (
 func GetFormationByID(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationID, tenant string) *graphql.FormationExt {
 	var gotFormation *graphql.FormationExt
 	getFormationReq := FixGetFormationRequest(formationID)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getFormationReq, gotFormation)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.NotEmpty(t, gotFormation.ID)
 
@@ -25,11 +24,19 @@ func GetFormationByID(t require.TestingT, ctx context.Context, gqlClient *gcli.C
 func GetFormationByName(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName, tenant string) *graphql.FormationExt {
 	var gotFormation *graphql.FormationExt
 	getFormationReq := FixGetFormationByNameRequest(formationName)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getFormationReq, gotFormation)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getFormationReq, &gotFormation)
 	require.NoError(t, err)
 	require.NotEmpty(t, gotFormation.ID)
 
 	return gotFormation
+}
+
+func GetFormationByNameWithError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName, tenant string) (*graphql.FormationExt,error) {
+	var gotFormation *graphql.FormationExt
+	getFormationReq := FixGetFormationByNameRequest(formationName)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getFormationReq, &gotFormation)
+
+	return gotFormation, err
 }
 
 func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationsReq *gcli.Request) *graphql.FormationPage {
@@ -80,10 +87,21 @@ func CreateFormationFromTemplateWithinTenant(t *testing.T, ctx context.Context, 
 	formationInput := FixFormationInput(formationName, formationTemplateName)
 	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
 	require.NoError(t, err)
+	return CreateFormationFromTemplateWithInputWithinTenant(t, ctx, gqlClient, tenantID,formationName, formationInputGQL)
+}
 
+func CreateFormationFromTemplateWithStateWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName, formationState *string) graphql.FormationExt {
+	t.Logf("Creating formation with name: %q from template with name: %q with state: %q", formationName, *formationTemplateName, *formationState)
+	formationInput := FixFormationInputWithState(formationName, formationTemplateName, formationState)
+	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputWithStateToGQL(formationInput)
+	require.NoError(t, err)
+	return CreateFormationFromTemplateWithInputWithinTenant(t, ctx, gqlClient, tenantID, formationName, formationInputGQL)
+}
+
+func CreateFormationFromTemplateWithInputWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName, formationInputGQL string) graphql.FormationExt {
 	var formation graphql.FormationExt
 	createFormationReq := FixCreateFormationWithTemplateRequest(formationInputGQL)
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, createFormationReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
 
@@ -243,6 +261,15 @@ func UnassignFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.
 
 func ResynchronizeFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID, formationName string) *graphql.Formation {
 	resynchronizeReq := FixResynchronizeFormationNotificationsRequest(formationID)
+	assignedFormation := &graphql.Formation{}
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, resynchronizeReq, &assignedFormation)
+	require.NoError(t, err)
+	require.Equal(t, formationName, assignedFormation.Name)
+	return assignedFormation
+}
+
+func FinalizeFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID, formationName string) *graphql.Formation {
+	resynchronizeReq := FixFinalizeDraftFormationRequest(formationID)
 	assignedFormation := &graphql.Formation{}
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, resynchronizeReq, &assignedFormation)
 	require.NoError(t, err)

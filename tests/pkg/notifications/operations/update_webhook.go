@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -57,7 +58,6 @@ func (o *UpdateWebhookOperation) WithObjectID(objectID string) *UpdateWebhookOpe
 	return o
 }
 
-// todo~~ use this method
 func (o *UpdateWebhookOperation) WithObjectType(objectType WebhookReferenceObjectType) *UpdateWebhookOperation {
 	o.objectType = objectType
 	return o
@@ -83,7 +83,11 @@ func (o *UpdateWebhookOperation) Execute(t *testing.T, ctx context.Context, gqlC
 	case WebhookReferenceObjectTypeApplicationTemplate:
 		webhooks = fixtures.GetApplicationTemplate(t, ctx, gqlClient, o.tenantID, o.objectID).Webhooks
 	case WebhookReferenceObjectTypeFormationTemplate:
-		//todo get formation templates
+		formationTemplateID := ctx.Value(context_keys.FormationTemplateIDKey).(string)
+		webhooksForTemplate := fixtures.QueryFormationTemplate(t, ctx, gqlClient, formationTemplateID).Webhooks
+		for i, _ := range webhooksForTemplate {
+			webhooks = append(webhooks, *webhooksForTemplate[i])
+		}
 	}
 
 	var webhook graphql.Webhook

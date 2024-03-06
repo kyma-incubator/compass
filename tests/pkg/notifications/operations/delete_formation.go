@@ -2,13 +2,14 @@ package operations
 
 import (
 	"context"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	gcli "github.com/machinebox/graphql"
 )
-// todo~~ in case of async lifecycle the returned state is deleting - can it be validated - we store only the ID and asserting things should be in asserter
+
 type DeleteFormationOperation struct {
 	name                  string
 	formationTemplateName string
@@ -39,7 +40,22 @@ func (o *DeleteFormationOperation) WithAsserters(asserters ...asserters.Asserter
 }
 
 func (o *DeleteFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.DeleteFormationWithinTenant(t, ctx, gqlClient, o.tenantID, o.name)
+	deletedFormation := fixtures.DeleteFormationWithinTenant(t, ctx, gqlClient, o.tenantID, o.name)
+
+	// For validating formation deletion a formation provisioned in the test case is used.
+	// As the formation is created from Operation and not from Provider its ID can not be stored in the context
+	// as the operations do not return result. For most operations and asserters providing the formation name as
+	// configuration is sufficient as the formation is fetched using its name. However, when asserting the
+	// formation deletion by the time the asserter is executed the formation may already be gone and an error will
+	// be returned when trying to fetch it. Thus, overriding the context with the required data for the deleted
+	// formation is needed.
+	//
+	// NOTE!!!
+	//
+	// Do NOT provide formationName as configuration for the asserters for DeleteFormationOperation as it has
+	// higher precedence than the contents of the context!!!
+	ctx = context.WithValue(ctx, context_keys.FormationIDKey, deletedFormation.ID)
+	ctx = context.WithValue(ctx, context_keys.FormationNameKey, deletedFormation.Name)
 
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)

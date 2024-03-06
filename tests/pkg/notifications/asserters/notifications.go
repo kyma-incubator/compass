@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/machinebox/graphql"
 	"io"
 	"net/http"
 	"testing"
@@ -37,7 +39,9 @@ type NotificationsAsserter struct {
 	tenant                             string
 	tenantParentCustomer               string
 	config                             string
+	formationName                      string // used when the test operates with formation different from the one provided in pre  setup
 	externalServicesMockMtlsSecuredURL string
+	certSecuredGraphQLClient           *graphql.Client
 	client                             *http.Client
 }
 
@@ -63,6 +67,16 @@ func (a *NotificationsAsserter) WithState(state string) *NotificationsAsserter {
 	return a
 }
 
+func (a *NotificationsAsserter) WithFormationName(formationName string) *NotificationsAsserter {
+	a.formationName = formationName
+	return a
+}
+
+func (a *NotificationsAsserter) WithGQLClient(gqlClient *graphql.Client) *NotificationsAsserter {
+	a.certSecuredGraphQLClient = gqlClient
+	return a
+}
+
 func (a *NotificationsAsserter) WithUseItemsStruct(useItemsStruct bool) *NotificationsAsserter {
 	a.useItemsStruct = useItemsStruct
 	return a
@@ -79,10 +93,19 @@ func (a *NotificationsAsserter) WithExpectedSubjects(expectedSubjects []string) 
 }
 
 func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formationID := ctx.Value(context_keys.FormationIDKey).(string)
+	var formationID string
+	if a.formationName != "" {
+		formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenant)
+		formationID = formation.ID
+	} else {
+		formationID = ctx.Value(context_keys.FormationIDKey).(string)
+	}
 
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
 	assertNotificationsCount(t, body, a.targetObjectID, a.expectedNotificationsCount)
+	if a.expectedNotificationsCount == 0 {
+		return
+	}
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]

@@ -2,6 +2,7 @@ package asserters
 
 import (
 	"context"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"testing"
 	"time"
@@ -49,22 +50,30 @@ func (a *FormationIsDeletedAsserter) WithTick(tick time.Duration) *FormationIsDe
 
 func (a *FormationIsDeletedAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
 	t.Logf("Asserting formation assignments with eventually...")
+
+	var formationName string
+	if a.formationName != "" {
+		formationName = a.formationName
+	} else {
+		formationName = ctx.Value(context_keys.FormationNameKey).(string)
+	}
+
 	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
 		// Get the formations for participant globally
 		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, a.tenantID, a.certSecuredGraphQLClient)
 		foundFormation := false
 		for _, formation := range formationPage.Data {
-			if formation.Name == a.formationName {
+			if formation.Name == formationName {
 				foundFormation = true
 			}
 		}
 
 		if foundFormation {
-			tOnce.Logf("Formation with name %s is not yet deleted", a.formationName)
+			tOnce.Logf("Formation with name %s is not yet deleted", formationName)
 			return false
 		}
-		tOnce.Logf("Successfully asserted formation with name %s is deleted", a.formationName)
+		tOnce.Logf("Successfully asserted formation with name %s is deleted", formationName)
 		return true
-	}, a.timeout, a.tick, "Timed out after %s while trying to assert formation with name %s is deleted.", a.timeout, a.formationName)
+	}, a.timeout, a.tick, "Timed out after %s while trying to assert formation with name %s is deleted.", a.timeout, formationName)
 }

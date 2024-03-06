@@ -37,23 +37,27 @@ func (b *FAExpectationsBuilder) getCurrentParticipantIDs() []string {
 }
 
 func (b *FAExpectationsBuilder) WithParticipant(newParticipantID string) *FAExpectationsBuilder {
+	return b.WithParticipantAndStates(newParticipantID, "READY", "READY", "READY")
+}
+
+func (b *FAExpectationsBuilder) WithParticipantAndStates(newParticipantID, targetState, sourceState, selfState string) *FAExpectationsBuilder {
 	if _, ok := b.expectations[newParticipantID]; ok {
 		return b
 	}
 
 	// add records for assignments where the new participant is target and a participant that was already added to the expectations structure is source
 	for _, expectationsForPreviouslyAddedParticipantAsSource := range b.expectations {
-		expectationsForPreviouslyAddedParticipantAsSource[newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+		expectationsForPreviouslyAddedParticipantAsSource[newParticipantID] = fixtures.AssignmentState{State: targetState, Config: nil, Value: nil, Error: nil}
 	}
 
 	currentParticipantIDs := b.getCurrentParticipantIDs()
 	// add expectations where the newly added participant is source
 	b.expectations[newParticipantID] = make(map[string]fixtures.AssignmentState, len(currentParticipantIDs)+1)
 	// add record for the loop assignment
-	b.expectations[newParticipantID][newParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+	b.expectations[newParticipantID][newParticipantID] = fixtures.AssignmentState{State: selfState, Config: nil, Value: nil, Error: nil}
 	// add records for assignments where the new participant is source and the target is a participant that was already added to the expectations structure
 	for _, previouslyAddedParticipantID := range currentParticipantIDs {
-		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}
+		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.AssignmentState{State: sourceState, Config: nil, Value: nil, Error: nil}
 	}
 
 	return b

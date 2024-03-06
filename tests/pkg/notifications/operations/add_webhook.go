@@ -74,9 +74,9 @@ func (o *AddWebhookToObjectOperation) Execute(t *testing.T, ctx context.Context,
 	case WebhookReferenceObjectTypeApplication:
 		wh = fixtures.AddWebhookToApplication(t, ctx, gqlClient, webhookInput, o.tenantID, o.objectID)
 	case WebhookReferenceObjectTypeApplicationTemplate:
-		wh = fixtures.AddWebhookToApplicationTemplate(t, ctx, gqlClient, webhookInput, o.tenantID, o.objectID)
+		wh = fixtures.AddWebhookToApplicationTemplate(t, ctx, gqlClient, webhookInput, "", o.objectID)
 	case WebhookReferenceObjectTypeFormationTemplate:
-		wh = fixtures.AddWebhookToFormationTemplate(t, ctx, gqlClient, webhookInput, o.tenantID, o.objectID)
+		wh = fixtures.AddWebhookToFormationTemplate(t, ctx, gqlClient, webhookInput, "", o.objectID)
 	}
 	o.webhookID = wh.ID
 
@@ -86,7 +86,11 @@ func (o *AddWebhookToObjectOperation) Execute(t *testing.T, ctx context.Context,
 }
 
 func (o *AddWebhookToObjectOperation) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.CleanupWebhook(t, ctx, gqlClient, o.tenantID, o.webhookID)
+	tnt := ""
+	if o.objectType == WebhookReferenceObjectTypeApplication {
+		tnt = o.tenantID
+	}
+	fixtures.CleanupWebhook(t, ctx, gqlClient, tnt, o.webhookID)
 }
 
 func (o *AddWebhookToObjectOperation) Operation() Operation {

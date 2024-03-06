@@ -41,7 +41,7 @@ func (o *MultiOperation) Execute(t *testing.T, ctx context.Context, gqlClient *g
 
 func (o *MultiOperation) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
 	// execute the cleanups in reverse order to mimic defer execution
-	for i := 0; i < len(o.operations); i++ {
+	for i := len(o.operations) - 1; i >= 0; i-- {
 		o.operations[i].Cleanup(t, ctx, gqlClient)
 	}
 }

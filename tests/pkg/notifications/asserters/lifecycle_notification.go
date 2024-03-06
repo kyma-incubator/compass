@@ -2,7 +2,9 @@ package asserters
 
 import (
 	"context"
+	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
@@ -17,8 +19,9 @@ type LifecycleNotificationsAsserter struct {
 	formationName                      string
 	tenantID                           string
 	parentTenantID                     string
-	externalServicesMockMtlsSecuredURL string
 	state                              string
+	expectNotifications                bool
+	externalServicesMockMtlsSecuredURL string
 	certSecuredGraphQLClient           *graphql.Client
 	client                             *http.Client
 	timeout                            time.Duration
@@ -27,6 +30,7 @@ type LifecycleNotificationsAsserter struct {
 
 func NewLifecycleNotificationsAsserter(externalServicesMockMtlsSecuredURL string, gqlClient *graphql.Client, client *http.Client) *LifecycleNotificationsAsserter {
 	return &LifecycleNotificationsAsserter{
+		expectNotifications:                true,
 		externalServicesMockMtlsSecuredURL: externalServicesMockMtlsSecuredURL,
 		certSecuredGraphQLClient:           gqlClient,
 		client:                             client,
@@ -60,6 +64,11 @@ func (a *LifecycleNotificationsAsserter) WithState(state string) *LifecycleNotif
 	return a
 }
 
+func (a *LifecycleNotificationsAsserter) WithExpectNotifications(expectNotifications bool) *LifecycleNotificationsAsserter {
+	a.expectNotifications = expectNotifications
+	return a
+}
+
 func (a *LifecycleNotificationsAsserter) WithTimeout(timeout time.Duration) *LifecycleNotificationsAsserter {
 	a.timeout = timeout
 	return a
@@ -71,23 +80,40 @@ func (a *LifecycleNotificationsAsserter) WithTick(tick time.Duration) *Lifecycle
 }
 
 func (a *LifecycleNotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenantID)
+	var formationID string
+	var formationName string
+	if a.formationName != "" {
+		formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenantID)
+		formationID = formation.ID
+		formationName = a.formationName
+	} else {
+		formationID = ctx.Value(context_keys.FormationIDKey).(string)
+		formationName = ctx.Value(context_keys.FormationNameKey).(string)
+	}
+
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
-	a.assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, a.formationName, a.state, a.operation, a.tenantID, a.parentTenantID, a.timeout, a.tick)
+	a.assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formationID, formationName, a.state, a.operation, a.tenantID, a.parentTenantID, a.expectNotifications, a.timeout, a.tick)
 }
 
-func (a *LifecycleNotificationsAsserter) assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, timeout, tick time.Duration) {
+func (a *LifecycleNotificationsAsserter) assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, expectNotifications bool, timeout, tick time.Duration) {
 	var shouldExpectDeleted bool
 	if formationOperation == createFormationOperation || formationState == "DELETE_ERROR" {
 		shouldExpectDeleted = false
 	} else {
 		shouldExpectDeleted = true
 	}
-	a.assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, shouldExpectDeleted, timeout, tick)
+	a.assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t, ctx, body, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID, expectNotifications, shouldExpectDeleted, timeout, tick)
 }
-func (a *LifecycleNotificationsAsserter) assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, shouldExpectDeleted bool, timeout, tick time.Duration) {
+func (a *LifecycleNotificationsAsserter) assertAsyncFormationNotificationFromCreationOrDeletionExpectDeletedWithEventually(t *testing.T, ctx context.Context, body []byte, formationID, formationName, formationState, formationOperation, tenantID, parentTenantID string, expectNotifications, shouldExpectDeleted bool, timeout, tick time.Duration) {
 	t.Logf("Assert asynchronous formation lifecycle notifications are sent for %q operation...", formationOperation)
 	notificationsForFormation := gjson.GetBytes(body, formationID)
+
+	if !expectNotifications {
+		require.False(t, notificationsForFormation.Exists())
+		require.Len(t, notificationsForFormation.Array(), 0)
+		return
+	}
+
 	require.True(t, notificationsForFormation.Exists())
 	require.Len(t, notificationsForFormation.Array(), 1)
 
@@ -106,30 +132,33 @@ func (a *LifecycleNotificationsAsserter) assertAsyncFormationNotificationFromCre
 	require.Eventually(t, func() (isOkay bool) {
 		tOnce.Log("Assert formation lifecycle notifications are successfully processed...")
 		formationPage := fixtures.ListFormationsWithinTenant(t, ctx, tenantID, a.certSecuredGraphQLClient)
-		if shouldExpectDeleted {
-			if formationPage.TotalCount != 0 {
-				tOnce.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
-				return
+
+		var foundFormation *gql.Formation
+		for _, formation := range formationPage.Data {
+			if formation.Name == a.formationName {
+				foundFormation = formation
 			}
-			if formationPage.Data != nil && len(formationPage.Data) > 0 {
+		}
+		if shouldExpectDeleted {
+			if foundFormation != nil {
 				tOnce.Logf("Formation lifecycle notification is expected to have deleted formation with ID %q, but it is still there", formationID)
 				return
 			}
 		} else {
-			if formationPage.TotalCount != 1 {
-				tOnce.Log("Formation count does not match")
+			if foundFormation == nil {
+				tOnce.Logf("Formation with ID %s was not found", formationID)
 				return
 			}
-			if formationPage.Data[0].State != formationState {
-				tOnce.Logf("Formation state for formation with ID %q is %q, expected: %q", formationID, formationPage.Data[0].State, formationState)
+			if foundFormation.State != formationState {
+				tOnce.Logf("Formation state for formation with ID %q is %q, expected: %q", formationID, foundFormation.State, formationState)
 				return
 			}
-			if formationPage.Data[0].ID != formationID {
-				tOnce.Logf("Formation ID is %q, expected: %q", formationPage.Data[0].ID, formationID)
+			if foundFormation.ID != formationID {
+				tOnce.Logf("Formation ID is %q, expected: %q", foundFormation.ID, formationID)
 				return
 			}
-			if formationPage.Data[0].Name != formationName {
-				tOnce.Logf("Formation name is %q, expected: %q", formationPage.Data[0].Name, formationName)
+			if foundFormation.Name != formationName {
+				tOnce.Logf("Formation name is %q, expected: %q", foundFormation.Name, formationName)
 				return
 			}
 		}

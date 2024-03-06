@@ -124,6 +124,15 @@ func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Req
 			}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
+func FixFinalizeDraftFormationRequest(formationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: finalizeDraftFormation(formationID:"%s"){
+				%s
+			  }
+			}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
 func FixResynchronizeFormationNotificationsRequestWithResetOption(formationID string, reset bool) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
@@ -137,5 +146,13 @@ func FixFormationInput(formationName string, formationTemplateName *string) grap
 	return graphql.FormationInput{
 		Name:         formationName,
 		TemplateName: formationTemplateName,
+	}
+}
+
+func FixFormationInputWithState(formationName string, formationTemplateName, formationState *string) graphql.FormationInput {
+	return graphql.FormationInput{
+		Name:         formationName,
+		TemplateName: formationTemplateName,
+		State:        formationState,
 	}
 }
