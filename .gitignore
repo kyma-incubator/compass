@@ -69,3 +69,7 @@ cover.out
 
 main
 *.test
+
+# local workspaces
+go.work
+go.work.sum
