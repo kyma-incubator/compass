@@ -601,6 +601,7 @@ func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context
 	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
+// ListBySubscribedRuntimesAndApplicationTemplates lists subscribed runtimes and application templates for a given self register label with a custom SQL
 func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
@@ -639,7 +640,7 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 
 	res := new(bytes.Buffer)
 	if err = t.Execute(res, data); err != nil {
-		return nil, errors.Wrapf(err, "while executing template")
+		return nil, errors.Wrap(err, "while executing template")
 	}
 
 	stmt := res.String()
