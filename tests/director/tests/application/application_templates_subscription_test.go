@@ -35,6 +35,8 @@ const (
 	baseURLTemplate       = "http://%s.%s.subscription.com"
 	regionPrefix          = "cf-"
 	subscriptionsLabelKey = "subscriptions"
+	timeout               = time.Minute * 3
+	checkInterval         = time.Second * 5
 )
 
 func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
@@ -485,6 +487,7 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
+		// label to trigger the system field discovery engine
 		appTemplateInput.Labels["systemFieldDiscovery"] = true
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
@@ -510,7 +513,7 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		require.NoError(stdT, err)
 		require.Equal(stdT, http.StatusOK, response.StatusCode)
 
-		t.Run("Application is created successfully in consumer subaccount as a result of subscription and system field discovery webhook is created", func(t *testing.T) {
+		t.Run("Application is created successfully in consumer subaccount as a result of subscription and system field discovery webhook is created and executed", func(t *testing.T) {
 			//GIVEN
 			subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
 
@@ -521,11 +524,28 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 			// THEN
 			appPageExt := fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
 
-			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
-			// webhooks with types - configuration changed and system field discovery
-			require.Len(t, appPageExt.Data[0].Webhooks, 2)
-			require.True(t, assertions.AssertWebhooksTypesForSystemFieldDiscoveryEngine(appPageExt.Data[0].Webhooks))
 			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
+			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
+
+			// this value is from external svc mock
+			expectedURL := "https://new-url.com"
+
+			require.Eventually(t, func() bool {
+				appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
+				// webhooks with types - configuration changed and system field discovery
+				if len(appPageExt.Data[0].Webhooks) == 2 {
+					t.Logf("Waiting for application webhook to be deleted")
+					return false
+				}
+
+				if appPageExt.Data[0].BaseURL != nil && *appPageExt.Data[0].BaseURL == expectedURL {
+					t.Log("application webhook was executed and base URL was updated successfully")
+					return true
+				}
+
+				t.Log("application webhook was executed, but application base URL was not updated")
+				return false
+			}, timeout, checkInterval, "Waiting for application base URL to be updated.")
 		})
 	})
 }

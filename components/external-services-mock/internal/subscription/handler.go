@@ -50,11 +50,17 @@ type ProviderSubscriptionInfo struct {
 	ProviderSubscriptionsIds []string
 }
 
-type Response struct {
-	SubscriptionGUID string `json:"subscriptionGUID"`
+var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
+
+// Subscription represents subscription object in a saas registry subscription api response payload.
+type Subscription struct {
+	AppURL string `json:"url"`
 }
 
-var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
+// SubscriptionsResponse represents collection of all subscription objects in a saas registry subscriptions api response payload.
+type SubscriptionsResponse struct {
+	Subscriptions []Subscription `json:"subscriptions"`
+}
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
@@ -65,6 +71,27 @@ func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig Pro
 		jobID:            jobID,
 		tenantsHierarchy: map[string]string{tenantConfig.TestConsumerSubaccountIDTenantHierarchy: tenantConfig.TestConsumerAccountIDTenantHierarchy, tenantConfig.TestConsumerSubaccountID: tenantConfig.TestConsumerAccountID},
 	}
+}
+
+// GetSubscriptions build and execute request to SaaS registry. This method is invoked on local setup,
+// on real environment an external service with the same path but different host is called.
+func (h *handler) GetSubscriptions(writer http.ResponseWriter, r *http.Request) {
+	logger := log.C(r.Context())
+	subscriptions := SubscriptionsResponse{
+		Subscriptions: []Subscription{
+			{
+				AppURL: "https://new-url.com",
+			},
+		},
+	}
+	subscriptionsBytes, err := json.Marshal(subscriptions)
+	if err != nil {
+		logger.Errorf("Failed to marshal subscriptions: %s", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+	writer.Write(subscriptionsBytes)
 }
 
 // Subscribe build and execute subscribe request to tenant fetcher. This method is invoked on local setup,
