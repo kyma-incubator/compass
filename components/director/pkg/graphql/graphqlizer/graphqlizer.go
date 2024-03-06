@@ -707,6 +707,15 @@ func (g *Graphqlizer) FormationInputToGQL(in graphql.FormationInput) (string, er
 	}`)
 }
 
+// FormationInputWithStateToGQL converts go formation input structure into graphql format
+func (g *Graphqlizer) FormationInputWithStateToGQL(in graphql.FormationInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		templateName: "{{.TemplateName}}"
+		state: "{{.State}}"
+	}`)
+}
+
 // FormationTemplateInputToGQL missing godoc
 func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateInput) (string, error) {
 	return g.genericToGQL(in, `{

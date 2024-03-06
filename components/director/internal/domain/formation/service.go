@@ -605,8 +605,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
 		// If we are in create error state, the formation is not ready, and we should not send notifications
 		if formationFromDB.State == model.InitialFormationState || formationFromDB.State == model.CreateErrorFormationState || formationFromDB.State == model.DraftFormationState {
-			//TODO~~ revisit log message as it does not fit DRAFT state
-			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for state to be updated...", formationFromDB.ID, model.ReadyFormationState)
 			return ft.formation, nil
 		}
 
@@ -1116,9 +1115,6 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 	if len(formationTemplateWebhooks) > 0{
 		newState=model.InitialFormationState
 	}
-
-	// TODO~~ remove
-	//newState=model.InitialFormationState
 
 	log.C(ctx).Infof("Setting formation with ID %s to %s state and starting resinchronization", formationID, newState)
 	formation.State = newState
