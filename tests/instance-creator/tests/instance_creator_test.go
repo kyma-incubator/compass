@@ -6,6 +6,11 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+	"time"
+
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -29,10 +34,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"net/http"
-	"strings"
-	"testing"
-	"time"
 )
 
 const (
@@ -417,12 +418,14 @@ func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationI
 
 func assertConfig(t testingx.OnceLogger, assignmentExpectation fixtures.AssignmentState, assignment *graphql.FormationAssignment) {
 	if assignmentExpectation.Config != nil && strings.Contains(*assignmentExpectation.Config, "outboundCommunication") {
-		assertSubstitutedConfig(t, *assignment.Configuration, assignment.ID) // Make sure there are uri, username and password in the configuration, and they are substituted jsonpaths
-	} else {
-		if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
-			t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
-			return
-		}
+		// Make sure there are uri, username and password in the configuration, and they are substituted jsonpaths
+		assertSubstitutedConfig(t, *assignment.Configuration, assignment.ID)
+		return
+	}
+
+	if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+		t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+		return
 	}
 }
 
@@ -447,8 +450,6 @@ func assertSubstitutedConfig(t testingx.OnceLogger, config, assignmentID string)
 		}
 	}
 	iterate("", gjson.Parse(config))
-
-	// Make sure there are uri, username and password in the configuration, and they are substituted jsonpaths
 
 	if found != 3 {
 		t.Logf("The actual assignment config %s don't have substituted %q, %q and %q for assignment ID: %s", config, uriKey, usernameKey, passwordKey, assignmentID)

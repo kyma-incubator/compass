@@ -3,14 +3,15 @@ package service_manager
 import (
 	"bytes"
 	"fmt"
-	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"testing"
+
+	"github.com/gorilla/mux"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
+	"github.com/stretchr/testify/require"
 )
 
 const (
