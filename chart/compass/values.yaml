@@ -173,8 +173,8 @@ global:
       version: "v20240301-97563d8f"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20240301-1a4c377a"
+      dir: dev/incubator/
+      version: "PR-3705"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -222,16 +222,16 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20240228-bbf7843b"
+      dir: dev/incubator/
+      version: "PR-3705"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20240229-e395d039"
+      dir: dev/incubator/
+      version: "PR-3705"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1310,6 +1310,8 @@ global:
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
       missingTenantOnDemandID: "subaccount-external-tnt"
+      tenantRegion: "us-1"
+      tenantRegionPrefix: "cf-"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
