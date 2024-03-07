@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -392,8 +393,13 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
-	if newFormation.State == model.DraftFormationState{
+	if newFormation.State == model.DraftFormationState {
 		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the foration is finalized", newFormation.State)
+
+		if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
+			return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
+		}
+
 		return newFormation, nil
 	}
 
@@ -1112,8 +1118,8 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 	}
 
 	newState := model.ReadyFormationState
-	if len(formationTemplateWebhooks) > 0{
-		newState=model.InitialFormationState
+	if len(formationTemplateWebhooks) > 0 {
+		newState = model.InitialFormationState
 	}
 
 	log.C(ctx).Infof("Setting formation with ID %s to %s state and starting resinchronization", formationID, newState)
@@ -1162,15 +1168,15 @@ func (s *service) resynchronizeFormation(ctx context.Context, formation *model.F
 
 	if formation.State != model.ReadyFormationState {
 		previousState := formation.State
-		formation, isDeleted, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation, previousState)
+		resynchronizedFormation, isDeleted, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation, previousState)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formation.ID)
 		}
 		if isDeleted {
-			return formation, nil
+			return resynchronizedFormation, nil
 		}
-		if formation.State != model.ReadyFormationState {
-			return formation, nil
+		if resynchronizedFormation.State != model.ReadyFormationState {
+			return resynchronizedFormation, nil
 		}
 	}
 
