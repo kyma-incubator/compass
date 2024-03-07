@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/validator"
 	"strconv"
 	"strings"
 	"sync"
@@ -338,7 +339,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return err
 	}
 
-	resourcesFromDB, err := s.fetchResources(ctx, resource, documents)
+	_, err := s.fetchResources(ctx, resource, documents)
 	if err != nil {
 		return err
 	}
@@ -348,13 +349,19 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		return err
 	}
 
-	validationResult := documents.Validate(webhookBaseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
-	if validationResult != nil {
-		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
-		*validationErrors = validationResult
-	}
+	validationClient := validator.NewValidationClient("http://localhost:8080") // env var
+	documentValidator := validator.NewDocumentValidator(validationClient)
 
-	if err := documents.Sanitize(webhookBaseURL, webhookBaseProxyURL); err != nil {
+	documentValidator.Validate(documents, webhookBaseURL, globalResourcesOrdIDs)
+
+	documentSanitizer := validator.NewDocumentSanitizer()
+	//validationResult := documents.Validate(webhookBaseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
+	//if validationResult != nil {
+	//validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
+	//	*validationErrors = validationResult
+	//}
+
+	if err := documentSanitizer.Sanitize(documents, webhookBaseURL, webhookBaseProxyURL); err != nil {
 		return errors.Wrap(err, "while sanitizing ORD documents")
 	}
 
