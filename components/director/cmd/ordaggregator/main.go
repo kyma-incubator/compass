@@ -5,7 +5,6 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-
 	"net"
 	"net/http"
 	"os"
@@ -141,7 +140,7 @@ type config struct {
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
 	APIMetadataValidatorHost                 string `envconfig:"APP_API_METADATA_VALIDATOR_HOST,optional"`
 	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
-	APIMetadataValidatorEnabled              string `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
+	APIMetadataValidatorEnabled              bool   `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
 
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig

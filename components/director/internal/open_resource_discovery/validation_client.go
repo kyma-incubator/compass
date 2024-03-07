@@ -40,11 +40,11 @@ type ValidationResult struct {
 type ValidationClient struct {
 	url     string
 	client  *http.Client
-	enabled string
+	enabled bool
 }
 
 // NewValidationClient returns new validation client
-func NewValidationClient(url string, client *http.Client, enabled string) *ValidationClient {
+func NewValidationClient(url string, client *http.Client, enabled bool) *ValidationClient {
 	return &ValidationClient{
 		url:     url,
 		client:  client,
@@ -54,7 +54,7 @@ func NewValidationClient(url string, client *http.Client, enabled string) *Valid
 
 // Validate sends request to API Metadata Validator to validate one ORD document
 func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ValidationResult, error) {
-	if vc.enabled == "false" {
+	if !vc.enabled {
 		log.C(ctx).Info("API Metadata Validator is not enabled. Skipping validation...")
 
 		return []ValidationResult{}, nil
