@@ -148,7 +148,7 @@ func (s *Handler) getMockEventForSubaccount(tenantOnDemandID string) []byte {
 }`
 
 	if slices.Contains(s.allowedTenantOnDemandIDs, tenantOnDemandID) {
-		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, "region", s.defaultCustomerTenantID, s.defaultTenantID)
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, s.tenantRegion, s.defaultCustomerTenantID, s.defaultTenantID)
 		return []byte(mockedEvent)
 	}
 	return []byte(emptyTenantProviderResponse)

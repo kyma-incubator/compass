@@ -738,6 +738,8 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 	busTenant := fixBusinessTenantMappingInputWithCostObjectID("1", provider, "subdomain-1", region, "", tenant.Subaccount, &testLicenseType, &costObjectID)
 	costObjTenant := fixBusinessTenantMappingInputWithCostObjectType("id-here", provider, "", "", "", tenant.CostObject, &testLicenseType, &costObjectType)
 	costObjTenant.Parents = []string{}
+	regionalCostObjTenant := fixBusinessTenantMappingInputWithCostObjectType("id-here", provider, "", centralRegion, "", tenant.CostObject, &testLicenseType, &costObjectType)
+	regionalCostObjTenant.Parents = []string{}
 
 	event := fixEvent(t, "Subaccount", busTenant.Parents[0], eventFieldsFromTenant(tenant.Subaccount, jobConfig.APIConfig.TenantFieldMapping, busTenant, eventAdditionalFields))
 
@@ -804,7 +806,7 @@ func TestTenantManager_FetchTenant(t *testing.T) {
 
 				return details, []*automock.EventAPIClient{client}
 			},
-			expectedTenant: []model.BusinessTenantMappingInput{busTenant, costObjTenant},
+			expectedTenant: []model.BusinessTenantMappingInput{busTenant, regionalCostObjTenant},
 		},
 		{
 			name: "[Temporary] Success when tenant is not found",

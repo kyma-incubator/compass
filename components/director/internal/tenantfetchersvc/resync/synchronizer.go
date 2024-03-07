@@ -243,7 +243,7 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
 
-	for idx, _ := range fetchedTenants {
+	for idx := range fetchedTenants {
 		fetchedTenant := fetchedTenants[idx]
 		if fetchedTenant.Region != "" {
 			fetchedTenants[idx].Region = ts.config.RegionPrefix + fetchedTenant.Region

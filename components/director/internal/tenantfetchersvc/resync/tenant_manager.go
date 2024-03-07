@@ -151,7 +151,7 @@ func (tm *TenantsManager) FetchTenants(ctx context.Context, externalTenantID str
 				return
 			}
 
-			for idx, _ := range createdRegionalTenants {
+			for idx := range createdRegionalTenants {
 				tnt := createdRegionalTenants[idx]
 				log.C(ctx).Infof("Tenant %q found in region %s", tnt.ExternalTenant, region)
 				if tnt.Region == "" {
