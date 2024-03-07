@@ -4,7 +4,6 @@ package automock
 
 import (
 	http "net/http"
-	testing "testing"
 
 	mock "github.com/stretchr/testify/mock"
 )
@@ -19,6 +18,10 @@ func (_m *ExternalSvcCaller) Call(_a0 *http.Request) (*http.Response, error) {
 	ret := _m.Called(_a0)
 
 	var r0 *http.Response
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*http.Request) (*http.Response, error)); ok {
+		return rf(_a0)
+	}
 	if rf, ok := ret.Get(0).(func(*http.Request) *http.Response); ok {
 		r0 = rf(_a0)
 	} else {
@@ -27,7 +30,6 @@ func (_m *ExternalSvcCaller) Call(_a0 *http.Request) (*http.Response, error) {
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(*http.Request) error); ok {
 		r1 = rf(_a0)
 	} else {
@@ -37,8 +39,12 @@ func (_m *ExternalSvcCaller) Call(_a0 *http.Request) (*http.Response, error) {
 	return r0, r1
 }
 
-// NewExternalSvcCaller creates a new instance of ExternalSvcCaller. It also registers the testing.TB interface on the mock and a cleanup function to assert the mocks expectations.
-func NewExternalSvcCaller(t testing.TB) *ExternalSvcCaller {
+// NewExternalSvcCaller creates a new instance of ExternalSvcCaller. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewExternalSvcCaller(t interface {
+	mock.TestingT
+	Cleanup(func())
+}) *ExternalSvcCaller {
 	mock := &ExternalSvcCaller{}
 	mock.Mock.Test(t)
 

@@ -2,6 +2,7 @@ package tenant
 
 import (
 	"context"
+
 	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
@@ -280,12 +281,15 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 	}
 
 	tenantIDs := make([]string, 0, len(tenantsMap))
+	tenantsToSync := make([]string, 0)
 	for tenantID, tenantType := range tenantsMap {
 		tenantIDs = append(tenantIDs, tenantID)
-		if tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer {
-			r.syncSystemsForTenant(ctx, tenantID)
+		if r.isSyncableTenant(tenantType) {
+			tenantsToSync = append(tenantsToSync, tenantID)
 		}
 	}
+
+	r.syncSystemsForTenant(ctx, tenantsToSync)
 
 	return tenantIDs, nil
 }
@@ -311,8 +315,8 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 		return "", err
 	}
 
-	if tenant.Type == tenantpkg.TypeToStr(tenantpkg.Account) || tenant.Type == tenantpkg.TypeToStr(tenantpkg.Customer) {
-		r.syncSystemsForTenant(ctx, id)
+	if r.isSyncableTenant(tenantpkg.StrToType(tenant.Type)) {
+		r.syncSystemsForTenant(ctx, []string{id})
 	}
 
 	return id, nil
@@ -409,10 +413,14 @@ func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx
 	return tr, nil
 }
 
-func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantID string) {
-	log.C(ctx).Infof("Calling sync systems API with TenantID %q", tenantID)
-	if err := r.systemFetcherClient.Sync(ctx, tenantID); err != nil {
-		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API with TenantID %q", tenantID)
+func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantIDs []string) {
+	if len(tenantIDs) == 0 {
+		return
+	}
+
+	log.C(ctx).Infof("Calling sync systems API for Tenants: %v", tenantIDs)
+	if err := r.systemFetcherClient.Sync(ctx, tenantIDs, true); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API for Tenants %v", tenantIDs)
 	}
 }
 
@@ -508,4 +516,8 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 	log.C(ctx).Infof("Successfully removed access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 
 	return output, nil
+}
+
+func (r *Resolver) isSyncableTenant(tenantType tenantpkg.Type) bool {
+	return tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer
 }

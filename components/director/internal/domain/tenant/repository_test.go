@@ -1893,7 +1893,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 					{tenantID: testID, parentID: testParentID},
 				})
 
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status FROM public.business_tenant_mappings b WHERE b.type = $1 AND ( EXISTS (SELECT 1 FROM tenant_runtime_contexts trc WHERE b.id = trc.tenant_id) OR EXISTS ( SELECT 1 FROM tenant_applications ta JOIN applications app ON ta.id = app.id JOIN labels l ON app.app_template_id = l.app_template_id WHERE b.id = ta.tenant_id AND l.key = $2 AND l.app_template_id IS NOT NULL ) )`)).
 					WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 					WillReturnRows(rowsToReturn)
 
@@ -1939,7 +1939,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 					{sqlRow: sqlRow{id: testID2, name: "name2", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
 				})
 
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status FROM public.business_tenant_mappings b WHERE b.type = $1 AND ( EXISTS (SELECT 1 FROM tenant_runtime_contexts trc WHERE b.id = trc.tenant_id) OR EXISTS ( SELECT 1 FROM tenant_applications ta JOIN applications app ON ta.id = app.id JOIN labels l ON app.app_template_id = l.app_template_id WHERE b.id = ta.tenant_id AND l.key = $2 AND l.app_template_id IS NOT NULL ) )`)).
 					WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 					WillReturnRows(rowsToReturn)
 
@@ -1955,7 +1955,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 			Name: "Error while listing tenants by type",
 			DBFN: func(t *testing.T) (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status FROM public.business_tenant_mappings b WHERE b.type = $1 AND ( EXISTS (SELECT 1 FROM tenant_runtime_contexts trc WHERE b.id = trc.tenant_id) OR EXISTS ( SELECT 1 FROM tenant_applications ta JOIN applications app ON ta.id = app.id JOIN labels l ON app.app_template_id = l.app_template_id WHERE b.id = ta.tenant_id AND l.key = $2 AND l.app_template_id IS NOT NULL ) )`)).
 					WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 					WillReturnError(testError)
 

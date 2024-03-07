@@ -115,7 +115,7 @@ func (d *Director) UnsubscribeTenant(ctx context.Context, providerID, subaccount
 
 // ExistsTenantByExternalID makes graphql query to check if tenant exists
 func (d *Director) ExistsTenantByExternalID(ctx context.Context, tenantID string) (bool, error) {
-	query := fmt.Sprintf(`query { result: tenantByInternalID(id: "%s") { id internalID name type parents labels }}`, tenantID)
+	query := fmt.Sprintf(`query { result: tenantByExternalID(id: "%s") { id internalID name type parents labels }}`, tenantID)
 	var res TenantResponse
 	gRequest := gcli.NewRequest(query)
 

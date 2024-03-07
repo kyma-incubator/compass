@@ -87,7 +87,7 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherTenantHierarchyClaimKey)
 		apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
-		subscription.ConfigureTenantTypeAndID(t, httpClient, subscriptionToken, conf.SubscriptionConfig.URL, "customer", "2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0")// Parent ID is the CRM parent for the consumer account from the test tenant hierarchy
+		subscription.ConfigureTenantTypeAndID(t, httpClient, subscriptionToken, conf.SubscriptionConfig.URL, "customer", "2c4f4a25-ba9a-4dbc-be68-e0beb77a7eb0") // Parent ID is the CRM parent for the consumer account from the test tenant hierarchy
 		defer subscription.ResetTenantTypeAndID(t, httpClient, subscriptionToken, conf.SubscriptionConfig.URL)
 
 		defer subscription.BuildAndExecuteUnsubscribeRequest(t, providerRuntime.ID, providerRuntime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
