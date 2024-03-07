@@ -31,15 +31,17 @@ type Handler struct {
 	allowedTenantOnDemandIDs []string
 	defaultTenantID          string
 	defaultCustomerTenantID  string
+	tenantRegion             string
 }
 
-func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID, defaultCustomerTenantID string) *Handler {
+func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID, defaultCustomerTenantID, tenantRegion string) *Handler {
 	return &Handler{
 		mutex:                    sync.Mutex{},
 		mockedEvents:             make(map[string][][]byte),
 		allowedTenantOnDemandIDs: allowedTenantOnDemandIDs,
 		defaultTenantID:          defaultTenantID,
 		defaultCustomerTenantID:  defaultCustomerTenantID,
+		tenantRegion:             tenantRegion,
 	}
 }
 
