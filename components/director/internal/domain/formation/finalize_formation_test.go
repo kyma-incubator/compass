@@ -12,7 +12,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/labeldef"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
@@ -22,7 +21,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 )
@@ -77,17 +75,6 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 	for i := range formationAssignments {
 		formationAssignmentPairs = append(formationAssignmentPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignments[i]))
 	}
-
-	var formationAssignmentInitialPairs = make([]*formationassignment.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
-	for i := range formationAssignmentsInInitialState {
-		formationAssignmentInitialPairs = append(formationAssignmentInitialPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignmentsInInitialState[i]))
-	}
-
-	testSchema, err := labeldef.NewSchemaForFormations([]string{testScenario, testFormationName})
-	assert.NoError(t, err)
-
-	nilSchemaLblDef := fixScenariosLabelDefinition(TntInternalID, testSchema)
-	nilSchemaLblDef.Schema = nil
 
 	testCases := []struct {
 		Name                                     string
