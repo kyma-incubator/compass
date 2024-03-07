@@ -74,31 +74,41 @@ func TestService_SyncGlobalResources(t *testing.T) {
 
 	successfulClientFn := func() *automock.Client {
 		client := &automock.Client{}
-		client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{fixGlobalRegistryORDDocument()}, baseURL, nil)
+		client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{fixGlobalRegistryORDDocument()}, []string{}, baseURL, nil)
 		return client
 	}
 
+	successfulDocumentValidatorFn := func() *automock.Validator {
+		docValidator := &automock.Validator{}
+		docValidator.On("Validate", mock.Anything, []*ord.Document{fixGlobalRegistryORDDocument()}, baseURL, map[string]bool{}, []string{}, "sap:base:v1").Return(nil, nil)
+		return docValidator
+	}
+
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		productSvcFn    func() *automock.GlobalProductService
-		vendorSvcFn     func() *automock.GlobalVendorService
-		clientFn        func() *automock.Client
-		ExpectedErr     error
+		Name                    string
+		TransactionerFn         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		productSvcFn            func() *automock.GlobalProductService
+		vendorSvcFn             func() *automock.GlobalVendorService
+		clientFn                func() *automock.Client
+		documentValidatorFn     func() *automock.Validator
+		ExpectedErr             error
+		ExpectedValidationError bool
 	}{
 		{
-			Name:            "Success when resources are not in db should Create them",
-			TransactionerFn: txGen.ThatSucceeds,
-			productSvcFn:    successfulProductCreate,
-			vendorSvcFn:     successfulVendorCreate,
-			clientFn:        successfulClientFn,
+			Name:                "Success when resources are not in db should Create them",
+			TransactionerFn:     txGen.ThatSucceeds,
+			productSvcFn:        successfulProductCreate,
+			vendorSvcFn:         successfulVendorCreate,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
 		},
 		{
-			Name:            "Success when resources are in db should Update them",
-			TransactionerFn: txGen.ThatSucceeds,
-			productSvcFn:    successfulProductUpdate,
-			vendorSvcFn:     successfulVendorUpdate,
-			clientFn:        successfulClientFn,
+			Name:                "Success when resources are in db should Update them",
+			TransactionerFn:     txGen.ThatSucceeds,
+			productSvcFn:        successfulProductUpdate,
+			vendorSvcFn:         successfulVendorUpdate,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
 		},
 		{
 			Name:            "Success when resources are in db should Update them and delete all global resources that are not returned anymore",
@@ -123,47 +133,73 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(fixGlobalVendors(), nil).Once()
 				return vendorSvc
 			},
-			clientFn: successfulClientFn,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
 		},
 		{
 			Name:            "Error when fetch ord docs fail",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(nil, "", testErr)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(nil, []string{}, "", testErr)
 				return client
 			},
 			ExpectedErr: testErr,
 		},
 		{
-			Name:            "Error when ord docs are invalid",
-			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			Name:            "Validation error when ord docs are invalid",
+			TransactionerFn: txGen.ThatSucceeds,
+			productSvcFn:    successfulProductCreate,
+			vendorSvcFn: func() *automock.GlobalVendorService {
+				vendorSvc := &automock.GlobalVendorService{}
+				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, nil).Once()
+				return vendorSvc
+			},
+			documentValidatorFn: func() *automock.Validator {
+				docValidator := &automock.Validator{}
+				doc := fixGlobalRegistryORDDocument()
+				doc.Vendors[0].OrdID = "invalid-ord-id"
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}, "sap:base:v1").Run(func(args mock.Arguments) {
+					docs := args.Get(1).([]*ord.Document)
+					docs[0].Vendors = docs[0].Vendors[1:]
+				}).Return([]*ord.ValidationError{{OrdID: "ordId", Description: "ordId: must be in a valid format."}}, nil)
+				return docValidator
+			},
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.Vendors[0].OrdID = "invalid-ord-id"
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, []string{}, baseURL, nil)
 				return client
 			},
-			ExpectedErr: errors.New("ordId: must be in a valid format."),
+			ExpectedValidationError: true,
 		},
 		{
 			Name:            "Error when ord docs contains resource that is not vendor or product",
 			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			documentValidatorFn: func() *automock.Validator {
+				docValidator := &automock.Validator{}
+				doc := fixGlobalRegistryORDDocument()
+				doc.ConsumptionBundles = fixORDDocument().ConsumptionBundles
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{}, []string{}, "sap:base:v1").Return(nil, errors.New("global registry supports only vendors and products"))
+				return docValidator
+			},
 			clientFn: func() *automock.Client {
 				client := &automock.Client{}
 				doc := fixGlobalRegistryORDDocument()
 				doc.ConsumptionBundles = fixORDDocument().ConsumptionBundles
-				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, baseURL, nil)
+				client.On("FetchOpenResourceDiscoveryDocuments", context.TODO(), resource, testWebhook, ordMapping, ordRequestObject).Return(ord.Documents{doc}, []string{}, baseURL, nil)
 				return client
 			},
 			ExpectedErr: errors.New("global registry supports only vendors and products"),
 		},
 		{
-			Name:            "Error when starting transaction fails",
-			TransactionerFn: txGen.ThatFailsOnBegin,
-			clientFn:        successfulClientFn,
-			ExpectedErr:     testErr,
+			Name:                "Error when starting transaction fails",
+			TransactionerFn:     txGen.ThatFailsOnBegin,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when vendor list fails",
@@ -173,8 +209,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
 				return vendorSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when vendor create fails",
@@ -185,8 +222,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				vendorSvc.On("CreateGlobal", txtest.CtxWithDBMatcher(), *doc.Vendors[0]).Return("", testErr).Once()
 				return vendorSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when vendor update fails",
@@ -197,8 +235,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				vendorSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), vendorID, *doc.Vendors[0]).Return(testErr).Once()
 				return vendorSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when vendor delete fails",
@@ -212,8 +251,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				vendorSvc.On("DeleteGlobal", txtest.CtxWithDBMatcher(), "vendor-id-2").Return(testErr).Once()
 				return vendorSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when second vendor list fails",
@@ -225,8 +265,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				vendorSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
 				return vendorSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when product list fails",
@@ -237,8 +278,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				productSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(nil, testErr).Once()
 				return productSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when product create fails",
@@ -250,8 +292,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				productSvc.On("CreateGlobal", txtest.CtxWithDBMatcher(), *doc.Products[0]).Return("", testErr).Once()
 				return productSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when product update fails",
@@ -263,8 +306,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				productSvc.On("UpdateGlobal", txtest.CtxWithDBMatcher(), productID, *doc.Products[0]).Return(testErr).Once()
 				return productSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			clientFn:            successfulClientFn,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when product delete fails",
@@ -279,8 +323,9 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				productSvc.On("DeleteGlobal", txtest.CtxWithDBMatcher(), "product-id-2").Return(testErr).Once()
 				return productSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
 			Name:            "Error when second product list fails",
@@ -293,16 +338,18 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				productSvc.On("ListGlobal", txtest.CtxWithDBMatcher()).Return(fixGlobalProducts(), testErr).Once()
 				return productSvc
 			},
-			clientFn:    successfulClientFn,
-			ExpectedErr: testErr,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 		{
-			Name:            "Error when transaction commit fails",
-			TransactionerFn: txGen.ThatFailsOnCommit,
-			productSvcFn:    successfulProductCreate,
-			vendorSvcFn:     successfulVendorCreate,
-			clientFn:        successfulClientFn,
-			ExpectedErr:     testErr,
+			Name:                "Error when transaction commit fails",
+			TransactionerFn:     txGen.ThatFailsOnCommit,
+			productSvcFn:        successfulProductCreate,
+			vendorSvcFn:         successfulVendorCreate,
+			documentValidatorFn: successfulDocumentValidatorFn,
+			clientFn:            successfulClientFn,
+			ExpectedErr:         testErr,
 		},
 	}
 
@@ -322,15 +369,26 @@ func TestService_SyncGlobalResources(t *testing.T) {
 				client = test.clientFn()
 			}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
+			documentValidator := &automock.Validator{}
+			if test.documentValidatorFn != nil {
+				documentValidator = test.documentValidatorFn()
+			}
+
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings, documentValidator)
 			globalIDs, err := svc.SyncGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
 				require.Contains(t, err.Error(), test.ExpectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				require.Len(t, globalIDs, 2)
-				require.True(t, globalIDs[vendorORDID])
+
+				if test.ExpectedValidationError {
+					require.Len(t, globalIDs, 1)
+				} else {
+					require.Len(t, globalIDs, 2)
+					require.True(t, globalIDs[vendorORDID])
+				}
+
 				require.True(t, globalIDs[globalProductORDID])
 			}
 
@@ -356,11 +414,12 @@ func TestService_ListGlobalResources(t *testing.T) {
 	}
 
 	testCases := []struct {
-		Name            string
-		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		productSvcFn    func() *automock.GlobalProductService
-		vendorSvcFn     func() *automock.GlobalVendorService
-		ExpectedErr     error
+		Name                string
+		TransactionerFn     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		productSvcFn        func() *automock.GlobalProductService
+		vendorSvcFn         func() *automock.GlobalVendorService
+		documentValidatorFn func() *automock.Validator
+		ExpectedErr         error
 	}{
 		{
 			Name:            "Success",
@@ -416,7 +475,12 @@ func TestService_ListGlobalResources(t *testing.T) {
 			}
 			client := &automock.Client{}
 
-			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings)
+			documentValidator := &automock.Validator{}
+			if test.documentValidatorFn != nil {
+				documentValidator = test.documentValidatorFn()
+			}
+
+			svc := ord.NewGlobalRegistryService(tx, ord.GlobalRegistryConfig{URL: baseURL}, vendorSvc, productSvc, client, credentialExchangeStrategyTenantMappings, documentValidator)
 			globalIDs, err := svc.ListGlobalResources(context.TODO())
 			if test.ExpectedErr != nil {
 				require.Error(t, err)
