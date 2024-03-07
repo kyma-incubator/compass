@@ -243,9 +243,10 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
 
-	for _, fetchedTenant := range fetchedTenants {
+	for idx := range fetchedTenants {
+		fetchedTenant := fetchedTenants[idx]
 		if fetchedTenant.Region != "" {
-			fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+			fetchedTenants[idx].Region = ts.config.RegionPrefix + fetchedTenant.Region
 		}
 
 		if len(fetchedTenant.Parents) == 0 && fetchedTenant.Type != string(tenant.CostObject) {
