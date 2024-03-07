@@ -6,5 +6,6 @@ ALTER TABLE formations
     ADD CONSTRAINT formations_state_check
         CHECK (state = ANY
                (ARRAY['INITIAL'::text, 'READY'::text, 'CREATE_ERROR'::text, 'DELETE_ERROR'::text, 'DELETING'::text,
-                'DRAFT'::text]))
-    COMMIT;
+                'DRAFT'::text]));
+
+COMMIT;
