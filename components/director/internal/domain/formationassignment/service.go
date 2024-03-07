@@ -582,7 +582,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 //
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
-func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	var errs *multierror.Error
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests)
 	alreadyProcessedFAs := make(map[string]bool, 0)
@@ -897,7 +897,7 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	return nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest) []*AssignmentMappingPair {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*AssignmentMappingPair {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
@@ -906,28 +906,28 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		}
 
 		target := assignment.Target
-		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-			log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
-
-			target = runtimeContextIDToRuntimeIDMapping[assignment.Target]
-			log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, assignment.Target)
-		}
+		//if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
+		//	log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
+		//
+		//	target = runtimeContextIDToRuntimeIDMapping[assignment.Target]
+		//	log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, assignment.Target)
+		//}
 
 	assignment:
 		for j, request := range requests {
-			var objectID string
-			if request.Webhook != nil && request.Webhook.RuntimeID != nil {
-				objectID = *request.Webhook.RuntimeID
-			}
+			var objectID = request.Target
+			//if request.Webhook != nil && request.Webhook.RuntimeID != nil {
+			//	objectID = *request.Webhook.RuntimeID
+			//}
 
 			// It is possible for both the application and the application template to have registered webhooks.
 			// In such case the application webhook should be used.
-			if request.Webhook != nil && request.Webhook.ApplicationID != nil {
-				objectID = *request.Webhook.ApplicationID
-			} else if request.Webhook != nil && request.Webhook.ApplicationTemplateID != nil &&
-				*request.Webhook.ApplicationTemplateID == applicationIDToApplicationTemplateIDMapping[target] {
-				objectID = target
-			}
+			//if request.Webhook != nil && request.Webhook.ApplicationID != nil {
+			//	objectID = *request.Webhook.ApplicationID
+			//} else if request.Webhook != nil && request.Webhook.ApplicationTemplateID != nil &&
+			//	*request.Webhook.ApplicationTemplateID == applicationIDToApplicationTemplateIDMapping[target] {
+			//	objectID = target
+			//}
 
 			if objectID != target {
 				continue
@@ -943,7 +943,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			}
 			for _, id := range participants {
 				if assignment.Source == id {
-					mappingObject.Request = requests[j]
+					mappingObject.Request = requests[j].FormationAssignmentNotificationRequest
 					break assignment
 				}
 			}

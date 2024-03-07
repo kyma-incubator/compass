@@ -43,29 +43,30 @@ func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
 	ctx context.Context,
 	joinPointDetails *formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails,
 	webhook *model.Webhook,
-) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+) (*webhookclient.FormationAssignmentNotificationRequest, string, error) {
 	log.C(ctx).Infof("Building formation assignment notification request...")
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateFormationAssignmentNotifications, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
 		log.C(ctx).Errorf("Did not generate notifications due to error: %v", errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationAssignmentNotificationOperation, model.PreOperation))
-		return nil, nil
+		return nil, "", nil
 	}
 
 	faInputBuilder, err := getFormationAssignmentInputBuilder(webhook.Type)
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 
+	target := joinPointDetails.Assignment.Target
 	req, err := nb.createWebhookRequest(ctx, webhook, faInputBuilder(joinPointDetails))
 	if err != nil {
-		return nil, errors.Wrapf(err, "while creating webhook request")
+		return nil, "", errors.Wrapf(err, "while creating webhook request")
 	}
 
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PostGenerateFormationAssignmentNotifications, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
 		log.C(ctx).Errorf("Did not generate notifications due to error: %v", errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationAssignmentNotificationOperation, model.PostOperation))
-		return nil, nil
+		return nil, "", nil
 	}
 
-	return req, nil
+	return req, target, nil
 }
 
 // BuildFormationNotificationRequests builds new formation notification request
