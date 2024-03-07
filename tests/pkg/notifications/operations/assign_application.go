@@ -45,7 +45,7 @@ func (o *AssignAppToFormationOperation) Execute(t *testing.T, ctx context.Contex
 	if o.formationName != "" {
 		formationName = o.formationName
 	} else {
-		formationName = ctx.Value(context_keys.FormationNameKey).(string)
+		formationName = ctx.Value(o.formationNameContextKey).(string)
 	}
 
 	fixtures.AssignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
