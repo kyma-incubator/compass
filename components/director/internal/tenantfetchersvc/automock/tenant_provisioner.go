@@ -14,13 +14,13 @@ type TenantProvisioner struct {
 	mock.Mock
 }
 
-// ProvisionTenants provides a mock function with given fields: ctx, request, newTenantsIDs
-func (_m *TenantProvisioner) ProvisionTenants(ctx context.Context, request *tenantfetchersvc.TenantSubscriptionRequest, newTenantsIDs map[string]bool) error {
-	ret := _m.Called(ctx, request, newTenantsIDs)
+// ProvisionMissingTenants provides a mock function with given fields: ctx, request
+func (_m *TenantProvisioner) ProvisionMissingTenants(ctx context.Context, request *tenantfetchersvc.TenantSubscriptionRequest) error {
+	ret := _m.Called(ctx, request)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *tenantfetchersvc.TenantSubscriptionRequest, map[string]bool) error); ok {
-		r0 = rf(ctx, request, newTenantsIDs)
+	if rf, ok := ret.Get(0).(func(context.Context, *tenantfetchersvc.TenantSubscriptionRequest) error); ok {
+		r0 = rf(ctx, request)
 	} else {
 		r0 = ret.Error(0)
 	}
