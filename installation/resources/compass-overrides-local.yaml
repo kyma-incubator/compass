@@ -190,6 +190,7 @@ global:
       enabled: true
       api:
         regionName: "central"
+        regionPrefix: "cf-"
         authConfigSecretKey: "central"
         endpoints:
           subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
@@ -210,6 +211,7 @@ global:
           labelsField: "labels"
           subaccountCostObjectIDField: "costObjectId"
           subaccountCostObjectTypeField: "costObjectType"
+          regionField: "region"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"
