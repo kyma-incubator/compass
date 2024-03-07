@@ -19,7 +19,7 @@ type TenantFieldMapping struct {
 	DiscriminatorField string `envconfig:"MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"MAPPING_VALUE_DISCRIMINATOR"`
 
-	RegionField      string `envconfig:"MAPPING_FIELD_REGION" default:"APP_MAPPING_FIELD_REGION"`
+	RegionField      string `envconfig:"MAPPING_FIELD_REGION" default:"region"`
 	EntityIDField    string `envconfig:"MAPPING_FIELD_ENTITY_ID" default:"entityId"`
 	EntityTypeField  string `envconfig:"MAPPING_FIELD_ENTITY_TYPE" default:"entityType"`
 	LicenseTypeField string `envconfig:"MAPPING_FIELD_LICENSE_TYPE" default:"licenseType"`

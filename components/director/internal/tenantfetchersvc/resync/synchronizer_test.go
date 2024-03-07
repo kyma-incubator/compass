@@ -510,6 +510,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 
 	jobCfg := resync.JobConfig{
 		TenantProvider: resync.TenantOnDemandProvider,
+		RegionPrefix:   "cf-",
 	}
 
 	newSubaccountTenant := model.BusinessTenantMappingInput{ExternalTenant: newTenantID, Parents: []string{parentTenantID}, Region: region, Type: string(tenant.Subaccount)}
@@ -539,6 +540,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithExistingParent := newSubaccountTenant
 				tenantWithExistingParent.Parents = []string{parentTenantID}
+				tenantWithExistingParent.Region = jobCfg.RegionPrefix + tenantWithExistingParent.Region
 				svc.On("FetchTenants", ctx, newTenantID).Return([]model.BusinessTenantMappingInput{newSubaccountTenant}, nil)
 				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{tenantWithExistingParent}).Return(nil)
 				return svc
