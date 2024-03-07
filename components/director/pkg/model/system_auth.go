@@ -77,6 +77,8 @@ const (
 	TenantDiscoveryOperatorConsumerReference SystemAuthReferenceObjectType = "Tenant Discovery Operator"
 	// InstanceCreatorConsumerReference is a reference to the instance creator operator consumer type
 	InstanceCreatorConsumerReference SystemAuthReferenceObjectType = "Instance Creator"
+	// FormationViewerConsumerReference is a reference to the formation viewer consumer type
+	FormationViewerConsumerReference SystemAuthReferenceObjectType = "Formation Viewer"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc
