@@ -31,14 +31,6 @@ func GetFormationByName(t require.TestingT, ctx context.Context, gqlClient *gcli
 	return gotFormation
 }
 
-func GetFormationByNameWithError(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationName, tenant string) (*graphql.FormationExt,error) {
-	var gotFormation *graphql.FormationExt
-	getFormationReq := FixGetFormationByNameRequest(formationName)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, getFormationReq, &gotFormation)
-
-	return gotFormation, err
-}
-
 func ListFormations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, listFormationsReq *gcli.Request) *graphql.FormationPage {
 	var formationPage graphql.FormationPage
 	err := testctx.Tc.RunOperation(ctx, gqlClient, listFormationsReq, &formationPage)
