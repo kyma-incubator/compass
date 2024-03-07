@@ -87,6 +87,8 @@ spec:
                 value: "{{ (index .Values.global.tenants 40).id }}"
               - name: APP_ON_DEMAND_TENANT
                 value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
+              - name: APP_TENANT_REGION
+                value: {{ .Values.global.tests.tenantFetcher.tenantRegion }}
               - name: APP_CA_CERT
                 valueFrom:
                   secretKeyRef:
