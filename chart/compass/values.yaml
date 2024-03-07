@@ -178,7 +178,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3701"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -1477,6 +1477,8 @@ global:
         - "certificate_subject_mapping:write"
         - "certificate_subject_mapping:read"
       managed_application_consumer: []
+      formation_viewer:
+        - "formation:read"
       landscape_resource_operator:
         - "application:read"
         - "application:write"
