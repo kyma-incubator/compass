@@ -50,7 +50,10 @@ type testConfig struct {
 	CertLoaderConfig                 credloader.CertConfig
 	ExternalClientCertSecretName     string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	OnDemandTenant                   string `envconfig:"APP_ON_DEMAND_TENANT"`
-	GatewayOauth                     string `envconfig:"APP_GATEWAY_OAUTH"`
+	TenantRegion                     string `envconfig:"APP_TENANT_REGION"`
+	TenantRegionPrefix               string `envconfig:"APP_TENANT_REGION_PREFIX"`
+
+	GatewayOauth string `envconfig:"APP_GATEWAY_OAUTH"`
 }
 
 type TenantProviderConfig struct {

@@ -109,6 +109,10 @@ spec:
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_ON_DEMAND_TENANT
               value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
+            - name: APP_TENANT_REGION
+              value: {{ .Values.global.tests.tenantFetcher.tenantRegion }}
+            - name: APP_TENANT_REGION_PREFIX
+              value: {{ .Values.global.tests.tenantFetcher.tenantRegionPrefix }}
       restartPolicy: Never
 ---
 apiVersion: v1

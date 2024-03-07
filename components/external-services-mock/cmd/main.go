@@ -83,6 +83,7 @@ type config struct {
 	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
 	TrustedNewGA              string `envconfig:"APP_TRUSTED_NEW_GA"`
 	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
+	TenantRegion              string `envconfig:"APP_TENANT_REGION"`
 
 	KeyLoaderConfig credloader.KeysConfig
 
@@ -312,7 +313,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 
 	// Tenant fetcher handlers
 	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
-	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant)
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant, cfg.TenantRegion)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))

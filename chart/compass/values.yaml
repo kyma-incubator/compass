@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3700"
+      version: "PR-3700
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1311,6 +1311,8 @@ global:
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
       missingTenantOnDemandID: "subaccount-external-tnt"
+      tenantRegion: "us-1"
+      tenantRegionPrefix: "cf-"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
