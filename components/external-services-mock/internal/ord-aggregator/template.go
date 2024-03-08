@@ -362,7 +362,7 @@ const ordDocument = `{
          "description":"Description API 1",
          "entryPoints":[
             "https://exmaple.com/test/v1",
-            "https://exmaple.com/test/v2"
+            "./example/test/v2"
          ],
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v2",
          "shortDescription":"Short description for API",
