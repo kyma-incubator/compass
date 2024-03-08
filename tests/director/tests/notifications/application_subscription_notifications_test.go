@@ -736,8 +736,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
 			require.NoError(stdT, err)
 
+			destinationName := "e2e-client-cert-auth-destination-name"
 			destination := clients.Destination{
-				Name:           "e2e-client-cert-auth-destination-name",
+				Name:           destinationName,
 				Type:           "HTTP",
 				URL:            "http://e2e-client-cert-auth-url-example.com",
 				Authentication: "ClientCertificateAuthentication",
@@ -782,6 +783,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 					return false
 				}
 				require.Len(stdT, appDestinations, 1)
+
+				appDestinationName := gjson.Get(respBody, "consumptionBundles.0.destinations.0.name").String()
+				require.Equal(t, destinationName, appDestinationName)
 
 				return true
 			}, time.Second*30, time.Second)
