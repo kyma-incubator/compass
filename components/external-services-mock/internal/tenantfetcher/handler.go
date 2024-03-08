@@ -31,15 +31,17 @@ type Handler struct {
 	allowedTenantOnDemandIDs []string
 	defaultTenantID          string
 	defaultCustomerTenantID  string
+	tenantRegion             string
 }
 
-func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID, defaultCustomerTenantID string) *Handler {
+func NewHandler(allowedTenantOnDemandIDs []string, defaultTenantID, defaultCustomerTenantID, tenantRegion string) *Handler {
 	return &Handler{
 		mutex:                    sync.Mutex{},
 		mockedEvents:             make(map[string][][]byte),
 		allowedTenantOnDemandIDs: allowedTenantOnDemandIDs,
 		defaultTenantID:          defaultTenantID,
 		defaultCustomerTenantID:  defaultCustomerTenantID,
+		tenantRegion:             tenantRegion,
 	}
 }
 
@@ -146,7 +148,7 @@ func (s *Handler) getMockEventForSubaccount(tenantOnDemandID string) []byte {
 }`
 
 	if slices.Contains(s.allowedTenantOnDemandIDs, tenantOnDemandID) {
-		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, "region", s.defaultCustomerTenantID, s.defaultTenantID)
+		mockedEvent := fmt.Sprintf(mockSubaccountEventPattern, tenantOnDemandID, "Subaccount on demand", "subdomain", "LICENSETYPE", s.defaultTenantID, s.tenantRegion, s.defaultCustomerTenantID, s.defaultTenantID)
 		return []byte(mockedEvent)
 	}
 	return []byte(emptyTenantProviderResponse)
