@@ -398,13 +398,12 @@ func rewriteRelativeURIsInJSONArray(j json.RawMessage, baseURL string) (json.Raw
 
 	items := make([]interface{}, 0)
 	for _, crrURI := range parsedJSON.Array() {
-		if !isAbsoluteURL(crrURI.String()) {
-			rewrittenURI := baseURL + crrURI.String()
-
-			items = append(items, rewrittenURI)
-		} else {
-			items = append(items, crrURI.String())
+		rewrittenURI, err := constructResourceDefinitionURL(baseURL, crrURI.String())
+		if err != nil {
+			return nil, err
 		}
+
+		items = append(items, rewrittenURI)
 	}
 
 	rewrittenJSON, err := json.Marshal(items)
