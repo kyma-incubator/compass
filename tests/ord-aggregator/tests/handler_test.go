@@ -75,34 +75,36 @@ const (
 	expectedSeventhSystemInstanceDescription       = "test-app7-description"
 	expectedBundleTitle                            = "BUNDLE TITLE"
 	secondExpectedBundleTitle                      = "BUNDLE TITLE 2"
-	expectedBundleDescription                      = "lorem ipsum dolor nsq sme"
+	expectedBundleDescription                      = "Description for bundle"
 	secondExpectedBundleDescription                = ""
 	firstBundleOrdIDRegex                          = "ns:consumptionBundle:BUNDLE_ID(.+):v1"
-	expectedPackageTitle                           = "PACKAGE 1 TITLE"
-	expectedPackageDescription                     = "lorem ipsum dolor set"
+	firstExpectedPackageTitle                      = "PACKAGE 1 TITLE"
+	firstExpectedPackageDescription                = "lorem ipsum dolor set"
+	secondExpectedPackageTitle                     = "PACKAGE 2 TITLE"
+	secondExpectedPackageDescription               = "lorem ipsum dolor set"
 	expectedEntityTypeTitle                        = "ENTITYTYPE 1 TITLE"
 	expectedEntityTypeDescription                  = "lorem ipsum dolor set"
 	firstProductTitle                              = "PRODUCT TITLE"
-	firstProductShortDescription                   = "lorem ipsum"
+	firstProductShortDescription                   = "Short description for product"
 	secondProductTitle                             = "SAP Business Technology Platform"
 	secondProductShortDescription                  = "Accelerate business outcomes with integration, data to value, and extensibility."
 	firstAPIExpectedTitle                          = "API TITLE"
-	firstAPIExpectedDescription                    = "lorem ipsum dolor sit amet"
+	firstAPIExpectedDescription                    = "Description API 1"
 	firstAPIExpectedNumberOfSpecs                  = 3
 	secondAPIExpectedTitle                         = "API TITLE INTERNAL"
-	secondAPIExpectedDescription                   = "Test description internal"
+	secondAPIExpectedDescription                   = "Description for API internal"
 	secondAPIExpectedNumberOfSpecs                 = 2
 	thirdAPIExpectedTitle                          = "API TITLE PRIVATE"
-	thirdAPIExpectedDescription                    = "Test description private"
+	thirdAPIExpectedDescription                    = "Description for API private"
 	thirdAPIExpectedNumberOfSpecs                  = 2
 	firstEventTitle                                = "EVENT TITLE"
-	firstEventDescription                          = "lorem ipsum dolor sit amet"
+	firstEventDescription                          = "Description Event 1"
 	secondEventTitle                               = "EVENT TITLE 2"
-	secondEventDescription                         = "lorem ipsum dolor sit amet"
+	secondEventDescription                         = "Description Event 2"
 	thirdEventTitle                                = "EVENT TITLE INTERNAL"
-	thirdEventDescription                          = "Test description internal"
+	thirdEventDescription                          = "Description for Event internal"
 	fourthEventTitle                               = "EVENT TITLE PRIVATE"
-	fourthEventDescription                         = "Test description private"
+	fourthEventDescription                         = "Description for Event private"
 	expectedCapabilityTitle                        = "CAPABILITY TITLE"
 	expectedCapabilityDescription                  = "Optional, longer description"
 	expectedCapabilityNumberOfSpecs                = 1
@@ -129,8 +131,8 @@ const (
 
 	expectedNumberOfSystemInstances                       = 7
 	expectedNumberOfSystemInstancesInSubscription         = 1
-	expectedNumberOfPackages                              = 7
-	expectedNumberOfPackagesInSubscription                = 1
+	expectedNumberOfPackages                              = 14
+	expectedNumberOfPackagesInSubscription                = 2
 	expectedNumberOfEntityTypes                           = 7
 	expectedNumberOfEntityTypesInSubscription             = 1
 	expectedNumberOfBundles                               = 14
@@ -236,6 +238,10 @@ func TestORDAggregator(stdT *testing.T) {
 		systemInstancesMap[expectedFifthSystemInstanceName] = expectedFifthSystemInstanceDescription
 		systemInstancesMap[expectedSixthSystemInstanceName] = expectedSixthSystemInstanceDescription
 		systemInstancesMap[expectedSeventhSystemInstanceName] = expectedSeventhSystemInstanceDescription
+
+		packagesMap := make(map[string]string)
+		packagesMap[firstExpectedPackageTitle] = firstExpectedPackageDescription
+		packagesMap[secondExpectedPackageTitle] = secondExpectedPackageDescription
 
 		apisMap := make(map[string]string)
 		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
@@ -442,7 +448,7 @@ func TestORDAggregator(stdT *testing.T) {
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackages)
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, packagesMap, expectedNumberOfPackages, descriptionField)
 			t.Log("Successfully verified packages")
 
 			// Verify entity types
@@ -695,6 +701,10 @@ func TestORDAggregator(stdT *testing.T) {
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		ctx := context.Background()
 
+		packagesMap := make(map[string]string)
+		packagesMap[firstExpectedPackageTitle] = firstExpectedPackageDescription
+		packagesMap[secondExpectedPackageTitle] = secondExpectedPackageDescription
+
 		apisMap := make(map[string]string)
 		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
 		apisMap[secondAPIExpectedTitle] = secondAPIExpectedDescription
@@ -929,8 +939,8 @@ func TestORDAggregator(stdT *testing.T) {
 				t.Log("Missing Packages...will try again")
 				return false
 			}
-			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfSystemInstancesInSubscription)
-			assertions.AssertSingleEntityFromORDService(t, respBody, expectedNumberOfSystemInstancesInSubscription, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, expectedNumberOfPackagesInSubscription)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, packagesMap, expectedNumberOfPackagesInSubscription, descriptionField)
 			t.Log("Successfully verified packages")
 
 			// Verify bundles
@@ -1170,7 +1180,7 @@ func TestORDAggregator(stdT *testing.T) {
 		numberOfProducts := 1
 		numberOfVendors := 1
 		numberOfSystemInstances := 1
-		numberOfPackages := 1
+		numberOfPackages := 2
 		numberOfBundles := 2
 		numberOfAPIs := 3
 		numberOfPublicAPIs := 1
@@ -1222,6 +1232,10 @@ func TestORDAggregator(stdT *testing.T) {
 		// Define assertion data
 		systemInstancesMap := make(map[string]string)
 		systemInstancesMap[expectedSystemInstanceName] = updatedDescription
+
+		packagesMap := make(map[string]string)
+		packagesMap[firstExpectedPackageTitle] = firstExpectedPackageDescription
+		packagesMap[secondExpectedPackageTitle] = secondExpectedPackageDescription
 
 		apisMap := make(map[string]string)
 		apisMap[firstAPIExpectedTitle] = firstAPIExpectedDescription
@@ -1393,7 +1407,7 @@ func TestORDAggregator(stdT *testing.T) {
 				return false
 			}
 			assertions.AssertDocumentationLabels(t, respBody, documentationLabelKey, documentationLabelsPossibleValues, numberOfPackages)
-			assertions.AssertSingleEntityFromORDService(t, respBody, numberOfPackages, expectedPackageTitle, expectedPackageDescription, descriptionField)
+			assertions.AssertMultipleEntitiesFromORDService(t, respBody, packagesMap, numberOfPackages, descriptionField)
 			t.Log("Successfully verified packages")
 
 			// Verify bundles

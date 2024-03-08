@@ -94,6 +94,12 @@ do
             shift # past argument
             shift # past value
         ;;
+        --api-metadata-validator-image)
+            checkInputParameterValue "${2}"
+            API_METADATA_VALIDATOR_IMAGE="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --*)
             echo "Unknown flag ${1}"
             exit 1
@@ -118,6 +124,12 @@ function set_oidc_config() {
   fi
 }
 
+function set_api_metadata_validator_image() {
+  yq -i ".global.ordAggregator.metadataValidator.enabled = \"$1\"" "$PATH_TO_VALUES"
+  yq -i ".global.ordAggregator.metadataValidator.image = \"$2\"" "$PATH_TO_VALUES"
+  yq -i ".global.ordAggregator.metadataValidator.host = \"$3\"" "$PATH_TO_VALUES"
+}
+
 # NOTE: Only one trap per script is supported.
 function cleanup_trap() {
   if [[ -f "$K3D_CA" ]]; then
@@ -132,6 +144,7 @@ function cleanup_trap() {
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
     set_oidc_config "" "" "$DEFAULT_OIDC_ADMIN_GROUPS"
+    set_api_metadata_validator_image false "" ""
   fi
   pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
 }
@@ -166,6 +179,10 @@ function patchJWKS() {
   "$KUBECTL" get requestauthentication compass-internal-authn -n compass-system -o yaml | sed 's/jwksUri\:.*$/jwks\: '$JWKS'/' | "$KUBECTL" apply -f -
   echo "Request Authentication resources were successfully patched"
 }
+
+if [[ -n ${API_METADATA_VALIDATOR_IMAGE} ]]; then
+  set_api_metadata_validator_image true $API_METADATA_VALIDATOR_IMAGE "http://localhost"
+fi
 
 if [[ -z ${OIDC_HOST} || -z ${OIDC_CLIENT_ID} ]]; then
   if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then

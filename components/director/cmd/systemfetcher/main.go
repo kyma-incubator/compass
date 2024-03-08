@@ -10,6 +10,8 @@ import (
 	"sync"
 	"time"
 
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -353,13 +355,18 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
+		processingError := &ord.ProcessingError{
+			RuntimeError: &ord.RuntimeError{
+				Message: errProcess.Error(),
+			},
+		}
+		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 			return op.ID, errMarkAsFailed
 		}
 		return op.ID, errProcess
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, nil); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}
