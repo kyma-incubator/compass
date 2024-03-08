@@ -1063,6 +1063,14 @@ global:
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
+    metadataValidator:
+      enabled: "false"
+      setImagePullSecrets: false
+      imagePullSecretName: api-validator-secret
+      image: ""
+      version: 3.5.5
+      host: ""
+      port: 8080
     tenantMappingConfiguration: '{}'
     parallelOperationProcessors: 10
     priorityQueueLimit: 10

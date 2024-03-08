@@ -24,8 +24,8 @@ type OperationService interface {
 	Create(ctx context.Context, in *model.OperationInput) (string, error)
 	CreateMultiple(ctx context.Context, in []*model.OperationInput) error
 	DeleteMultiple(ctx context.Context, ids []string) error
-	MarkAsCompleted(ctx context.Context, id, errorMsg string) error
-	MarkAsFailed(ctx context.Context, id, errorMsg string) error
+	MarkAsCompleted(ctx context.Context, id string, customErr error) error
+	MarkAsFailed(ctx context.Context, id string, customErr error) error
 	ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error)
 	ListPriorityQueue(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)

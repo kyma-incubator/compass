@@ -22,13 +22,14 @@ type Client struct {
 }
 
 // FetchOpenResourceDiscoveryDocuments provides a mock function with given fields: ctx, resource, _a2, ordWebhookMapping, appBaseURL
-func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource ord.Resource, _a2 *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL webhook.OpenResourceDiscoveryWebhookRequestObject) (ord.Documents, string, error) {
+func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resource ord.Resource, _a2 *model.Webhook, ordWebhookMapping application.ORDWebhookMapping, appBaseURL webhook.OpenResourceDiscoveryWebhookRequestObject) (ord.Documents, []string, string, error) {
 	ret := _m.Called(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 
 	var r0 ord.Documents
-	var r1 string
-	var r2 error
-	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) (ord.Documents, string, error)); ok {
+	var r1 []string
+	var r2 string
+	var r3 error
+	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) (ord.Documents, []string, string, error)); ok {
 		return rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) ord.Documents); ok {
@@ -39,19 +40,27 @@ func (_m *Client) FetchOpenResourceDiscoveryDocuments(ctx context.Context, resou
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) string); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) []string); ok {
 		r1 = rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 	} else {
-		r1 = ret.Get(1).(string)
+		if ret.Get(1) != nil {
+			r1 = ret.Get(1).([]string)
+		}
 	}
 
-	if rf, ok := ret.Get(2).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) error); ok {
+	if rf, ok := ret.Get(2).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) string); ok {
 		r2 = rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
 	} else {
-		r2 = ret.Error(2)
+		r2 = ret.Get(2).(string)
 	}
 
-	return r0, r1, r2
+	if rf, ok := ret.Get(3).(func(context.Context, ord.Resource, *model.Webhook, application.ORDWebhookMapping, webhook.OpenResourceDiscoveryWebhookRequestObject) error); ok {
+		r3 = rf(ctx, resource, _a2, ordWebhookMapping, appBaseURL)
+	} else {
+		r3 = ret.Error(3)
+	}
+
+	return r0, r1, r2, r3
 }
 
 // NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.

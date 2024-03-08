@@ -196,13 +196,13 @@ func (_m *OperationService) LockOperation(ctx context.Context, operationID strin
 	return r0, r1
 }
 
-// MarkAsCompleted provides a mock function with given fields: ctx, id, errorMsg
-func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string, errorMsg string) error {
-	ret := _m.Called(ctx, id, errorMsg)
+// MarkAsCompleted provides a mock function with given fields: ctx, id, customErr
+func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string, customErr error) error {
+	ret := _m.Called(ctx, id, customErr)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, id, errorMsg)
+	if rf, ok := ret.Get(0).(func(context.Context, string, error) error); ok {
+		r0 = rf(ctx, id, customErr)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -210,13 +210,13 @@ func (_m *OperationService) MarkAsCompleted(ctx context.Context, id string, erro
 	return r0
 }
 
-// MarkAsFailed provides a mock function with given fields: ctx, id, errorMsg
-func (_m *OperationService) MarkAsFailed(ctx context.Context, id string, errorMsg string) error {
-	ret := _m.Called(ctx, id, errorMsg)
+// MarkAsFailed provides a mock function with given fields: ctx, id, customErr
+func (_m *OperationService) MarkAsFailed(ctx context.Context, id string, customErr error) error {
+	ret := _m.Called(ctx, id, customErr)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, id, errorMsg)
+	if rf, ok := ret.Get(0).(func(context.Context, string, error) error); ok {
+		r0 = rf(ctx, id, customErr)
 	} else {
 		r0 = ret.Error(0)
 	}
