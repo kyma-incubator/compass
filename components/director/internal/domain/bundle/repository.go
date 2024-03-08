@@ -339,13 +339,11 @@ func (r *pgRepository) ListByDestination(ctx context.Context, tenantID string, d
 
 // ListByApplicationAndCorrelationIDs lists application bundles in a certain tenant that have matching correlation IDs
 func (r *pgRepository) ListByApplicationAndCorrelationIDs(ctx context.Context, tenantID, appID, correlationIDs string) ([]*model.Bundle, error) {
-	var appIDInCondition repo.Condition
 	bundleCollection := BundleCollection{}
 
-	appIDInCondition = repo.NewEqualCondition(appIDColumn, appID)
 	correlationIDConditions := buildCorrelationIDConditions(correlationIDs)
 	conditions := repo.And(
-		&repo.ConditionTree{Operand: appIDInCondition},
+		&repo.ConditionTree{Operand: repo.NewEqualCondition(appIDColumn, appID)},
 		repo.Or(repo.ConditionTreesFromConditions(correlationIDConditions)...),
 	)
 

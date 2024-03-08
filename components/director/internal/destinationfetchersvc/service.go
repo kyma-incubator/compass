@@ -259,7 +259,7 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				}
 
 				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
-					len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
+					len(bundles), tenant, destination.Name, destination.XCorrelationID)
 
 				if err = d.upsertBundles(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
 					return err
@@ -276,7 +276,7 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				return err
 			}
 
-			log.C(ctxWithTransact).Infof("Found 0 bundles found for system '%s', url '%s', correlation id '%s'", destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
+			log.C(ctxWithTransact).Infof("Found %d bundles for system '%s', url '%s', correlation id '%s'", len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 
 			if err = d.upsertBundles(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
 				return err

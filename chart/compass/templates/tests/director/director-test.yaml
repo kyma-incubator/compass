@@ -411,6 +411,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
             - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_ORD_EXTERNAL_CERT_SECURED_SERVICE_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.ordService.prefix }}"
             - name: APP_HEALTH_URL
               value: "https://director.{{ .Values.global.ingress.domainName }}/healthz"
             - name: APP_WEBHOOK_URL
@@ -695,6 +697,8 @@ spec:
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.oauthTokenPath }}
             - name: APP_USER_AUTHENTICATOR_SUBACCOUNT_SUBDOMAIN
               value: {{ .Values.global.tests.userNameAuthenticators.subaccount.subdomain }}
+            - name: APP_ORD_SERVICE_DEFAULT_RESPONSE_TYPE
+              value: {{ .Values.global.ordService.defaultResponseType }}
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
