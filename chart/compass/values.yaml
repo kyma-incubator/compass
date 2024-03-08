@@ -174,7 +174,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3708"
+      version: "PR-3700"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3708"
+      version: "PR-3700"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3664"
+      version: "PR-3700"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -913,7 +913,7 @@ global:
     port: 3000
     systemFieldDiscoveryWebhookPartialProcessing: true
     systemFieldDiscoveryWebhookPartialProcessMaxDays: 7
-    webhookProcessorJobInterval: 3m
+    webhookProcessorJobInterval: 10s
     lease:
       lockname: tenantfetcherlease
     xsappNamePath: "xsappname"

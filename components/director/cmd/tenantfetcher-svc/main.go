@@ -87,7 +87,7 @@ type config struct {
 	SecurityConfig securityConfig
 
 	WebhookProcessorElectionConfig cronjob.ElectionConfig
-	WebhookProcessorJobInterval    time.Duration `envconfig:"APP_WEBHOOK_PROCESSOR_JOB_INTERVAL,default=3m"`
+	WebhookProcessorJobInterval    time.Duration `envconfig:"APP_WEBHOOK_PROCESSOR_JOB_INTERVAL,default=1m"`
 
 	SystemFieldDiscoveryWebhookPartialProcessing     bool `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING"`
 	SystemFieldDiscoveryWebhookPartialProcessMaxDays int  `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
