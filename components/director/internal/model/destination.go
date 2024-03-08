@@ -35,11 +35,13 @@ func (d *DestinationInput) Validate() error {
 		return errors.New("missing destination correlation id")
 	}
 
+	return nil
+}
+
+// HasValidIdentifiers checks if the destination has either one of the pairs: XSystemTenantID and XSystemType, or XSystemBaseURL and XSystemTenantName
+func (d *DestinationInput) HasValidIdentifiers() bool {
 	hasSystemIDAndType := d.XSystemTenantID != "" && d.XSystemType != ""
 	hasNameAndURL := d.XSystemBaseURL != "" && d.XSystemTenantName != ""
 
-	if !hasSystemIDAndType && !hasNameAndURL {
-		return errors.New("missing destination tenant information")
-	}
-	return nil
+	return hasSystemIDAndType || hasNameAndURL
 }

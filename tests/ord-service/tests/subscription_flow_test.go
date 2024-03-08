@@ -493,12 +493,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(stdT, consumerApp.Name)
 
 		const correlationID = "correlationID"
-		bndlInput := graphql.BundleCreateInput{
-			Name:           "test-bundle",
+		const correlationIDSecond = "correlationID-second"
+		bndlInput1 := graphql.BundleCreateInput{
+			Name:           "test-bundle-1",
 			CorrelationIDs: []string{correlationID},
 		}
-		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
-		require.NotEmpty(stdT, bundle.ID)
+		bndlInput2 := graphql.BundleCreateInput{
+			Name:           "test-bundle-2",
+			CorrelationIDs: []string{correlationIDSecond},
+		}
+
+		bundle1 := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput1)
+		require.NotEmpty(stdT, bundle1.ID)
+		bundle2 := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput2)
+		require.NotEmpty(stdT, bundle2.ID)
 
 		formationTmplName := "e2e-test-formation-template-name"
 		applicationType := util.ApplicationTypeC4C
@@ -648,7 +656,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			Type:            "HTTP",
 			URL:             "http://localhost",
 			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
+			XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
 			XSystemTenantID: localTenantID,
 			XSystemType:     string(util.ApplicationTypeC4C),
 		}
@@ -675,28 +683,47 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json", consumerApp.ID), headers)
 
 			appName := gjson.Get(respBody, "title").String()
+
 			if appName != consumerApp.Name {
 				return false
 			}
 			require.Equal(stdT, consumerApp.Name, appName)
 
-			appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
-			if appDestinationsRaw == "" {
+			appDestinations1Raw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
+			if appDestinations1Raw == "" {
 				return false
 			}
-			require.NotEmpty(stdT, appDestinationsRaw)
+			require.NotEmpty(stdT, appDestinations1Raw)
 
-			appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
-			if len(appDestinations) != 1 {
+			appDestinations2Raw := gjson.Get(respBody, "consumptionBundles.1.destinations").Raw
+			if appDestinations2Raw == "" {
 				return false
 			}
-			require.Len(stdT, appDestinations, 1)
+			require.NotEmpty(stdT, appDestinations2Raw)
 
-			appDestinationName := appDestinations[0].Get("sensitiveData.destinationConfiguration.Name").String()
-			if appDestinationName != destination.Name {
+			appDestinationsForBundle1 := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
+			if len(appDestinationsForBundle1) != 1 {
 				return false
 			}
-			require.Equal(stdT, destination.Name, appDestinationName)
+			require.Len(stdT, appDestinationsForBundle1, 1)
+
+			appDestinationsForBundle2 := gjson.Get(respBody, "consumptionBundles.1.destinations").Array()
+			if len(appDestinationsForBundle2) != 1 {
+				return false
+			}
+			require.Len(stdT, appDestinationsForBundle2, 1)
+
+			appDestination1Name := appDestinationsForBundle1[0].Get("sensitiveData.destinationConfiguration.Name").String()
+			if appDestination1Name != destination.Name {
+				return false
+			}
+			require.Equal(stdT, destination.Name, appDestination1Name)
+
+			appDestination2Name := appDestinationsForBundle2[0].Get("sensitiveData.destinationConfiguration.Name").String()
+			if appDestination2Name != destination.Name {
+				return false
+			}
+			require.Equal(stdT, destination.Name, appDestination2Name)
 
 			return true
 		}, time.Second*30, time.Second)

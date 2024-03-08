@@ -15,6 +15,32 @@ type BundleRepo struct {
 	mock.Mock
 }
 
+// ListByApplicationAndCorrelationIDs provides a mock function with given fields: ctx, tenantID, appID, correlationIDs
+func (_m *BundleRepo) ListByApplicationAndCorrelationIDs(ctx context.Context, tenantID string, appID string, correlationIDs string) ([]*model.Bundle, error) {
+	ret := _m.Called(ctx, tenantID, appID, correlationIDs)
+
+	var r0 []*model.Bundle
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) ([]*model.Bundle, error)); ok {
+		return rf(ctx, tenantID, appID, correlationIDs)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) []*model.Bundle); ok {
+		r0 = rf(ctx, tenantID, appID, correlationIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Bundle)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
+		r1 = rf(ctx, tenantID, appID, correlationIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByDestination provides a mock function with given fields: ctx, tenantID, destination
 func (_m *BundleRepo) ListByDestination(ctx context.Context, tenantID string, destination model.DestinationInput) ([]*model.Bundle, error) {
 	ret := _m.Called(ctx, tenantID, destination)

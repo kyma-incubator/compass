@@ -271,6 +271,29 @@ func (c *inCondition) GetQueryArgs() ([]interface{}, bool) {
 	return c.args, true
 }
 
+// NewExistsConditionForSubQuery represents SQL EXISTS subquery (EXISTS (SELECT ...))
+func NewExistsConditionForSubQuery(subQuery string, args []interface{}) Condition {
+	return &existsCondition{
+		parenthesis: subQuery,
+		args:        args,
+	}
+}
+
+type existsCondition struct {
+	parenthesis string
+	args        []interface{}
+}
+
+// GetQueryPart returns formatted string that will be included in the SQL query for a given condition
+func (c *existsCondition) GetQueryPart() string {
+	return fmt.Sprintf("EXISTS (%s)", c.parenthesis)
+}
+
+// GetQueryArgs returns a boolean flag if the condition contain arguments and the actual arguments
+func (c *existsCondition) GetQueryArgs() ([]interface{}, bool) {
+	return c.args, true
+}
+
 // NewInConditionForStringValues represents SQL IN condition (field IN (?, ?, ...))
 func NewInConditionForStringValues(field string, values []string) Condition {
 	parenthesisParams := make([]string, 0, len(values))

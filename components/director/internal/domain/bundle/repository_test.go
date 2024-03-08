@@ -3,8 +3,11 @@ package bundle_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+	"fmt"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -526,7 +529,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 				Query: regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, 
 					default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies,
 					ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels, last_update FROM 
-					public.bundles WHERE app_id IN (
+					public.bundles WHERE (app_id IN (
 						SELECT id
 						FROM public.applications
 						WHERE id IN (
@@ -535,9 +538,9 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 							WHERE tenant_id=(SELECT parent_id FROM tenant_parents WHERE tenant_id = $1 )
 						)
 						AND name = $2 AND base_url = $3
-				) AND correlation_ids ?| array[$4]`),
+				) AND EXISTS ( SELECT 1 FROM jsonb_array_elements_text(correlation_ids) as correlation_ids_text WHERE correlation_ids_text LIKE $4 ))`),
 				Args: []driver.Value{tenantID, destinationWithSystemName.XSystemTenantName,
-					destinationWithSystemName.XSystemBaseURL, destinationWithSystemName.XCorrelationID},
+					destinationWithSystemName.XSystemBaseURL, fmt.Sprintf("%%%s%%", destinationcreator.DeconstructCorrelationIDs(destinationWithSystemName.XCorrelationID)[0])},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
@@ -574,7 +577,7 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 				Query: regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema,
 					default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies,
 					ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels, last_update FROM
-					public.bundles WHERE app_id IN (
+					public.bundles WHERE (app_id IN (
 						SELECT DISTINCT pa.id as id
 						FROM public.applications pa JOIN labels l ON pa.id=l.app_id
 						WHERE pa.id IN (
@@ -585,9 +588,9 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 						AND l.key='applicationType'
 						AND l.value ?| array[$2]
 						AND pa.local_tenant_id = $3
-				) AND correlation_ids ?| array[$4]`),
+				) AND EXISTS ( SELECT 1 FROM jsonb_array_elements_text(correlation_ids) as correlation_ids_text WHERE correlation_ids_text LIKE $4 ))`),
 				Args: []driver.Value{tenantID, destinationWithSystemID.XSystemType,
-					destinationWithSystemID.XSystemTenantID, destinationWithSystemID.XCorrelationID},
+					destinationWithSystemID.XSystemTenantID, fmt.Sprintf("%%%s%%", destinationcreator.DeconstructCorrelationIDs(destinationWithSystemID.XCorrelationID)[0])},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
@@ -610,4 +613,47 @@ func TestPgRepository_ListByDestination(t *testing.T) {
 	}
 
 	suiteBySystemID.Run(t)
+}
+
+func TestPgRepository_ListByApplicationAndCorrelationIDs(t *testing.T) {
+	bndlEntity := fixEntityBundleWithAppID(bundleID, "foo", "bar")
+	modelBundle := fixBundleModel("foo", "bar")
+
+	destination := model.DestinationInput{
+		XSystemBaseURL:    "http://localhost",
+		XSystemTenantName: "system_name",
+		XCorrelationID:    "correlation_id_value",
+	}
+
+	suiteBySystemName := testdb.RepoListTestSuite{
+		Name: "List Bundles By Application ID And Correlation IDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query: regexp.QuoteMeta(`SELECT id, app_id, app_template_version_id, name, description, version, instance_auth_request_json_schema, 
+					default_instance_auth, ord_id, local_tenant_id, short_description, links, labels, credential_exchange_strategies,
+					ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, resource_hash, documentation_labels, last_update FROM 
+					public.bundles WHERE ((id IN (SELECT id FROM bundles_tenants WHERE tenant_id = $1)) AND (app_id = $2 AND EXISTS ( SELECT 1 FROM jsonb_array_elements_text(correlation_ids) as correlation_ids_text WHERE correlation_ids_text LIKE $3 )))`),
+				Args:     []driver.Value{tenantID, appID, fmt.Sprintf("%%%s%%", destinationcreator.DeconstructCorrelationIDs(destination.XCorrelationID)[0])},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns()).
+						AddRow(fixBundleRowWithAppID(bundleID)...),
+					}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixBundleColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:   bundle.NewRepository,
+		ExpectedModelEntities: []interface{}{modelBundle},
+		ExpectedDBEntities:    []interface{}{bndlEntity},
+		MethodArgs:            []interface{}{tenantID, appID, destination.XCorrelationID},
+		MethodName:            "ListByApplicationAndCorrelationIDs",
+	}
+
+	suiteBySystemName.Run(t)
 }

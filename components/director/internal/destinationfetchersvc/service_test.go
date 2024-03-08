@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tidwall/gjson"
+
 	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
@@ -28,16 +30,20 @@ import (
 const (
 	tenantID                = "f09ba084-0e82-49ab-ab2e-b7ecc988312d"
 	runtimeID               = "d09ba084-0e82-49ab-ab2e-b7ecc988312d"
+	destinationID           = "a447698f-acb1-4b3c-b2e7-e65bcf543538"
+	appID                   = "69454c64-6284-404f-af3d-4bbbdee2c4e2"
 	tenantLabelKey          = "subaccount"
 	regionLabelKey          = "region"
 	region                  = "region1"
 	UUID                    = "9b26a428-d526-469c-a5ef-2856f3ce0430"
 	subdomainLabelValue     = "127" // will be replaced in 127.0.0.1 when fetching token for destination service
 	selfRegDistinguishLabel = "selfRegDistinguishLabel"
+	correlationID           = "sap.s4:communicationScenario:SAP_COM_0108"
 )
 
 var (
-	testErr = errors.New("test error")
+	testErr               = errors.New("test error")
+	formationAssignmentID = "c7494c4f-606a-4381-b095-8548c6726fc6"
 )
 
 func TestService_SyncTenantDestinations(t *testing.T) {
@@ -51,75 +57,147 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 	destConfig := defaultDestinationConfig(t, destinationServer.server.URL)
 
 	testCases := []struct {
-		Name                string
-		LabelRepo           func() *automock.LabelRepo
-		DestRepo            func() *automock.DestinationRepo
-		Transactioner       func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner)
-		BundleRepo          func() *automock.BundleRepo
-		UUIDService         func() *automock.UUIDService
-		ExpectedErrorOutput string
-		DestServiceHandler  func(w http.ResponseWriter, r *http.Request)
+		Name                    string
+		LabelRepo               func() *automock.LabelRepo
+		DestRepo                func() *automock.DestinationRepo
+		Transactioner           func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner)
+		BundleRepo              func() *automock.BundleRepo
+		FormationAssignmentRepo func() *automock.FormationAssignmentRepository
+		UUIDService             func() *automock.UUIDService
+		ExpectedErrorOutput     string
+		DestServiceHandler      func(w http.ResponseWriter, r *http.Request)
 	}{
 		{
 			Name: "Sync tenant destinations",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(5)
 			},
-			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:  successfulBundleRepo("bundleID"),
-			DestRepo:    successfulDestinationRepo("bundleID"),
-			UUIDService: successfulUUIDService,
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              successfulBundleRepo("bundleID"),
+			DestRepo:                successfulDestinationRepo("bundleID"),
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
 		},
 		{
 			Name: "Successful sync of destinations but failing to delete old should not return error",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(5)
 			},
-			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:  successfulBundleRepo("bundleID"),
-			DestRepo:    successfulInsertFailingDeleteDestinationRepo("bundleID"),
-			UUIDService: successfulUUIDService,
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              successfulBundleRepo("bundleID"),
+			DestRepo:                successfulInsertFailingDeleteDestinationRepo("bundleID"),
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
 		},
 		{
 			Name: "When getting bundles fails should stop processing destinations",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			LabelRepo:           successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:          failingBundleRepo,
-			DestRepo:            unusedDestinationsRepo,
-			UUIDService:         successfulUUIDService,
-			ExpectedErrorOutput: testErr.Error(),
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              failingBundleRepo,
+			DestRepo:                unusedDestinationsRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
-			Name: "When no bundles are returned should continue to process destinations",
+			Name: "When destination without system identifiers is returned should try to find bundles using the formation assignments",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(5)
+				return txGen.ThatSucceedsMultipleTimes(4)
 			},
-			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:  bundleRepoWithNoBundles,
-			DestRepo:    successfulDeleteDestinationRepo,
-			UUIDService: successfulUUIDService,
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              successfulBundleRepoForFormationAssignment("bundleID"),
+			DestRepo:                successfulGetDeleteUpsertDestinationRepo("bundleID"),
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: successfulFormationAssignmentRepo,
+			DestServiceHandler:      destinationWithoutIdentifiersHandler(t),
+		},
+		{
+			Name: "When destination without system identifiers is returned should try to find bundles using the formation assignments but there is no formation assignment in the destination",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(4)
+			},
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                successfulGetDeleteDestinationWithoutFormationAssignmentRepo("bundleID"),
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: successfulFormationAssignmentRepo,
+			DestServiceHandler:      destinationWithoutIdentifiersHandler(t),
+		},
+		{
+			Name: "When destination without system identifiers is returned and getting destination fails should stop processing destinations",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                failingGetDestinationRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: successfulFormationAssignmentRepo,
+			DestServiceHandler:      destinationWithoutIdentifiersHandler(t),
+			ExpectedErrorOutput:     testErr.Error(),
+		},
+		{
+			Name: "When destination without system identifiers is returned and getting formation assignment fails should stop processing destinations",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                successfulGetDestinationRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: failingFormationAssignmentRepo,
+			DestServiceHandler:      destinationWithoutIdentifiersHandler(t),
+			ExpectedErrorOutput:     testErr.Error(),
+		},
+		{
+			Name: "When destination without system identifiers is returned and listing bundles by appID and correlationID fails should stop processing destinations",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              failingListByApplicationAndCorrelationIDsBundleRepo,
+			DestRepo:                successfulGetDestinationRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: successfulFormationAssignmentRepo,
+			DestServiceHandler:      destinationWithoutIdentifiersHandler(t),
+			ExpectedErrorOutput:     testErr.Error(),
+		},
+		{
+			Name: "When destination without system identifiers is returned and upserting destination fails should stop processing destinations",
+			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              successfulBundleRepoForFormationAssignment("bundle-id"),
+			DestRepo:                failingUpsertDestinationRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: successfulFormationAssignmentRepo,
+			DestServiceHandler:      destinationWithoutIdentifiersHandler(t),
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
 			Name: "When destination upsert or delete fails should stop processing destinations",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			LabelRepo:           successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:          successfulBundleRepo("bundleID"),
-			DestRepo:            failingDestinationRepo,
-			UUIDService:         successfulUUIDService,
-			ExpectedErrorOutput: testErr.Error(),
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              successfulBundleRepo("bundleID"),
+			DestRepo:                failingDestinationRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
-			Name:                "Failed to begin transaction to database",
-			Transactioner:       txGen.ThatFailsOnBegin,
-			LabelRepo:           unusedLabelRepo,
-			BundleRepo:          unusedBundleRepo,
-			DestRepo:            unusedDestinationsRepo,
-			UUIDService:         unusedUUIDService,
-			ExpectedErrorOutput: testErr.Error(),
+			Name:                    "Failed to begin transaction to database",
+			Transactioner:           txGen.ThatFailsOnBegin,
+			LabelRepo:               unusedLabelRepo,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                unusedDestinationsRepo,
+			UUIDService:             unusedUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
 			Name:          "Failed to find subdomain label",
@@ -130,10 +208,11 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 					Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				return repo
 			},
-			BundleRepo:          unusedBundleRepo,
-			DestRepo:            unusedDestinationsRepo,
-			UUIDService:         unusedUUIDService,
-			ExpectedErrorOutput: fmt.Sprintf("tenant %s not found", tenantID),
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                unusedDestinationsRepo,
+			UUIDService:             unusedUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     fmt.Sprintf("tenant %s not found", tenantID),
 		},
 		{
 			Name:          "Error while getting subdomain label",
@@ -144,85 +223,44 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 					Return(nil, testErr)
 				return repo
 			},
-			BundleRepo:          unusedBundleRepo,
-			DestRepo:            unusedDestinationsRepo,
-			UUIDService:         unusedUUIDService,
-			ExpectedErrorOutput: testErr.Error(),
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                unusedDestinationsRepo,
+			UUIDService:             unusedUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
-			Name:                "Failed to commit transaction",
-			Transactioner:       txGen.ThatFailsOnCommit,
-			LabelRepo:           successfulLabelSubdomainRequest,
-			BundleRepo:          unusedBundleRepo,
-			DestRepo:            unusedDestinationsRepo,
-			UUIDService:         unusedUUIDService,
-			ExpectedErrorOutput: testErr.Error(),
+			Name:                    "Failed to commit transaction",
+			Transactioner:           txGen.ThatFailsOnCommit,
+			LabelRepo:               successfulLabelSubdomainRequest,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                unusedDestinationsRepo,
+			UUIDService:             unusedUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
 			Name: "Failed getting region",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(2)
 			},
-			LabelRepo:           failedLabelRegionAndSuccessfulSubdomainRequest,
-			BundleRepo:          unusedBundleRepo,
-			DestRepo:            unusedDestinationsRepo,
-			UUIDService:         unusedUUIDService,
-			ExpectedErrorOutput: testErr.Error(),
-		},
-		{
-			Name: "When destination service returns only invalid destinations - do not store them and remove old ones",
-			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(4)
-			},
-			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:  unusedBundleRepo,
-			DestRepo:    successfulDeleteDestinationRepo,
-			UUIDService: successfulUUIDService,
-			DestServiceHandler: func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.Header().Set("Page-Count", "1")
-
-				var (
-					invalidDest1 = `{
-						"Name": "badS4URL",
-						"URL": "invalid",
-						"XFSystemName": "Test S4HANA system",
-						"product.name": "SAP S/4HANA Cloud",
-						"communicationScenarioId": "SAP_COM_0108"
-					}`
-					invalidDest2 = `{
-						"Name": "no URL",
-						"XFSystemName": "Test S4HANA system",
-						"product.name": "SAP S/4HANA Cloud",
-						"x-correlation-id": "correlation-id"
-					}`
-					invalidDest3 = `{
-						"Name": "bad URL",
-						"URL": ":invalidURL",
-						"x-system-name": "Test S4HANA system",
-						"x-system-type": "SAP S/4HANA Cloud",
-						"x-correlation-id": "correlation-id"
-					}`
-					invalidDest4 = `{
-						"Name": "no correlation id",
-						"x-system-type": "systemType",
-						"x-system-id": "systemId"
-					}`
-				)
-				_, err := w.Write([]byte(fmt.Sprintf("[%s, %s, %s, %s]",
-					invalidDest1, invalidDest2, invalidDest3, invalidDest4)))
-				assert.NoError(t, err)
-			},
+			LabelRepo:               failedLabelRegionAndSuccessfulSubdomainRequest,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                unusedDestinationsRepo,
+			UUIDService:             unusedUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
+			ExpectedErrorOutput:     testErr.Error(),
 		},
 		{
 			Name: "When destination service returns zero pages - just remove old ones",
 			Transactioner: func() (*persistenceAutomock.PersistenceTx, *persistenceAutomock.Transactioner) {
 				return txGen.ThatSucceedsMultipleTimes(3)
 			},
-			LabelRepo:   successfulLabelRegionAndSubdomainRequest,
-			BundleRepo:  unusedBundleRepo,
-			DestRepo:    successfulDeleteDestinationRepo,
-			UUIDService: successfulUUIDService,
+			LabelRepo:               successfulLabelRegionAndSubdomainRequest,
+			BundleRepo:              unusedBundleRepo,
+			DestRepo:                successfulDeleteDestinationRepo,
+			UUIDService:             successfulUUIDService,
+			FormationAssignmentRepo: unusedFormationAssignmentRepo,
 			DestServiceHandler: func(w http.ResponseWriter, r *http.Request) {
 				w.Header().Set("Content-Type", "application/json")
 				w.Header().Set("Page-Count", "0")
@@ -243,18 +281,20 @@ func TestService_SyncTenantDestinations(t *testing.T) {
 			labelRepo := testCase.LabelRepo()
 			bundleRepo := testCase.BundleRepo()
 			uuidService := testCase.UUIDService()
+			formationAssignmentRepo := testCase.FormationAssignmentRepo()
 			tenantRepo := unusedTenantRepo()
 			defer mock.AssertExpectationsForObjects(t, tx, destRepo, labelRepo, uuidService, bundleRepo, tenantRepo)
 
 			destSvc := destinationfetchersvc.DestinationService{
-				Transactioner:      tx,
-				UUIDSvc:            uuidService,
-				DestinationRepo:    destRepo,
-				BundleRepo:         bundleRepo,
-				LabelRepo:          labelRepo,
-				TenantRepo:         tenantRepo,
-				DestinationsConfig: destConfig,
-				APIConfig:          destAPIConfig,
+				Transactioner:           tx,
+				UUIDSvc:                 uuidService,
+				DestinationRepo:         destRepo,
+				BundleRepo:              bundleRepo,
+				LabelRepo:               labelRepo,
+				TenantRepo:              tenantRepo,
+				DestinationsConfig:      destConfig,
+				FormationAssignmentRepo: formationAssignmentRepo,
+				APIConfig:               destAPIConfig,
 			}
 
 			ctx := context.Background()
@@ -414,11 +454,12 @@ func TestService_GetSubscribedTenantIDs(t *testing.T) {
 			labelRepo := unusedLabelRepo()
 			uuidService := unusedUUIDService()
 			bundleRepo := unusedBundleRepo()
+			formationAssignmentRepo := unusedFormationAssignmentRepo()
 			tenantRepo := testCase.TenantRepo()
 
 			defer mock.AssertExpectationsForObjects(t, tx, destRepo, labelRepo, uuidService, bundleRepo, tenantRepo)
 
-			destSvc := destinationfetchersvc.NewDestinationService(tx, uuidService, destRepo, bundleRepo, labelRepo, destConfig, destAPIConfig, tenantRepo, selfRegDistinguishLabel)
+			destSvc := destinationfetchersvc.NewDestinationService(tx, uuidService, destRepo, bundleRepo, labelRepo, destConfig, destAPIConfig, tenantRepo, formationAssignmentRepo, selfRegDistinguishLabel)
 
 			ctx := context.Background()
 			// WHEN
@@ -500,11 +541,12 @@ func TestService_IsTenantSubscribed(t *testing.T) {
 			labelRepo := unusedLabelRepo()
 			uuidService := unusedUUIDService()
 			bundleRepo := unusedBundleRepo()
+			formationAssignmentRepo := unusedFormationAssignmentRepo()
 			tenantRepo := testCase.TenantRepo()
 
 			defer mock.AssertExpectationsForObjects(t, tx, destRepo, labelRepo, uuidService, bundleRepo, tenantRepo)
 
-			destSvc := destinationfetchersvc.NewDestinationService(tx, uuidService, destRepo, bundleRepo, labelRepo, destConfig, destAPIConfig, tenantRepo, selfRegDistinguishLabel)
+			destSvc := destinationfetchersvc.NewDestinationService(tx, uuidService, destRepo, bundleRepo, labelRepo, destConfig, destAPIConfig, tenantRepo, formationAssignmentRepo, selfRegDistinguishLabel)
 
 			ctx := context.Background()
 			// WHEN
@@ -525,8 +567,11 @@ func TestService_IsTenantSubscribed(t *testing.T) {
 func unusedLabelRepo() *automock.LabelRepo              { return &automock.LabelRepo{} }
 func unusedDestinationsRepo() *automock.DestinationRepo { return &automock.DestinationRepo{} }
 func unusedBundleRepo() *automock.BundleRepo            { return &automock.BundleRepo{} }
-func unusedTenantRepo() *automock.TenantRepo            { return &automock.TenantRepo{} }
-func unusedUUIDService() *automock.UUIDService          { return &automock.UUIDService{} }
+func unusedFormationAssignmentRepo() *automock.FormationAssignmentRepository {
+	return &automock.FormationAssignmentRepository{}
+}
+func unusedTenantRepo() *automock.TenantRepo   { return &automock.TenantRepo{} }
+func unusedUUIDService() *automock.UUIDService { return &automock.UUIDService{} }
 
 func successfulUUIDService() *automock.UUIDService {
 	uuidService := &automock.UUIDService{}
@@ -581,6 +626,20 @@ func successfulBundleRepo(bundleID string) func() *automock.BundleRepo {
 	}
 }
 
+func successfulBundleRepoForFormationAssignment(bundleID string) func() *automock.BundleRepo {
+	return func() *automock.BundleRepo {
+		bundleRepo := unusedBundleRepo()
+		bundleRepo.On("ListByApplicationAndCorrelationIDs",
+			mock.Anything, tenantID, appID, correlationID).Return(
+			[]*model.Bundle{{
+				BaseEntity: &model.BaseEntity{
+					ID: bundleID,
+				},
+			}}, nil)
+		return bundleRepo
+	}
+}
+
 func failingBundleRepo() *automock.BundleRepo {
 	bundleRepo := unusedBundleRepo()
 	bundleRepo.On("ListByDestination",
@@ -588,11 +647,42 @@ func failingBundleRepo() *automock.BundleRepo {
 	return bundleRepo
 }
 
-func bundleRepoWithNoBundles() *automock.BundleRepo {
+func failingListByApplicationAndCorrelationIDsBundleRepo() *automock.BundleRepo {
 	bundleRepo := unusedBundleRepo()
-	bundleRepo.On("ListByDestination",
-		mock.Anything, mock.Anything, mock.Anything).Return([]*model.Bundle{}, nil)
+	bundleRepo.On("ListByApplicationAndCorrelationIDs",
+		mock.Anything, tenantID, appID, correlationID).Return(nil, testErr)
 	return bundleRepo
+}
+
+func successfulGetDeleteUpsertDestinationRepo(bundleID string) func() *automock.DestinationRepo {
+	return func() *automock.DestinationRepo {
+		destinationRepo := unusedDestinationsRepo()
+		destinationRepo.On("GetDestinationByNameAndTenant",
+			mock.Anything, destination1Name, tenantID).Return(destinationModelByJSONString(destinationID, exampleDestination1, &formationAssignmentID), nil)
+		destinationRepo.On("Upsert",
+			mock.Anything, mock.Anything, mock.AnythingOfType("string"), tenantID, bundleID, mock.AnythingOfType("string")).Return(nil)
+		destinationRepo.On("DeleteOld",
+			mock.Anything, UUID, tenantID).Return(nil)
+		return destinationRepo
+	}
+}
+
+func successfulGetDeleteDestinationWithoutFormationAssignmentRepo(bundleID string) func() *automock.DestinationRepo {
+	return func() *automock.DestinationRepo {
+		destinationRepo := unusedDestinationsRepo()
+		destinationRepo.On("GetDestinationByNameAndTenant",
+			mock.Anything, destination1Name, tenantID).Return(destinationModelByJSONString(destinationID, exampleDestination1, nil), nil)
+		destinationRepo.On("DeleteOld",
+			mock.Anything, UUID, tenantID).Return(nil)
+		return destinationRepo
+	}
+}
+
+func successfulGetDestinationRepo() *automock.DestinationRepo {
+	destinationRepo := unusedDestinationsRepo()
+	destinationRepo.On("GetDestinationByNameAndTenant",
+		mock.Anything, destination1Name, tenantID).Return(destinationModelByJSONString(destinationID, exampleDestination1, &formationAssignmentID), nil)
+	return destinationRepo
 }
 
 func successfulDeleteDestinationRepo() *automock.DestinationRepo {
@@ -629,6 +719,36 @@ func failingDestinationRepo() *automock.DestinationRepo {
 	destinationRepo.On("Upsert",
 		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
 	return destinationRepo
+}
+
+func failingGetDestinationRepo() *automock.DestinationRepo {
+	destinationRepo := unusedDestinationsRepo()
+	destinationRepo.On("GetDestinationByNameAndTenant",
+		mock.Anything, destination1Name, tenantID).Return(nil, testErr)
+	return destinationRepo
+}
+
+func failingUpsertDestinationRepo() *automock.DestinationRepo {
+	destinationRepo := unusedDestinationsRepo()
+	destinationRepo.On("GetDestinationByNameAndTenant",
+		mock.Anything, destination1Name, tenantID).Return(destinationModelByJSONString(destinationID, exampleDestination1, &formationAssignmentID), nil)
+	destinationRepo.On("Upsert",
+		mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(testErr)
+	return destinationRepo
+}
+
+func successfulFormationAssignmentRepo() *automock.FormationAssignmentRepository {
+	formationAssignmentRepo := unusedFormationAssignmentRepo()
+	formationAssignmentRepo.On("GetGlobalByID",
+		mock.Anything, formationAssignmentID).Return(formationAssignmentModel(formationAssignmentID, appID), nil)
+	return formationAssignmentRepo
+}
+
+func failingFormationAssignmentRepo() *automock.FormationAssignmentRepository {
+	formationAssignmentRepo := unusedFormationAssignmentRepo()
+	formationAssignmentRepo.On("GetGlobalByID",
+		mock.Anything, formationAssignmentID).Return(nil, testErr)
+	return formationAssignmentRepo
 }
 
 func successfulTenantRepo(tenantIDs []string) func() *automock.TenantRepo {
@@ -682,5 +802,34 @@ func defaultDestinationConfig(t *testing.T, destinationServerURL string) config.
 		RegionToInstanceConfig: map[string]config.InstanceConfig{
 			region: instanceConfig,
 		},
+	}
+}
+
+func destinationModelByJSONString(id, destination string, formationAssignmentID *string) *model.Destination {
+	return &model.Destination{
+		ID:                    id,
+		Name:                  gjson.Get(destination, "Name").String(),
+		Type:                  gjson.Get(destination, "Type").String(),
+		URL:                   gjson.Get(destination, "URL").String(),
+		Authentication:        gjson.Get(destination, "Authentication").String(),
+		FormationAssignmentID: formationAssignmentID,
+	}
+}
+
+func formationAssignmentModel(id, targetID string) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:         id,
+		Target:     targetID,
+		TargetType: model.FormationAssignmentTypeApplication,
+	}
+}
+
+func destinationWithoutIdentifiersHandler(t *testing.T) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("Page-Count", "0")
+
+		_, err := w.Write([]byte(fmt.Sprintf("[%s]", exampleDestinationWithoutIdentifiers)))
+		assert.NoError(t, err)
 	}
 }

@@ -1,5 +1,7 @@
 package destinationcreator
 
+import "strings"
+
 const (
 	// TypeHTTP represents the HTTP destination type
 	TypeHTTP Type = "HTTP"
@@ -48,6 +50,8 @@ const (
 	DedicatedTokenServiceURLType TokenServiceURLType = "Dedicated"
 	// CommonTokenServiceURLType represents the 'Common' token service URL type of OAuth2ClientCredentials destination
 	CommonTokenServiceURLType TokenServiceURLType = "Common"
+
+	correlationIDDelimiter = ","
 )
 
 // Type represents the destination type
@@ -69,4 +73,14 @@ type DestinationInfo struct {
 	AuthenticationType AuthType
 	Type               Type
 	URL                string
+}
+
+// ConstructCorrelationIDsString creates a comma-separated string based on given correlation IDs array
+func ConstructCorrelationIDsString(correlationIDs []string) string {
+	return strings.Join(correlationIDs, correlationIDDelimiter)
+}
+
+// DeconstructCorrelationIDs splits a string containing comma-separated correlation IDs into an array
+func DeconstructCorrelationIDs(correlationIDs string) []string {
+	return strings.Split(correlationIDs, correlationIDDelimiter)
 }
