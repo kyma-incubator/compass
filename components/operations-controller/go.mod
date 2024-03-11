@@ -4,8 +4,8 @@ go 1.20
 
 require (
 	github.com/go-logr/logr v1.2.3
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240228100227-417623163134
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240311140410-753a4c0553bd
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240311140410-753a4c0553bd
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.17.0
@@ -57,7 +57,7 @@ require (
 	github.com/jmoiron/sqlx v1.3.5 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228074947-02a81b1e3bf8 // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240311140410-753a4c0553bd // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect

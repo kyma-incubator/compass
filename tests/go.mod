@@ -5,12 +5,12 @@ go 1.20
 require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.6.0
-	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240228074947-02a81b1e3bf8
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20240228074947-02a81b1e3bf8
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240228100750-f0a14a359089
-	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240228074947-02a81b1e3bf8
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240228074947-02a81b1e3bf8
-	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20240228074947-02a81b1e3bf8
+	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240311140410-753a4c0553bd
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20240311140410-753a4c0553bd
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240311140410-753a4c0553bd
+	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240311140410-753a4c0553bd
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240311140410-753a4c0553bd
+	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20240311140410-753a4c0553bd
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
@@ -56,8 +56,8 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228074947-02a81b1e3bf8 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240228074947-02a81b1e3bf8 // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240311140410-753a4c0553bd // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240311140410-753a4c0553bd // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
