@@ -543,9 +543,9 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 					return true
 				}
 
-				t.Log("application webhook was executed, but application base URL was not updated")
+				t.Log("application webhook was executed, but application base URL or application state were not updated")
 				return false
-			}, timeout, checkInterval, "Waiting for application base URL to be updated.")
+			}, timeout, checkInterval, "Waiting for application base URL and application state to be updated.")
 		})
 	})
 }
