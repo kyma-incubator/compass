@@ -19,10 +19,6 @@ type FormationRepository struct {
 func (_m *FormationRepository) Create(ctx context.Context, item *model.Formation) error {
 	ret := _m.Called(ctx, item)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation) error); ok {
 		r0 = rf(ctx, item)
@@ -37,10 +33,6 @@ func (_m *FormationRepository) Create(ctx context.Context, item *model.Formation
 func (_m *FormationRepository) DeleteByName(ctx context.Context, tenantID string, name string) error {
 	ret := _m.Called(ctx, tenantID, name)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteByName")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, tenantID, name)
@@ -54,10 +46,6 @@ func (_m *FormationRepository) DeleteByName(ctx context.Context, tenantID string
 // Get provides a mock function with given fields: ctx, id, tenantID
 func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id, tenantID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Get")
-	}
 
 	var r0 *model.Formation
 	var r1 error
@@ -85,10 +73,6 @@ func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID stri
 func (_m *FormationRepository) GetByName(ctx context.Context, name string, tenantID string) (*model.Formation, error) {
 	ret := _m.Called(ctx, name, tenantID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetByName")
-	}
-
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Formation, error)); ok {
@@ -114,10 +98,6 @@ func (_m *FormationRepository) GetByName(ctx context.Context, name string, tenan
 // GetGlobalByID provides a mock function with given fields: ctx, id
 func (_m *FormationRepository) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetGlobalByID")
-	}
 
 	var r0 *model.Formation
 	var r1 error
@@ -145,10 +125,6 @@ func (_m *FormationRepository) GetGlobalByID(ctx context.Context, id string) (*m
 func (_m *FormationRepository) List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error) {
 	ret := _m.Called(ctx, tenant, pageSize, cursor)
 
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
-
 	var r0 *model.FormationPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, int, string) (*model.FormationPage, error)); ok {
@@ -175,10 +151,6 @@ func (_m *FormationRepository) List(ctx context.Context, tenant string, pageSize
 func (_m *FormationRepository) ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, formationIDs)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByIDsGlobal")
-	}
-
 	var r0 []*model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.Formation, error)); ok {
@@ -204,10 +176,6 @@ func (_m *FormationRepository) ListByIDsGlobal(ctx context.Context, formationIDs
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *FormationRepository) Update(ctx context.Context, _a1 *model.Formation) error {
 	ret := _m.Called(ctx, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation) error); ok {

@@ -40,7 +40,7 @@ type webhookRepository interface {
 
 //go:generate mockery --exported --name=notificationBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationBuilder interface {
-	BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, string, error)
+	BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
 	BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationNotificationOperationDetails, formation *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error)
 	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationTemplateID string, formation *model.Formation, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationTemplateID string, formation *model.Formation, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
@@ -133,7 +133,9 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		if err != nil {
 			return nil, err
 		}
-		req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
+
+		target := details.Application.ID
+		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
@@ -215,7 +217,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 			return nil, err
 		}
 
-		req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhooksToCall[runtime.ID])
+		target := details.Runtime.ID
+		if rtCtx != nil {
+			target = details.RuntimeContext.ID
+		}
+		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhooksToCall[runtime.ID])
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
@@ -318,7 +324,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 				return nil, err
 			}
 
-			req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
+			target := details.TargetApplication.ID
+			req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 			if err != nil {
 				return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 			} else if req != nil {
@@ -363,7 +370,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 			return nil, err
 		}
 
-		req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appIDToWebhookMapping[appID])
+		target := details.TargetApplication.ID
+		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appIDToWebhookMapping[appID])
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
@@ -480,7 +488,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 			return nil, err
 		}
 
-		req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appIDToWebhookMapping[appID])
+		target := details.Application.ID
+		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appIDToWebhookMapping[appID])
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
@@ -546,7 +555,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 			return nil, err
 		}
 
-		req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
+		target := details.RuntimeContext.ID
+		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
@@ -606,7 +616,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 			return nil, err
 		}
 
-		req, target, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
+		target := details.Runtime.ID
+		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {

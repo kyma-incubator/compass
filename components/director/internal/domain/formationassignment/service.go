@@ -904,30 +904,10 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			Request:             nil,
 			FormationAssignment: assignments[i],
 		}
-
 		target := assignment.Target
-		//if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-		//	log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
-		//
-		//	target = runtimeContextIDToRuntimeIDMapping[assignment.Target]
-		//	log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, assignment.Target)
-		//}
-
 	assignment:
 		for j, request := range requests {
 			var objectID = request.Target
-			//if request.Webhook != nil && request.Webhook.RuntimeID != nil {
-			//	objectID = *request.Webhook.RuntimeID
-			//}
-
-			// It is possible for both the application and the application template to have registered webhooks.
-			// In such case the application webhook should be used.
-			//if request.Webhook != nil && request.Webhook.ApplicationID != nil {
-			//	objectID = *request.Webhook.ApplicationID
-			//} else if request.Webhook != nil && request.Webhook.ApplicationTemplateID != nil &&
-			//	*request.Webhook.ApplicationTemplateID == applicationIDToApplicationTemplateIDMapping[target] {
-			//	objectID = target
-			//}
 
 			if objectID != target {
 				continue

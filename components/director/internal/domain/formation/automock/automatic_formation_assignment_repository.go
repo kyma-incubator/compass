@@ -19,10 +19,6 @@ type AutomaticFormationAssignmentRepository struct {
 func (_m *AutomaticFormationAssignmentRepository) Create(ctx context.Context, _a1 model.AutomaticScenarioAssignment) error {
 	ret := _m.Called(ctx, _a1)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, model.AutomaticScenarioAssignment) error); ok {
 		r0 = rf(ctx, _a1)
@@ -36,10 +32,6 @@ func (_m *AutomaticFormationAssignmentRepository) Create(ctx context.Context, _a
 // DeleteForScenarioName provides a mock function with given fields: ctx, tenantID, scenarioName
 func (_m *AutomaticFormationAssignmentRepository) DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error {
 	ret := _m.Called(ctx, tenantID, scenarioName)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteForScenarioName")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
@@ -55,10 +47,6 @@ func (_m *AutomaticFormationAssignmentRepository) DeleteForScenarioName(ctx cont
 func (_m *AutomaticFormationAssignmentRepository) DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error {
 	ret := _m.Called(ctx, tenantID, targetTenantID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteForTargetTenant")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, tenantID, targetTenantID)
@@ -72,10 +60,6 @@ func (_m *AutomaticFormationAssignmentRepository) DeleteForTargetTenant(ctx cont
 // ListAll provides a mock function with given fields: ctx, tenantID
 func (_m *AutomaticFormationAssignmentRepository) ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, tenantID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListAll")
-	}
 
 	var r0 []*model.AutomaticScenarioAssignment
 	var r1 error

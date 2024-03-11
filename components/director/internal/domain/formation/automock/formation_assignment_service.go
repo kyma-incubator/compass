@@ -25,10 +25,6 @@ type FormationAssignmentService struct {
 func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error) {
 	ret := _m.Called(ctx, mappingPair)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CleanupFormationAssignment")
-	}
-
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)); ok {
@@ -53,10 +49,6 @@ func (_m *FormationAssignmentService) CleanupFormationAssignment(ctx context.Con
 func (_m *FormationAssignmentService) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Delete")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
@@ -71,10 +63,6 @@ func (_m *FormationAssignmentService) Delete(ctx context.Context, id string) err
 func (_m *FormationAssignmentService) DeleteAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) error {
 	ret := _m.Called(ctx, formationID, objectID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteAssignmentsForObjectID")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, formationID, objectID)
@@ -88,10 +76,6 @@ func (_m *FormationAssignmentService) DeleteAssignmentsForObjectID(ctx context.C
 // GenerateAssignments provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
 func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 *model.Formation) ([]*model.FormationAssignmentInput, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GenerateAssignments")
-	}
 
 	var r0 []*model.FormationAssignmentInput
 	var r1 error
@@ -119,10 +103,6 @@ func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, t
 func (_m *FormationAssignmentService) GetAssignmentsForFormation(ctx context.Context, tenantID string, formationID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, formationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetAssignmentsForFormation")
-	}
-
 	var r0 []*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
@@ -148,10 +128,6 @@ func (_m *FormationAssignmentService) GetAssignmentsForFormation(ctx context.Con
 // GetAssignmentsForFormationWithStates provides a mock function with given fields: ctx, tenantID, formationID, states
 func (_m *FormationAssignmentService) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID string, formationID string, states []string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, formationID, states)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetAssignmentsForFormationWithStates")
-	}
 
 	var r0 []*model.FormationAssignment
 	var r1 error
@@ -179,10 +155,6 @@ func (_m *FormationAssignmentService) GetAssignmentsForFormationWithStates(ctx c
 func (_m *FormationAssignmentService) GetForFormation(ctx context.Context, id string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, id, formationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetForFormation")
-	}
-
 	var r0 *model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.FormationAssignment, error)); ok {
@@ -208,10 +180,6 @@ func (_m *FormationAssignmentService) GetForFormation(ctx context.Context, id st
 // GetReverseBySourceAndTarget provides a mock function with given fields: ctx, formationID, sourceID, targetID
 func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Context, formationID string, sourceID string, targetID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, formationID, sourceID, targetID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetReverseBySourceAndTarget")
-	}
 
 	var r0 *model.FormationAssignment
 	var r1 error
@@ -239,10 +207,6 @@ func (_m *FormationAssignmentService) GetReverseBySourceAndTarget(ctx context.Co
 func (_m *FormationAssignmentService) ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, objectID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListAllForObjectGlobal")
-	}
-
 	var r0 []*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationAssignment, error)); ok {
@@ -268,10 +232,6 @@ func (_m *FormationAssignmentService) ListAllForObjectGlobal(ctx context.Context
 // ListByFormationIDs provides a mock function with given fields: ctx, formationIDs, pageSize, cursor
 func (_m *FormationAssignmentService) ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error) {
 	ret := _m.Called(ctx, formationIDs, pageSize, cursor)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationIDs")
-	}
 
 	var r0 []*model.FormationAssignmentPage
 	var r1 error
@@ -299,10 +259,6 @@ func (_m *FormationAssignmentService) ListByFormationIDs(ctx context.Context, fo
 func (_m *FormationAssignmentService) ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, formationIDs)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationIDsNoPaging")
-	}
-
 	var r0 [][]*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string) ([][]*model.FormationAssignment, error)); ok {
@@ -328,10 +284,6 @@ func (_m *FormationAssignmentService) ListByFormationIDsNoPaging(ctx context.Con
 // ListFormationAssignmentsForObjectID provides a mock function with given fields: ctx, formationID, objectID
 func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx context.Context, formationID string, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, formationID, objectID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListFormationAssignmentsForObjectID")
-	}
 
 	var r0 []*model.FormationAssignment
 	var r1 error
@@ -359,10 +311,6 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 func (_m *FormationAssignmentService) PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tnt, assignments)
 
-	if len(ret) == 0 {
-		panic("no return value specified for PersistAssignments")
-	}
-
 	var r0 []*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)); ok {
@@ -389,10 +337,6 @@ func (_m *FormationAssignmentService) PersistAssignments(ctx context.Context, tn
 func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error) {
 	ret := _m.Called(ctx, mappingPair)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ProcessFormationAssignmentPair")
-	}
-
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)); ok {
@@ -414,15 +358,11 @@ func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context
 }
 
 // ProcessFormationAssignments provides a mock function with given fields: ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests, operation, formationOperation
-func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
+func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	ret := _m.Called(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests, operation, formationOperation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ProcessFormationAssignments")
-	}
-
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*model.FormationAssignment, map[string]string, map[string]string, []*webhookclient.FormationAssignmentNotificationRequest, func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), model.FormationOperation) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.FormationAssignment, map[string]string, map[string]string, []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), model.FormationOperation) error); ok {
 		r0 = rf(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests, operation, formationOperation)
 	} else {
 		r0 = ret.Error(0)
@@ -434,10 +374,6 @@ func (_m *FormationAssignmentService) ProcessFormationAssignments(ctx context.Co
 // Update provides a mock function with given fields: ctx, id, fa
 func (_m *FormationAssignmentService) Update(ctx context.Context, id string, fa *model.FormationAssignment) error {
 	ret := _m.Called(ctx, id, fa)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationAssignment) error); ok {
