@@ -569,6 +569,7 @@ type ComplexityRoot struct {
 		DeleteTenants                                func(childComplexity int, in []string) int
 		DeleteWebhook                                func(childComplexity int, webhookID string) int
 		DetachConstraintFromFormationTemplate        func(childComplexity int, constraintID string, formationTemplateID string) int
+		FinalizeDraftFormation                       func(childComplexity int, formationID string) int
 		InvalidateSystemAuthOneTimeToken             func(childComplexity int, authID string) int
 		MergeApplications                            func(childComplexity int, destinationID string, sourceID string) int
 		RefetchAPISpec                               func(childComplexity int, apiID string) int
@@ -941,6 +942,7 @@ type MutationResolver interface {
 	DeleteDocument(ctx context.Context, id string) (*Document, error)
 	CreateFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*Formation, error)
+	FinalizeDraftFormation(ctx context.Context, formationID string) (*Formation, error)
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
 	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
@@ -3716,6 +3718,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.DetachConstraintFromFormationTemplate(childComplexity, args["constraintID"].(string), args["formationTemplateID"].(string)), true
 
+	case "Mutation.finalizeDraftFormation":
+		if e.complexity.Mutation.FinalizeDraftFormation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_finalizeDraftFormation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.FinalizeDraftFormation(childComplexity, args["formationID"].(string)), true
+
 	case "Mutation.invalidateSystemAuthOneTimeToken":
 		if e.complexity.Mutation.InvalidateSystemAuthOneTimeToken == nil {
 			break
@@ -5781,6 +5795,7 @@ enum FormationStatusCondition {
 	IN_PROGRESS
 	ERROR
 	READY
+	DRAFT
 }
 
 enum HealthCheckStatusCondition {
@@ -7619,6 +7634,7 @@ type Mutation {
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
 	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	finalizeDraftFormation(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.finalizeDraftFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)
@@ -9084,6 +9100,20 @@ func (ec *executionContext) field_Mutation_detachConstraintFromFormationTemplate
 		}
 	}
 	args["formationTemplateID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_finalizeDraftFormation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["formationID"]; ok {
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationID"] = arg0
 	return args, nil
 }
 
@@ -24971,6 +25001,71 @@ func (ec *executionContext) _Mutation_resynchronizeFormationNotifications(ctx co
 	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
 }
 
+func (ec *executionContext) _Mutation_finalizeDraftFormation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	fc := &graphql.FieldContext{
+		Object:   "Mutation",
+		Field:    field,
+		Args:     nil,
+		IsMethod: true,
+	}
+
+	ctx = graphql.WithFieldContext(ctx, fc)
+	rawArgs := field.ArgumentMap(ec.Variables)
+	args, err := ec.field_Mutation_finalizeDraftFormation_args(ctx, rawArgs)
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	fc.Args = args
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().FinalizeDraftFormation(rctx, args["formationID"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.finalizeDraftFormation")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, err
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Formation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Formation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Formation)
+	fc.Result = res
+	return ec.marshalNFormation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormation(ctx, field.Selections, res)
+}
+
 func (ec *executionContext) _Mutation_deleteFormation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -40071,6 +40166,11 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			}
 		case "resynchronizeFormationNotifications":
 			out.Values[i] = ec._Mutation_resynchronizeFormationNotifications(ctx, field)
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "finalizeDraftFormation":
+			out.Values[i] = ec._Mutation_finalizeDraftFormation(ctx, field)
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}

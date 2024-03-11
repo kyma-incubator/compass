@@ -599,7 +599,9 @@ var (
 		FormationType: testFormationTemplateName,
 	}
 
-	formationWithInitialState              = fixFormationModelWithState(model.InitialFormationState)
+	formationWithInitialState = fixFormationModelWithState(model.InitialFormationState)
+	formationWithDraftState   = fixFormationModelWithState(model.DraftFormationState)
+
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),

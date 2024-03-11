@@ -86,6 +86,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 		State:               model.ReadyFormationState,
 	}
 	formationInInitialState := fixFormationModelWithState(model.InitialFormationState)
+	formationInDraftState := fixFormationModelWithState(model.DraftFormationState)
 
 	expectedFormationTemplate := &model.FormationTemplate{
 		ID:               FormationTemplateID,
@@ -327,7 +328,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				ExpectedFormation: expected,
 			},
 			{
-				Name: "success when formation has state different that ready should delete FA without sending notifications",
+				Name: "success when formation has state different that ready should delete FA without sending notifications - initial state",
 				TxFn: txGen.ThatDoesntStartTransaction,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -371,6 +372,52 @@ func TestServiceUnassignFormation(t *testing.T) {
 				ObjectID:          objectTypeData.ObjectID,
 				InputFormation:    in,
 				ExpectedFormation: formationInInitialState,
+			},
+			{
+				Name: "success when formation has state different that ready should delete FA without sending notifications - draft state",
+				TxFn: txGen.ThatDoesntStartTransaction,
+				LabelServiceFn: func() *automock.LabelService {
+					labelService := &automock.LabelService{}
+					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
+					labelService.On("UpdateLabel", ctx, TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
+						Key:        model.ScenariosKey,
+						Value:      []string{secondTestFormationName},
+						ObjectID:   objectTypeData.ObjectID,
+						ObjectType: objectTypeData.LabelType,
+						Version:    0,
+					}).Return(nil).Once()
+					return labelService
+				},
+				FormationRepositoryFn: func() *automock.FormationRepository {
+					formationRepo := &automock.FormationRepository{}
+					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInDraftState, nil).Once()
+					return formationRepo
+				},
+				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+					formationAssignmentSvc := &automock.FormationAssignmentService{}
+					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctx, formationInDraftState.ID, objectTypeData.ObjectID).Return(nil).Once()
+					return formationAssignmentSvc
+				},
+				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+					repo := &automock.FormationTemplateRepository{}
+					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					return repo
+				},
+				ConstraintEngineFn: func() *automock.ConstraintEngine {
+					engine := &automock.ConstraintEngine{}
+					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					return engine
+				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
+				ObjectType:        objectTypeData.ObjectType,
+				ObjectID:          objectTypeData.ObjectID,
+				InputFormation:    in,
+				ExpectedFormation: formationInDraftState,
 			},
 			{
 				Name: "error when formation has state different that ready should delete FA without sending notifications but fails while updating scenario label",
