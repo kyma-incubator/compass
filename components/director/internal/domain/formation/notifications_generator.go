@@ -134,12 +134,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 			return nil, err
 		}
 
-		target := details.Application.ID
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 	return requests, nil
@@ -217,9 +216,9 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 			return nil, err
 		}
 
-		target := details.Runtime.ID
+		target := rtID
 		if rtCtx != nil {
-			target = details.RuntimeContext.ID
+			target = rtCtx.ID
 		}
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhooksToCall[runtime.ID])
 		if err != nil {
@@ -324,12 +323,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 				return nil, err
 			}
 
-			target := details.TargetApplication.ID
 			req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 			if err != nil {
 				return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 			} else if req != nil {
-				requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
+				requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 			}
 		}
 	}
@@ -370,12 +368,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 			return nil, err
 		}
 
-		target := details.TargetApplication.ID
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appIDToWebhookMapping[appID])
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
@@ -488,12 +485,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 			return nil, err
 		}
 
-		target := details.Application.ID
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, appIDToWebhookMapping[appID])
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 	return requests, nil
@@ -555,12 +551,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 			return nil, err
 		}
 
-		target := details.RuntimeContext.ID
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: runtimeCtxID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
@@ -616,12 +611,11 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 			return nil, err
 		}
 
-		target := details.Runtime.ID
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: runtimeID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
