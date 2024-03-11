@@ -83,6 +83,7 @@ graphql:
     unassignFormation: ["formation:write"]
     unassignFormationGlobal: ["formation:global_write"]
     resynchronizeFormationNotifications: ["formation:write"]
+    finalizeDraftFormation: [ "formation:write" ]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]

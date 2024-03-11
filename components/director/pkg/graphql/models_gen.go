@@ -1612,17 +1612,19 @@ const (
 	FormationStatusConditionInProgress FormationStatusCondition = "IN_PROGRESS"
 	FormationStatusConditionError      FormationStatusCondition = "ERROR"
 	FormationStatusConditionReady      FormationStatusCondition = "READY"
+	FormationStatusConditionDraft      FormationStatusCondition = "DRAFT"
 )
 
 var AllFormationStatusCondition = []FormationStatusCondition{
 	FormationStatusConditionInProgress,
 	FormationStatusConditionError,
 	FormationStatusConditionReady,
+	FormationStatusConditionDraft,
 }
 
 func (e FormationStatusCondition) IsValid() bool {
 	switch e {
-	case FormationStatusConditionInProgress, FormationStatusConditionError, FormationStatusConditionReady:
+	case FormationStatusConditionInProgress, FormationStatusConditionError, FormationStatusConditionReady, FormationStatusConditionDraft:
 		return true
 	}
 	return false
