@@ -22,18 +22,20 @@
 /chart/compass/charts/system-fetcher @kyma-incubator/team-falcon
 /chart/compass/templates/filters @kyma-incubator/team-raptor
 /components/connectivity-adapter @kyma-incubator/team-falcon
+/components/connectivity-adapter/Dockerfile
+/components/connectivity-adapter/go.mod
+/components/connectivity-adapter/go.sum
+/components/connectivity-adapter/cmd/main.go
 /components/connector @kyma-incubator/team-raptor
-/components/director/cmd/ns-adapter @kyma-incubator/team-falcon
-/components/director/cmd/ordaggregator @kyma-incubator/team-falcon
-/components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
-/components/director/cmd/systemfetcher @kyma-incubator/team-falcon
-/components/director/cmd/tenantfetcher-svc @kyma-incubator/team-falcon
-/components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-falcon
+/components/connector/Dockerfile
+/components/connector/go.mod
+/components/connector/go.sum
+/components/connector/cmd/main.go
 /components/director/internal/domain/formation @kyma-incubator/team-raptor
 /components/director/internal/domain/formationassignment @kyma-incubator/team-raptor
 /components/director/internal/domain/formationtemplate @kyma-incubator/team-raptor
-components/director/internal/domain/formationconstraint @kyma-incubator/team-raptor
-components/director/internal/domain/formationtemplateconstraintreferences @kyma-incubator/team-raptor
+/components/director/internal/domain/formationconstraint @kyma-incubator/team-raptor
+/components/director/internal/domain/formationtemplateconstraintreferences @kyma-incubator/team-raptor
 /components/director/internal/formationmapping @kyma-incubator/team-raptor
 /components/director/internal/domain/certsubjectmapping @kyma-incubator/team-raptor
 /components/director/internal/info @kyma-incubator/team-raptor
@@ -46,14 +48,46 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /components/director/pkg/accessstrategy @kyma-incubator/team-falcon
 /components/director/pkg/operation @kyma-incubator/team-falcon
 /components/director/pkg/scenario @kyma-incubator/team-raptor
+/components/director/Dockerfile
+/components/director/go.mod
+/components/director/go.sum
 /components/gateway @kyma-incubator/team-raptor
+/components/gateway/Dockerfile
+/components/gateway/go.mod
+/components/gateway/go.sum
+/components/gateway/cmd/main.go
 /components/hydrator @kyma-incubator/team-raptor
+/components/hydrator/Dockerfile
+/components/hydrator/go.mod
+/components/hydrator/go.sum
+/components/hydrator/cmd/main.go
 /components/kyma-adapter @kyma-incubator/team-raptor
+/components/kyma-adapter/Dockerfile
+/components/kyma-adapter/go.mod
+/components/kyma-adapter/go.sum
+/components/kyma-adapter/cmd/main.go
 /components/instance-creator @kyma-incubator/team-raptor
+/components/instance-creator/Dockerfile
+/components/instance-creator/go.mod
+/components/instance-creator/go.sum
+/components/instance-creator/cmd/main.go
 /components/ias-adapter @kyma-incubator/team-atlas
+/components/ias-adapter/Dockerfile
+/components/ias-adapter/go.mod
+/components/ias-adapter/go.sum
+/components/ias-adapter/cmd/main.go
 /components/operations-controller @kyma-incubator/team-falcon
+/components/operations-controller/Dockerfile
+/components/operations-controller/go.mod
+/components/operations-controller/go.sum
+/components/operations-controller/cmd/main.go
 /components/pairing-adapter @kyma-incubator/team-falcon
+/components/pairing-adapter/Dockerfile
+/components/pairing-adapter/go.mod
+/components/pairing-adapter/go.sum
+/components/pairing-adapter/cmd/main.go
 /components/schema-migrator @kyma-incubator/team-falcon @kyma-incubator/team-raptor
+/components/schema-migrator/Dockerfile
 /installation/cmd @kyma-incubator/team-raptor
 /installation/scripts @kyma-incubator/team-raptor
 /installation/scripts/prow @kyma-incubator/team-raptor @kyma-incubator/team-falcon
@@ -71,6 +105,9 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 /tests/pkg/notifications @kyma-incubator/team-raptor
 /tests/system-fetcher @kyma-incubator/team-falcon
 /tests/tenant-fetcher @kyma-incubator/team-falcon
+/tests/Dockerfile
+/tests/go.mod
+/tests/go.sum
 
 # All .md files
 *.md @kyma-incubator/cmp-technical-writers
