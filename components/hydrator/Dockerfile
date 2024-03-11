@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM golang:1.21.8-alpine3.19 as builder
+FROM --platform=$BUILDPLATFORM golang:1.21.6-alpine3.19 as builder
 
 ENV BASE_APP_DIR /go/src/github.com/kyma-incubator/compass/components/hydrator
 WORKDIR ${BASE_APP_DIR}
