@@ -24,6 +24,8 @@ const (
 	DeleteErrorFormationState FormationState = "DELETE_ERROR"
 	// DeletingFormationState indicates that the formation is in deleting state
 	DeletingFormationState FormationState = "DELETING"
+	// DraftFormationState indicates that the formation is not yet fully shaped
+	DraftFormationState FormationState = "DRAFT"
 )
 
 // FormationOperation defines the kind of operation done on a given formation

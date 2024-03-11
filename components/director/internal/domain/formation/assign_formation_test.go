@@ -92,6 +92,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		State:               model.ReadyFormationState,
 	}
 	formationInInitialState := fixFormationModelWithState(model.InitialFormationState)
+	formationInDraftState := fixFormationModelWithState(model.DraftFormationState)
 	formationInDeletingState := fixFormationModelWithState(model.DeletingFormationState)
 
 	applicationLblNoFormations := &model.Label{
@@ -1880,6 +1881,52 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:          ApplicationID,
 			InputFormation:    inputFormation,
 			ExpectedFormation: formationInInitialState,
+		},
+		{
+			Name: "success for application when formation is in draft state",
+			TxFn: txGen.ThatSucceeds,
+			UIDServiceFn: func() *automock.UuidService {
+				uidService := &automock.UuidService{}
+				uidService.On("Generate").Return(fixUUID()).Once()
+				return uidService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
+				labelService.On("GetLabel", ctx, TntInternalID, &applicationLblInput).Return(nil, apperrors.NewNotFoundError(resource.Label, "")).Once()
+				labelService.On("CreateLabel", ctx, TntInternalID, fixUUID(), &applicationLblInput).Return(nil).Once()
+				return labelService
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInDraftState, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctx, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInDraftState).Return(formationAssignmentInputs, nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(nil, nil).Once()
+				return formationAssignmentSvc
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			ObjectType:        graphql.FormationObjectTypeApplication,
+			ObjectID:          ApplicationID,
+			InputFormation:    inputFormation,
+			ExpectedFormation: formationInDraftState,
 		},
 		{
 			Name: "error for application when formation is in deleting state",

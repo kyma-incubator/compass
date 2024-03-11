@@ -3,12 +3,13 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/hashicorp/go-multierror"
+	"github.com/mitchellh/hashstructure/v2"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/processor"
 
@@ -16,7 +17,6 @@ import (
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
 	requestobject "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
-	"dario.cat/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -37,8 +37,6 @@ import (
 )
 
 const (
-	// MultiErrorSeparator represents the separator for splitting multi error into slice of validation errors
-	MultiErrorSeparator string = "* "
 	// TenantMappingCustomTypeIdentifier represents an identifier for tenant mapping webhooks in Credential exchange strategies
 	TenantMappingCustomTypeIdentifier = "sap.ucl:tenant-mapping"
 
@@ -50,6 +48,18 @@ const (
 	// ProcessingErrorMsg is the error message for processing error in ORD Documents
 	ProcessingErrorMsg = "error processing ORD documents"
 )
+
+func (p *ProcessingError) Error() string {
+	return p.toJSON()
+}
+
+func (p *ProcessingError) toJSON() string {
+	bytes, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Sprintf(`{"error": "failed to marshal error: %s"}`, err)
+	}
+	return string(bytes)
+}
 
 // ServiceConfig contains configuration for the ORD aggregator service
 type ServiceConfig struct {
@@ -96,18 +106,11 @@ type Service struct {
 	webhookSvc                     WebhookService
 	bundleSvc                      BundleService
 	bundleReferenceSvc             BundleReferenceService
-	apiSvc                         APIService
 	apiProcessor                   APIProcessor
-	eventSvc                       EventService
 	eventProcessor                 EventProcessor
-	entityTypeSvc                  EntityTypeService
-	capabilitySvc                  CapabilityService
 	capabilityProcessor            CapabilityProcessor
-	integrationDependencySvc       IntegrationDependencyService
-	dataProductSvc                 DataProductService
 	specSvc                        SpecService
 	fetchReqSvc                    FetchRequestService
-	packageSvc                     PackageService
 	packageProcessor               PackageProcessor
 	productProcessor               ProductProcessor
 	vendorProcessor                VendorProcessor
@@ -128,10 +131,12 @@ type Service struct {
 
 	globalRegistrySvc GlobalRegistryService
 	ordClient         Client
+	documentValidator Validator
+	documentSanitizer DocumentSanitizer
 }
 
 // NewAggregatorService returns a new object responsible for service-layer ORD operations.
-func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiSvc APIService, apiProcessor APIProcessor, eventSvc EventService, eventProcessor EventProcessor, entityTypeSvc EntityTypeService, entityTypeProcessor EntityTypeProcessor, capabilitySvc CapabilityService, capabilityProcessor CapabilityProcessor, integrationDependencySvc IntegrationDependencyService, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductSvc DataProductService, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageSvc PackageService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService) *Service {
+func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transact persistence.Transactioner, appSvc ApplicationService, webhookSvc WebhookService, bundleSvc BundleService, bundleReferenceSvc BundleReferenceService, apiProcessor APIProcessor, eventProcessor EventProcessor, entityTypeProcessor EntityTypeProcessor, capabilityProcessor CapabilityProcessor, integrationDependencyProcessor IntegrationDependencyProcessor, dataProductProcessor DataProductProcessor, specSvc SpecService, fetchReqSvc FetchRequestService, packageProcessor PackageProcessor, productProcessor ProductProcessor, vendorProcessor VendorProcessor, tombstoneProcessor TombstoneProcessor, tenantSvc TenantService, globalRegistrySvc GlobalRegistryService, client Client, webhookConverter WebhookConverter, appTemplateVersionSvc ApplicationTemplateVersionService, appTemplateSvc ApplicationTemplateService, tombstonedResourcesDeleter TombstonedResourcesDeleter, labelService LabelService, ordWebhookMapping []application.ORDWebhookMapping, opSvc operationsmanager.OperationService, documentValidator Validator, documentSanitizer DocumentSanitizer) *Service {
 	return &Service{
 		config:                         config,
 		metricsCfg:                     metricsCfg,
@@ -140,21 +145,14 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		webhookSvc:                     webhookSvc,
 		bundleSvc:                      bundleSvc,
 		bundleReferenceSvc:             bundleReferenceSvc,
-		apiSvc:                         apiSvc,
 		apiProcessor:                   apiProcessor,
-		eventSvc:                       eventSvc,
 		eventProcessor:                 eventProcessor,
-		entityTypeSvc:                  entityTypeSvc,
 		entityTypeProcessor:            entityTypeProcessor,
-		capabilitySvc:                  capabilitySvc,
 		capabilityProcessor:            capabilityProcessor,
-		integrationDependencySvc:       integrationDependencySvc,
 		integrationDependencyProcessor: integrationDependencyProcessor,
-		dataProductSvc:                 dataProductSvc,
 		dataProductProcessor:           dataProductProcessor,
 		specSvc:                        specSvc,
 		fetchReqSvc:                    fetchReqSvc,
-		packageSvc:                     packageSvc,
 		packageProcessor:               packageProcessor,
 		productProcessor:               productProcessor,
 		vendorProcessor:                vendorProcessor,
@@ -169,6 +167,8 @@ func NewAggregatorService(config ServiceConfig, metricsCfg MetricsConfig, transa
 		labelSvc:                       labelService,
 		ordWebhookMapping:              ordWebhookMapping,
 		opSvc:                          opSvc,
+		documentValidator:              documentValidator,
+		documentSanitizer:              documentSanitizer,
 	}
 }
 
@@ -196,9 +196,8 @@ func (s *Service) ProcessApplication(ctx context.Context, appID string) error {
 				globalResourcesLoaded = true
 			}
 			log.C(ctx).Infof("Process Webhook ID %s for Application with ID %s", wh.ID, appID)
-			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
-				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
-			}
+
+			return s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs)
 		}
 	}
 	return nil
@@ -239,9 +238,7 @@ func (s *Service) ProcessAppInAppTemplateContext(ctx context.Context, appTemplat
 				return errors.Errorf("cannot find application with id %q for app template with id %q", appID, appTemplateID)
 			}
 
-			if err = s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs); err != nil {
-				return errors.Wrapf(err, "processing of ORD webhook for application with id %q failed", appID)
-			}
+			return s.processApplicationWebhook(ctx, wh, appID, globalResourcesOrdIDs)
 		}
 	}
 	return nil
@@ -267,9 +264,8 @@ func (s *Service) ProcessApplicationTemplate(ctx context.Context, appTemplateID 
 			}
 
 			log.C(ctx).Infof("Processing Webhook ID %s for Application Tempalate with ID %s", wh.ID, appTemplateID)
-			if err = s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs); err != nil {
-				return err
-			}
+
+			return s.processApplicationTemplateWebhook(ctx, wh, appTemplateID, globalResourcesOrdIDs)
 		}
 	}
 	return nil
@@ -333,35 +329,38 @@ func (s *Service) getWebhooksForApplication(ctx context.Context, appID string) (
 	return webhooks, nil
 }
 
-func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, validationErrors *error) error {
+func (s *Service) processDocuments(ctx context.Context, resource Resource, webhookBaseURL, webhookBaseProxyURL string, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject, documents Documents, globalResourcesOrdIDs map[string]bool, docsString []string) ([]*ValidationError, error) {
 	if _, err := s.processDescribedSystemVersions(ctx, resource, documents); err != nil {
-		return err
-	}
-
-	resourcesFromDB, err := s.fetchResources(ctx, resource, documents)
-	if err != nil {
-		return err
+		return nil, err
 	}
 
 	resourceHashes, err := hashResources(documents)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	validationResult := documents.Validate(webhookBaseURL, resourcesFromDB, resourceHashes, globalResourcesOrdIDs, s.config.credentialExchangeStrategyTenantMappings)
-	if validationResult != nil {
-		validationResult = &ORDDocumentValidationError{errors.Wrap(validationResult, "invalid documents")}
-		*validationErrors = validationResult
+	log.C(ctx).Infof("Validating ORD documents for resource with ID %s", resource.ID)
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString, "")
+	if err != nil {
+		return validationErrors, err
 	}
 
-	if err := documents.Sanitize(webhookBaseURL, webhookBaseProxyURL); err != nil {
-		return errors.Wrap(err, "while sanitizing ORD documents")
+	log.C(ctx).Infof("Sanitizing ORD documents for resource with ID %s", resource.ID)
+	validationErrorsFromSanitize, err := s.documentSanitizer.Sanitize(documents, webhookBaseURL, webhookBaseProxyURL)
+	if err != nil {
+		return validationErrors, errors.Wrap(err, "while sanitizing ORD documents")
+	}
+
+	if len(validationErrorsFromSanitize) > 0 {
+		log.C(ctx).Errorf("Stopping aggregation of resource with ID %s", resource.ID)
+
+		return append(validationErrors, validationErrorsFromSanitize...), nil
 	}
 
 	ordLocalTenantID := s.getUniqueLocalTenantID(documents)
 	if ordLocalTenantID != "" && resource.LocalTenantID == nil {
 		if err := s.appSvc.Update(ctx, resource.ID, model.ApplicationUpdateInput{LocalTenantID: str.Ptr(ordLocalTenantID)}); err != nil {
-			return err
+			return validationErrors, err
 		}
 	}
 	for _, doc := range documents {
@@ -382,7 +381,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, applicationTemplateID, doc.DescribedSystemVersion.Version)
 			if err != nil {
-				return err
+				return validationErrors, err
 			}
 
 			resourceToAggregate = Resource{
@@ -394,77 +393,77 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 		log.C(ctx).Infof("Starting processing vendors for %s with id: %q", resource.Type, resource.ID)
 		vendorsFromDB, err := s.vendorProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Vendors)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing vendors for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing products for %s with id: %q", resource.Type, resource.ID)
 		productsFromDB, err := s.productProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Products)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing products for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing packages for %s with id: %q", resource.Type, resource.ID)
 		packagesFromDB, err := s.packageProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Packages, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing packages for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing bundles for %s with id: %q", resource.Type, resource.ID)
 		bundlesFromDB, err := s.processBundles(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.ConsumptionBundles, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing bundles for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing apis for %s with id: %q", resource.Type, resource.ID)
 		apisFromDB, apiFetchRequests, err := s.apiProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.APIResources, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing apis for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing events for %s with id: %q", resource.Type, resource.ID)
 		eventsFromDB, eventFetchRequests, err := s.eventProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, bundlesFromDB, packagesFromDB, doc.EventResources, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing events for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing entity types for %s with id: %q", resource.Type, resource.ID)
 		entityTypesFromDB, err := s.entityTypeProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.EntityTypes, packagesFromDB, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing entity types for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing capabilities for %s with id: %q", resource.Type, resource.ID)
 		capabilitiesFromDB, capabilitiesFetchRequests, err := s.capabilityProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.Capabilities, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing capabilities for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 		integrationDependenciesFromDB, err := s.integrationDependencyProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.IntegrationDependencies, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing integration dependencies for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing data products for %s with id: %q", resource.Type, resource.ID)
 		dataProductsFromDB, err := s.dataProductProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, packagesFromDB, doc.DataProducts, resourceHashes)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing data products for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing tombstones for %s with id: %q", resource.Type, resource.ID)
 		tombstonesFromDB, err := s.tombstoneProcessor.Process(ctx, resourceToAggregate.Type, resourceToAggregate.ID, doc.Tombstones)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing tombstones for %s with id: %q", resource.Type, resource.ID)
 
@@ -473,18 +472,18 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 
 		fetchRequests, err = s.tombstonedResourcesDeleter.Delete(ctx, resourceToAggregate.Type, vendorsFromDB, productsFromDB, packagesFromDB, bundlesFromDB, apisFromDB, eventsFromDB, entityTypesFromDB, capabilitiesFromDB, integrationDependenciesFromDB, dataProductsFromDB, tombstonesFromDB, fetchRequests)
 		if err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished deleting tombstoned resources for %s with id: %q", resource.Type, resource.ID)
 
 		log.C(ctx).Infof("Starting processing specs for %s with id: %q", resource.Type, resource.ID)
 		if err := s.processSpecs(ctx, resourceToAggregate.Type, fetchRequests, ordRequestObject); err != nil {
-			return err
+			return validationErrors, err
 		}
 		log.C(ctx).Infof("Finished processing specs for %s with id: %q", resource.Type, resource.ID)
 	}
 
-	return nil
+	return validationErrors, nil
 }
 
 func (s *Service) processSpecs(ctx context.Context, resourceType directorresource.Type, ordFetchRequests []*processor.OrdFetchRequest, ordRequestObject requestobject.OpenResourceDiscoveryWebhookRequestObject) error {
@@ -938,325 +937,10 @@ func (s *Service) resyncAppTemplateVersion(ctx context.Context, appTemplateID st
 	return err
 }
 
-func (s *Service) fetchAPIDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.APIDefinition, error) {
-	var (
-		apisFromDB []*model.APIDefinition
-		err        error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		apisFromDB, err = s.apiSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		apisFromDB, err = s.apiSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	apiDataFromDB := make(map[string]*model.APIDefinition, len(apisFromDB))
-
-	for _, api := range apisFromDB {
-		apiOrdID := str.PtrStrToStr(api.OrdID)
-		apiDataFromDB[apiOrdID] = api
-	}
-
-	return apiDataFromDB, nil
-}
-
-func (s *Service) fetchCapabilitiesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Capability, error) {
-	var (
-		capabilitiesFromDB []*model.Capability
-		err                error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		capabilitiesFromDB, err = s.capabilitySvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	capabilitiesDataFromDB := make(map[string]*model.Capability, len(capabilitiesFromDB))
-
-	for _, capability := range capabilitiesFromDB {
-		capabilityOrdID := str.PtrStrToStr(capability.OrdID)
-		capabilitiesDataFromDB[capabilityOrdID] = capability
-	}
-
-	return capabilitiesDataFromDB, nil
-}
-
-func (s *Service) fetchIntegrationDependenciesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.IntegrationDependency, error) {
-	var (
-		integrationDependenciesFromDB []*model.IntegrationDependency
-		err                           error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		integrationDependenciesFromDB, err = s.integrationDependencySvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	integrationDependenciesDataFromDB := make(map[string]*model.IntegrationDependency, len(integrationDependenciesFromDB))
-
-	for _, integrationDependency := range integrationDependenciesFromDB {
-		integrationDependencyOrdID := str.PtrStrToStr(integrationDependency.OrdID)
-		integrationDependenciesDataFromDB[integrationDependencyOrdID] = integrationDependency
-	}
-
-	return integrationDependenciesDataFromDB, nil
-}
-
-func (s *Service) fetchEntityTypesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EntityType, error) {
-	var (
-		entityTypesFromDB []*model.EntityType
-		err               error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		entityTypesFromDB, err = s.entityTypeSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	entityTypesDataFromDB := make(map[string]*model.EntityType, len(entityTypesFromDB))
-
-	for _, entityType := range entityTypesFromDB {
-		entityTypesDataFromDB[entityType.OrdID] = entityType
-	}
-
-	return entityTypesDataFromDB, nil
-}
-
-func (s *Service) fetchDataProductsFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.DataProduct, error) {
-	var (
-		dataProductsFromDB []*model.DataProduct
-		err                error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		dataProductsFromDB, err = s.dataProductSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	dataProductDataFromDB := make(map[string]*model.DataProduct, len(dataProductsFromDB))
-
-	for _, dataProduct := range dataProductsFromDB {
-		dataProductOrdID := str.PtrStrToStr(dataProduct.OrdID)
-		dataProductDataFromDB[dataProductOrdID] = dataProduct
-	}
-
-	return dataProductDataFromDB, nil
-}
-
-func (s *Service) fetchPackagesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Package, error) {
-	var (
-		packagesFromDB []*model.Package
-		err            error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		packagesFromDB, err = s.packageSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		packagesFromDB, err = s.packageSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	packageDataFromDB := make(map[string]*model.Package)
-
-	for _, pkg := range packagesFromDB {
-		packageDataFromDB[pkg.OrdID] = pkg
-	}
-
-	return packageDataFromDB, nil
-}
-
-func (s *Service) fetchEventDefFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.EventDefinition, error) {
-	var (
-		eventsFromDB []*model.EventDefinition
-		err          error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		eventsFromDB, err = s.eventSvc.ListByApplicationTemplateVersionID(ctx, resourceID)
-	} else {
-		eventsFromDB, err = s.eventSvc.ListByApplicationID(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	eventDataFromDB := make(map[string]*model.EventDefinition)
-
-	for _, event := range eventsFromDB {
-		eventOrdID := str.PtrStrToStr(event.OrdID)
-		eventDataFromDB[eventOrdID] = event
-	}
-
-	return eventDataFromDB, nil
-}
-
-func (s *Service) fetchBundlesFromDB(ctx context.Context, resourceType directorresource.Type, resourceID string) (map[string]*model.Bundle, error) {
-	var (
-		bundlesFromDB []*model.Bundle
-		err           error
-	)
-
-	if resourceType == directorresource.ApplicationTemplateVersion {
-		bundlesFromDB, err = s.bundleSvc.ListByApplicationTemplateVersionIDNoPaging(ctx, resourceID)
-	} else {
-		bundlesFromDB, err = s.bundleSvc.ListByApplicationIDNoPaging(ctx, resourceID)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	bundleDataFromDB := make(map[string]*model.Bundle)
-
-	for _, bndl := range bundlesFromDB {
-		bndlOrdID := str.PtrStrToStr(bndl.OrdID)
-		bundleDataFromDB[bndlOrdID] = bndl
-	}
-
-	return bundleDataFromDB, nil
-}
-
-func (s *Service) fetchResources(ctx context.Context, resource Resource, documents Documents) (ResourcesFromDB, error) {
-	resourceIDs := make(map[string]directorresource.Type, 0)
-
-	if resource.Type == directorresource.Application {
-		resourceIDs[resource.ID] = directorresource.Application
-	}
-
-	for _, doc := range documents {
-		if doc.DescribedSystemVersion != nil {
-			appTemplateID := resource.ID
-			if resource.Type == directorresource.Application && resource.ParentID != nil {
-				appTemplateID = *resource.ParentID
-			}
-
-			appTemplateVersion, err := s.getApplicationTemplateVersionByAppTemplateIDAndVersionInTx(ctx, appTemplateID, doc.DescribedSystemVersion.Version)
-			if err != nil {
-				return ResourcesFromDB{}, err
-			}
-			resourceIDs[appTemplateVersion.ID] = directorresource.ApplicationTemplateVersion
-		}
-	}
-
-	tx, err := s.transact.Begin()
-	if err != nil {
-		return ResourcesFromDB{}, err
-	}
-	defer s.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	apiDataFromDB := make(map[string]*model.APIDefinition)
-	eventDataFromDB := make(map[string]*model.EventDefinition)
-	packageDataFromDB := make(map[string]*model.Package)
-	bundleDataFromDB := make(map[string]*model.Bundle)
-	capabilitiesDataFromDB := make(map[string]*model.Capability)
-	integrationDependenciesFromDB := make(map[string]*model.IntegrationDependency)
-	entityTypesDataFromDB := make(map[string]*model.EntityType)
-	dataProductDataFromDB := make(map[string]*model.DataProduct)
-
-	for resourceID, resourceType := range resourceIDs {
-		apiData, err := s.fetchAPIDefFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching apis for %s with id %s", resourceType, resourceID)
-		}
-
-		eventData, err := s.fetchEventDefFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching events for %s with id %s", resourceType, resourceID)
-		}
-
-		packageData, err := s.fetchPackagesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching packages for %s with id %s", resourceType, resourceID)
-		}
-
-		bundleData, err := s.fetchBundlesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching bundles for %s with id %s", resourceType, resourceID)
-		}
-
-		capabilityData, err := s.fetchCapabilitiesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching capabilities for %s with id %s", resourceType, resourceID)
-		}
-
-		integrationDependencyData, err := s.fetchIntegrationDependenciesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching integration dependencies for %s with id %s", resourceType, resourceID)
-		}
-
-		entityTypeData, err := s.fetchEntityTypesFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching entity types for %s with id %s", resourceType, resourceID)
-		}
-
-		dataProductData, err := s.fetchDataProductsFromDB(ctx, resourceType, resourceID)
-		if err != nil {
-			return ResourcesFromDB{}, errors.Wrapf(err, "while fetching data products for %s with id %s", resourceType, resourceID)
-		}
-
-		if err = mergo.Merge(&apiDataFromDB, apiData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&eventDataFromDB, eventData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&packageDataFromDB, packageData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&bundleDataFromDB, bundleData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&capabilitiesDataFromDB, capabilityData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&integrationDependenciesFromDB, integrationDependencyData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&entityTypesDataFromDB, entityTypeData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-		if err = mergo.Merge(&dataProductDataFromDB, dataProductData); err != nil {
-			return ResourcesFromDB{}, err
-		}
-	}
-
-	return ResourcesFromDB{
-		APIs:                    apiDataFromDB,
-		Events:                  eventDataFromDB,
-		Packages:                packageDataFromDB,
-		Bundles:                 bundleDataFromDB,
-		Capabilities:            capabilitiesDataFromDB,
-		IntegrationDependencies: integrationDependenciesFromDB,
-		EntityTypes:             entityTypesDataFromDB,
-		DataProducts:            dataProductDataFromDB,
-	}, tx.Commit()
-}
-
 func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model.Webhook, resource Resource, globalResourcesOrdIDs map[string]bool, ordWebhookMapping application.ORDWebhookMapping) error {
 	var (
 		documents      Documents
+		docsString     []string
 		webhookBaseURL string
 		err            error
 	)
@@ -1318,7 +1002,7 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 	}
 
 	if (webhook.Type == model.WebhookTypeOpenResourceDiscovery || webhook.Type == model.WebhookTypeOpenResourceDiscoveryStatic) && webhook.URL != nil {
-		documents, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
+		documents, docsString, webhookBaseURL, err = s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, webhook, ordWebhookMapping, ordRequestObject)
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
@@ -1329,42 +1013,46 @@ func (s *Service) processWebhookAndDocuments(ctx context.Context, webhook *model
 
 	if len(documents) > 0 {
 		log.C(ctx).Infof("Processing ORD documents for resource %s with ID %s", resource.Type, resource.ID)
-		var validationError error
 
-		err = s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, &validationError)
-		if ordValidationError, ok := (validationError).(*ORDDocumentValidationError); ok {
-			validationErrors := strings.Split(ordValidationError.Error(), MultiErrorSeparator)
-
-			// the first item in the slice is the message 'invalid documents' for the wrapped errors
-			validationErrors = validationErrors[1:]
-
-			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
-
-			for i := range validationErrors {
-				validationErrors[i] = strings.TrimSpace(validationErrors[i])
-				metricsPusher.ReportAggregationFailureORD(ctx, validationErrors[i])
+		validationErrors, err := s.processDocuments(ctx, resource, webhookBaseURL, ordWebhookMapping.ProxyURL, ordRequestObject, documents, globalResourcesOrdIDs, docsString)
+		if len(validationErrors) > 0 {
+			// convert validationErrors array of pointers to array of objects in order to log them properly
+			var validationErrorsObjects []ValidationError
+			for _, errPtr := range validationErrors {
+				if errPtr != nil {
+					validationErrorsObjects = append(validationErrorsObjects, *errPtr)
+				}
 			}
 
-			log.C(ctx).WithError(ordValidationError.Err).WithField("validation_errors", validationErrors).Error(ValidationErrorMsg)
+			log.C(ctx).WithError(errors.New(fmt.Sprintf("%s for resource with ID %s", ValidationErrorMsg, resource.ID))).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
 		}
-		var errs *multierror.Error
+
 		if err != nil {
 			metricsPusher := metrics.NewAggregationFailurePusher(metricsCfg)
 			metricsPusher.ReportAggregationFailureORD(ctx, err.Error())
 
 			log.C(ctx).WithError(err).Errorf("%s: %v", ProcessingErrorMsg, err)
-			errs = multierror.Append(errs, errors.Wrap(err, ProcessingErrorMsg))
 		}
 
-		if validationError != nil {
-			errs = multierror.Append(errs, errors.Wrap(validationError, ValidationErrorMsg))
+		if err != nil {
+			return &ProcessingError{
+				ValidationErrors: nil,
+				RuntimeError:     &RuntimeError{Message: err.Error()},
+			}
 		}
 
-		if errs != nil {
-			return errs
+		if len(validationErrors) == 0 {
+			log.C(ctx).Infof("Successfully processed ORD documents for resource with ID %s", resource.ID)
+
+			return nil
 		}
-		log.C(ctx).Info("Successfully processed ORD documents")
+
+		return &ProcessingError{
+			ValidationErrors: validationErrors,
+			RuntimeError:     nil,
+		}
 	}
+
 	return nil
 }
 
@@ -1464,11 +1152,8 @@ func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.
 		Name:          app.Name,
 		LocalTenantID: app.LocalTenantID,
 	}
-	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
-		return errors.Wrapf(err, "while processing webhook %s for application %s", webhook.ID, appID)
-	}
 
-	return nil
+	return s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping)
 }
 
 func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook *model.Webhook, appTemplateID string, globalResourcesOrdIDs map[string]bool) error {
@@ -1496,11 +1181,8 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook
 		ID:   appTemplate.ID,
 		Name: appTemplate.Name,
 	}
-	if err = s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping); err != nil {
-		return err
-	}
 
-	return nil
+	return s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping)
 }
 
 func (s *Service) getMappingORDConfiguration(applicationType string) application.ORDWebhookMapping {
@@ -1753,4 +1435,126 @@ func (s *Service) saveLowestOwnerForAppToContextInTx(ctx context.Context, appID 
 	}
 
 	return ctx, tx.Commit()
+}
+
+func normalizeAPIDefinition(api *model.APIDefinitionInput) (model.APIDefinitionInput, error) {
+	bytes, err := json.Marshal(api)
+	if err != nil {
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while marshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+	}
+
+	var normalizedAPIDefinition model.APIDefinitionInput
+	if err := json.Unmarshal(bytes, &normalizedAPIDefinition); err != nil {
+		return model.APIDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling api definition with ID %s", str.PtrStrToStr(api.OrdID))
+	}
+
+	return normalizedAPIDefinition, nil
+}
+
+func normalizeEventDefinition(event *model.EventDefinitionInput) (model.EventDefinitionInput, error) {
+	bytes, err := json.Marshal(event)
+	if err != nil {
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while marshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+	}
+
+	var normalizedEventDefinition model.EventDefinitionInput
+	if err := json.Unmarshal(bytes, &normalizedEventDefinition); err != nil {
+		return model.EventDefinitionInput{}, errors.Wrapf(err, "error while unmarshalling event definition with ID %s", str.PtrStrToStr(event.OrdID))
+	}
+
+	return normalizedEventDefinition, nil
+}
+
+func normalizeEntityType(entityType *model.EntityTypeInput) (model.EntityTypeInput, error) {
+	bytes, err := json.Marshal(entityType)
+	if err != nil {
+		return model.EntityTypeInput{}, errors.Wrapf(err, "error while marshalling entity type with ID %s", entityType.OrdID)
+	}
+
+	var normalizedEntityType model.EntityTypeInput
+	if err := json.Unmarshal(bytes, &normalizedEntityType); err != nil {
+		return model.EntityTypeInput{}, errors.Wrapf(err, "error while unmarshalling entity type with ID %s", entityType.OrdID)
+	}
+
+	return normalizedEntityType, nil
+}
+
+func normalizeCapability(capability *model.CapabilityInput) (model.CapabilityInput, error) {
+	bytes, err := json.Marshal(capability)
+	if err != nil {
+		return model.CapabilityInput{}, errors.Wrapf(err, "error while marshalling capability with ID %s", str.PtrStrToStr(capability.OrdID))
+	}
+
+	var normalizedCapability model.CapabilityInput
+	if err := json.Unmarshal(bytes, &normalizedCapability); err != nil {
+		return model.CapabilityInput{}, errors.Wrapf(err, "error while unmarshalling capability with ID %s", str.PtrStrToStr(capability.OrdID))
+	}
+
+	return normalizedCapability, nil
+}
+
+func normalizeIntegrationDependency(integrationDependency *model.IntegrationDependencyInput) (model.IntegrationDependencyInput, error) {
+	bytes, err := json.Marshal(integrationDependency)
+	if err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while marshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	var normalizedIntegrationDependency model.IntegrationDependencyInput
+	if err := json.Unmarshal(bytes, &normalizedIntegrationDependency); err != nil {
+		return model.IntegrationDependencyInput{}, errors.Wrapf(err, "error while unmarshalling integration dependency with ID %s", str.PtrStrToStr(integrationDependency.OrdID))
+	}
+
+	return normalizedIntegrationDependency, nil
+}
+
+func normalizeDataProduct(dataProduct *model.DataProductInput) (model.DataProductInput, error) {
+	bytes, err := json.Marshal(dataProduct)
+	if err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while marshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	var normalizedDataProduct model.DataProductInput
+	if err := json.Unmarshal(bytes, &normalizedDataProduct); err != nil {
+		return model.DataProductInput{}, errors.Wrapf(err, "error while unmarshalling data product with ID %s", str.PtrStrToStr(dataProduct.OrdID))
+	}
+
+	return normalizedDataProduct, nil
+}
+
+func normalizePackage(pkg *model.PackageInput) (model.PackageInput, error) {
+	bytes, err := json.Marshal(pkg)
+	if err != nil {
+		return model.PackageInput{}, errors.Wrapf(err, "error while marshalling package definition with ID %s", pkg.OrdID)
+	}
+
+	var normalizedPkgDefinition model.PackageInput
+	if err := json.Unmarshal(bytes, &normalizedPkgDefinition); err != nil {
+		return model.PackageInput{}, errors.Wrapf(err, "error while unmarshalling package definition with ID %s", pkg.OrdID)
+	}
+
+	return normalizedPkgDefinition, nil
+}
+
+func normalizeBundle(bndl *model.BundleCreateInput) (model.BundleCreateInput, error) {
+	bytes, err := json.Marshal(bndl)
+	if err != nil {
+		return model.BundleCreateInput{}, errors.Wrapf(err, "error while marshalling bundle definition with ID %v", bndl.OrdID)
+	}
+
+	var normalizedBndlDefinition model.BundleCreateInput
+	if err := json.Unmarshal(bytes, &normalizedBndlDefinition); err != nil {
+		return model.BundleCreateInput{}, errors.Wrapf(err, "error while unmarshalling bundle definition with ID %v", bndl.OrdID)
+	}
+
+	return normalizedBndlDefinition, nil
+}
+
+// HashObject hashes the given object
+func HashObject(obj interface{}) (uint64, error) {
+	hash, err := hashstructure.Hash(obj, hashstructure.FormatV2, &hashstructure.HashOptions{SlicesAsSets: true})
+	if err != nil {
+		return 0, errors.New("failed to hash the given object")
+	}
+
+	return hash, nil
 }

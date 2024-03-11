@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -17,6 +16,13 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
 	"github.com/pkg/errors"
+)
+
+const (
+	// APIProtocolODataV2 is one of the available api protocol options
+	APIProtocolODataV2 string = "odata-v2"
+	// APIProtocolRest is one of the available api protocol options
+	APIProtocolRest string = "rest"
 )
 
 // APIRepository is responsible for the repo-layer APIDefinition operations.
@@ -495,10 +501,10 @@ func enrichAPIProtocol(api *model.APIDefinition, specs []*model.SpecInput) {
 	if len(specs) > 0 && specs[0] != nil && specs[0].APIType != nil {
 		switch *specs[0].APIType {
 		case model.APISpecTypeOdata:
-			protocol := ord.APIProtocolODataV2
+			protocol := APIProtocolODataV2
 			api.APIProtocol = &protocol
 		case model.APISpecTypeOpenAPI:
-			protocol := ord.APIProtocolRest
+			protocol := APIProtocolRest
 			api.APIProtocol = &protocol
 		}
 	}

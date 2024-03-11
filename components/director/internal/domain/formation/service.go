@@ -393,6 +393,16 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
+	if newFormation.State == model.DraftFormationState {
+		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the formation is finalized", newFormation.State)
+
+		if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
+			return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)
+		}
+
+		return newFormation, nil
+	}
+
 	formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, newFormation, formationTemplateName, formationTemplateID, model.CreateFormation)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
@@ -600,8 +610,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
 		// If we are in create error state, the formation is not ready, and we should not send notifications
-		if formationFromDB.State == model.InitialFormationState || formationFromDB.State == model.CreateErrorFormationState {
-			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
+		if formationFromDB.State == model.InitialFormationState || formationFromDB.State == model.CreateErrorFormationState || formationFromDB.State == model.DraftFormationState {
+			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for state to be updated...", formationFromDB.ID, model.ReadyFormationState)
 			return ft.formation, nil
 		}
 
@@ -894,7 +904,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return formationFromDB, nil
 	}
 
-	// We can reach this only if we are in INITIAL state and there are assigned objects to the formation
+	// We can reach this only if we are in INITIAL or DRAFT state and there are assigned objects to the formation
 	// there are no notifications sent for them, and we have created formation assignments for them.
 	// If we by any chance reach it from ERROR state, the formation should be empty, with no formation assignments in it, and the deletion shouldn't do anything.
 	if formationFromDB.State != model.ReadyFormationState {
@@ -1078,6 +1088,63 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	return formationFromDB, nil
 }
 
+// FinalizeDraftFormation changes the formation state do initial and start processing the formation and formation assignment notifications
+func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error) {
+	log.C(ctx).Infof("Finalizing formation with ID: %q", formationID)
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	formation, err := s.formationRepository.Get(ctx, formationID, tenantID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
+	}
+
+	if formation.State != model.DraftFormationState {
+		return nil, errors.Errorf("The formation with ID %s is not in %s state", formationID, model.DraftFormationState)
+	}
+
+	fTmpl, err := s.formationTemplateRepository.Get(ctx, formation.FormationTemplateID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while getting formation template with ID: %q", formation.FormationTemplateID)
+	}
+
+	formationTemplateID := fTmpl.ID
+
+	formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
+	if err != nil {
+		return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
+	}
+
+	newState := model.ReadyFormationState
+	if len(formationTemplateWebhooks) > 0 {
+		newState = model.InitialFormationState
+	}
+
+	log.C(ctx).Infof("Setting formation with ID %s to %s state and starting resinchronization", formationID, newState)
+	formation.State = newState
+
+	formationStateTx, err := s.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	formationStateTransactionCtx := persistence.SaveToContext(ctx, formationStateTx)
+
+	defer s.transact.RollbackUnlessCommitted(formationStateTransactionCtx, formationStateTx)
+
+	if err = s.Update(formationStateTransactionCtx, formation); err != nil {
+		return nil, err
+	}
+
+	err = formationStateTx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return s.resynchronizeFormation(ctx, formation, tenantID, false)
+}
+
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, shouldReset bool) (*model.Formation, error) {
 	log.C(ctx).Infof("Resynchronizing formation with ID: %q", formationID)
@@ -1091,17 +1158,25 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
 
+	return s.resynchronizeFormation(ctx, formation, tenantID, shouldReset)
+}
+
+func (s *service) resynchronizeFormation(ctx context.Context, formation *model.Formation, tenantID string, shouldReset bool) (*model.Formation, error) {
+	if formation.State == model.DraftFormationState {
+		return nil, errors.Errorf("Formations in state %s can not be resynchronized", model.DraftFormationState)
+	}
+
 	if formation.State != model.ReadyFormationState {
 		previousState := formation.State
-		formation, isDeleted, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation, previousState)
+		resynchronizedFormation, isDeleted, err := s.resynchronizeFormationNotifications(ctx, tenantID, formation, previousState)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formationID)
+			return nil, errors.Wrapf(err, "while resynchronizing formation notifications for formation with ID %q", formation.ID)
 		}
 		if isDeleted {
-			return formation, nil
+			return resynchronizedFormation, nil
 		}
-		if formation.State != model.ReadyFormationState {
-			return formation, nil
+		if resynchronizedFormation.State != model.ReadyFormationState {
+			return resynchronizedFormation, nil
 		}
 	}
 
@@ -1903,6 +1978,10 @@ func determineFormationState(ctx context.Context, formationTemplateID, formation
 		}
 		log.C(ctx).Infof("Formation template with ID: %q and name: %q does not have any webhooks. The formation will be created with %s state", formationTemplateID, formationTemplateName, model.ReadyFormationState)
 		return model.ReadyFormationState
+	}
+
+	if externallyProvidedFormationState == model.DraftFormationState {
+		return externallyProvidedFormationState
 	}
 
 	return model.InitialFormationState

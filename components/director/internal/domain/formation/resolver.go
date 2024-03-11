@@ -32,6 +32,7 @@ type Service interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
+	FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error)
 }
 
 // Converter missing godoc
@@ -530,6 +531,8 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 		switch formationState := keys[i].State; formationState {
 		case string(model.ReadyFormationState):
 			condition = graphql.FormationStatusConditionReady
+		case string(model.DraftFormationState):
+			condition = graphql.FormationStatusConditionDraft
 		case string(model.InitialFormationState), string(model.DeletingFormationState):
 			condition = graphql.FormationStatusConditionInProgress
 		case string(model.CreateErrorFormationState), string(model.DeleteErrorFormationState):
@@ -537,27 +540,29 @@ func (r *Resolver) StatusDataLoader(keys []dataloader.ParamFormationStatus) ([]*
 			formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{Message: keys[i].Message, ErrorCode: keys[i].ErrorCode})
 		}
 
-		for _, fa := range formationAssignments {
-			if fa.IsInErrorState() {
-				condition = graphql.FormationStatusConditionError
+		if condition != graphql.FormationStatusConditionDraft {
+			for _, fa := range formationAssignments {
+				if fa.IsInErrorState() {
+					condition = graphql.FormationStatusConditionError
 
-				if fa.Error == nil {
-					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
-					continue
+					if fa.Error == nil {
+						formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{AssignmentID: &fa.ID})
+						continue
+					}
+
+					var assignmentError formationassignment.AssignmentErrorWrapper
+					if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
+						return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
+					}
+
+					formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
+						AssignmentID: &fa.ID,
+						Message:      assignmentError.Error.Message,
+						ErrorCode:    int(assignmentError.Error.ErrorCode),
+					})
+				} else if condition != graphql.FormationStatusConditionError && fa.IsInProgressState() {
+					condition = graphql.FormationStatusConditionInProgress
 				}
-
-				var assignmentError formationassignment.AssignmentErrorWrapper
-				if err = json.Unmarshal(fa.Error, &assignmentError); err != nil {
-					return nil, []error{errors.Wrapf(err, "while unmarshalling formation assignment error with assignment ID %q", fa.ID)}
-				}
-
-				formationStatusErrors = append(formationStatusErrors, &graphql.FormationStatusError{
-					AssignmentID: &fa.ID,
-					Message:      assignmentError.Error.Message,
-					ErrorCode:    int(assignmentError.Error.ErrorCode),
-				})
-			} else if condition != graphql.FormationStatusConditionError && fa.IsInProgressState() {
-				condition = graphql.FormationStatusConditionInProgress
 			}
 		}
 
@@ -586,6 +591,28 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	}
 
 	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID, shouldReset)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return r.conv.ToGraphQL(updatedFormation)
+}
+
+// FinalizeDraftFormation changes the formation state to initial and start processing the formation and formation assignment notifications
+func (r *Resolver) FinalizeDraftFormation(ctx context.Context, formationID string) (*graphql.Formation, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	updatedFormation, err := r.service.FinalizeDraftFormation(ctx, formationID)
 	if err != nil {
 		return nil, err
 	}
