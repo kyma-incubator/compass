@@ -1836,7 +1836,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 	appID := "app"
 	appID2 := "app2"
 	appTemplateID := "appTemplate"
-	runtimeID := "runtime"
 	runtimeCtxID := "runtimeCtx"
 	matchedApplicationAssignment := &model.FormationAssignment{
 		Source:     appID2,
@@ -1905,18 +1904,16 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 
 	//TODO test two apps and one runtime to verify the mapping
 	var testCases = []struct {
-		Name                                      string
-		Context                                   context.Context
-		TemplateInput                             *automock.TemplateInput
-		TemplateInputReverse                      *automock.TemplateInput
-		FormationAssignments                      []*model.FormationAssignment
-		Requests                                  []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
-		Operation                                 func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
-		FormationOperation                        model.FormationOperation
-		RuntimeContextToRuntimeMapping            map[string]string
-		ApplicationsToApplicationTemplatesMapping map[string]string
-		ExpectedMappings                          []*formationassignment.AssignmentMappingPairWithOperation
-		ExpectedErrorMsg                          string
+		Name                 string
+		Context              context.Context
+		TemplateInput        *automock.TemplateInput
+		TemplateInputReverse *automock.TemplateInput
+		FormationAssignments []*model.FormationAssignment
+		Requests             []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
+		Operation            func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+		FormationOperation   model.FormationOperation
+		ExpectedMappings     []*formationassignment.AssignmentMappingPairWithOperation
+		ExpectedErrorMsg     string
 	}{
 		{
 			Name:                 "Success when match assignment for application",
@@ -1982,15 +1979,14 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			},
 		},
 		{
-			Name:                           "Success when match assignment for runtimeContext",
-			Context:                        ctxWithTenant,
-			TemplateInput:                  rtmCtxToAppInputTemplate,
-			TemplateInputReverse:           rtmCtxToAppInputTemplateReverse,
-			FormationAssignments:           []*model.FormationAssignment{matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse},
-			Requests:                       rtmCtxToAppRequests,
-			Operation:                      operationContainer.appendThatDoesNotProcessedReverse,
-			RuntimeContextToRuntimeMapping: map[string]string{runtimeCtxID: runtimeID},
-			FormationOperation:             assignOperation,
+			Name:                 "Success when match assignment for runtimeContext",
+			Context:              ctxWithTenant,
+			TemplateInput:        rtmCtxToAppInputTemplate,
+			TemplateInputReverse: rtmCtxToAppInputTemplateReverse,
+			FormationAssignments: []*model.FormationAssignment{matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse},
+			Requests:             rtmCtxToAppRequests,
+			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
+			FormationOperation:   assignOperation,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
@@ -2124,7 +2120,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			svc := formationassignment.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
 
 			//WHEN
-			err := svc.ProcessFormationAssignments(testCase.Context, testCase.FormationAssignments, testCase.RuntimeContextToRuntimeMapping, testCase.ApplicationsToApplicationTemplatesMapping, testCase.Requests, testCase.Operation, testCase.FormationOperation)
+			err := svc.ProcessFormationAssignments(testCase.Context, testCase.FormationAssignments, testCase.Requests, testCase.Operation, testCase.FormationOperation)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

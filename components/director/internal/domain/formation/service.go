@@ -615,25 +615,13 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return ft.formation, nil
 		}
 
-		rtmContextIDsMapping, terr := s.getRuntimeContextIDToRuntimeIDMapping(ctx, tnt, assignments)
-		err = terr
-		if err != nil {
-			return nil, err
-		}
-
-		applicationIDToApplicationTemplateIDMapping, terr := s.getApplicationIDToApplicationTemplateIDMapping(ctx, tnt, assignments)
-		err = terr
-		if err != nil {
-			return nil, err
-		}
-
 		requests, terr := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
 		err = terr
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
-		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
+		if err = s.formationAssignmentService.ProcessFormationAssignments(ctx, assignments, requests, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
 			log.C(ctx).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 			return nil, err
 		}
@@ -1015,19 +1003,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 	}
 
-	rtmContextIDsMapping, nerr := s.getRuntimeContextIDToRuntimeIDMapping(transactionCtx, tnt, initialAssignmentsData)
-	err = nerr
-	if err != nil {
-		return nil, err
-	}
-
-	applicationIDToApplicationTemplateIDMapping, nerr := s.getApplicationIDToApplicationTemplateIDMapping(transactionCtx, tnt, initialAssignmentsData)
-	err = nerr
-	if err != nil {
-		return nil, err
-	}
-
-	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, initialAssignmentsData, rtmContextIDsMapping, applicationIDToApplicationTemplateIDMapping, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
+	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, initialAssignmentsData, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
 		err = nerr
 		if commitErr := tx.Commit(); commitErr != nil {
 			err = errors.Wrapf(
@@ -1427,46 +1403,6 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 	}
 
 	return formation, false, nil
-}
-
-func (s *service) getRuntimeContextIDToRuntimeIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
-	rtmContextIDsSet := make(map[string]bool, 0)
-	for _, assignment := range formationAssignmentsForObject {
-		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-			rtmContextIDsSet[assignment.Target] = true
-		}
-	}
-	rtmContextIDs := setToSlice(rtmContextIDsSet)
-
-	rtmContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, rtmContextIDs)
-	if err != nil {
-		return nil, err
-	}
-	rtmContextIDsToRuntimeMap := make(map[string]string, len(rtmContexts))
-	for _, rtmContext := range rtmContexts {
-		rtmContextIDsToRuntimeMap[rtmContext.ID] = rtmContext.RuntimeID
-	}
-	return rtmContextIDsToRuntimeMap, nil
-}
-
-func (s *service) getApplicationIDToApplicationTemplateIDMapping(ctx context.Context, tnt string, formationAssignmentsForObject []*model.FormationAssignment) (map[string]string, error) {
-	appIDsMap := make(map[string]bool, 0)
-	for _, assignment := range formationAssignmentsForObject {
-		if assignment.TargetType == model.FormationAssignmentTypeApplication {
-			appIDsMap[assignment.Target] = true
-		}
-	}
-	applications, err := s.applicationRepository.ListAllByIDs(ctx, tnt, setToSlice(appIDsMap))
-	if err != nil {
-		return nil, err
-	}
-	appToAppTemplateMap := make(map[string]string, len(applications))
-	for i := range applications {
-		if applications[i].ApplicationTemplateID != nil {
-			appToAppTemplateMap[applications[i].ID] = *applications[i].ApplicationTemplateID
-		}
-	}
-	return appToAppTemplateMap, nil
 }
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
