@@ -602,7 +602,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 	return r.conv.ToGraphQL(updatedFormation)
 }
 
-// FinalizeDraftFormation changes the formation state do initial and start processing the formation and formation assignment notifications
+// FinalizeDraftFormation changes the formation state to initial and start processing the formation and formation assignment notifications
 func (r *Resolver) FinalizeDraftFormation(ctx context.Context, formationID string) (*graphql.Formation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {

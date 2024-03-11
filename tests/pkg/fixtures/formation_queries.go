@@ -261,9 +261,9 @@ func ResynchronizeFormation(t require.TestingT, ctx context.Context, gqlClient *
 }
 
 func FinalizeFormation(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID, formationName string) *graphql.Formation {
-	resynchronizeReq := FixFinalizeDraftFormationRequest(formationID)
+	finalizeReq := FixFinalizeDraftFormationRequest(formationID)
 	assignedFormation := &graphql.Formation{}
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, resynchronizeReq, &assignedFormation)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, finalizeReq, &assignedFormation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, assignedFormation.Name)
 	return assignedFormation

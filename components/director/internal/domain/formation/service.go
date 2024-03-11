@@ -394,7 +394,7 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	}
 
 	if newFormation.State == model.DraftFormationState {
-		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the foration is finalized", newFormation.State)
+		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the formation is finalized", newFormation.State)
 
 		if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostCreate, CRUDJoinPointDetails, formationTemplateID); err != nil {
 			return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.CreateFormationOperation, model.PostOperation)

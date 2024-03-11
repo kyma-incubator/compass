@@ -658,7 +658,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithFormationTemplateName(formationTemplateName).
 			WithAsserters(statusAsserter)
 
-		// Assign both applications when the formation is still in INITIAL state and validate no notifications are sent and formation assignments are in INITIAL state
+		// Assign both applications when the formation is still in DRAFT state and validate no notifications are sent and formation assignments are in INITIAL state
 		t.Logf("Assign application 1 to formation: %s", formationName)
 		assignApp1 := operations.NewAssignAppToFormationOperation(app1ID, tnt).
 			WithFormationName(formationName).
@@ -669,7 +669,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithFormationName(formationName).
 			Operation()
 
-		// todo~~ assert no notifications and all assignments are in INITIAL
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 			WithParticipantAndStates(app1ID, "INITIAL", "INITIAL", "INITIAL").
 			WithParticipantAndStates(app2ID, "INITIAL", "INITIAL", "INITIAL")
