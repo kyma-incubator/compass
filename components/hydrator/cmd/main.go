@@ -67,16 +67,6 @@ type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 	RootAPI string `envconfig:"APP_ROOT_API,default=/hydrators"`
 
-	ClientTimeout   time.Duration `envconfig:"default=105s"`
-	ServerTimeout   time.Duration `envconfig:"default=110s"`
-	ShutdownTimeout time.Duration `envconfig:"default=10s"`
-
-	Handler cfg.HandlerConfig
-
-	Director director.Config
-
-	JWKSSyncPeriod time.Duration `envconfig:"default=5m"`
-
 	KubeConfig kubernetes.Config
 
 	ConfigurationFile       string
