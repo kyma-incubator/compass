@@ -1720,6 +1720,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 	}
 
 	formationWithInitialState := fixFormationWithState(model.InitialFormationState)
+	formationWithDraftState := fixFormationWithState(model.DraftFormationState)
 	formationWithReadyState := fixFormationWithState(model.ReadyFormationState)
 	formationWithDeletingState := fixFormationWithState(model.DeletingFormationState)
 
@@ -1975,11 +1976,26 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Error when request body state is not correct for create formation operation",
+			name:       "Error when request body state is not correct for create formation operation - initial state",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationRequestBody{
+				State: model.DeleteErrorFormationState,
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		{
+			name:       "Error when request body state is not correct for create formation operation - draft state",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithDraftState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{

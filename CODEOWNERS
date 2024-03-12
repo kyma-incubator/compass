@@ -23,17 +23,11 @@
 /chart/compass/templates/filters @kyma-incubator/team-raptor
 /components/connectivity-adapter @kyma-incubator/team-falcon
 /components/connector @kyma-incubator/team-raptor
-/components/director/cmd/ns-adapter @kyma-incubator/team-falcon
-/components/director/cmd/ordaggregator @kyma-incubator/team-falcon
-/components/director/cmd/scopessynchronizer @kyma-incubator/team-raptor
-/components/director/cmd/systemfetcher @kyma-incubator/team-falcon
-/components/director/cmd/tenantfetcher-svc @kyma-incubator/team-falcon
-/components/director/cmd/tenantloader @kyma-incubator/team-raptor @kyma-incubator/team-falcon
 /components/director/internal/domain/formation @kyma-incubator/team-raptor
 /components/director/internal/domain/formationassignment @kyma-incubator/team-raptor
 /components/director/internal/domain/formationtemplate @kyma-incubator/team-raptor
-components/director/internal/domain/formationconstraint @kyma-incubator/team-raptor
-components/director/internal/domain/formationtemplateconstraintreferences @kyma-incubator/team-raptor
+/components/director/internal/domain/formationconstraint @kyma-incubator/team-raptor
+/components/director/internal/domain/formationtemplateconstraintreferences @kyma-incubator/team-raptor
 /components/director/internal/formationmapping @kyma-incubator/team-raptor
 /components/director/internal/domain/certsubjectmapping @kyma-incubator/team-raptor
 /components/director/internal/info @kyma-incubator/team-raptor
@@ -74,3 +68,8 @@ components/director/internal/domain/formationtemplateconstraintreferences @kyma-
 
 # All .md files
 *.md @kyma-incubator/cmp-technical-writers
+
+# All versioning files
+Dockerfile
+go.mod
+go.sum

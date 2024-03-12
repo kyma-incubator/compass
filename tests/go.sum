@@ -1,5 +1,4 @@
 cloud.google.com/go v0.26.0/go.mod h1:aQUYkXzVsufM+DwF1aE+0xfcU+56JwCaLick0ClmMTw=
-dario.cat/mergo v1.0.0 h1:AGCNq9Evsj31mOgNPcLyXc+4PNABt905YmuqPYYpBWk=
 github.com/99designs/gqlgen v0.11.3 h1:oFSxl1DFS9X///uHV3y6CEfpcXWrDUxVblR4Xib2bs4=
 github.com/99designs/gqlgen v0.11.3/go.mod h1:RgX5GRRdDWNkh4pBrdzNpNPFVsdoUFY2+adM6nb1N+4=
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
@@ -136,8 +135,8 @@ github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-2024022
 github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240228074947-02a81b1e3bf8/go.mod h1:w2ugGFPxTO2MV6Bg4RSmuTeWxy5cITrEUHgeAyKBHkg=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20240228074947-02a81b1e3bf8 h1:k+vAuVtkbRvQqyydF+VRfzlLUTTCF27D6Bsvle7EfQo=
 github.com/kyma-incubator/compass/components/connector v0.0.0-20240228074947-02a81b1e3bf8/go.mod h1:CNOkn09QCu6sBX4UkFQEwgs4e6EZXJ9P9XZst6lCVz8=
-github.com/kyma-incubator/compass/components/director v0.0.0-20240228100750-f0a14a359089 h1:1CjpsTL22gFrWUt0VktFveLTeT/f3jTSkaEqhDB6lKQ=
-github.com/kyma-incubator/compass/components/director v0.0.0-20240228100750-f0a14a359089/go.mod h1:m2uughFQ1t+J24NGz5N3E87n6HHmT+qzsXlpzxHnjKY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240311092909-570aceacebbe h1:6HPiGPBaTU2JZSigH16J6+ZIUFPdvwvxbYNe1Yrf6xI=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240311092909-570aceacebbe/go.mod h1:m2uughFQ1t+J24NGz5N3E87n6HHmT+qzsXlpzxHnjKY=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240228074947-02a81b1e3bf8 h1:lxRWRX2xF87hIKlwfJiTKRvKpsGZK8Q0myp+by4scfE=
 github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240228074947-02a81b1e3bf8/go.mod h1:72bRCXiMVL5N4DQKTUBn0Uo5xp1DyfgOA7OBNNuPW5o=
 github.com/kyma-incubator/compass/components/gateway v0.0.0-20240228074947-02a81b1e3bf8 h1:GWO3BaXV5OXlnhxoLToatlqswtRUwOiM1pDCCxlh1mI=
@@ -178,7 +177,6 @@ github.com/matttproud/golang_protobuf_extensions v1.0.4 h1:mmDVorXM7PCGKw94cs5zk
 github.com/mitchellh/copystructure v1.0.0/go.mod h1:SNtv71yrdKgLRyLFxmLdkAbkKEFWgYaq1OVrnRcwhnw=
 github.com/mitchellh/copystructure v1.1.2 h1:Th2TIvG1+6ma3e/0/bopBKohOTY7s4dA8V2q4EUcBJ0=
 github.com/mitchellh/copystructure v1.1.2/go.mod h1:EBArHfARyrSWO/+Wyr9zwEkc6XMFB9XyNgFNmRkZZU4=
-github.com/mitchellh/hashstructure/v2 v2.0.2 h1:vGKWl0YJqUNxE8d+h8f6NJLcCJrgbhC4NcD46KavDd4=
 github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047/go.mod h1:FVVH3fgwuzCH5S8UJGiWEs2h04kUh9fWfEaFds41c1Y=
 github.com/mitchellh/reflectwalk v1.0.0/go.mod h1:mSTlrgnPZtwu0c4WaC2kGObEpuNDbx0jmZXqmk4esnw=
 github.com/mitchellh/reflectwalk v1.0.1 h1:FVzMWA5RllMAKIdUSC8mdWo3XtwoecrH79BY70sEEpE=
@@ -288,7 +286,6 @@ golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.6.0-dev.0.20220419223038-86c51ed26bb4/go.mod h1:jJ57K6gSWd91VN4djpZkiMVwK6gcyfeH4XE8wZrZaV4=
 golang.org/x/mod v0.8.0/go.mod h1:iBbtSCu2XBx23ZKBPSOrRkjjQPZFPuis4dIYUhu/chs=
-golang.org/x/mod v0.12.0 h1:rmsUpXtvNzj340zd98LZ4KntptpfRHwpFOHG188oHXc=
 golang.org/x/net v0.0.0-20180724234803-3673e40ba225/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180826012351-8a410e7b638d/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20190213061140-3a22650c66bd/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=

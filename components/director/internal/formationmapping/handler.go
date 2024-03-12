@@ -537,6 +537,10 @@ func (h *Handler) processFormationDeleteStatusUpdate(ctx context.Context, format
 
 // processFormationCreateStatusUpdate handles the async create formation status update
 func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, formation *model.Formation, reqBody FormationRequestBody) (bool, error) {
+	if formation.State == model.DraftFormationState {
+		return false, errors.Errorf("Formations in state: %q do not support status updates", formation.State)
+	}
+
 	if reqBody.State != model.ReadyFormationState && reqBody.State != model.CreateErrorFormationState {
 		return false, errors.Errorf("An invalid state: %q is provided for %q operation", reqBody.State, model.CreateFormation)
 	}

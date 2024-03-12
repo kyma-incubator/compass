@@ -10,34 +10,34 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
-type ResynchronizeFormationOperation struct {
+type FinalizeFormationOperation struct {
 	tenantID      string
 	formationName string // used when the test operates with formation different from the one provided in pre  setup
 	asserters     []asserters.Asserter
 }
 
-func NewResynchronizeFormationOperation() *ResynchronizeFormationOperation {
-	return &ResynchronizeFormationOperation{}
+func NewFinalizeFormationOperation() *FinalizeFormationOperation {
+	return &FinalizeFormationOperation{}
 }
 
-func (o *ResynchronizeFormationOperation) WithTenantID(tenantID string) *ResynchronizeFormationOperation {
+func (o *FinalizeFormationOperation) WithTenantID(tenantID string) *FinalizeFormationOperation {
 	o.tenantID = tenantID
 	return o
 }
 
-func (o *ResynchronizeFormationOperation) WithFormationName(formationName string) *ResynchronizeFormationOperation {
+func (o *FinalizeFormationOperation) WithFormationName(formationName string) *FinalizeFormationOperation {
 	o.formationName = formationName
 	return o
 }
 
-func (o *ResynchronizeFormationOperation) WithAsserters(asserters ...asserters.Asserter) *ResynchronizeFormationOperation {
+func (o *FinalizeFormationOperation) WithAsserters(asserters ...asserters.Asserter) *FinalizeFormationOperation {
 	for i, _ := range asserters {
 		o.asserters = append(o.asserters, asserters[i])
 	}
 	return o
 }
 
-func (o *ResynchronizeFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+func (o *FinalizeFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
 	var formationID string
 	var formationName string
 
@@ -49,15 +49,15 @@ func (o *ResynchronizeFormationOperation) Execute(t *testing.T, ctx context.Cont
 		formationID = ctx.Value(context_keys.FormationIDKey).(string)
 		formationName = ctx.Value(context_keys.FormationNameKey).(string)
 	}
-	fixtures.ResynchronizeFormation(t, ctx, gqlClient, o.tenantID, formationID, formationName)
+	fixtures.FinalizeFormation(t, ctx, gqlClient, o.tenantID, formationID, formationName)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
 	}
 }
 
-func (o *ResynchronizeFormationOperation) Cleanup(_ *testing.T, _ context.Context, _ *gcli.Client) {
+func (o *FinalizeFormationOperation) Cleanup(_ *testing.T, _ context.Context, _ *gcli.Client) {
 }
 
-func (o *ResynchronizeFormationOperation) Operation() Operation {
+func (o *FinalizeFormationOperation) Operation() Operation {
 	return o
 }

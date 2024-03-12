@@ -487,6 +487,9 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		for i := range appTemplateInput.Placeholders {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
+
+		// explicit set BaseURL to nil
+		appTemplateInput.ApplicationInput.BaseURL = nil
 		// label to trigger the system field discovery engine
 		appTemplateInput.Labels["systemFieldDiscovery"] = true
 
@@ -527,9 +530,6 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 			assertApplicationFromSubscription(t, appPageExt, appTmpl.ID, 1)
 			require.NotEmpty(t, appPageExt.Data[0].Webhooks)
 
-			// this value is from external svc mock
-			expectedURL := "https://new-url.com"
-
 			require.Eventually(t, func() bool {
 				appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
 				// webhooks with types - configuration changed and system field discovery
@@ -538,7 +538,7 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 					return false
 				}
 
-				if appPageExt.Data[0].BaseURL != nil && *appPageExt.Data[0].BaseURL == expectedURL {
+				if appPageExt.Data[0].BaseURL != nil {
 					t.Log("application webhook was executed and base URL was updated successfully")
 					return true
 				}

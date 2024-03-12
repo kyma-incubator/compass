@@ -2,6 +2,7 @@ package operations
 
 import (
 	"context"
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -17,7 +18,8 @@ type UpdateWebhookOperation struct {
 	inputTemplate  string
 	urlTemplate    string
 	outputTemplate string
-	applicationID  string
+	objectID       string
+	objectType     WebhookReferenceObjectType
 	tenantID       string
 	asserters      []asserters.Asserter
 }
@@ -51,8 +53,13 @@ func (o *UpdateWebhookOperation) WithOutputTemplate(outputTemplate string) *Upda
 	return o
 }
 
-func (o *UpdateWebhookOperation) WithApplicationID(applicationID string) *UpdateWebhookOperation {
-	o.applicationID = applicationID
+func (o *UpdateWebhookOperation) WithObjectID(objectID string) *UpdateWebhookOperation {
+	o.objectID = objectID
+	return o
+}
+
+func (o *UpdateWebhookOperation) WithObjectType(objectType WebhookReferenceObjectType) *UpdateWebhookOperation {
+	o.objectType = objectType
 	return o
 }
 
@@ -69,9 +76,22 @@ func (o *UpdateWebhookOperation) WithAsserters(asserters ...asserters.Asserter) 
 }
 
 func (o *UpdateWebhookOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	applicationExt := fixtures.GetApplication(t, ctx, gqlClient, o.tenantID, o.applicationID)
+	var webhooks []graphql.Webhook
+	switch o.objectType {
+	case WebhookReferenceObjectTypeApplication:
+		webhooks = fixtures.GetApplication(t, ctx, gqlClient, o.tenantID, o.objectID).Webhooks
+	case WebhookReferenceObjectTypeApplicationTemplate:
+		webhooks = fixtures.GetApplicationTemplate(t, ctx, gqlClient, o.tenantID, o.objectID).Webhooks
+	case WebhookReferenceObjectTypeFormationTemplate:
+		formationTemplateID := ctx.Value(context_keys.FormationTemplateIDKey).(string)
+		webhooksForTemplate := fixtures.QueryFormationTemplate(t, ctx, gqlClient, formationTemplateID).Webhooks
+		for i, _ := range webhooksForTemplate {
+			webhooks = append(webhooks, *webhooksForTemplate[i])
+		}
+	}
+
 	var webhook graphql.Webhook
-	for _, wh := range applicationExt.Webhooks {
+	for _, wh := range webhooks {
 		if wh.Type == o.webhookType {
 			webhook = wh
 			break
