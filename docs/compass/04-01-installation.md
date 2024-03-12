@@ -339,6 +339,11 @@ Note that using this flag also results in building a new `schema-migrator` image
 ./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
+To enable the API Metadata Validator that is used for validating Open Resource Discovery (ORD) documents (https://github.com/SAP/open-resource-discovery), run the installation script with an additional flag that sets the required container image of the validator.
+If this flag is not set when running the command, the validator won't be enabled.
+```bash
+./installation/cmd/run.sh --api-metadata-validator-image {IMAGE_VALUE}
+```
 
 >**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
 If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
