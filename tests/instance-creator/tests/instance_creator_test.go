@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
-	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
@@ -30,7 +29,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -48,8 +46,6 @@ const (
 
 var (
 	tenantAccessLevels = []string{"account", "global"} // should be a valid tenant access level
-	eventuallyTimeout  = 8 * time.Second
-	eventuallyTick     = 50 * time.Millisecond
 )
 
 func TestInstanceCreator(t *testing.T) {
@@ -69,7 +65,7 @@ func TestInstanceCreator(t *testing.T) {
 		},
 	}
 
-	formationTemplateName := "app-only-formation-template-name"
+	formationTemplateName := "instance-creator-formation-template-name"
 
 	certSubjcetMappingCN := "csm-async-callback-cn"
 	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
@@ -234,7 +230,7 @@ func TestInstanceCreator(t *testing.T) {
 		AssertExpectations(t, ctx)
 	asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).AssertExpectations(t, ctx)
 
-	t.Run("Asynchronous App to App Formation Assignment Notifications", func(t *testing.T) {
+	t.Run("Asynchronous App to App Formation Assignment Notifications with Instances creation", func(t *testing.T) {
 		t.Logf("Cleanup notifications")
 		cleanupOp := operations.NewCleanupNotificationsOperation().WithExternalServicesMockMtlsSecuredURL(conf.ExternalServicesMockMtlsSecuredURL).WithHTTPClient(certSecuredHTTPClient).Operation()
 		defer cleanupOp.Cleanup(t, ctx, certSecuredGraphQLClient)
@@ -321,11 +317,11 @@ func TestInstanceCreator(t *testing.T) {
 			},
 		}
 
-		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).Operation()
+		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(assertSubstitutedConfig, expectedAssignments, 4, certSecuredGraphQLClient, tnt)
+		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
+		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(asserterWithCustomConfigMatcher, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
-		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formationID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
-		assertFormationStatus(t, ctx, tnt, formationID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
 		t.Logf("Unassign Application 1 from formation: %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
@@ -346,90 +342,7 @@ func TestInstanceCreator(t *testing.T) {
 	})
 }
 
-func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
-	t.Logf("Asserting formation assignments with eventually...")
-	tOnce := testingx.NewOnceLogger(t)
-	require.Eventually(t, func() (isOkay bool) {
-		tOnce.Logf("Getting formation assignments...")
-		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
-		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
-		if expectedAssignmentsCount != assignmentsPage.TotalCount {
-			t.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
-			return
-		}
-		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
-
-		assignments := assignmentsPage.Data
-		for _, assignment := range assignments {
-			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-			if !ok {
-				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
-				return
-			}
-			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
-			if !ok {
-				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
-				return
-			}
-			if assignmentExpectation.State != assignment.State {
-				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
-				return
-			}
-			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
-				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
-				return
-			}
-
-			assertConfig(tOnce, assignmentExpectation, assignment)
-		}
-
-		tOnce.Logf("Successfully asserted formation asssignments asynchronously")
-		return true
-	}, timeout, tick)
-}
-
-func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationID string, expectedFormationStatus graphql.FormationStatus) {
-	// Get the formation with its status
-	t.Logf("Getting formation with ID: %q", formationID)
-	var gotFormation graphql.FormationExt
-	getFormationReq := fixtures.FixGetFormationRequest(formationID)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant, getFormationReq, &gotFormation)
-	require.NoError(t, err)
-
-	// Assert the status
-	require.Equal(t, expectedFormationStatus.Condition, gotFormation.Status.Condition, "Formation with ID %q is with status %q, but %q was expected", formationID, gotFormation.Status.Condition, expectedFormationStatus.Condition)
-
-	if expectedFormationStatus.Errors == nil {
-		require.Nil(t, gotFormation.Status.Errors)
-	} else { // assert only the Message and ErrorCode
-		require.Len(t, gotFormation.Status.Errors, len(expectedFormationStatus.Errors))
-		for _, expectedError := range expectedFormationStatus.Errors {
-			found := false
-			for _, gotError := range gotFormation.Status.Errors {
-				if gotError.ErrorCode == expectedError.ErrorCode && gotError.Message == expectedError.Message {
-					found = true
-					break
-				}
-			}
-			require.Truef(t, found, "Error %q with error code %d was not found", expectedError.Message, expectedError.ErrorCode)
-		}
-	}
-}
-
-func assertConfig(t testingx.OnceLogger, assignmentExpectation fixtures.AssignmentState, assignment *graphql.FormationAssignment) {
-	if assignmentExpectation.Config != nil && strings.Contains(*assignmentExpectation.Config, "outboundCommunication") {
-		// Make sure there are uri, username and password in the configuration, and they are substituted jsonpaths
-		assertSubstitutedConfig(t, *assignment.Configuration, assignment.ID)
-		return
-	}
-
-	if isEqual := jsonutils.AssertJSONStringEquality(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
-		t.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
-		return
-	}
-}
-
-func assertSubstitutedConfig(t testingx.OnceLogger, config, assignmentID string) {
+func assertSubstitutedConfig(t require.TestingT, _, actualConfig *string) bool {
 	found := 0
 
 	var iterate func(key string, value gjson.Result)
@@ -449,10 +362,12 @@ func assertSubstitutedConfig(t testingx.OnceLogger, config, assignmentID string)
 			}
 		}
 	}
-	iterate("", gjson.Parse(config))
+	iterate("", gjson.Parse(*actualConfig))
 
 	if found != 3 {
-		t.Logf("The actual assignment config %s don't have substituted %q, %q and %q for assignment ID: %s", config, uriKey, usernameKey, passwordKey, assignmentID)
-		return
+		t.Errorf("The actual assignment config %s don't have substituted %q, %q and %q", *actualConfig, uriKey, usernameKey, passwordKey)
+		return false
 	}
+
+	return true
 }

@@ -11,8 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
-	"github.com/kyma-incubator/compass/tests/director/tests"
-
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -21,7 +19,7 @@ import (
 )
 
 var (
-	conf                      = &tests.DirectorConfig{}
+	conf                      = &InstanceCreatorConfig{}
 	certSecuredGraphQLClient  *graphql.Client
 	directorInternalGQLClient *graphql.Client
 	cc                        credloader.CertCache
