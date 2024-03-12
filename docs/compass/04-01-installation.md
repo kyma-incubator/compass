@@ -339,8 +339,8 @@ Note that using this flag also results in building a new `schema-migrator` image
 ./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
-In order to enable the API Metadata Validator, which is used for validation of ORD Documents (https://github.com/SAP/open-resource-discovery) - execute the installation script with the additional flag that sets the necessary container image of the validator.
-Initially if the flag is not set when executing the command, the validator will not be enabled.
+To enable the API Metadata Validator that is used for validating Open Resource Discovery (ORD) documents (https://github.com/SAP/open-resource-discovery), run the installation script with an additional flag that sets the required container image of the validator.
+If this flag is not set when running the command, the validator won't be enabled.
 ```bash
 ./installation/cmd/run.sh --api-metadata-validator-image {IMAGE_VALUE}
 ```
