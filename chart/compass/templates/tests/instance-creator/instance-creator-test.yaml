@@ -35,6 +35,8 @@ spec:
             limits:
               memory: "256Mi"
           env:
+            - name: APP_DIRECTOR_INTERNAL_GATEWAY_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_URL
               value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}"
             - name: APP_GATEWAY_OAUTH
