@@ -1,7 +1,6 @@
 package graphql_test
 
 import (
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -75,13 +74,7 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 			applicationTemplate.Placeholders = testCase.Value
 			// WHEN
 
-			empJSON1, _ := json.MarshalIndent(applicationTemplate.ApplicationInput.Webhooks, "", "  ")
-			fmt.Printf("subaccount 0\n %s\n", string(empJSON1))
-
 			err := applicationTemplate.Validate()
-
-			empJSON1, _ = json.MarshalIndent(applicationTemplate.ApplicationInput.Webhooks, "", "  ")
-			fmt.Printf("subaccount 0\n %s\n", string(empJSON1))
 			// THEN
 			if testCase.Error == nil {
 				require.NoError(t, err)
