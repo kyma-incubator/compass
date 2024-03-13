@@ -130,6 +130,8 @@ github.com/kyma-incubator/compass/components/connector v0.0.0-20240311150451-fb4
 github.com/kyma-incubator/compass/components/connector v0.0.0-20240311150451-fb47652e9f70/go.mod h1:aTSRDHq6xlFs2BRBvfmT1MqP8IswASK71VLd7WAsn3M=
 github.com/kyma-incubator/compass/components/director v0.0.0-20240311150451-fb47652e9f70 h1:HlHSh8ya+LpauLrXfjgPThKDruO0BAx46UyclwFRHPI=
 github.com/kyma-incubator/compass/components/director v0.0.0-20240311150451-fb47652e9f70/go.mod h1:sL6t8dFpav01S8PZ+/mq+YiWl0DP/GskVskNat6MJ+g=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240312193954-fd717b97efd9 h1:IUkuUx/mXAwhjq+VS9/MhPzfE4+JM919R7e5c2dc/Zk=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240312193954-fd717b97efd9/go.mod h1:CqEH3vOziHSZIYiEus+yeudOrdP4/mfOgirEe4Bu1Zk=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240311150451-fb47652e9f70 h1:fvgmP8FObin+awkAoOC0NYxmCQqqeQXF/Zy9W9wKWwo=
 github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240311150451-fb47652e9f70/go.mod h1:M80+x2ZTj07iGVKGintWNrWs2JkVP+FqqOmUoXg4njM=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
