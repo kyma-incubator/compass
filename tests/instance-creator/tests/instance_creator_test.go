@@ -42,7 +42,6 @@ const (
 
 	uriKey      = "uri"
 	usernameKey = "username"
-	passwordKey = "password"
 )
 
 var (
@@ -369,7 +368,7 @@ func assertSubstitutedConfig(t require.TestingT, _, actualConfig *string) bool {
 				iterate(strI, el)
 			}
 		} else {
-			if (key == uriKey || key == usernameKey || key == passwordKey) && !strings.Contains(key, "$.") {
+			if (key == uriKey || key == usernameKey || key == "password") && !strings.Contains(key, "$.") {
 				found++
 			}
 		}
@@ -377,7 +376,7 @@ func assertSubstitutedConfig(t require.TestingT, _, actualConfig *string) bool {
 	iterate("", gjson.Parse(*actualConfig))
 
 	if found != 3 {
-		t.Errorf("The actual assignment config %s don't have substituted %q, %q and %q", *actualConfig, uriKey, usernameKey, passwordKey)
+		t.Errorf("The actual assignment config %s don't have substituted %q, %q and %q", *actualConfig, uriKey, usernameKey, "password")
 		return false
 	}
 
