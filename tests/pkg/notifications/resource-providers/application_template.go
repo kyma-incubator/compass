@@ -41,14 +41,14 @@ func NewApplicationTemplateProvider(applicationType, localTenantID, region, name
 
 func (p *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) graphql.ApplicationTemplate {
 	in := fixtures.FixApplicationTemplateWithWebhookInput(p.applicationType, p.localTenantID, p.region, p.namespace, p.namePlaceholder, p.displayNamePlaceholder, p.applicationWebhookInput, p.condition)
-	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, p.tenantID, in)
+	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, "", in)
 	require.NoError(t, err)
 	p.applicationTemplate = appTpl
 	return appTpl
 }
 
 func (p *ApplicationTemplateProvider) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	fixtures.CleanupApplicationTemplate(t, ctx, gqlClient, p.tenantID, p.applicationTemplate)
+	fixtures.CleanupApplicationTemplate(t, ctx, gqlClient, "", p.applicationTemplate)
 }
 
 func (p *ApplicationTemplateProvider) GetResource() Resource {

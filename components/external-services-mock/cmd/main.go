@@ -83,6 +83,7 @@ type config struct {
 	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
 	TrustedNewGA              string `envconfig:"APP_TRUSTED_NEW_GA"`
 	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
+	TenantRegion              string `envconfig:"APP_TENANT_REGION"`
 
 	KeyLoaderConfig credloader.KeysConfig
 
@@ -229,6 +230,9 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
+	// This endpoint is for getting a token for calling saas registry subscriptions api in system field discovery engine flow on local env.
+	router.HandleFunc("/discovery/cert/token", tokenHandler.Generate).Methods(http.MethodPost)
+
 	// Subscription handlers that mock subscription manager API's. On real environment we use the same path but with different(real) host
 	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
 	subHandler := subscription.NewHandler(httpClient, cfg.TenantConfig, cfg.TenantProviderConfig, jobID)
@@ -237,6 +241,9 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
 	router.HandleFunc(fmt.Sprintf("/api/v1/configure/tenant-type-id"), subHandler.ConfigureTenantTypeAndID).Methods(http.MethodPut)
 	router.HandleFunc(fmt.Sprintf("/api/v1/configure/tenant-type-id"), subHandler.ResetTenantTypeAndID).Methods(http.MethodDelete)
+
+	// This endpoint is used only for local env. On real env an external service is called with same path, but different host.
+	router.HandleFunc("/saas-manager/v1/service/subscriptions", subHandler.GetSubscriptions).Methods(http.MethodGet)
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
 	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
@@ -306,7 +313,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 
 	// Tenant fetcher handlers
 	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
-	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant)
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant, cfg.TenantRegion)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))

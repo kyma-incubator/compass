@@ -37,6 +37,8 @@ const (
 	TenantDiscoveryOperator Type = "Tenant Discovery Operator"
 	// InstanceCreator is a consumer type that is used by Instance Creator operator
 	InstanceCreator Type = "Instance Creator"
+	// FormationViewer is a consumer type that is used by Instance Creator operator
+	FormationViewer Type = "Formation Viewer"
 )
 
 // Consumer missing godoc
@@ -74,6 +76,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Ty
 		return TenantDiscoveryOperator, nil
 	case model.InstanceCreatorConsumerReference:
 		return InstanceCreator, nil
+	case model.FormationViewerConsumerReference:
+		return FormationViewer, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}

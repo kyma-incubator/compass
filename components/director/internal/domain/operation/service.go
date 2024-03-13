@@ -88,15 +88,15 @@ func (s *service) DeleteMultiple(ctx context.Context, ids []string) error {
 }
 
 // MarkAsCompleted marks an operation as completed
-func (s *service) MarkAsCompleted(ctx context.Context, id, errorMsg string) error {
+func (s *service) MarkAsCompleted(ctx context.Context, id string, customErr error) error {
 	op, err := s.opRepo.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting opreration with id %q", id)
 	}
 
 	op.Error = json.RawMessage("{}")
-	if errorMsg != "" {
-		opError := NewOperationError(errorMsg)
+	if customErr != nil {
+		opError := NewOperationError(customErr)
 		rawMessage, err := opError.ToJSONRawMessage()
 		if err != nil {
 			return errors.Wrap(err, "while marshaling operation error")
@@ -121,14 +121,14 @@ func (s *service) Update(ctx context.Context, input *model.Operation) error {
 }
 
 // MarkAsFailed marks an operation as failed
-func (s *service) MarkAsFailed(ctx context.Context, id, errorMsg string) error {
+func (s *service) MarkAsFailed(ctx context.Context, id string, customErr error) error {
 	op, err := s.opRepo.Get(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while getting opreration with id %q", id)
 	}
 
 	currentTime := time.Now()
-	opError := NewOperationError(errorMsg)
+	opError := NewOperationError(customErr)
 	rawMessage, err := opError.ToJSONRawMessage()
 	if err != nil {
 		return errors.Wrap(err, "while marshaling operation error")
@@ -200,14 +200,18 @@ func (s *service) ListAllByType(ctx context.Context, opType model.OperationType)
 	return s.opRepo.ListAllByType(ctx, opType)
 }
 
+type customError struct {
+	ErrorMsg error `json:"message"`
+}
+
 // OperationError represents an error from operation processing.
 type OperationError struct {
-	ErrorMsg string `json:"error"`
+	CustomError customError `json:"error"`
 }
 
 // NewOperationError creates OperationError instance.
-func NewOperationError(errorMsg string) *OperationError {
-	return &OperationError{ErrorMsg: errorMsg}
+func NewOperationError(customErr error) *OperationError {
+	return &OperationError{CustomError: customError{ErrorMsg: customErr}}
 }
 
 // ToJSONRawMessage converts the operation error ro JSON

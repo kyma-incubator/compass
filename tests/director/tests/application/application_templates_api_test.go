@@ -597,7 +597,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 					JSONPath:    &displayNamePlaceholder,
 				},
 			},
-			AppInputDescription: ptr.String("test {{not-compliant}}"),
+			AppInputDescription: ptr.String("test"),
 			ExpectedErrMessage:  "Invalid data ApplicationTemplateInput [appInput=name: cannot be blank.]",
 		},
 		{
@@ -606,8 +606,43 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 			AppTemplateAppInputJSONNameProperty:   str.Ptr("test-app"),
 			AppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name")},
 			AppTemplatePlaceholders:               []*graphql.PlaceholderDefinitionInput{},
-			AppInputDescription:                   ptr.String("test {{not-compliant}}"),
+			AppInputDescription:                   ptr.String("test"),
 			ExpectedErrMessage:                    "applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.",
+		},
+		{
+			Name:                                  "unused placeholder defined in the placeholders array",
+			AppTemplateName:                       fmt.Sprintf("SAP %s", "app-template-name"),
+			AppTemplateAppInputJSONNameProperty:   str.Ptr("test-app"),
+			AppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name"), "displayName": "{{display-name}}"},
+			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
+				},
+				{
+					Name:        "unused-placeholder-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: ptr.String("test"),
+			ExpectedErrMessage:  "application input does not use provided placeholder [name=unused-placeholder-name]",
+		},
+		{
+			Name:                                  "undefined placeholder applicationInput",
+			AppTemplateName:                       fmt.Sprintf("SAP %s", "app-template-name"),
+			AppTemplateAppInputJSONNameProperty:   str.Ptr("{{undefined-placeholder-name}}"),
+			AppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name"), "displayName": "{{display-name}}"},
+			AppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: ptr.String("test"),
+			ExpectedErrMessage:  "Placeholder [name=undefined-placeholder-name] is used in the application input but it is not defined in the Placeholders array",
 		},
 	}
 
@@ -1114,7 +1149,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 					JSONPath:    &displayNameJSONPath,
 				},
 			},
-			AppInputDescription: ptr.String("test {{not-compliant}}"),
+			AppInputDescription: ptr.String("test"),
 			ExpectedErrMessage:  "Invalid data ApplicationTemplateUpdateInput [appInput=name: cannot be blank.]",
 		},
 		{
@@ -1129,8 +1164,43 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 					JSONPath:    &nameJSONPath,
 				},
 			},
-			AppInputDescription: ptr.String("test {{not-compliant}}"),
+			AppInputDescription: ptr.String("test"),
 			ExpectedErrMessage:  "applicationInputJSON name property or applicationInputJSON displayName label is missing. They must be present in order to proceed.",
+		},
+		{
+			Name:                                     "unused placeholder defined in the placeholders array",
+			NewAppTemplateName:                       fmt.Sprintf("SAP %s", "app-template-name"),
+			NewAppTemplateAppInputJSONNameProperty:   str.Ptr("test-app"),
+			NewAppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name"), "displayName": "{{display-name}}"},
+			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
+				},
+				{
+					Name:        "unused-placeholder-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: ptr.String("test"),
+			ExpectedErrMessage:  "application input does not use provided placeholder [name=unused-placeholder-name]",
+		},
+		{
+			Name:                                     "undefined placeholder applicationInput",
+			NewAppTemplateName:                       fmt.Sprintf("SAP %s", "app-template-name"),
+			NewAppTemplateAppInputJSONNameProperty:   str.Ptr("{{undefined-placeholder-name}}"),
+			NewAppTemplateAppInputJSONLabelsProperty: &map[string]interface{}{"applicationType": fmt.Sprintf("SAP %s", "app-template-name"), "displayName": "{{display-name}}"},
+			NewAppTemplatePlaceholders: []*graphql.PlaceholderDefinitionInput{
+				{
+					Name:        "display-name",
+					Description: &displayNamePlaceholder,
+					JSONPath:    &displayNamePlaceholder,
+				},
+			},
+			AppInputDescription: ptr.String("test"),
+			ExpectedErrMessage:  "Placeholder [name=undefined-placeholder-name] is used in the application input but it is not defined in the Placeholders array",
 		},
 	}
 

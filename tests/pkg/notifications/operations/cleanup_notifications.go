@@ -48,7 +48,7 @@ func (o *CleanupNotificationsOperation) Execute(t *testing.T, ctx context.Contex
 	}
 }
 
-func (o *CleanupNotificationsOperation) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
+func (o *CleanupNotificationsOperation) Cleanup(_ *testing.T, _ context.Context, _ *gcli.Client) {
 }
 
 func (o *CleanupNotificationsOperation) Operation() Operation {
