@@ -59,7 +59,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240301073936-1a4c377a3937
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240313073924-df84150e150a
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

@@ -128,6 +128,8 @@ github.com/kyma-incubator/compass/components/director v0.0.0-20240228074947-02a8
 github.com/kyma-incubator/compass/components/director v0.0.0-20240228074947-02a81b1e3bf8/go.mod h1:WG/lUocX9lA2E3LPaI7Oqm8RZDmB46+jtft2SC0ScVY=
 github.com/kyma-incubator/compass/components/director v0.0.0-20240301073936-1a4c377a3937 h1:Xl/jHKo5vduKaBjl9Viy6HkfOP2i70tqUgfx9cnEcuc=
 github.com/kyma-incubator/compass/components/director v0.0.0-20240301073936-1a4c377a3937/go.mod h1:m2uughFQ1t+J24NGz5N3E87n6HHmT+qzsXlpzxHnjKY=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240313073924-df84150e150a h1:smEbOk65ilgBB1j5WnqY44mmvuEJUmxIN+gryH/SYZw=
+github.com/kyma-incubator/compass/components/director v0.0.0-20240313073924-df84150e150a/go.mod h1:m2uughFQ1t+J24NGz5N3E87n6HHmT+qzsXlpzxHnjKY=
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228074947-02a81b1e3bf8 h1:Ig4/5zfGADb7oCL6YQ4ZkHs4WADhPDYX+NcRWBPNxL4=
 github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240228074947-02a81b1e3bf8/go.mod h1:E8Wf/ZyWvi48YsKZT0O9AVWLJI41Eakfk5xHz1mLeK4=
 github.com/lestrrat-go/backoff/v2 v2.0.8 h1:oNb5E5isby2kiro9AgdHLv5N5tint1AnDVVf2E2un5A=
