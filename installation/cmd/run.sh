@@ -25,7 +25,7 @@ RESET_VALUES_YAML=true
 K3D_NAME="kyma"
 K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
-APISERVER_VERSION=1.25.6
+APISERVER_VERSION=1.26.6
 
 # These variables are used only during local installation to override the utils to use the k3d cluster
 KUBECTL="kubectl_k3d_kyma"
