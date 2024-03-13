@@ -336,7 +336,7 @@ func TestInstanceCreator(t *testing.T) {
 		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, subscriptionConsumerTenantID, appNamespace, appRegion, tnt, emptyParentCustomerID, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
-		op = operations.NewUnassignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
+		op = operations.NewUnassignAppToFormationOperationGlobal(app1ID).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
@@ -344,7 +344,7 @@ func TestInstanceCreator(t *testing.T) {
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder()
 		faAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		op = operations.NewUnassignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter).Operation()
+		op = operations.NewUnassignAppToFormationOperationGlobal(app2ID).WithAsserters(faAsserter, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
