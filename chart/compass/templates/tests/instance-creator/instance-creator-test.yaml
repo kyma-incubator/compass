@@ -108,6 +108,10 @@ spec:
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_DISTINGUISH_LABEL_VALUE
               value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SUBSCRIPTION_CONFIG_SELF_REGISTER_SUBDOMAIN_PLACEHOLDER_VALUE
+              value: {{ .Values.global.tests.subscription.consumerSubdomain }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SUBSCRIPTION_CONFIG_SELF_REG_REGION2

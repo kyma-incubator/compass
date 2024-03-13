@@ -19,6 +19,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	test_json "github.com/kyma-incubator/compass/tests/pkg/json"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
@@ -317,7 +318,14 @@ func TestInstanceCreator(t *testing.T) {
 			},
 		}
 
-		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(assertSubstitutedConfig, expectedAssignments, 4, certSecuredGraphQLClient, tnt)
+		configMatcher := func(t require.TestingT, expectedConfig, actualConfig *string) bool {
+			if expectedConfig != nil && strings.Contains(*expectedConfig, "outboundCommunication") {
+				return assertSubstitutedConfig(t, expectedConfig, actualConfig)
+			}
+			return assertExactConfig(t, expectedConfig, actualConfig)
+		}
+
+		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(asserterWithCustomConfigMatcher, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
@@ -340,6 +348,10 @@ func TestInstanceCreator(t *testing.T) {
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})
+}
+
+func assertExactConfig(t require.TestingT, expectedConfig, actualConfig *string) bool {
+	return test_json.AssertJSONStringEquality(t, expectedConfig, actualConfig)
 }
 
 func assertSubstitutedConfig(t require.TestingT, _, actualConfig *string) bool {
