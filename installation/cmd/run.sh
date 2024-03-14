@@ -281,6 +281,8 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   KYMA="$KYMA" KUBECTL="$KUBECTL" LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
+openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443
+
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
   KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
