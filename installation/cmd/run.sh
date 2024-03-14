@@ -25,7 +25,7 @@ RESET_VALUES_YAML=true
 K3D_NAME="kyma"
 K3D_MEMORY=8192MB
 K3D_TIMEOUT=10m0s
-APISERVER_VERSION=1.26.6
+APISERVER_VERSION=1.25.6
 
 # These variables are used only during local installation to override the utils to use the k3d cluster
 KUBECTL="kubectl_k3d_kyma"
@@ -309,7 +309,9 @@ prometheusMTLSPatch
 
 echo 'Adding compass certificate to keychain'
 COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
+echo "Before SSL cli command"
 echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
+echo "After SSL cli command"
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
