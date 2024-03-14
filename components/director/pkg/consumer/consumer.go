@@ -48,6 +48,7 @@ type Consumer struct {
 	Flow          oathkeeper.AuthFlow `json:"Flow"`
 	OnBehalfOf    string              `json:"onBehalfOf"`
 	Region        string              `json:"region"`
+	Subject       string              `json:"subject"`
 	TokenClientID string              `json:"tokenClientID"`
 }
 

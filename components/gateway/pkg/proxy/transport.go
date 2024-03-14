@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -153,6 +154,7 @@ type Claims struct {
 	ConsumerID     string `json:"consumerID"`
 	ConsumerType   string `json:"consumerType"`
 	OnBehalfOf     string `json:"onBehalfOf"`
+	Subject        string `json:"subject"`
 }
 
 func (c Claims) Valid() error {
@@ -166,6 +168,7 @@ func getClaims(ctx context.Context, headers http.Header) (Claims, error) {
 		ConsumerID   string `json:"consumerID"`
 		ConsumerType string `json:"consumerType"`
 		OnBehalfOf   string `json:"onBehalfOf"`
+		Subject      string `json:"subject"`
 		jwt.StandardClaims
 	}{}
 
@@ -196,7 +199,10 @@ func getClaims(ctx context.Context, headers http.Header) (Claims, error) {
 		ConsumerID:     tokenClaims.ConsumerID,
 		ConsumerType:   tokenClaims.ConsumerType,
 		OnBehalfOf:     tokenClaims.OnBehalfOf,
+		Subject:        tokenClaims.Subject,
 	}
+
+	fmt.Println("ALEX getClaims", claims)
 
 	if provider, exists := tenants["providerTenant"]; exists {
 		claims.Tenant = provider

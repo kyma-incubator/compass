@@ -101,7 +101,7 @@ func (a *Authenticator) Handler() func(next http.Handler) http.Handler {
 				apperrors.WriteAppError(ctx, w, err, statusCode)
 				return
 			}
-
+			fmt.Println("ALEX Auth middleware")
 			ctx = tokenClaims.ContextWithClaims(ctx)
 
 			ctx = a.storeHeadersDataInContext(ctx, r)

@@ -284,6 +284,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, errors.Wrapf(err, "while loading consumer")
 	}
 
+	empJSON1, err := json.MarshalIndent(consumerInfo, "", "  ")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Printf("consumerInfo 0\n %s\n", string(empJSON1))
+
 	labels := convertedIn.Labels
 	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
 		isSelfReg, selfRegFlowErr := r.isSelfRegFlow(labels)

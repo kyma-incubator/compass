@@ -3,6 +3,7 @@ package idtokenclaims
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -27,6 +28,7 @@ type Claims struct {
 	OnBehalfOf    string              `json:"onBehalfOf"`
 	Region        string              `json:"region"`
 	TokenClientID string              `json:"tokenClientID"`
+	Subject       string              `json:"subject"`
 	Flow          oathkeeper.AuthFlow `json:"flow"`
 	ZID           string              `json:"zid"`
 	jwt.StandardClaims
@@ -42,10 +44,14 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 		OnBehalfOf    string              `json:"onBehalfOf"`
 		Region        string              `json:"region"`
 		TokenClientID string              `json:"tokenClientID"`
+		Subject       string              `json:"subject"`
 		Flow          oathkeeper.AuthFlow `json:"flow"`
 		ZID           string              `json:"zid"`
 		jwt.StandardClaims
 	}{}
+
+	fmt.Println("ALEX UnmarshalJSON")
+	//debug.PrintStack()
 
 	err := json.Unmarshal(b, &tokenClaims)
 	if err != nil {
@@ -58,6 +64,7 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 	c.OnBehalfOf = tokenClaims.OnBehalfOf
 	c.Region = tokenClaims.Region
 	c.TokenClientID = tokenClaims.TokenClientID
+	c.Subject = tokenClaims.Subject
 	c.Flow = tokenClaims.Flow
 	c.ZID = tokenClaims.ZID
 	c.StandardClaims = tokenClaims.StandardClaims
@@ -75,7 +82,7 @@ func (c *Claims) ContextWithClaims(ctx context.Context) context.Context {
 	ctxWithTenants := tenant.SaveToContext(ctx, c.Tenant[tenantmapping.ConsumerTenantKey], c.Tenant[tenantmapping.ExternalTenantKey])
 	scopesArray := strings.Split(c.Scopes, " ")
 	ctxWithScopes := scope.SaveToContext(ctxWithTenants, scopesArray)
-	apiConsumer := consumer.Consumer{ConsumerID: c.ConsumerID, Type: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf, Region: c.Region, TokenClientID: c.TokenClientID}
+	apiConsumer := consumer.Consumer{ConsumerID: c.ConsumerID, Type: c.ConsumerType, Flow: c.Flow, OnBehalfOf: c.OnBehalfOf, Region: c.Region, TokenClientID: c.TokenClientID, Subject: c.Subject}
 	ctxWithConsumerInfo := consumer.SaveToContext(ctxWithScopes, apiConsumer)
 	return ctxWithConsumerInfo
 }
