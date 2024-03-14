@@ -5518,7 +5518,6 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	testError := errors.New("Test error")
-	localTenantID := "local-tenant-id"
 	filter := labelfilter.MultipleFromGraphQL([]*graphql.LabelFilter{{Key: "key", Query: str.Ptr("query")}})
 	first := 200
 	cursor := "cursor"

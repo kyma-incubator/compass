@@ -992,7 +992,6 @@ func TestPgRepository_GetBySystemNumber(t *testing.T) {
 }
 
 func TestPgRepository_ListByLocalTenantID_NoFilter(t *testing.T) {
-	localTenantID := "local-tenant-id"
 	app1ID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
 	appEntity1 := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App 1", "App desc 1")
@@ -1067,7 +1066,6 @@ func TestPgRepository_ListByLocalTenantID_NoFilter(t *testing.T) {
 }
 
 func TestPgRepository_ListByLocalTenantID_WithFilter(t *testing.T) {
-	localTenantID := "local-tenant-id"
 	appID := "aec0e9c5-06da-4625-9f8a-bda17ab8c3b9"
 	appEntity := fixDetailedEntityApplication(t, appID, givenTenant(), "App", "App desc")
 	appModel := fixDetailedModelApplication(t, appID, givenTenant(), "App", "App desc")

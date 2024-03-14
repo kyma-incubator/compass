@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
@@ -2023,6 +2024,126 @@ func TestGetApplicationsAPIEventDefinitions(t *testing.T) {
 	require.NotEmpty(t, app.EventDefinition)
 	assert.Equal(t, app.APIDefinition.ID, api.ID)
 	assert.Equal(t, app.EventDefinition.ID, event.ID)
+}
+
+func TestListApplicationsByLocalTenantID(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	localTenantID := "local-tenant-id-1234"
+
+	nameField := "name"
+	displayNameField := "display-name"
+	tenantIdField := "tenant-id"
+
+	createAppTemplate := func(name string) (graphql.ApplicationTemplate, error) {
+		input := fixtures.FixApplicationTemplate(name)
+		input.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:     "name",
+				JSONPath: ptr.String(fmt.Sprintf("$.%s", nameField)),
+			},
+			{
+				Name:     "display-name",
+				JSONPath: ptr.String(fmt.Sprintf("$.%s", displayNameField)),
+			},
+			{
+				Name:     "tenant-id",
+				JSONPath: ptr.String(fmt.Sprintf("$.%s", tenantIdField)),
+			},
+		}
+		input.ApplicationInput.LocalTenantID = ptr.String("{{tenant-id}}")
+
+		return fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
+	}
+
+	createApp := func(appTemplate graphql.ApplicationTemplate, name, localTenantID string) (graphql.ApplicationExt, error) {
+		placeholdersPayload, err := json.Marshal(map[string]string{
+			nameField:        name,
+			displayNameField: name,
+			tenantIdField:    localTenantID,
+		})
+		require.NoError(t, err)
+
+		input := graphql.ApplicationFromTemplateInput{
+			ID:                  &appTemplate.ID,
+			TemplateName:        appTemplate.Name,
+			PlaceholdersPayload: str.Ptr(string(placeholdersPayload)),
+		}
+		inputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(input)
+		require.NoError(t, err)
+
+		request := fixtures.FixRegisterApplicationFromTemplateWithLocalTenantID(inputGQL)
+		app := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, request, &app)
+
+		return app, err
+	}
+
+	listApplications := func(localTenantID, appTemplateName string) (graphql.ApplicationPageExt, error) {
+		var filter string
+		var err error
+		if appTemplateName != "" {
+			filter, err = testctx.Tc.Graphqlizer.LabelFilterToGQL(graphql.LabelFilter{Key: conf.ApplicationTypeLabelKey, Query: &appTemplateName})
+			require.NoError(t, err)
+		}
+
+		request := fixtures.FixListApplicationsByLocalTenantID(localTenantID, filter, 200, "")
+		page := graphql.ApplicationPageExt{}
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &page)
+		if appTemplateName != "" {
+			example.SaveExampleInCustomDir(t, request.Query(), example.QueryApplicationsCategory, "query applications by local tenant id and an optional filter")
+		}
+
+		return page, err
+	}
+
+	appTemplateOne, err := createAppTemplate(fixtures.CreateAppTemplateName("template one"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateOne)
+	require.NoError(t, err)
+
+	appTemplateTwo, err := createAppTemplate(fixtures.CreateAppTemplateName("template two"))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplateTwo)
+	require.NoError(t, err)
+
+	appOne, err := createApp(appTemplateOne, "app-one-name", localTenantID)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, appOne.ID)
+	require.NoError(t, err)
+
+	appTwo, err := createApp(appTemplateTwo, "app-two-name", localTenantID)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, appTwo.ID)
+	require.NoError(t, err)
+
+	//WHEN
+	page, err := listApplications(localTenantID, "")
+
+	//THEN
+	require.NoError(t, err)
+	require.Equal(t, 2, page.TotalCount)
+	require.Equal(t, 2, len(page.Data))
+
+	require.Equal(t, localTenantID, page.Data[0].LocalTenantID)
+	require.Equal(t, localTenantID, page.Data[1].LocalTenantID)
+
+	actualName1 := page.Data[0].Name
+	actualName2 := page.Data[1].Name
+	require.NotEqual(t, actualName1, actualName2)
+
+	appNames := []string{actualName1, actualName2}
+	require.Subset(t, appNames, []string{appOne.Name})
+	require.Subset(t, appNames, []string{appTwo.Name})
+
+	//WHEN
+	page, err = listApplications(localTenantID, appTemplateOne.Name)
+
+	//THEN
+	require.NoError(t, err)
+	require.Equal(t, 1, page.TotalCount)
+	require.Equal(t, 1, len(page.Data))
+
+	require.Equal(t, localTenantID, page.Data[0].LocalTenantID)
+	require.Equal(t, appOne.Name, page.Data[0].Name)
 }
 
 func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
