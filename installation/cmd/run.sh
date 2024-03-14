@@ -281,7 +281,7 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   KYMA="$KYMA" KUBECTL="$KUBECTL" LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
-prometheusMTLSPatch
+"$KUBECTL" get secret kyma-gateway-certs --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | "$KUBECTL" replace --force --namespace=kyma-system -f -
 
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
@@ -306,6 +306,8 @@ patchJWKS&
 
 COMPASS_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
 KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-compass.sh --overrides-file "${COMPASS_OVERRIDES}" --timeout 30m0s --sql-helm-backend
+
+prometheusMTLSPatch
 
 echo "Adding Compass entries to /etc/hosts..."
 $SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"
