@@ -173,6 +173,7 @@ func (s *service) MultipleToTenantMapping(ctx context.Context, tenantInputs []mo
 	tenants := make([]model.BusinessTenantMapping, 0, len(tenantInputs))
 	tenantIDs := make(map[string]string, len(tenantInputs))
 	for _, tenant := range tenantInputs {
+		log.C(ctx).Infof("Tenant Inputs: %v", tenant)
 		id := s.uidService.Generate()
 		tenants = append(tenants, *tenant.ToBusinessTenantMapping(id))
 		tenantIDs[tenant.ExternalTenant] = id

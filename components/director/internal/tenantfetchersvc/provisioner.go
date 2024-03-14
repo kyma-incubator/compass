@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -75,6 +76,7 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 
 // ProvisionTenants provisions tenants according to their type
 func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
+	log.C(ctx).Infof("Provision Tenants: %v", *request)
 	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
 	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 }
