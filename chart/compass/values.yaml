@@ -198,7 +198,7 @@ global:
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3745"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
