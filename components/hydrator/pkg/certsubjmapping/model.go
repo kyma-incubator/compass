@@ -1,10 +1,11 @@
 package certsubjmapping
 
 import (
-	"errors"
+	"encoding/json"
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+	"github.com/pkg/errors"
 )
 
 type SubjectConsumerTypeMapping struct {
@@ -30,4 +31,13 @@ func (s *SubjectConsumerTypeMapping) Validate() error {
 	}
 
 	return nil
+}
+
+func UnmarshalMappings(certSubjectMappingsFromEnv string) ([]SubjectConsumerTypeMapping, error) {
+	var mappingsFromEnv []SubjectConsumerTypeMapping
+	if err := json.Unmarshal([]byte(certSubjectMappingsFromEnv), &mappingsFromEnv); err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling mappings")
+	}
+
+	return mappingsFromEnv, nil
 }
