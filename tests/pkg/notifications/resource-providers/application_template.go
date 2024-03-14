@@ -39,12 +39,12 @@ func NewApplicationTemplateProvider(applicationType, localTenantID, region, name
 	return p
 }
 
-func (p *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) string {
+func (p *ApplicationTemplateProvider) Provide(t *testing.T, ctx context.Context, gqlClient *gcli.Client) graphql.ApplicationTemplate {
 	in := fixtures.FixApplicationTemplateWithWebhookInput(p.applicationType, p.localTenantID, p.region, p.namespace, p.namePlaceholder, p.displayNamePlaceholder, p.applicationWebhookInput, p.condition)
 	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, gqlClient, "", in)
 	require.NoError(t, err)
 	p.applicationTemplate = appTpl
-	return appTpl.ID
+	return appTpl
 }
 
 func (p *ApplicationTemplateProvider) Cleanup(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {

@@ -190,7 +190,7 @@ global:
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3636"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3636"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3636"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
