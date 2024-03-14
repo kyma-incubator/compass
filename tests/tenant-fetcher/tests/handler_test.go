@@ -669,7 +669,7 @@ func TestGlobalAccounts(t *testing.T) {
 	})
 
 	t.Run("Having cost object parents", func(t *testing.T) {
-		costObjectIDs := []string{"costObj1", "0costObj2"}
+		costObjectIDs := []string{"costObj1", "costObj2"}
 
 		defer cleanupTenants(t, ctx, directorInternalGQLClient, append(externalTenantIDs, costObjectIDs...))
 
