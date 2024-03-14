@@ -281,8 +281,6 @@ if [[ ! ${SKIP_KYMA_START} ]]; then
   KYMA="$KYMA" KUBECTL="$KUBECTL" LOCAL_ENV=true bash "${ROOT_PATH}"/installation/scripts/install-kyma.sh
 fi
 
-"$KUBECTL" get secret kyma-gateway-certs --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | "$KUBECTL" replace --force --namespace=kyma-system -f -
-
 if [[ ! ${SKIP_DB_INSTALL} ]]; then
   DB_OVERRIDES="${CURRENT_DIR}/../resources/compass-overrides-local.yaml"
   KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install-db.sh --overrides-file "${DB_OVERRIDES}" --timeout 30m0s
@@ -314,9 +312,7 @@ $SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-m
 
 echo 'Adding compass certificate to keychain'
 COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
-echo "Before SSL cli command"
-echo -n | openssl s_client -showcerts -servername compass.local.kyma.dev -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
-echo "After SSL cli command"
+echo -n | openssl s_client -showcerts -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
 else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
