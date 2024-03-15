@@ -173,8 +173,8 @@ global:
       version: "v20240313-05c805c2"
       name: compass-pairing-adapter
     director:
-      dir: prod/incubator/
-      version: "v20240313-05c805c2"
+      dir: dev/incubator/
+      version: "PR-3756"
       name: compass-director
     hydrator:
       dir: prod/incubator/
@@ -230,8 +230,8 @@ global:
       version: "v20230421-e8840c18"
       name: compass-console
     e2e_tests:
-      dir: prod/incubator/
-      version: "v20240313-05c805c2"
+      dir: dev/incubator/
+      version: "PR-3756"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
