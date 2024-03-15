@@ -58,6 +58,10 @@ do
             DUMP_DB=true
             shift # past argument
         ;;
+        --pr-job)
+            PR_JOB=true
+            shift
+        ;;
         --k3d-memory)
             checkInputParameterValue "${2}"
             K3D_MEMORY="${2}"
@@ -307,15 +311,17 @@ KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install
 
 prometheusMTLSPatch
 
-echo "Adding Compass entries to /etc/hosts..."
-echo -e "\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev" | $SUDO tee -a /etc/hosts
+if [[ ! ${PR_JOB} ]]; then
+  echo 'Adding compass certificate to keychain'
+  COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
+  echo -n | openssl s_client -showcerts -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
+  if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
+    sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
+  else # this is the case when the script is ran on non-Mac OSX machines
+    $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
+    $SUDO update-ca-certificates
+  fi
 
-echo 'Adding compass certificate to keychain'
-COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
-# echo -n | openssl s_client -showcerts -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
-if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
-  sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
-#else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-#  $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
-#  $SUDO update-ca-certificates
+  echo "Adding Compass entries to /etc/hosts..."
+  echo -e "\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev" | $SUDO tee -a /etc/hosts 1>/dev/null
 fi
