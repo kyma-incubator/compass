@@ -312,10 +312,10 @@ echo -e "\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.k
 
 echo 'Adding compass certificate to keychain'
 COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
-echo -n | openssl s_client -showcerts -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
+# echo -n | openssl s_client -showcerts -connect compass.local.kyma.dev:443 2>/dev/null | openssl x509 -inform pem > "${COMPASS_CERT_PATH}"
 if [ "$(uname)" == "Darwin" ]; then #  this is the case when the script is ran on local Mac OSX machines
   sudo security add-trusted-cert -d -r trustRoot -k /Library/Keychains/System.keychain "${COMPASS_CERT_PATH}"
-else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
-  $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
-  $SUDO update-ca-certificates
+#else # this is the case when the script is ran on non-Mac OSX machines, ex. as part of remote PR jobs
+#  $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
+#  $SUDO update-ca-certificates
 fi
