@@ -311,6 +311,7 @@ KUBECTL="$KUBECTL" HELM="$HELM" bash "${ROOT_PATH}"/installation/scripts/install
 
 prometheusMTLSPatch
 
+# PR jobs do not retrieve and trust the self-signed CA of the Kubernetes cluster as it has issues.
 if [[ ! ${PR_JOB} ]]; then
   echo 'Adding compass certificate to keychain'
   COMPASS_CERT_PATH="${CURRENT_DIR}/../cmd/compass-cert.pem"
