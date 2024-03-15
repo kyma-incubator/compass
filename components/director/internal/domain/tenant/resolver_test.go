@@ -727,7 +727,7 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(tenantsToUpsertModel, nil).Once()
 				return TenantConv
 			},
 			TenantsInput:   tenantsToUpsertGQL,
@@ -753,7 +753,20 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(tenantsToUpsertModel, nil).Once()
+				return TenantConv
+			},
+			TenantsInput:   tenantsToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:        "Returns error when converting multiple input from graphql",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: unusedTenantService,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				TenantConv := &automock.BusinessTenantMappingConverter{}
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(nil, testError).Once()
 				return TenantConv
 			},
 			TenantsInput:   tenantsToUpsertGQL,
@@ -770,7 +783,7 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(tenantsToUpsertModel, nil).Once()
 				return TenantConv
 			},
 			TenantsInput:   tenantsToUpsertGQL,
@@ -853,7 +866,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				tenantConv := &automock.BusinessTenantMappingConverter{}
-				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(tenantToUpsertModel, nil).Once()
 				return tenantConv
 			},
 			TenantsInput:   tenantToUpsertGQL,
@@ -879,7 +892,20 @@ func TestResolver_WriteSingle(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				tenantConv := &automock.BusinessTenantMappingConverter{}
-				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(tenantToUpsertModel, nil).Once()
+				return tenantConv
+			},
+			TenantsInput:   tenantToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: "",
+		},
+		{
+			Name:        "Error when converting input from graphql",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: unusedTenantService,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				tenantConv := &automock.BusinessTenantMappingConverter{}
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(model.BusinessTenantMappingInput{}, testError).Once()
 				return tenantConv
 			},
 			TenantsInput:   tenantToUpsertGQL,
@@ -896,7 +922,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				tenantConv := &automock.BusinessTenantMappingConverter{}
-				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(tenantToUpsertModel, nil).Once()
 				return tenantConv
 			},
 			TenantsInput:   tenantToUpsertGQL,
@@ -1027,28 +1053,24 @@ func TestResolver_Update(t *testing.T) {
 	tenantParent := ""
 	tenantInternalID := "internal"
 
-	tenantsToUpdateGQL := []*graphql.BusinessTenantMappingInput{
-		{
-			Name:           testName,
-			ExternalTenant: testExternal,
-			Parents:        []*string{str.Ptr(tenantParent)},
-			Subdomain:      str.Ptr(testSubdomain),
-			Region:         str.Ptr(testRegion),
-			Type:           string(tnt.Account),
-			Provider:       testProvider,
-		},
+	tenantToUpdateGQL := graphql.BusinessTenantMappingInput{
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parents:        []*string{str.Ptr(tenantParent)},
+		Subdomain:      str.Ptr(testSubdomain),
+		Region:         str.Ptr(testRegion),
+		Type:           string(tnt.Account),
+		Provider:       testProvider,
 	}
 
-	tenantsToUpdateModel := []model.BusinessTenantMappingInput{
-		{
-			Name:           testName,
-			ExternalTenant: testExternal,
-			Parents:        []string{tenantParent},
-			Subdomain:      testSubdomain,
-			Region:         testRegion,
-			Type:           string(tnt.Account),
-			Provider:       testProvider,
-		},
+	tenantToUpdateModel := model.BusinessTenantMappingInput{
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parents:        []string{tenantParent},
+		Subdomain:      testSubdomain,
+		Region:         testRegion,
+		Type:           string(tnt.Account),
+		Provider:       testProvider,
 	}
 
 	expectedTenantModel := &model.BusinessTenantMapping{
@@ -1087,17 +1109,17 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(expectedTenantModel, nil).Once()
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantToUpdateGQL.ExternalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				conv.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL)
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  nil,
 			ExpectedResult: expectedTenantGQL,
@@ -1107,7 +1129,7 @@ func TestResolver_Update(t *testing.T) {
 			TxFn:           txGen.ThatFailsOnBegin,
 			TenantSvcFn:    unusedTenantService,
 			TenantConvFn:   unusedTenantConverter,
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1117,15 +1139,15 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(testError).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1135,16 +1157,30 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(nil, testError).Once()
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantToUpdateGQL.ExternalTenant).Return(nil, testError).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
+			IDInput:        tenantInternalID,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:        "Returns error when converting input from graphql",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: unusedTenantService,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(model.BusinessTenantMappingInput{}, testError).Once()
+				return conv
+			},
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1154,16 +1190,16 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(expectedTenantModel, nil).Once()
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantToUpdateGQL.ExternalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,

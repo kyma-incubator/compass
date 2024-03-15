@@ -1,6 +1,7 @@
 package tenant
 
 import (
+	"context"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -82,26 +83,52 @@ func (c *converter) ToGraphQLInput(in model.BusinessTenantMappingInput) graphql.
 	}
 }
 
-func (c *converter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
+func (c *converter) MultipleInputFromGraphQL(ctx context.Context, in []*graphql.BusinessTenantMappingInput, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) ([]model.BusinessTenantMappingInput, error) {
+	externalTenantToType := make(map[string]string)
+	for _, tnt := range in {
+		externalTenantToType[tnt.ExternalTenant] = tnt.Type
+	}
+
 	res := make([]model.BusinessTenantMappingInput, 0, len(in))
 
 	for _, tnt := range in {
 		if tnt != nil {
-			res = append(res, c.InputFromGraphQL(*tnt))
+			btm, err := c.InputFromGraphQL(ctx, *tnt, externalTenantToType, retrieveTenantTypeFn)
+			if err != nil {
+				return nil, err
+			}
+			res = append(res, btm)
 		}
 	}
 
-	return res
+	return res, nil
 }
 
-func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
+func (c *converter) InputFromGraphQL(ctx context.Context, tnt graphql.BusinessTenantMappingInput, externalTenantToType map[string]string, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) (model.BusinessTenantMappingInput, error) {
 	externalTenant := tnt.ExternalTenant
 	trimmedParents := pointerStringsToStrings(tnt.Parents)
 
 	switch tnt.Type {
 	case tenant.TypeToStr(tenant.Customer):
 		externalTenant = tenant.TrimCustomerIDLeadingZeros(tnt.ExternalTenant)
-	case tenant.TypeToStr(tenant.Account), tenant.TypeToStr(tenant.Organization):
+	case tenant.TypeToStr(tenant.Account):
+		trimmedParents = make([]string, 0, len(tnt.Parents))
+		for _, parent := range tnt.Parents {
+			if parent != nil && str.PtrStrToStr(parent) != "" {
+				parentType, err := c.getTenantType(ctx, externalTenantToType, *parent, retrieveTenantTypeFn)
+				if err != nil {
+					return model.BusinessTenantMappingInput{}, err
+				}
+
+				if parentType == tenant.TypeToStr(tenant.Customer) {
+					trimmedParent := tenant.TrimCustomerIDLeadingZeros(*parent)
+					trimmedParents = append(trimmedParents, trimmedParent)
+				} else {
+					trimmedParents = append(trimmedParents, *parent)
+				}
+			}
+		}
+	case tenant.TypeToStr(tenant.Organization):
 		trimmedParents = make([]string, 0, len(tnt.Parents))
 		for _, parent := range tnt.Parents {
 			if parent != nil {
@@ -128,7 +155,21 @@ func (c *converter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) mod
 		CustomerID:     customerID,
 		CostObjectType: tnt.CostObjectType,
 		CostObjectID:   tnt.CostObjectID,
+	}, nil
+}
+
+func (c *converter) getTenantType(ctx context.Context, externalTenantToType map[string]string, externalTenant string, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) (string, error) {
+	tenantType, ok := externalTenantToType[externalTenant]
+	if ok {
+		return tenantType, nil
 	}
+
+	tenantType, err := retrieveTenantTypeFn(ctx, externalTenant)
+	if err != nil {
+		return "", errors.Wrapf(err, "while retrieving tenant type for tenant %q", externalTenant)
+	}
+
+	return tenantType, nil
 }
 
 // MultipleToGraphQL converts all the provided model.BusinessTenantMapping service-layer representations of a tenant to the GraphQL-layer representations graphql.Tenant.
