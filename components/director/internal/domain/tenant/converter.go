@@ -115,7 +115,7 @@ func (c *converter) InputFromGraphQL(ctx context.Context, tnt graphql.BusinessTe
 	case tenant.TypeToStr(tenant.Account):
 		trimmedParents = make([]string, 0, len(tnt.Parents))
 		for _, parent := range tnt.Parents {
-			if parent != nil {
+			if parent != nil && str.PtrStrToStr(parent) != "" {
 				parentType, err := c.getTenantType(ctx, externalTenantToType, *parent, retrieveTenantTypeFn)
 				if err != nil {
 					return model.BusinessTenantMappingInput{}, err
