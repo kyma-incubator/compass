@@ -418,7 +418,7 @@ func (r *Resolver) ApplicationsByLocalTenantID(ctx context.Context, localTenantI
 
 	appPage, err := r.appSvc.ListByLocalTenantID(ctx, localTenantID, labelFilter, *first, cursor)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting applications by local tenant id")
+		return nil, errors.Wrapf(err, "while listing applications by local tenant id '%s'", localTenantID)
 	}
 
 	err = tx.Commit()

@@ -259,13 +259,18 @@ func FixListApplicationsByLocalTenantID(localTenantID string, labelFilterInGQL s
 		labelFilterInGQL = ", filter: " + labelFilterInGQL
 	}
 
+	applicationFields := fmt.Sprintf(`
+		localTenantID
+		%s
+	`, testctx.Tc.GQLFieldsProvider.ForApplication())
+
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
 			result: applicationsByLocalTenantID(localTenantID: "%s", first: %d, after: "%s" %s) {
 					%s
-					localTenantID
 				}
-			}`, localTenantID, first, after, labelFilterInGQL, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
+			}`,
+			localTenantID, first, after, labelFilterInGQL, testctx.Tc.GQLFieldsProvider.Page(applicationFields)))
 }
 
 func FixGetApplicationByLocalTenantIDAndAppTemplateIDRequest(localTenantID, appTemplateID string) *gcli.Request {

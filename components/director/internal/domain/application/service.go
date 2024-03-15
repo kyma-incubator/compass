@@ -336,11 +336,11 @@ func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Applicati
 func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
+		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
 	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, filter, pageSize, cursor)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing applications with local tenant id %s", localTenantID)
+		return nil, errors.Wrap(err, "while listing applications")
 	}
 
 	return apps, nil
