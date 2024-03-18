@@ -30,5 +30,6 @@ type InstanceCreatorConfig struct {
 	GlobalSubaccountIDLabelKey          string        `envconfig:"APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY"`
 	SubscriptionProviderAppNameProperty string        `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 	CertSubjectMappingResyncInterval    time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
+	InstanceCreatorRegion               string        `envconfig:"APP_INSTANCE_CREATOR_REGION,default=eu-1"`
 	SkipSSLValidation                   bool          `envconfig:"default=false"`
 }

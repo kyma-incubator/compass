@@ -118,7 +118,7 @@ func TestInstanceCreator(t *testing.T) {
 
 	namePlaceholder := "name"
 	displayNamePlaceholder := "display-name"
-	appRegion := "eu-1"
+	appRegion := conf.InstanceCreatorRegion
 	appNamespace := "compass.test"
 	localTenantID := "local-tenant-id"
 	applicationType1 := "app-type-1"
