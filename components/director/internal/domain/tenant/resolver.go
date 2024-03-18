@@ -49,8 +49,8 @@ type BusinessTenantMappingService interface {
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
-	MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput
-	InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput
+	MultipleInputFromGraphQL(ctx context.Context, in []*graphql.BusinessTenantMappingInput, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) ([]model.BusinessTenantMappingInput, error)
+	InputFromGraphQL(ctx context.Context, tnt graphql.BusinessTenantMappingInput, externalTenantToType map[string]string, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) (model.BusinessTenantMappingInput, error)
 	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 	TenantAccessInputFromGraphQL(in graphql.TenantAccessInput) (*model.TenantAccess, error)
 	TenantAccessToGraphQL(in *model.TenantAccess) (*graphql.TenantAccess, error)
@@ -269,7 +269,10 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
+	tenants, err := r.conv.MultipleInputFromGraphQL(ctx, inputTenants, r.retrieveTenantType)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenants from graphql to model")
+	}
 
 	tenantsMap, err := r.srv.UpsertMany(ctx, tenants...)
 	if err != nil {
@@ -304,7 +307,10 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenant := r.conv.InputFromGraphQL(inputTenant)
+	tenant, err := r.conv.InputFromGraphQL(ctx, inputTenant, map[string]string{}, r.retrieveTenantType)
+	if err != nil {
+		return "", errors.Wrap(err, "while converting tenant from graphql to model")
+	}
 
 	id, err := r.srv.UpsertSingle(ctx, tenant)
 	if err != nil {
@@ -352,8 +358,13 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	tenantModels := r.conv.MultipleInputFromGraphQL([]*graphql.BusinessTenantMappingInput{&in})
-	if err := r.srv.Update(ctx, id, tenantModels[0]); err != nil {
+
+	tenantModel, err := r.conv.InputFromGraphQL(ctx, in, map[string]string{}, r.retrieveTenantType)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenant from graphql to model")
+	}
+
+	if err := r.srv.Update(ctx, id, tenantModel); err != nil {
 		return nil, errors.Wrapf(err, "while updating tenant with internal ID %s and external ID %s", id, in.ExternalTenant)
 	}
 
@@ -520,4 +531,12 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 
 func (r *Resolver) isSyncableTenant(tenantType tenantpkg.Type) bool {
 	return tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer
+}
+
+func (r *Resolver) retrieveTenantType(ctx context.Context, t string) (string, error) {
+	tnt, err := r.srv.GetTenantByExternalID(ctx, t)
+	if err != nil {
+		return "", err
+	}
+	return tenantpkg.TypeToStr(tnt.Type), nil
 }

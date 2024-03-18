@@ -1,11 +1,11 @@
-# Request credentials for Bundles
+# Request Credentials for Bundles
 
 In Kyma Runtime, a single Application is represented as a ServiceClass, and a single Bundle of a given Application is represented as a ServicePlan in the Service Catalog. You can create many instances of a Bundle in a single Runtime. For example, in the Kyma Runtime, an instance of a Bundle is represented by a ServiceInstance that can be created for every Namespace.
 
 When provisioning a new ServiceInstance from a Bundle, a Runtime requests API credentials. API credentials for every ServiceInstance are defined on the Bundle level and stored in the Director component. Multiple APIs under the same Bundle share the same credentials.
 
 
-## Requesting API credentials flow
+## Requesting API Credentials Flow
 
 This diagram illustrates the detailed flow of requesting API credentials. The Application provides Webhook API where Compass requests new credentials for the given Bundle.
 
@@ -23,7 +23,7 @@ Assume we have Application which is already registered in Compass. Application h
 
 When the user deletes a ServiceInstance, Runtime Agent requests the Director to delete credentials. The Director sets credentials status to `UNUSED`, notifies the Application, and waits for credentials deletion.
 
-### Example flow of requesting credentials
+### Example Flow of Requesting Credentials
 
 1. User connects the `foo` Application with the single `bar` Bundle which contains few API and Event Definitions. The Bundle has `instanceAuthRequestInputSchema` defined.
 1. User selects the `foo` ServiceClass and the `bar` ServicePlan.
@@ -37,7 +37,7 @@ When the user deletes a ServiceInstance, Runtime Agent requests the Director to 
    
 1. After the Runtime fetches valid credentials for the ServiceInstance, the status of the ServiceInstance is set to `READY`.
 
-### GraphQL schema
+### GraphQL Schema
 
 The following snippet describes GraphQL API for Bundles credential requests:
 
@@ -161,10 +161,10 @@ type Mutation {
 }
 ```
 
-## Passing additional input parameters
+## Passing Additional Input Parameters
 
 You can pass additional input parameters when provisioning a new ServiceInstance from a Bundle. Input parameters are validated against input JSON schema provided in the **instanceAuthRequestInputSchema** field by the Application or Integration System. The parameters, as well as the input JSON schema, are completely optional. As there is no trusted connection between an Integration System and Runtime, additional input parameters have to be passed to the Application or Integration System through the Director.
 
-## Registering Bundle API without credentials
+## Registering Bundle API Without Credentials
 
 In order to register API that does not require credentials, you must set the **defaultInstanceAuth.credential** property to `null`.

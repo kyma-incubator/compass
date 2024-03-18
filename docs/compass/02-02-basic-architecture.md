@@ -1,8 +1,8 @@
-# Basic architecture
+# Basic Architecture
 
 The diagram presents the basic workflow between Applications, Runtimes, and Compass:
 
-![Basic architecture](./assets/architecture.svg)
+![Basic Architecture](./assets/architecture.svg)
 
 1. Administrator adds Runtimes and Applications, and configures them using Compass.
 2. Runtime Agent continuously fetches the latest configuration from Compass.
