@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -75,16 +76,17 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 
 // ProvisionTenants provisions tenants according to their type
 func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
-	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
+	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(ctx, *request))
 	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 }
 
-func (p *provisioner) tenantsFromRequest(request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
+func (p *provisioner) tenantsFromRequest(ctx context.Context, request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
 	tenants := make([]model.BusinessTenantMappingInput, 0, 3)
 	customerID := request.CustomerTenantID
 	accountID := request.AccountTenantID
 	costObjectID := request.CostObjectTenantID
 
+	log.C(ctx).Debugf("Tenants retrieved from the subscription request. Customer id %q,account id %q, cost-object id %q", customerID, accountID, costObjectID)
 	var licenseType *string
 
 	if len(request.SubscriptionLcenseType) > 0 {

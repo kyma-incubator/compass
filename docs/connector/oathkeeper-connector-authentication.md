@@ -1,4 +1,4 @@
-# Connector authentication with Oathkeeper
+# Connector Authentication with Oathkeeper
 
 ## Introduction
 
@@ -7,7 +7,7 @@ Oathkeeper provides several ways to authenticate, authorize, and mutate request.
 Appropriate configuration of the mutator of type Hydrator allows to authenticate requests with a one-time token issued by the Connector or to validate the subject of the certificate.
 
 
-## Oathkeeper configuration
+## Oathkeeper Configuration
 
 To authenticate requests with a one-time token, configure the Oathkeeper like this: 
 ```
@@ -64,7 +64,7 @@ Use this access rules configuration:
 ```
 
 
-## One-time-token authentication
+## One-Time-Token Authentication
 
 The request to the Connector Service is processed like this:
 1. Hydrator mutator calls the `/v1/tokens/resolve` endpoint on the Connector Service Validator API.
@@ -72,7 +72,7 @@ The request to the Connector Service is processed like this:
 3. The request goes through the Compass Gateway to the Connector Service.
 4. The header `ClientIdFromToken` confirms the request authentication and enables the Connector Service to use the client ID to perform a requested operation.
 
-## Security improvements to implement
+## Security Improvements to Implement
 
 To prevent any security issues:
 - Strip the `ClientIdFromToken` header either on the Oathkeeper level or in the Connector Service Validator API.
