@@ -396,7 +396,6 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 	if newFormation.State == model.DraftFormationState {
 		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the formation is finalized", newFormation.State)
 	} else {
-
 		formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, newFormation, formationTemplateName, formationTemplateID, model.CreateFormation)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for formation with ID: %q and name: %q", newFormation.ID, newFormation.Name)
@@ -447,7 +446,6 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 	if formation.State == model.DraftFormationState {
 		log.C(ctx).Infof("Formation is in %q state. Skipping notifications...", model.DraftFormationState)
 	} else {
-
 		formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
 		if err != nil {
 			return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
