@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3754"
+      version: "PR-3757"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1336,6 +1336,8 @@ global:
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
+    instanceCreator:
+      region: "eu-1"
     destination:
       consumerSubdomain: "compass-external-services-mock"
       consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"

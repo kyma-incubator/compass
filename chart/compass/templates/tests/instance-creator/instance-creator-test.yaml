@@ -63,6 +63,8 @@ spec:
               value: {{ .Values.global.tests.selfRegistration.region }}
             - name: APP_SELF_REG_REGION2
               value: {{ .Values.global.tests.selfRegistration.region2 }}
+            - name: APP_INSTANCE_CREATOR_REGION
+              value: {{ .Values.global.tests.instanceCreator.region }}
             - name: APP_SKIP_SSL_VALIDATION
               value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
             - name: TEST_EXTERNAL_CERT_CN
