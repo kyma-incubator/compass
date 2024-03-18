@@ -1,4 +1,4 @@
-# Compass as a separate component
+# Compass as a Separate Component
 
 ## Overview
 
@@ -81,7 +81,7 @@ The following section lists all steps needed to implement the Compass separation
 
 - Modify pipelines for internal Compass environments.
 
-### Migration of existing Compass installations
+### Migration of Existing Compass Installations
 
 This section covers zero downtime migration from the old to the new approach of the Compass installation.
 
