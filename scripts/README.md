@@ -38,8 +38,8 @@ Rules without ending `-local` are run inside docker container.
 | build-image                       | build Docker image, used in CI environment                     |
 | push-image                        | push image to Image registry, used in CI environment           |
 
-## How to use `generic_make_go.mk` in your application makefile
-Makefile must contains following vars and statement:
+## How to Use `generic_make_go.mk` in Your Application Makefile
+Makefile must contain following vars and statement:
 ```makefile
 APP_NAME = App name
 APP_PATH = App path in repository
@@ -49,7 +49,7 @@ include $(SCRIPTS_DIR)/generic_make_go.mk
 ```
 available images are listed in [config.yaml](https://github.com/kyma-project/test-infra/blob/main/templates/config.yaml).
 
-## How it works
+## How it Works
 By example:
 When CI run`make release` the following steps are executed:
 - rule `release` depends on rules `resolve dep-status verify build-image push-image`
@@ -75,19 +75,19 @@ Target types:
 - `MOUNT_TARGET` - mount component directory as volume to docker container
 - `COPY_TAGRT` - copy components files to docker container.
 
-## How to adjust makefile
-### How to disable current rule in local makefile
+## How to Adjust Makefile
+### How to Disable Current Rule in Local Makefile
 In new Makefile add the following line: `{rule}: ;`.
 There will be warnings printed on console, but the rule will be disabled.
 
-### How to add new local rule, which doesn't need `BUILDPACK`:
+### How to Add New Local Rule, Which Doesn't Need `BUILDPACK`:
 Define rule in local makefile.
 Add this rule to one of the  global rule:
 ```makefile
 verify:: own-rule
 ```
 
-### How to add new rule in local makefile, which needs buildpack:
+### How to Add New Rule in Local Makefile, Which Needs Buildpack:
 Define rule in local makefile and call function which will create the rule:
 ```makefile
 my-rule-local: 
@@ -100,7 +100,7 @@ Available BUILDPACK_FUNCTIONS:
 - buildpack-mount
 - buildpkac-cp-ro
 
-### How to add new rule in generic makefile:
+### How to Add New Rule in Generic Makefile:
 Definie new local rule in `generic_make_go.mk` file:
 ```makefile
 your-rule-local:

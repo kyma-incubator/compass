@@ -1,4 +1,4 @@
-# File upload with graphql
+# File Upload with GraphQL
 
 ## Overview
 
@@ -9,7 +9,7 @@ Vanilla graphql does not support uploading files. However, you can use one of th
 - Base64 data encoding
 - Middleware which handles uploading files
 
-## Upload files with gqlgen 0.9.0 library
+## Upload Files with gqlgen 0.9.0 Library
 
 1. Use the following `schema.graphql`:
 ```graphql
@@ -88,7 +88,7 @@ curl localhost:8080/query \
 ```
 For more examples of how to upload files using gqlgen library, go to the reference links section.
 
-## Improvement proposal
+## Improvement Proposal
 
 We should support multiple ways of uploading large amounts of data, such as documentation.
 The `Clob` type, which is to be defined, could look as follows:
@@ -110,9 +110,9 @@ enum UploadType {
 
 That approach gives the end-user more flexibility on how to upload the data.
 
-## Reference links
+## Reference Links
 
-- [An article about the possible ways of uploading files](https://medium.freecodecamp.org/how-to-manage-file-uploads-in-graphql-mutations-using-apollo-graphene-b48ed6a6498c)
-- [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec)
-- [gqlgen 0.9.0 library](https://github.com/99designs/gqlgen/tree/v0.9.0)
-- [gqlgen file upload example](https://github.com/99designs/gqlgen/tree/v0.9.0/example/fileupload)
+- [An Article About the Possible Ways of Uploading Files](https://medium.freecodecamp.org/how-to-manage-file-uploads-in-graphql-mutations-using-apollo-graphene-b48ed6a6498c)
+- [GraphQL Multipart Request Specification](https://github.com/jaydenseric/graphql-multipart-request-spec)
+- [gqlgen 0.9.0 Library](https://github.com/99designs/gqlgen/tree/v0.9.0)
+- [gqlgen File Upload Example](https://github.com/99designs/gqlgen/tree/v0.9.0/example/fileupload)

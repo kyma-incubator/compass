@@ -77,7 +77,7 @@ mutation {
 Thanks to that,  Integration System can easily fetch all dependant Applications by querying them by label.
 Then, Integration System is responsible for updating Application details, like registering API and events definitions.
 
-## Integration System supporting many Application types
+## Integration System Supporting Many Application Types
 
 In the previous example, there was an assumption that every Application managed by given Integration System represents the same type
 of the Application that provides similar API and event definitions.  
@@ -204,7 +204,7 @@ stored in the `application-type` label.
 
 In this example, IntegrationSystem registers ApplicationTemplate, but users can also define their own ApplicationTemplates.
 
-## Use placeholders in ApplicationTemplate
+## Use Placeholders in ApplicationTemplate
 
 In the previous example, ApplicationTemplate was created with hardcoded Application name `ecommerce-app`.
 Because Application name has to be unique in given tenant, only one Application from given template can be created.
@@ -253,7 +253,7 @@ mutation {
 }
 ```
 
-## Providing input parameters
+## Providing Input Parameters
 
 Application template can also contain a label that defines the JSON schema for the input parameter. Input parameters are sometimes required to configure Application instance by the Integration System. Let assume, that for enabling some Application, the user has to provide credentials that will be used by Integration System to configure the external solution. Such input parameters can be described by appropriate JSON schema and stored under the  `simpleIntegrationSystem/inputParam` label. The Compass does not store credentials itself. It provides only the JSON schema through the API and the consumer is responsible for setting the appropriate values accordingly.
 
@@ -314,7 +314,7 @@ From UI perspective, user has also simple view for registering application with 
 - register Application manually
 - register Application from Template
 
-# Future plans
+# Future Plans
 
 1. For every Compass top-level type, it should be possible to define label. Currently, we can add label for Application and Runtime, but in
 the future we plan to add possibility to label IntegrationSystem or ApplicationTemplate.
