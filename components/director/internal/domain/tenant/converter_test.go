@@ -1,6 +1,7 @@
 package tenant_test
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -21,23 +22,21 @@ import (
 )
 
 var (
-	ids                     = []string{"id1", "id2", "id3"}
-	names                   = []string{"name1", "name2", "name3"}
-	externalTenants         = []string{"external1", "external2", "0000external3"}
-	parentID                = "parent1"
-	parentIDs               = []string{parentID}
-	parentIDsPtr            = []*string{&parentID}
-	parentWithLeadingZeroes = "0000parent2"
-	subdomain               = "subdomain"
-	region                  = "region"
-	licenseType             = "TESTLICENSE"
-	costObjectID            = "cost-obj-id"
-	costObjectType          = "cost-type"
+	ids             = []string{"id1", "id2", "id3"}
+	names           = []string{"name1", "name2", "name3"}
+	externalTenants = []string{"external1", "external2", "0000external3"}
+	parentID        = "parent1"
+	parentIDs       = []string{parentID}
+	parentIDsPtr    = []*string{&parentID}
+	subdomain       = "subdomain"
+	region          = "region"
+	licenseType     = "TESTLICENSE"
+	costObjectID    = "cost-obj-id"
+	costObjectType  = "cost-type"
 )
 
 const (
 	trimmedExternalTenant = "external3"
-	trimmedParent         = "parent2"
 )
 
 func TestConverter(t *testing.T) {
@@ -153,6 +152,10 @@ func TestConverter_ToGraphQLInput(t *testing.T) {
 }
 
 func TestConverter_InputFromGraphQL(t *testing.T) {
+	retrieveTenantTypeFn := func(ctx context.Context, t string) (string, error) {
+		return tnt.TypeToStr(tnt.Account), nil
+	}
+
 	t.Run("all fields", func(t *testing.T) {
 		c := tenant.NewConverter()
 
@@ -168,7 +171,10 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 			CostObjectID:   &costObjectID,
 			CostObjectType: &costObjectType,
 		}
-		res := c.InputFromGraphQL(in)
+
+		res, err := c.InputFromGraphQL(context.Background(), in, map[string]string{}, retrieveTenantTypeFn)
+		assert.NoError(t, err)
+
 		expected := model.BusinessTenantMappingInput{
 			Name:           names[0],
 			ExternalTenant: externalTenants[0],
@@ -187,6 +193,21 @@ func TestConverter_InputFromGraphQL(t *testing.T) {
 }
 
 func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
+	costObjectParent := "0000cost-object"
+	customerParent := "0000customer"
+	trimmedCustomerParent := "customer"
+
+	retrieveTenantTypeFn := func(ctx context.Context, t string) (string, error) {
+		if t == costObjectParent {
+			return tnt.TypeToStr(tnt.CostObject), nil
+		}
+		if t == customerParent {
+			return tnt.TypeToStr(tnt.Customer), nil
+		}
+
+		return tnt.TypeToStr(tnt.Account), nil
+	}
+
 	t.Run("all fields", func(t *testing.T) {
 		c := tenant.NewConverter()
 
@@ -204,7 +225,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parents:        []*string{&parentWithLeadingZeroes},
+				Parents:        []*string{&costObjectParent},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Account),
@@ -232,14 +253,34 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parents:        []*string{&parentWithLeadingZeroes},
+				Parents:        []*string{&customerParent},
 				Subdomain:      str.Ptr(subdomain),
 				Region:         str.Ptr(region),
 				Type:           string(tnt.Organization),
 				Provider:       testProvider,
 			},
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parents:        []*string{&customerParent},
+				Subdomain:      str.Ptr(subdomain),
+				Region:         str.Ptr(region),
+				Type:           string(tnt.Account),
+				Provider:       testProvider,
+			},
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parents:        []*string{&externalTenants[1]},
+				Subdomain:      str.Ptr(subdomain),
+				Region:         str.Ptr(region),
+				Type:           string(tnt.Account),
+				Provider:       testProvider,
+			},
 		}
-		res := c.MultipleInputFromGraphQL(in)
+		res, err := c.MultipleInputFromGraphQL(context.Background(), in, retrieveTenantTypeFn)
+		assert.NoError(t, err)
+
 		expected := []model.BusinessTenantMappingInput{
 			{
 				Name:           names[0],
@@ -253,7 +294,7 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[1],
 				ExternalTenant: externalTenants[1],
-				Parents:        []string{trimmedParent},
+				Parents:        []string{costObjectParent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Account),
@@ -281,10 +322,28 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 			{
 				Name:           names[0],
 				ExternalTenant: externalTenants[0],
-				Parents:        []string{trimmedParent},
+				Parents:        []string{trimmedCustomerParent},
 				Subdomain:      subdomain,
 				Region:         region,
 				Type:           string(tnt.Organization),
+				Provider:       testProvider,
+			},
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parents:        []string{trimmedCustomerParent},
+				Subdomain:      subdomain,
+				Region:         region,
+				Type:           string(tnt.Account),
+				Provider:       testProvider,
+			},
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parents:        []string{externalTenants[1]},
+				Subdomain:      subdomain,
+				Region:         region,
+				Type:           string(tnt.Account),
 				Provider:       testProvider,
 			},
 		}
@@ -292,6 +351,29 @@ func TestConverter_MultipleInputFromGraphQL(t *testing.T) {
 		// THEN
 		require.Equal(t, len(expected), len(res))
 		require.Equal(t, expected, res)
+	})
+
+	retrieveTenantTypeFnReturnsErr := func(ctx context.Context, t string) (string, error) {
+		return "", testError
+	}
+	t.Run("expected error", func(t *testing.T) {
+		c := tenant.NewConverter()
+
+		// WHEN
+		in := []*graphql.BusinessTenantMappingInput{
+			{
+				Name:           names[0],
+				ExternalTenant: externalTenants[0],
+				Parents:        parentIDsPtr,
+				Subdomain:      str.Ptr(subdomain),
+				Region:         str.Ptr(region),
+				Type:           string(tnt.Account),
+				Provider:       testProvider,
+			},
+		}
+		_, err := c.MultipleInputFromGraphQL(context.Background(), in, retrieveTenantTypeFnReturnsErr)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testError.Error())
 	})
 }
 
