@@ -1,4 +1,4 @@
-# Supported API specifications
+# Supported API Specifications
 
 These are the currently supported API specification versions and formats in different components:
 
@@ -11,7 +11,7 @@ These are the currently supported API specification versions and formats in diff
 | AsyncAPI<br>YAML, JSON | all formats, v2 only | validation and conversion to JSON and v2 | all versions and formats, validation by property | all versions and formats, no validation | all versions, JSON only, no validation and conversion |
 | Archives | no | yes (TAR and ZIP) | no | no | no |
 
-## Planned support for API specification versions and formats
+## Planned Support for API Specification Versions and Formats
 
 The following table shows the proposed supported API specification versions and formats in different components.
 Rendering would support only a single version of API specifications. Rafter would be responsible for validating and converting API specifications for Console UI. Because Compass UI does not use Rafter, the conversion would have to be done in Compass Backend. Preferably Rafter's converters and validators should be exposed as services or libraries that could be used by the Compass Backend and Compass UI.

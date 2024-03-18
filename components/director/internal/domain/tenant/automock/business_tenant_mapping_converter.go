@@ -3,6 +3,8 @@
 package automock
 
 import (
+	context "context"
+
 	graphql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	mock "github.com/stretchr/testify/mock"
 
@@ -16,34 +18,54 @@ type BusinessTenantMappingConverter struct {
 	mock.Mock
 }
 
-// InputFromGraphQL provides a mock function with given fields: tnt
-func (_m *BusinessTenantMappingConverter) InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput {
-	ret := _m.Called(tnt)
+// InputFromGraphQL provides a mock function with given fields: ctx, tnt, externalTenantToType, retrieveTenantTypeFn
+func (_m *BusinessTenantMappingConverter) InputFromGraphQL(ctx context.Context, tnt graphql.BusinessTenantMappingInput, externalTenantToType map[string]string, retrieveTenantTypeFn func(context.Context, string) (string, error)) (model.BusinessTenantMappingInput, error) {
+	ret := _m.Called(ctx, tnt, externalTenantToType, retrieveTenantTypeFn)
 
 	var r0 model.BusinessTenantMappingInput
-	if rf, ok := ret.Get(0).(func(graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput); ok {
-		r0 = rf(tnt)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, graphql.BusinessTenantMappingInput, map[string]string, func(context.Context, string) (string, error)) (model.BusinessTenantMappingInput, error)); ok {
+		return rf(ctx, tnt, externalTenantToType, retrieveTenantTypeFn)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, graphql.BusinessTenantMappingInput, map[string]string, func(context.Context, string) (string, error)) model.BusinessTenantMappingInput); ok {
+		r0 = rf(ctx, tnt, externalTenantToType, retrieveTenantTypeFn)
 	} else {
 		r0 = ret.Get(0).(model.BusinessTenantMappingInput)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, graphql.BusinessTenantMappingInput, map[string]string, func(context.Context, string) (string, error)) error); ok {
+		r1 = rf(ctx, tnt, externalTenantToType, retrieveTenantTypeFn)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
-// MultipleInputFromGraphQL provides a mock function with given fields: in
-func (_m *BusinessTenantMappingConverter) MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput {
-	ret := _m.Called(in)
+// MultipleInputFromGraphQL provides a mock function with given fields: ctx, in, retrieveTenantTypeFn
+func (_m *BusinessTenantMappingConverter) MultipleInputFromGraphQL(ctx context.Context, in []*graphql.BusinessTenantMappingInput, retrieveTenantTypeFn func(context.Context, string) (string, error)) ([]model.BusinessTenantMappingInput, error) {
+	ret := _m.Called(ctx, in, retrieveTenantTypeFn)
 
 	var r0 []model.BusinessTenantMappingInput
-	if rf, ok := ret.Get(0).(func([]*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput); ok {
-		r0 = rf(in)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*graphql.BusinessTenantMappingInput, func(context.Context, string) (string, error)) ([]model.BusinessTenantMappingInput, error)); ok {
+		return rf(ctx, in, retrieveTenantTypeFn)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []*graphql.BusinessTenantMappingInput, func(context.Context, string) (string, error)) []model.BusinessTenantMappingInput); ok {
+		r0 = rf(ctx, in, retrieveTenantTypeFn)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]model.BusinessTenantMappingInput)
 		}
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, []*graphql.BusinessTenantMappingInput, func(context.Context, string) (string, error)) error); ok {
+		r1 = rf(ctx, in, retrieveTenantTypeFn)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in

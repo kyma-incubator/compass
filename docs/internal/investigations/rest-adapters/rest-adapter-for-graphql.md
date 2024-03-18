@@ -4,7 +4,7 @@ To avoid rewriting integration layer for  Application Connector clients, we can 
 Application Connector API to Compass API.
 
 
-## Reproducing tutorial steps
+## Reproducing Tutorial Steps
 This section describes modifications required to ensure that the [Application Connector tutorial](https://kyma-project.io/docs/1.8/components/application-connector/#tutorials-tutorials) still works.
 
 1. Create a new Application

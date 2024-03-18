@@ -1,6 +1,6 @@
-## Design e2e tests execution on real environment
+## Design e2e Tests Execution on Real Environment
 
-### Installation of external services mock
+### Installation of External Services Mock
 
 1. To install external services mock, you can pass additional overrides file to the Compass installation script:
 
@@ -29,6 +29,6 @@ Since we want to reuse the real auditlog configurations (configmaps & secrets) i
 
 Note that some resources, such as, secrets from external services mock chart, must be guarded and not created in case the auditlog is disabled when installing external services mock.
 
-### Test tenants
+### Test Tenants
 1. You can load test tenants by using the tenant loader.
 2. The same tenants must be configured in director with the corresponding test admin user.

@@ -177,7 +177,8 @@ func TestListFormationsForObjectGlobal(t *testing.T) {
 	t.Logf("Create application template for type: %q", applicationType1)
 	appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil, graphql.ApplicationStatusConditionConnected)
 	defer appTemplateProvider.Cleanup(t, ctx, oauthGraphQLClient)
-	appTplID := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
+	appTpl := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
+	appTplID := appTpl.ID
 	internalConsumerID := appTplID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 
 	ftProvider := resource_providers.NewFormationTemplateCreator(formationTemplateName)

@@ -73,6 +73,7 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 			applicationTemplate := testCase.ApplicationTemplateInputProvider()
 			applicationTemplate.Placeholders = testCase.Value
 			// WHEN
+
 			err := applicationTemplate.Validate()
 			// THEN
 			if testCase.Error == nil {
@@ -1074,6 +1075,13 @@ func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 		Name: "valid",
 		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name: "valid",
+			Webhooks: []*graphql.WebhookInput{
+				{
+					URL:           stringPtr("http://localhost.com"),
+					Type:          graphql.WebhookTypeConfigurationChanged,
+					InputTemplate: stringPtr(`{"context":{ {{ if .CustomerTenantContext.AccountID }}"btp": {"uclFormationId":"{{.FormationID}}","globalAccountId":"{{.CustomerTenantContext.AccountID}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ else }}"atom": {"uclFormationId":"{{.FormationID}}","path":"{{.CustomerTenantContext.Path}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ end }} },"items": [ {"uclAssignmentId":"{{ .Assignment.ID }}","operation":"{{.Operation}}","deploymentRegion":"{{if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{end }}","applicationNamespace":"{{ if .Application.ApplicationNamespace }}{{.Application.ApplicationNamespace}}{{else }}{{.ApplicationTemplate.ApplicationNamespace}}{{ end }}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemTenantId":"{{.Application.ID}}",{{ if .ApplicationTemplate.Labels.parameters }}"parameters": {{.ApplicationTemplate.Labels.parameters}},{{ end }}"configuration": {{.ReverseAssignment.Value}} } ] }`),
+				},
+			},
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 		Webhooks:    []*graphql.WebhookInput{},
