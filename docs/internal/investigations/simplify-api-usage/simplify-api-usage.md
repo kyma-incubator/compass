@@ -72,7 +72,7 @@ There are 8 test cases in just one mutation, having in mind we would change arou
 * API becomes less readable due to optional `ID` parameter (the user could be confused what happens if we don't provide one)
 * internal API complexity increases - additional dependancy for resolvers 
 
-### 2. Separated Mutations Where `consumer ID` Input Parameter isn't Needed
+### 2. Separated Mutations Where `consumer ID` Input Parameter Isn't Needed
 There could be another mutation which doesn't accept `applicationID`/`runtimeID` as a parameter, so we would have doubled mutations. Take this for example:
 
 `addAPI(applicationID: ID, in: APIDefinitionInput! @validate): APIDefinition! @hasScopes(path: "graphql.mutation.addAPI")`

@@ -64,7 +64,7 @@ Use this access rules configuration:
 ```
 
 
-## One-time-token Authentication
+## One-Time-Token Authentication
 
 The request to the Connector Service is processed like this:
 1. Hydrator mutator calls the `/v1/tokens/resolve` endpoint on the Connector Service Validator API.

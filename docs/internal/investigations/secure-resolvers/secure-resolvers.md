@@ -31,7 +31,7 @@ We want to cover following cases:
 3. Integration System musn't read other Integration Systems.
 4. Runtime musn't read Applications which are not in the same scenario (`applicationsForRuntime`).
 
-### Restrict Access to Application/Runtime for IntegrationSystem Which isn't Managed
+### Restrict Access to Application/Runtime for IntegrationSystem Which Isn't Managed
 When Integration System request specific Application/Runtime, it should be able to read only object managed by itself.
 
 ## Solution

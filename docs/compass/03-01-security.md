@@ -22,7 +22,7 @@ The following diagram represents the architecture of the security in Compass:
 
 ### Tenant Mapping Handler
 
-The Tenant Mapping Handler is an Oathkeeper [Hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler that is responsible for mapping authentication session data to the tenant. It is part of the Hydrator component and communicates with the Director through the GraphQL API.
+The Tenant Mapping Handler is an Oathkeeper [hydrator](https://github.com/ory/docs/blob/525608c65694539384b785355d293bc0ad00da27/docs/oathkeeper/pipeline/mutator.md#hydrator) handler that is responsible for mapping authentication session data to the tenant. It is part of the Hydrator component and communicates with the Director through the GraphQL API.
 
 To unify the mapping approach, it is introduced an Authorization ID `auth_id`, which is used across the multiple authentication flows. Each authentication flow has its own context provider, which takes care of extracting information about the tenant and the granted scopes.
 
@@ -272,7 +272,7 @@ The diagram for the client certificate above outlines this case, too.
 
 The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only the `tenant`, but also `scopes`, which are defined per object type (Application or Runtime). The default type is *Runtime*.
 
-### One-time Token
+### One-Time Token
 
 **Used by:** Runtime/Application
 
@@ -300,7 +300,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 
 The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only the `tenant`, but also `scopes`, which are defined per object type (Application or Runtime).
 
-### Consumer-provider Flow
+### Consumer-Provider Flow
 
 **Used by:** Runtime/Integration System
 

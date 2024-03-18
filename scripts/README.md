@@ -80,7 +80,7 @@ Target types:
 In new Makefile add the following line: `{rule}: ;`.
 There will be warnings printed on console, but the rule will be disabled.
 
-### How to Add New Local Rule, Which doesn't Need `BUILDPACK`:
+### How to Add New Local Rule, Which Doesn't Need `BUILDPACK`:
 Define rule in local makefile.
 Add this rule to one of the  global rule:
 ```makefile

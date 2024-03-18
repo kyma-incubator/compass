@@ -127,7 +127,7 @@ updateApplication(in: {
 }
 ```
 
-**Remove All EventAPIs For Application**
+**Remove All EventAPIs for Application**
 ```graphql
 updateApplication(in: {
     id: "52cc65fe-c94f-4d94-b59a-01c1ba865547"
@@ -215,7 +215,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
 }
 ```
 
-**Remove All EventAPIs For Application**
+**Remove All EventAPIs for Application**
 ```graphql
 updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
     setEventAPIs: {
@@ -227,7 +227,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", actions: {
 }
 ```
 
-### 4. PUT-like Approach with Additional Mutations
+### 4. PUT-Like Approach with Additional Mutations
 
 #### Schema
 
@@ -261,7 +261,7 @@ updateApplication(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547", in: {
 }
 ```
 
-**Remove All EventAPIs For Application**
+**Remove All EventAPIs for Application**
 ```graphql
 deleteAllApplicationEventAPIs(id: "52cc65fe-c94f-4d94-b59a-01c1ba865547") {
     id
