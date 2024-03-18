@@ -122,6 +122,6 @@ and support rich queries.
 ## Summary
 CloudSQL Postgres or MySQL suits the best our requirements about persisting data for Compass.
 MySQL can be configured manually to replicate data across regions, but 
-according to [PostgreSQL vs MySQL article](https://www.2ndquadrant.com/en/postgresql/postgresql-vs-mysql/), PostgreSQL is 
+according to [PostgreSQL vs MySQL Article](https://www.2ndquadrant.com/en/postgresql/postgresql-vs-mysql/), PostgreSQL is 
 more SQL compliant, provides a better performance, implements more NoSQL features and because of that PostgreSQL 
 is our first-choice DB.

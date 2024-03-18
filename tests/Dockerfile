@@ -24,7 +24,8 @@ RUN GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./connectivity-ad
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./istio/tests -o istio.test && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./director/bench -o director.bench && \
     GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./ord-service/bench -o ord-service.bench && \
-    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./pairing-adapter/tests -o pairing-adapter.test && \
+    GOOS=$TARGETOS GOARCH=$TARGETARCH CGO_ENABLED=0 go test -c ./instance-creator/tests -o instance-creator.test
 
 FROM alpine:3.19
 
@@ -49,6 +50,7 @@ COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/tenant-fetch
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/system-fetcher.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/istio.test .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/pairing-adapter.test .
+COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/instance-creator.test .
 
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/director.bench .
 COPY --from=builder /go/src/github.com/kyma-incubator/compass/tests/ord-service.bench .
