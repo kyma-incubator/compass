@@ -37,10 +37,12 @@ func (a *FormationAssignmentsAsyncCustomConfigMatcherAsserter) AssertExpectation
 	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations, a.configMatcher)
 }
 
-func (a *FormationAssignmentsAsyncCustomConfigMatcherAsserter) WithTimeout(timeout time.Duration) {
+func (a *FormationAssignmentsAsyncCustomConfigMatcherAsserter) WithTimeout(timeout time.Duration) *FormationAssignmentsAsyncCustomConfigMatcherAsserter {
 	a.timeout = timeout
+	return a
 }
 
-func (a *FormationAssignmentsAsyncCustomConfigMatcherAsserter) WithTick(tick time.Duration) {
+func (a *FormationAssignmentsAsyncCustomConfigMatcherAsserter) WithTick(tick time.Duration) *FormationAssignmentsAsyncCustomConfigMatcherAsserter {
 	a.tick = tick
+	return a
 }

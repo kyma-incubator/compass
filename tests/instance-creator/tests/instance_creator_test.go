@@ -42,6 +42,9 @@ const (
 
 	uriKey      = "uri"
 	usernameKey = "username"
+
+	eventuallyTimeoutForInstances = 60 * time.Second
+	eventuallyTickForInstances    = 2 * time.Second
 )
 
 var (
@@ -324,7 +327,9 @@ func TestInstanceCreator(t *testing.T) {
 			return assertExactConfig(t, expectedConfig, actualConfig)
 		}
 
-		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt)
+		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt).
+			WithTimeout(eventuallyTimeoutForInstances).
+			WithTick(eventuallyTickForInstances)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(asserterWithCustomConfigMatcher, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
