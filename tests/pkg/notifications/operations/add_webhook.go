@@ -24,6 +24,7 @@ type AddWebhookToObjectOperation struct {
 	urlTemplate    string
 	inputTemplate  string
 	outputTemplate string
+	headerTemplate *string
 	objectID       string
 	objectType     WebhookReferenceObjectType
 	tenantID       string
@@ -60,6 +61,11 @@ func (o *AddWebhookToObjectOperation) WithOutputTemplate(outputTemplate string) 
 	return o
 }
 
+func (o *AddWebhookToObjectOperation) WithHeaderTemplate(headerTemplate *string) *AddWebhookToObjectOperation {
+	o.headerTemplate = headerTemplate
+	return o
+}
+
 func (o *AddWebhookToObjectOperation) WithAsserters(asserters ...asserters.Asserter) *AddWebhookToObjectOperation {
 	for i, _ := range asserters {
 		o.asserters = append(o.asserters, asserters[i])
@@ -68,7 +74,7 @@ func (o *AddWebhookToObjectOperation) WithAsserters(asserters ...asserters.Asser
 }
 
 func (o *AddWebhookToObjectOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	webhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate)
+	webhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.headerTemplate)
 	var wh *graphql.Webhook
 	switch o.objectType {
 	case WebhookReferenceObjectTypeApplication:

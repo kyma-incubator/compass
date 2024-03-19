@@ -31,8 +31,8 @@ require (
 
 require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240311150451-fb47652e9f70
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240311150451-fb47652e9f70
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240313130948-c1a00dbcc8b4
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240313130948-c1a00dbcc8b4
 	github.com/tidwall/sjson v1.2.5
 	k8s.io/apimachinery v0.26.9
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
@@ -68,7 +68,7 @@ require (
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.32.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	k8s.io/api v0.26.9 // indirect

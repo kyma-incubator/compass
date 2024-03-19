@@ -1,4 +1,4 @@
-# Generating API documentation
+# Generating API Documentation
 
 ## Overview
 
@@ -12,9 +12,9 @@ As of right now, there is no static page with our API documentation, so if any p
 * Utilises our example requests
 * The examples are compatible with the Director version
 
-## Possible solutions
+## Possible Solutions
 
-### 1. Links to the examples on the API playground
+### 1. Links to the Examples on the API Playground
 The GraphQL playground that we use on our endpoints generates documentation with comments from the schema.
 We could create a gqlgen plugin that would add a relative example link to every query and mutation. The example files would be stored inside the Director images and available on a GET request to `/director/examples/{file-name}.graphql`. That way the user would be able to check how the request looks right away.
 
@@ -35,7 +35,7 @@ POC can be found [here](https://github.com/kyma-incubator/compass/pull/417)
 **Cons**
 * requires some amount of work to serve pretty GraphQL examples
 
-### 2. Using a 3rd party tool to generate static html
+### 2. Using a 3rd Party Tool to Generate Static HTML
 [Dociql](https://github.com/wayfair/dociql) is a tool that generates html files with the documented schema.
 It uses the introspection query to fetch the API schema and a YAML file to configure the output. An example config can be found [here](https://github.com/wayfair/dociql/blob/master/config.yml)
 With the config file we can define the use cases of our schema and group it by domains. It also creates a sample request and response with a 'Try it now button'. The files would be stored inside the director image and hosted on one of its endpoints

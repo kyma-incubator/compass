@@ -19,6 +19,10 @@ const (
 	eventuallyTick    = 50 * time.Millisecond
 )
 
+var exactJSONConfigMatcher = func(t require.TestingT, expectedConfig, actualConfig *string) bool {
+	return json.AssertJSONStringEquality(t, expectedConfig, actualConfig)
+}
+
 type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
 	formationName string
@@ -48,7 +52,7 @@ func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx
 	}else {
 		formationID = ctx.Value(context_keys.FormationIDKey).(string)
 	}
-	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations)
+	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations, exactJSONConfigMatcher)
 }
 
 func (a *FormationAssignmentsAsyncAsserter) WithFormationName(formationName string)  *FormationAssignmentsAsyncAsserter{
@@ -66,7 +70,7 @@ func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration)  *Forma
 	return a
 }
 
-func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, configMatcher func(t require.TestingT, expectedConfig, actualConfig *string) bool) {
 	t.Logf("Asserting formation assignments with eventually...")
 	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
@@ -99,7 +103,7 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				return
 			}
-			if isEqual := json.AssertJSONStringEquality(tOnce, assignmentExpectation.Config, assignment.Configuration); !isEqual {
+			if isEqual := configMatcher(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				return
 			}
