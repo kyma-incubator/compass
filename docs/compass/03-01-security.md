@@ -66,11 +66,11 @@ As mentioned above, there are use cases where you can manage Compass resources f
 
 Both cases feature two context providers, which are used in a pair. One of context providers must be an externally-issued certificate context provider. It extracts the provider tenant ID from the certificate. Later on, Compass checks if the provider tenant has access to the consumer tenant. For more information, see the [Authentication Flows](03-01-security.md#authentication-flows) section in this document.
 
-### GraphQL security
+### GraphQL Security
 
-The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` header or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers. The GraphQL components have authentication middleware and GraphQL [directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
+The Gateway passes the request to Compass GraphQL services, such as the Director or the Connector. Additionally, the request contains authentication data. In the Director it is a JWT token, in the Connector it is the `Client-Id-From-Token` header or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers. The GraphQL components have authentication middleware and GraphQL [Directives](https://graphql.org/learn/queries/#directives) set up for all GraphQL operations (and some specific type fields, if necessary). 
 
-#### HTTP middleware
+#### HTTP Middleware
 
 In GraphQL servers, such as the Director or the Connector, there is an HTTP authentication middleware set up. In the Director, it validates and decodes the JWT token, and puts user scopes and the tenant in the request context
 (`context.Context`). In the Connector, it verifies the `Client-Id-From-Token` header or the `Client-Id-From-Certificate` and `Client-Certificate-Hash` headers.
@@ -132,7 +132,7 @@ types:
 
 The actual scopes will be defined later.
 
-#### Limiting Application/Runtime modifications
+#### Limiting Application/Runtime Modifications
 
 Application/Runtime shouldn't be able to modify other Applications or Runtimes. In the future, to limit the functionality, we will introduce another GraphQL directive.
 
@@ -144,7 +144,7 @@ type Mutation {
 
 The `limitModifications` mutation compares ID provided for the `updateApplication` mutation with Application ID saved in the context by Tenant Mapping Handler.
 
-## Authentication flows
+## Authentication Flows
 
 Each authentication flow is handled on a separate host via different VirtualService, as currently OathKeeper doesn't support certificates and multiple `Bearer` authenticators.
 
@@ -152,15 +152,15 @@ Each authentication flow is handled on a separate host via different VirtualServ
 
 **Used by:** Integration System / Application / Runtime
 
-There are two ways of creating a `client_id` and `client_secret` pair in the Hydra, using Hydra's [oauth client](https://github.com/kyma-project/kyma/blob/ab3d8878d013f8cc34c3f549dfa2f50f06502f14/docs/security/03-06-oauth2-server.md#register-an-oauth2-client) or [simple POST request](https://github.com/kyma-incubator/examples/tree/main/ory-hydra/scenarios/client-credentials#setup-an-oauth2-client).
+There are two ways of creating a `client_id` and `client_secret` pair in the Hydra, using Hydra's [Oauth Client](https://github.com/kyma-project/kyma/blob/ab3d8878d013f8cc34c3f549dfa2f50f06502f14/docs/security/03-06-oauth2-server.md#register-an-oauth2-client).
 
-**Obtaining token:**
+**Obtaining Token:**
 
 1. Runtime/Application/IntegrationSystem requests the `client_id` and `client_credentials` pair from the Director by a separate GraphQL mutation. the Director generates the pair, registers it in Hydra with proper scopes (defined by object type), and writes it to the database.
 1. Runtime/Application/IntegrationSystem calls Hydra with encoded credentials (`client_id` is the ID of the `SystemAuth` entry related to the given Runtime/Application/IntegrationSystem) and requested scopes.
 1. If the requested scopes are valid, Runtime/Application/IntegrationSystem receives an access token in response. Otherwise, it receives an error.
 
-**Request flow:**
+**Request Flow:**
 
 1. ORY Oathkeeper authenticator calls Hydra for introspection of the token.
 1. If the token is valid, Oathkeeper sends the request to ORY mutator hydrator.
@@ -177,15 +177,15 @@ In this authentication flow, scopes are read from OAuth 2.0 access token and wri
 
 **Proof of concept:** [kyma-incubator/compass#287](https://github.com/kyma-incubator/compass/pull/287)
 
-### JWT token issued by identity service
+### JWT Token Issued by Identity Service
 
 **Used by:** User
 
-**Obtaining token:**
+**Obtaining Token:**
 
 User logs in to Compass UI
 
-**Request flow:**
+**Request Flow:**
 
 1. ORY Oathkeeper authenticator validates the token using keys provided by the identity service. 
 2. If the token is valid, Oathkeeper sends the request to ORY mutator hydrator.
@@ -218,11 +218,11 @@ data:
           - "application.webhooks:read"
 ```
 
-### Client certificates
+### Client Certificates
 
 **Used by:** Runtime/Application
 
-**Compass Connector flow:**
+**Compass Connector Flow:**
 
 1. Runtime/Application makes a call to the Connector to the certificate-secured subdomain.
 1. Istio verifies the client certificate. If the certificate is invalid, Istio rejects the request.
@@ -247,7 +247,7 @@ data:
 
 The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only `tenant`, but also `scopes`, which are defined per object type (Application / Runtime). 
 
-### Externally-issued client certificates
+### Externally-issued Client Certificates
 
 **Used by:** Runtime/Integration System
 
@@ -272,11 +272,11 @@ The diagram for the client certificate above outlines this case, too.
 
 The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only the `tenant`, but also `scopes`, which are defined per object type (Application or Runtime). The default type is *Runtime*.
 
-### One-time token
+### One-Time Token
 
 **Used by:** Runtime/Application
 
-**Connector flow:**
+**Connector Flow:**
 
 1. Runtime/Application makes a call to the Connector's internal API.
 1. Oathkeeper mutator hydrator sends the request to the Token resolver hosted by the `Hydrator` component. It extracts the Client ID from the one-time token's `Connector-Token` header or from the `token` query parameter, and writes it to the `Client-Id-From-Token` header. In the case of failure, the header is empty.
@@ -300,7 +300,7 @@ The scopes are added to the authentication session in Tenant Mapping Handler. Th
 
 The scopes are added to the authentication session in Tenant Mapping Handler. The handler gets not only the `tenant`, but also `scopes`, which are defined per object type (Application or Runtime).
 
-### Consumer-provider flow
+### Consumer-Provider Flow
 
 **Used by:** Runtime/Integration System
 

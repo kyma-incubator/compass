@@ -18,6 +18,7 @@ type UpdateWebhookOperation struct {
 	inputTemplate  string
 	urlTemplate    string
 	outputTemplate string
+	headerTemplate *string
 	objectID       string
 	objectType     WebhookReferenceObjectType
 	tenantID       string
@@ -50,6 +51,11 @@ func (o *UpdateWebhookOperation) WithURLTemplate(urlTemplate string) *UpdateWebh
 
 func (o *UpdateWebhookOperation) WithOutputTemplate(outputTemplate string) *UpdateWebhookOperation {
 	o.outputTemplate = outputTemplate
+	return o
+}
+
+func (o *UpdateWebhookOperation) WithHeaderTemplate(headerTemplate *string) *UpdateWebhookOperation {
+	o.headerTemplate = headerTemplate
 	return o
 }
 
@@ -99,7 +105,7 @@ func (o *UpdateWebhookOperation) Execute(t *testing.T, ctx context.Context, gqlC
 	}
 	require.NotEmpty(t, webhook)
 
-	input := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate)
+	input := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.headerTemplate)
 	updatedWebhook := fixtures.UpdateWebhook(t, ctx, gqlClient, o.tenantID, webhook.ID, input)
 	require.Equal(t, updatedWebhook.ID, webhook.ID)
 	for _, asserter := range o.asserters {
