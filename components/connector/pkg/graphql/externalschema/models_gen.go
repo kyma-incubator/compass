@@ -14,14 +14,20 @@ type CertificationResult struct {
 }
 
 type Configuration struct {
-	Token                         *Token                         `json:"token"`
-	CertificateSigningRequestInfo *CertificateSigningRequestInfo `json:"certificateSigningRequestInfo"`
-	ManagementPlaneInfo           *ManagementPlaneInfo           `json:"managementPlaneInfo"`
+	Token                         *Token                         `json:"token,omitempty"`
+	CertificateSigningRequestInfo *CertificateSigningRequestInfo `json:"certificateSigningRequestInfo,omitempty"`
+	ManagementPlaneInfo           *ManagementPlaneInfo           `json:"managementPlaneInfo,omitempty"`
 }
 
 type ManagementPlaneInfo struct {
-	DirectorURL                    *string `json:"directorURL"`
-	CertificateSecuredConnectorURL *string `json:"certificateSecuredConnectorURL"`
+	DirectorURL                    *string `json:"directorURL,omitempty"`
+	CertificateSecuredConnectorURL *string `json:"certificateSecuredConnectorURL,omitempty"`
+}
+
+type Mutation struct {
+}
+
+type Query struct {
 }
 
 type Token struct {

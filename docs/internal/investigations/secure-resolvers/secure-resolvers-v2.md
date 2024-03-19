@@ -414,7 +414,7 @@ This section outlines several additional approaches that were taken into account
 * Add an ownerReference resolver on each input that returns details about the owning entity. Via a special GraphQL field interceptor/middleware add an additional field to the input so that the resolver is called. In the same or in a different middleware, add logic to compare the owner and the consumer.
 * Add support for labels to all entities, and then, label each one with the system auth IDs that are allowed to access it. Add system auth ID in the ID token. Add label criteria filters to all operations (CRUD). Based on the system auth from the token, append a label filter criteria that finds the system auth ID from the token in the system auth IDs label values of the target entity. All DB calls, in the scope of the request, will have this label filter appended in the where clause.
 
-## Improving Integration Systems (separate document eventually)
+## Improving Integration Systems
 
 The following section proposes an idea for simplifying the set up of integration systems to work with Central Management Plane (CMP). It also provides an idea for automated granting of access to integration systems for applications created by users.
 
