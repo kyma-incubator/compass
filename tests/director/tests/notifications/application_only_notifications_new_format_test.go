@@ -112,7 +112,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 	appTemplateProvider := resource_providers.NewApplicationTemplateProvider(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder, tnt, nil, graphql.ApplicationStatusConditionConnected)
 	defer appTemplateProvider.Cleanup(t, ctx, oauthGraphQLClient)
-	appTplID := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
+	appTpl := appTemplateProvider.Provide(t, ctx, oauthGraphQLClient)
+	appTplID := appTpl.ID
 	internalConsumerID := appTplID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
 	t.Logf("Created application template for type: %q", applicationType1)
 

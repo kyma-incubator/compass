@@ -2,7 +2,7 @@
 
 This document describes using static object storage as a database for the Application Registry.
 
-## Storing Application labels
+## Storing Application Labels
 
 The idea is to use Apache Parquet for storing pieces of information regarding labels.
 We want to have easy access to information and be able to:
@@ -14,7 +14,7 @@ We want to have easy access to information and be able to:
 
 To achieve querying by groups, the following bucket structure is suggested:
 
-![Bucket structure](./assets/bucket-structure.jpg)
+![Bucket Structure](./assets/bucket-structure.jpg)
 
 Data redundancy is needed to reduce requests while doing read operations.
 
@@ -131,7 +131,7 @@ Total calls: 1
 
    Using the structure, updating a single property would require only replacing a single file. Also, reading application metadata would be faster as most of it would be available after listing the application directory. The downsides to storing this data in a filename are possible length/encoding limitations.
 
-## Cross-region replication
+## Cross-Region Replication
 
 The following section describes a comparison between cloud-storage offerings regarding cross-region replication. All providers listed below have a similar offering, except for the GCP which offers multi-region within only the same continent.
 
@@ -151,7 +151,7 @@ We cannot replicate a single bucket across multiple regions like Asia, USA and E
 
 ### AWS S3
 
-Amazon has [Cross-region replication for S3 buckets](https://docs.aws.amazon.com/AmazonS3/latest/dev/crr.html). One bucket would be used to write, and others to read. It is limited to two regions at the same time (1:1 bucket mapping). It doesn't meet our requirements. 
+Amazon has [Cross-Region Replication for S3 Buckets](https://docs.aws.amazon.com/AmazonS3/latest/dev/crr.html). One bucket would be used to write, and others to read. It is limited to two regions at the same time (1:1 bucket mapping). It doesn't meet our requirements. 
 
 ### Azure Blob Storage
 

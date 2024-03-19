@@ -1,4 +1,4 @@
-# Limit access to GraphQL resources
+# Limit Access to GraphQL Resources
 
 This document describes proposed solution to the problem of unlimited resource access.
 Limiting access to certain resolvers is important especially in case of accessing authorization details.
@@ -7,20 +7,20 @@ Limiting access to certain resolvers is important especially in case of accessin
 
 API Consumer - Application / Runtime / Integration System / User 
 
-## Problems we want to solve
+## Problems We Want to Solve
 
-### Restrict access to `application { api { auth(runtimeID) } }` for Runtimes with ID different than passed `runtimeID`
+### Restrict Access to `application { api { auth(runtimeID) } }` for Runtimes with ID Different From Passed `runtimeID`
 
 RuntimeAgent wants to read auth details for application's API.
 The RuntimeAgent should be allowed to read field `auth` only with his own ID.
 In this case we will use new directive `limitAccessFor` and `limitManagerAccessTo`.
 
-### Restrict access to `application { auths }`
+### Restrict Access to `application { auths }`
 
 RuntimeAgent wants to read applications but shouldn't have access to their auth details.
 We can restrict the access by current `hasScopes` directive.
 
-### Restrict access to resolvers for specific types of API consumers (by ID)
+### Restrict Access to Resolvers for Specific Types of API Consumers (by ID)
 
 We should be able to restrict access to any resolver that takes API Consumer ID as one of its parameters by adding directive.
 
@@ -31,13 +31,13 @@ We want to cover following cases:
 3. Integration System musn't read other Integration Systems.
 4. Runtime musn't read Applications which are not in the same scenario (`applicationsForRuntime`).
 
-### Restrict access to Application/Runtime for IntegrationSystem is which not managed
+### Restrict Access to Application/Runtime for IntegrationSystem Which Isn't Managed
 When Integration System request specific Application/Runtime, it should be able to read only object managed by itself.
 
 ## Solution
 To achieve those restrictions the following solution is proposed:
 
-### Add information about API consumer in Tenant Mapping service
+### Add Information About API Consumer in Tenant Mapping Service
 We can use information which is added in Tenant Mapping Service to JWT [PR](https://github.com/kyma-incubator/compass/pull/475):
 1. Object Type, service is able to determine who calls the API, whether it is Application, Runtime or IntegrationSystem
 2. Object ID of caller
@@ -88,10 +88,10 @@ If integration system doesn't manage the application/runtime, the following erro
 
 Currently we cannot use this directive on query param ( https://github.com/99designs/gqlgen/issues/760).
 
-### Database schema change
+### Database Schema Change
 Every resource managed by integration system have to be reachable from integration system perspective.
 
-### New scopes
+### New Scopes
 
 We will introduce new scopes:
 * applicationForRuntime:list - for runtimes and admin user
@@ -101,7 +101,7 @@ We will introduce new scopes:
 
 We should change all **read** scopes on collections to **list** for consistency.
 
-### Proposed solution applied on graphql
+### Proposed Solution Applied on GraphQL
 New graphql schema after implementing and applying new directives:
 
 ```graphql
@@ -143,7 +143,7 @@ type Query {
 
 ## Examples
 
-### Example flow for ApplicationsForRuntime with limitAccessFor directive
+### Example Flow for ApplicationsForRuntime with limitAccessFor Directive
 Example based on `applicationsForRuntime` flow.
 
 We add `limitAccessFor` directive to `applicationsForRuntime` query:
@@ -164,7 +164,7 @@ the Runtime Agent will get an error `Access Denied`, because the IDs are differe
     * When IntegrationSystem with ID `ABCD` executes query `applicationsForRuntime` with param `runtimeID` equal to `DCBA`, 
 The directive doesn't compare anything, because it's only turn on for the `RUNTIME`.
 
-### Example flow for applications with limitManagerAccessTo directive
+### Example Flow for Applications with limitManagerAccessTo Directive
 Example based on `application(id)` flow.
 In this case besides `limitAccessFor` directive we are also going to apply `limitManagerAccessTo`.
 

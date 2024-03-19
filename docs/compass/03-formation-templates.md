@@ -37,7 +37,7 @@ type Mutation {
     updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
 ```
-> **Note:** For example GraphQL mutations, see: [create](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/create-formation-template/create-formation-template.graphql), [update](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/update-formation-template/update-formation-template.graphql), or [delete](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/delete-formation-template/delete-formation-template.graphql).
+> **Note:** For example GraphQL mutations, see: [Create](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/create-formation-template/create-formation-template.graphql), [Update](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/update-formation-template/update-formation-template.graphql), or [Delete](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/delete-formation-template/delete-formation-template.graphql).
 
 
 ### Queries 
@@ -48,4 +48,4 @@ type Query {
     formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 }
 ```
-> **Note:** For example GraphQL queries, see: [Query formation template](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-template/query-formation-template.graphql), or [Query formation templates](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-templates/query-formation-templates.graphql).
+> **Note:** For example GraphQL queries, see: [Query Formation Template](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-template/query-formation-template.graphql), or [Query Formation Templates](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/query-formation-templates/query-formation-templates.graphql).
