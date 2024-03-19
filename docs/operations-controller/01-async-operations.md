@@ -44,6 +44,6 @@ The Scheduler is part of the Director and is used as a GoLang library that can c
 The Scheduler is responsible for checking the progress of the operations. If there is an operation in progress, it cancels the new requests as the previous operation must be finalized before a new one is started.
 
 ### Operations Controller
-The Operations Controller component is a [Kubernetes controller](https://kubernetes.io/docs/concepts/architecture/controller/) that takes care of _Operation CRDs_ created by the Scheduler.
+The Operations Controller component is a [Kubernetes Controller](https://kubernetes.io/docs/concepts/architecture/controller/) that takes care of _Operation CRDs_ created by the Scheduler.
 
 For more information about its reconciliation loops, see the corresponding documents of the supported operation types.
