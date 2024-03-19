@@ -178,7 +178,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3747"
+      version: "PR-3717"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -186,15 +186,15 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3749"
+      version: "PR-3719"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3752"
+      version: "PR-3760"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3748"
+      version: "PR-3713"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -206,7 +206,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-125"
+      version: "PR-127"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
