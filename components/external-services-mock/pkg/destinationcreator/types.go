@@ -7,8 +7,8 @@ const (
 	BasicAuthDestinationType     = "basic"
 	SAMLAssertionDestinationType = "SAML assertion"
 	ClientCertDestinationType    = "client certificate authentication"
-	OAuth2ClientCredentialsType = "oauth2 client credentials"
-	OAuth2mTLSType              = "oauth2 mTLS"
+	OAuth2ClientCredentialsType  = "oauth2 client credentials"
+	OAuth2mTLSType               = "oauth2 mTLS"
 )
 
 type Destination interface {

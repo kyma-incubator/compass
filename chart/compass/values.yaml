@@ -162,23 +162,23 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3741"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3734"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3734"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3758"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3717"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -186,23 +186,23 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3719"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3760"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3713"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3745"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3734"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -214,7 +214,7 @@ global:
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3743"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -223,7 +223,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3739"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3760"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1336,6 +1336,8 @@ global:
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
+    instanceCreator:
+      region: "eu-1"
     destination:
       consumerSubdomain: "compass-external-services-mock"
       consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"

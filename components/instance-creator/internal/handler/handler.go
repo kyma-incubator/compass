@@ -378,7 +378,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 		return
 	}
 	defer func() {
-		log.C(ctx).Debug("Closing a DB connection for instance creation...")
+		log.C(ctx).Debug("Closing a DB connection for instance deletion...")
 		if err := connection.Close(); err != nil {
 			log.C(ctx).WithError(err).Error("Error while closing the database connection")
 		}
@@ -392,7 +392,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	// This lock prevents multiple unassign operations to execute simultaneously
 	locked, err := advisoryLocker.TryLock(ctx, assignmentID+reqBody.Context.Operation)
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance deletion"))
 		return
 	}
 	if !locked {
@@ -409,7 +409,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	log.C(ctx).Debugf("Locking an advisory lock with assignmentID %q...", assignmentID)
 	// This lock prevents unassign and assign operations to execute simultaneously
 	if err := advisoryLocker.Lock(ctx, assignmentID); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance deletion"))
 		return
 	}
 	defer func() {

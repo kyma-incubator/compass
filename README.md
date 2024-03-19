@@ -30,7 +30,7 @@ For more information about the Compass architecture, technical details, and comp
 
 ## Installation
 
-Install Compass locally or on a cluster. See the [installation document](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md) for details.
+Install Compass locally or on a cluster. See the [Installation](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md) document for details.
 
 ### Dependencies
 
