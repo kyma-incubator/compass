@@ -1,6 +1,6 @@
 # Troubleshooting
 
-## Application eventing configuration returns empty defaultURL
+## Application Eventing Configuration Returns Empty defaultURL
 
 It is possible for the Director to return empty `defaultURL` property for the Application eventing configuration in the following circumstances:
 - Application does not have a Scenario assigned.

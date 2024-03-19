@@ -13,5 +13,5 @@ This directory contains the following investigations:
 - [GraphQL - File Upload](./graphql-file-upload/file-upload-with-graphql.md)
 - [GraphQL - Mutation for updating complex types](./graphql-complex-updates/graphql-complex-updates.md)
 - [GraphQL - Secure Resolvers](./secure-resolvers/secure-resolvers.md)
-- [Documentation - Generating static page for our schema](./api-documentation/generate-api-documentation.md)
+- [Documentation - Generating Static Page for Our Schema](./api-documentation/generate-api-documentation.md)
 - [REST Adapters for GraphQL API](./rest-adapters/rest-adapter-for-graphql.md)
