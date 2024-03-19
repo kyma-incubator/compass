@@ -112,7 +112,7 @@ or
 }
 ```
 
-##### Tenant creation endpoint
+##### Tenant Creation Endpoint
 
 When successful, the endpoint returns the following JSON payload:
 
@@ -138,7 +138,7 @@ overrides:
 - `$name` - Specifies the tenant name.
 - `$discriminator` - Specifies an optional field that can be used to distinguish different types of tenants.
 
-##### Tenant deletion endpoint
+##### Tenant Deletion Endpoint
 
 When successful, the endpoint returns the following JSON payload:
 
@@ -160,7 +160,7 @@ overrides:
 - `$id` - Specifies a unique tenant ID.
 - `$name` - Specifies the tenant name.
 
-##### Tenant update endpoint
+##### Tenant Update Endpoint
 
 When successful, the endpoint returns the following JSON payload:
 
@@ -182,7 +182,7 @@ overrides:
 - `$id` - Specifies a unique tenant ID.
 - `$name` - Specifies the tenant name.
 
-##### Tenant move endpoint
+##### Tenant Move Endpoint
 
 When successful, the endpoint returns the following JSON payload:
 
