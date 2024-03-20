@@ -104,6 +104,35 @@ func (s Service) GetApplication(ctx context.Context, iasHost, clientID, appTenan
 	return filterByAppTenantID(applications.Applications, clientID, appTenantID)
 }
 
+func (s Service) CreateApplication(ctx context.Context, iasHost string, app *types.Application) error {
+	log := logger.FromContext(ctx)
+	url := buildCreateApplicationURL(iasHost)
+	appBytes, err := json.Marshal(app)
+	if err != nil {
+		return errors.Newf("failed to marshal body: %w", err)
+	}
+	log.Info().Msgf("creating application with body: %s", appBytes)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(appBytes))
+	if err != nil {
+		return errors.Newf("failed to create request: %w", err)
+	}
+	resp, err := s.client.Do(req)
+	if err != nil {
+		return errors.Newf("failed to send request: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusCreated {
+		respBytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			log.Warn().Msgf("failed to create application response body: %s", err)
+		}
+		return errors.Newf("failed to create application, status '%d', body '%s'", resp.StatusCode, respBytes)
+	}
+
+	return nil
+}
+
 func filterByAppTenantID(applications []types.Application, clientID, appTenantID string) (types.Application, error) {
 	for _, application := range applications {
 		if application.Authentication.SAPManagedAttributes.AppTenantID == appTenantID ||
@@ -186,6 +215,10 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 func buildGetApplicationURL(host, clientID string) string {
 	escapedFilter := url.QueryEscape(fmt.Sprintf("clientId eq %s", clientID))
 	return fmt.Sprintf("%s%s/?filter=%s", host, applicationsPath, escapedFilter)
+}
+
+func buildCreateApplicationURL(host string) string {
+	return fmt.Sprintf("%s%s/", host, applicationsPath)
 }
 
 func buildPatchApplicationURL(host, applicationID string) string {

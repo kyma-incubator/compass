@@ -20,6 +20,8 @@ type TenantMappingsStorage interface {
 //go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
 	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	CreateApplication(ctx context.Context, iasHost string, app *types.Application) error
+	// TODO Delete application on unassign?
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
 }
 
@@ -72,15 +74,21 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	tenantMapping types.TenantMapping, tenantMappingsFromDB map[string]types.TenantMapping) error {
 
 	formationID := tenantMapping.FormationID
-	uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
+	assignedTenant := tenantMapping.AssignedTenants[0]
+	uclAppID := assignedTenant.UCLApplicationID
 
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
-	if tenantMappingAlreadyInDB && len(tenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs) == 0 {
+	if tenantMappingAlreadyInDB && len(assignedTenant.Configuration.ConsumedAPIs) == 0 {
 		// Safeguard for empty consumedAPIs
 		logger.FromContext(ctx).Warn().Msgf(
 			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping upsert.",
 			uclAppID, formationID)
 	} else {
+		if assignedTenant.UCLApplicationType == types.S4ApplicationType {
+			if err := s.createIASApplication(ctx, tenantMapping); err != nil {
+				return errors.Newf("could not create IAS application: %w", err)
+			}
+		}
 		if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
 			return err
 		}
@@ -197,6 +205,23 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 		iasApps = append(iasApps, iasApp)
 	}
 	return iasApps, nil
+}
+
+func (s TenantMappingsService) createIASApplication(ctx context.Context, tenantMapping types.TenantMapping) error {
+	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
+	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.ApiCertificate
+	if s4Certificate == "" {
+		return errors.S4CertificateNotFound
+	}
+	s4App := types.Application{
+		Authentication: types.ApplicationAuthentication{
+			APICertificates: []types.ApiCertificateData{
+				{Base64Certificate: s4Certificate},
+			},
+		},
+	}
+
+	return s.IASService.CreateApplication(ctx, iasHost, &s4App)
 }
 
 func abs(x int) int {

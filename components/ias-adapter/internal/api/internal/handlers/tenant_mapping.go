@@ -64,9 +64,26 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
 		operation := tenantMapping.AssignedTenants[0].Operation
 
-		if operation == types.OperationAssign && errors.Is(err, errors.IASApplicationNotFound) {
-			internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
-			return
+		if operation == types.OperationAssign {
+			if errors.Is(err, errors.IASApplicationNotFound) {
+				internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
+				return
+			}
+
+			if errors.Is(err, errors.S4CertificateNotFound) {
+				logger.FromContext(ctx).Info().Msgf("Expecting S/4 certificate to be provided: %s", err.Error())
+				s4Config := &types.TenantMappingConfiguration{
+					Credentials: types.Credentials{
+						OutboundCommunicationCredentials: types.OutboundCommunicationCredentials{
+							OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
+								CorrelationIds: []string{"SAP_COM_1002"},
+							},
+						},
+					},
+				}
+				internal.RespondWithConfigPending(ctx, s4Config)
+				return
+			}
 		}
 
 		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)

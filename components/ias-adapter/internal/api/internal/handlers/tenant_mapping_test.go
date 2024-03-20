@@ -45,6 +45,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			AssignedTenants: []types.AssignedTenant{
 				{
 					UCLApplicationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+					UCLApplicationType: "test-app-type",
 					LocalTenantID:    "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
 					Operation:        types.OperationAssign,
 					Parameters: types.AssignedTenantParameters{

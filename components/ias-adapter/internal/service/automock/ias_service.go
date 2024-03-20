@@ -16,6 +16,24 @@ type IASService struct {
 	mock.Mock
 }
 
+// CreateApplication provides a mock function with given fields: ctx, iasHost, app
+func (_m *IASService) CreateApplication(ctx context.Context, iasHost string, app *types.Application) error {
+	ret := _m.Called(ctx, iasHost, app)
+
+	if len(ret) == 0 {
+		panic("no return value specified for CreateApplication")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *types.Application) error); ok {
+		r0 = rf(ctx, iasHost, app)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetApplication provides a mock function with given fields: ctx, iasHost, clientID, appTenantID
 func (_m *IASService) GetApplication(ctx context.Context, iasHost string, clientID string, appTenantID string) (types.Application, error) {
 	ret := _m.Called(ctx, iasHost, clientID, appTenantID)

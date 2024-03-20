@@ -35,20 +35,25 @@ type ReceiverTenant struct {
 }
 
 type (
-	Operation string
-	State     string
+	Operation       string
+	State           string
+	ApplicationType string
 )
 
 const (
 	OperationAssign   Operation = "assign"
 	OperationUnassign Operation = "unassign"
 
-	StateInitial State = "INITIAL"
-	StateReady   State = "READY"
+	StateInitial       State = "INITIAL"
+	StateReady         State = "READY"
+	StateConfigPending State = "CONFIG_PENDING"
+
+	S4ApplicationType ApplicationType = "SAP S/4HANA Cloud" // SAP S/4HANA On-Premise?
 )
 
 type AssignedTenant struct {
 	UCLApplicationID       string                      `json:"uclApplicationId"`
+	UCLApplicationType     ApplicationType             `json:"uclApplicationType"`
 	LocalTenantID          string                      `json:"localTenantId"`
 	Operation              Operation                   `json:"operation"`
 	ReverseAssignmentState State                       `json:"reverseAssignmentState"`
@@ -59,8 +64,8 @@ type AssignedTenant struct {
 
 func (at *AssignedTenant) String() string {
 	return fmt.Sprintf(
-		"$.operation: %s, $.localTenantId: %s, $.uclApplicationId: %s, $.parameters.technicalIntegrationId: %s, $.configuration: %+v",
-		at.Operation, at.LocalTenantID, at.UCLApplicationID, at.Parameters.ClientID, at.Configuration)
+		"$.operation: %s, $.localTenantId: %s, $.uclApplicationId: %s, $.uclApplicationType: %s, $.parameters.technicalIntegrationId: %s, $.configuration: %+v",
+		at.Operation, at.LocalTenantID, at.UCLApplicationID, at.UCLApplicationType, at.Parameters.ClientID, at.Configuration)
 }
 
 func (at *AssignedTenant) SetConfiguration(ctx context.Context) error {
@@ -87,7 +92,8 @@ type AssignedTenantParameters struct {
 }
 
 type AssignedTenantConfiguration struct {
-	ConsumedAPIs []string `json:"apis"`
+	ConsumedAPIs   []string `json:"apis"`
+	ApiCertificate string   `json:"apiCertificate,omitempty"` // TODO property name?
 }
 
 func (tm TenantMapping) Validate() error {
@@ -103,6 +109,10 @@ func (tm TenantMapping) Validate() error {
 	if tm.AssignedTenants[0].LocalTenantID == "" {
 		return errors.New("$.assignedTenants[0].localTenantId is required")
 	}
+	// TODO do we need to check the application type?
+	if tm.AssignedTenants[0].UCLApplicationType == "" {
+		return errors.New("$.assignedTenants[0].uclApplicationType is required")
+	}
 	if tm.AssignedTenants[0].Operation != OperationAssign && tm.AssignedTenants[0].Operation != OperationUnassign {
 		return errors.New("$.assignedTenants[0].operation can only be assign or unassign")
 	}
@@ -110,4 +120,25 @@ func (tm TenantMapping) Validate() error {
 		return errors.New("$.assignedTenants[0].parameters.technicalIntegrationId is required")
 	}
 	return nil
+}
+
+type TenantMappingResponse struct {
+	State         State                      `json:"state"`
+	Configuration TenantMappingConfiguration `json:"configuration"`
+}
+
+type TenantMappingConfiguration struct {
+	Credentials Credentials `json:"credentials"`
+}
+
+type Credentials struct {
+	OutboundCommunicationCredentials OutboundCommunicationCredentials `json:"outboundCommunication"`
+}
+
+type OutboundCommunicationCredentials struct {
+	OAuth2mTLSAuthentication OAuth2mTLSAuthentication `json:"oauth2mtls"`
+}
+
+type OAuth2mTLSAuthentication struct {
+	CorrelationIds []string `json:"correlationIds"`
 }

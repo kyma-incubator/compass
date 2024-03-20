@@ -27,6 +27,7 @@ var _ = Describe("Tenant mappings service", func() {
 		AssignedTenants: []types.AssignedTenant{
 			{
 				UCLApplicationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				UCLApplicationType: "test-app-type",
 				LocalTenantID:    "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
 				Operation:        types.OperationAssign,
 				Parameters: types.AssignedTenantParameters{
@@ -56,6 +57,12 @@ var _ = Describe("Tenant mappings service", func() {
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
 			Expect(err).Error().To(HaveOccurred())
 			Expect(err.Error()).To(ContainSubstring("failed to get IAS application"))
+		})
+	})
+
+	When("receive tenant mapping with S/4 participant", func() {
+		It("should create application in IAS", func() {
+
 		})
 	})
 })
