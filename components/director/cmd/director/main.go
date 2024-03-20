@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
+
 	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 
@@ -202,6 +204,8 @@ type config struct {
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 
 	ApplicationTemplateProductLabel string `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
+
+	EnvironmentSubjectConsumerMappings string `envconfig:"default=[],APP_SUBJECT_CONSUMER_MAPPING_CONFIG"`
 }
 
 func main() {
@@ -230,6 +234,14 @@ func main() {
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
+
+	subjectMappings, err := certsubjmapping.UnmarshalMappings(cfg.EnvironmentSubjectConsumerMappings)
+	exitOnError(err, "Error while unmarshalling the subject consumer mappings")
+
+	certSubjects := make([]string, 0, len(subjectMappings))
+	for _, subjectMapping := range subjectMappings {
+		certSubjects = append(certSubjects, subjectMapping.Subject)
+	}
 
 	defer func() {
 		err := closeFunc()
@@ -320,6 +332,7 @@ func main() {
 		cfg.DestinationCreatorConfig,
 		cfg.OrdAggregatorClientConfig,
 		cfg.SystemFetcherSyncClientConfig,
+		certSubjects,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -1137,4 +1150,13 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	fmHandler := formationmapping.NewFormationMappingHandler(transact, formationAssignmentSvc, formationAssignmentStatusSvc, faNotificationSvc, formationSvc, formationStatusSvc)
 
 	return fmHandler
+}
+
+func unmarshalSubjectMappings(certSubjectMappingsFromEnv string) ([]certsubjmapping.SubjectConsumerTypeMapping, error) {
+	var mappingsFromEnv []certsubjmapping.SubjectConsumerTypeMapping
+	if err := json.Unmarshal([]byte(certSubjectMappingsFromEnv), &mappingsFromEnv); err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling mappings")
+	}
+
+	return mappingsFromEnv, nil
 }

@@ -151,10 +151,11 @@ type Resolver struct {
 	appTemplateProductLabel    string
 	certSubjectMappingSvc      CertSubjectMappingService
 	ordClient                  *apiclient.ORDClient
+	envConsumerSubjects        []string
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig, environmentConsumerSubjects []string) *Resolver {
 	return &Resolver{
 		transact:                   transact,
 		appSvc:                     appSvc,
@@ -170,6 +171,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		appTemplateProductLabel:    appTemplateProductLabel,
 		certSubjectMappingSvc:      certSubjectMappingSvc,
 		ordClient:                  apiclient.NewORDClient(ordAggregatorClientConfig),
+		envConsumerSubjects:        environmentConsumerSubjects,
 	}
 }
 
@@ -349,6 +351,12 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 	log.C(ctx).Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
+
+	if consumerInfo.Flow.IsCertFlow() && consumerInfo.Subject != "" {
+		if err = r.prepareCertSubjectMapping(ctx, id, consumerInfo.Subject); err != nil {
+			return nil, err
+		}
+	}
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -1048,4 +1056,30 @@ func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Con
 	}
 
 	return regionValue, subaccountIDValue, systemFieldDiscoveryValue, nil
+}
+
+func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID, subject string) error {
+	for _, consumerSubject := range r.envConsumerSubjects {
+		if subject == consumerSubject {
+			log.C(ctx).Debug("Subject matches with a known environment consumer subject. Skipping certificate subject mapping creation.")
+			return nil
+		}
+	}
+
+	id := r.uidService.Generate()
+	model := &model.CertSubjectMapping{
+		ID:                 id,
+		Subject:            subject,
+		ConsumerType:       string(consumer.ApplicationConsumer),
+		InternalConsumerID: &appTemplateID,
+		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel, "account", "subaccount"},
+	}
+
+	if _, err := r.certSubjectMappingSvc.Create(ctx, model); err != nil {
+		return errors.Wrapf(err, "while creating a cert subject mapping for app template consumer %q", appTemplateID)
+	}
+
+	log.C(ctx).Infof("Successfully created a certificate subject mapping for Application Template with ID %q", appTemplateID)
+
+	return nil
 }

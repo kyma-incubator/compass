@@ -113,6 +113,8 @@ func (v *validator) Validate(ctx context.Context, claims idtokenclaims.Claims) e
 			return nil
 		}
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("subscription record not found neither for application: %q nor for runtime: %q", errAppProvider.Error(), errRuntimeConsumer.Error()))
+	case consumer.ApplicationConsumer:
+		return nil
 	default:
 		return apperrors.NewUnauthorizedError(fmt.Sprintf("consumer with type %s is not supported", claims.ConsumerType))
 	}

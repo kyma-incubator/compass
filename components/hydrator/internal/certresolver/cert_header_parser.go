@@ -2,6 +2,7 @@ package certresolver
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"regexp"
 	"strings"
@@ -19,6 +20,7 @@ type CertificateData struct {
 	ClientID         string
 	CertificateHash  string
 	AuthSessionExtra map[string]interface{}
+	Subject          string
 }
 
 type certificateInfo struct {
@@ -61,7 +63,7 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 
 	subjects := extractFromHeader(certHeader, subjectRegex)
 	hashes := extractFromHeader(certHeader, hashRegex)
-
+	fmt.Println("ALEX GetCertificateData subjects", subjects)
 	certificateInfos := createCertInfos(subjects, hashes)
 
 	log.C(ctx).Debugf("Trying to match certificate subjects [%s] for issuer %s", strings.Join(subjects, ","), hp.GetIssuer())
@@ -71,10 +73,15 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 		return nil
 	}
 
+	fmt.Printf("ALEX GetCertificateData subject - %s", certificateInfo.Subject)
+	fmt.Printf("ALEX GetCertificateData clientID - %s", hp.clientIDRetrieverFn(certificateInfo.Subject))
+	fmt.Printf("ALEX GetCertificateData AuthSessionExtra - %+v", hp.authSessionExtraRetrieverFn(ctx, certificateInfo.Subject))
+
 	certData := &CertificateData{
 		ClientID:         hp.clientIDRetrieverFn(certificateInfo.Subject),
 		CertificateHash:  certificateInfo.Hash,
 		AuthSessionExtra: hp.authSessionExtraRetrieverFn(ctx, certificateInfo.Subject),
+		Subject:          certificateInfo.Subject,
 	}
 
 	return certData
@@ -99,6 +106,7 @@ func createCertInfos(subjects, hashes []string) []certificateInfo {
 
 func (hp *headerParser) getCertificateInfoWithMatchingSubject(infos []certificateInfo) (certificateInfo, bool) {
 	for _, info := range infos {
+		fmt.Println("ALEX cert_header_parser - subject", info.Subject, hp.subjectMatcherFn(info.Subject))
 		if hp.subjectMatcherFn(info.Subject) {
 			return info, true
 		}

@@ -3,6 +3,7 @@ package application
 import (
 	"context"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -45,6 +46,10 @@ var (
 )
 
 func TestCreateApplicationTemplate(t *testing.T) {
+	ctx := context.Background()
+
+	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-create-cn")
+
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
 	t.Run("Success for global template", func(t *testing.T) {
 		// GIVEN
@@ -91,7 +96,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Success for global template with product label created with certificate", func(t *testing.T) {
 		// GIVEN
-		ctx := context.Background()
 		productLabelValue := []interface{}{"productLabelValue"}
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-product")
 		appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
@@ -108,14 +112,16 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, output)
 		require.NoError(t, err)
 
+		csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+
 		// THEN
 		require.Equal(t, output.Labels[conf.ApplicationTemplateProductLabel], productLabelValue)
 		require.NotEmpty(t, output.ID)
+		require.NotNil(t, csm, "Certificate subject mapping should be present but is missing")
 	})
 
 	t.Run("Success for regional template with product label created with certificate", func(t *testing.T) {
 		// GIVEN
-		ctx := context.Background()
 
 		productLabelValue := []interface{}{"productLabelValue"}
 		appTemplateName := "app-template-name-product-1"
@@ -145,8 +151,8 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		require.NoError(t, err)
 
 		t.Log("Create second regional application template")
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createApplicationTemplateRequest2, &output2)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, output2)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantID, createApplicationTemplateRequest2, &output2)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantID, output2)
 		require.NoError(t, err)
 
 		// THEN
@@ -160,7 +166,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Error for regional template with product label when the same product app template have different JSONPaths for their region placeholder", func(t *testing.T) {
 		// GIVEN
-		ctx := context.Background()
 
 		productLabelValue := []interface{}{"productLabelValue"}
 		appTemplateName1 := fixtures.CreateAppTemplateName("app-template-name-product-1")
@@ -199,7 +204,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Error for regional template with product label but missing region label on ApplicationInputJSON created with certificate", func(t *testing.T) {
 		// GIVEN
-		ctx := context.Background()
 
 		productLabelValue := []interface{}{"productLabelValue"}
 		appTemplateName1 := fixtures.CreateAppTemplateName("app-template-name-product-1")
@@ -226,7 +230,6 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Error when mixing global and regional App Templates for a single product label", func(t *testing.T) {
 		// GIVEN
-		ctx := context.Background()
 
 		// Create Regional and then Global
 		productLabelValue1 := []interface{}{"productLabelValue1"}
@@ -280,13 +283,13 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		globalOutput2 := graphql.ApplicationTemplate{}
 
 		t.Log("Create global application template")
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createGlobalApplicationTemplateRequest2, &globalOutput2)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, globalOutput2)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantID, createGlobalApplicationTemplateRequest2, &globalOutput2)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantID, globalOutput2)
 		require.NoError(t, err)
 
 		t.Log("Create regional application template")
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createRegionalApplicationTemplateRequest2, &regionalOutput2)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, regionalOutput2)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantID, createRegionalApplicationTemplateRequest2, &regionalOutput2)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantID, regionalOutput2)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), fmt.Sprintf(`Application Template with "%s" label is global and already exists`, conf.ApplicationTemplateProductLabel))
 	})
@@ -1054,6 +1057,9 @@ func TestUpdateApplicationTypeLabelOfApplicationsWhenAppTemplateNameIsUpdated(t 
 
 func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	ctx := context.Background()
+
+	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-other-region-cn")
+
 	appTemplateRegion := conf.SubscriptionConfig.SelfRegRegion
 	appTemplateOneInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel("SAP app-template", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 
@@ -1070,8 +1076,8 @@ func TestUpdateApplicationTemplate_AlreadyExistsInTheSameRegion(t *testing.T) {
 	appTemplateTwoInput := fixAppTemplateInputWithDistinguishLabel("SAP app-template-two", "other-label")
 
 	t.Log("Create second application template")
-	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantID, appTemplateTwoInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantID, appTemplateTwo)
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenantID, appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantID, appTemplateTwo)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateTwo.ID)
@@ -1912,6 +1918,24 @@ func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context)
 		ExternalClientCertExpectedIssuerLocality: &conf.ExternalClientCertExpectedIssuerLocalityRegion2,
 		ExternalCertProvider:                     certprovider.CertificateService,
 	}
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+}
+
+func createDirectorCertClientWithOtherSubject(t *testing.T, ctx context.Context, subject string) *gcli.Client {
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, subject, -1),
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 }

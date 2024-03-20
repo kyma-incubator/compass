@@ -2,6 +2,7 @@ package tenantmapping
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -61,14 +62,14 @@ func (c *consumerContextProvider) GetObjectContext(ctx context.Context, reqData 
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, c.tenantKeys, "", mergeWithOtherScopes, "", userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider), nil
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, c.tenantKeys, "", mergeWithOtherScopes, "", userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider, authDetails.Subject), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
 
 	authDetails.Region = region
 
-	objCtx := NewObjectContext(tenantMapping, c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider)
+	objCtx := NewObjectContext(tenantMapping, c.tenantKeys, "", mergeWithOtherScopes, authDetails.Region, userCtxData.clientID, authDetails.AuthID, authDetails.AuthFlow, consumer.User, tenantmapping.ConsumerProviderObjectContextProvider, authDetails.Subject)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
@@ -83,6 +84,12 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+
+	empJSON1, err := json.MarshalIndent(data.Body.Header, "", "  ")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Printf("ConsumerProviderObjectContextProvider Matcher header \n %s\n", string(empJSON1))
 
 	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
 		return false, nil, nil

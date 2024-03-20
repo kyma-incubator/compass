@@ -538,6 +538,7 @@ global:
         remove:
           - "Client-Id-From-Token"
           - "Client-Id-From-Certificate"
+          - "Subject-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
   hydrator:
@@ -742,7 +743,7 @@ global:
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}", "subject": "{{ print .Extra.subject }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync system_fetcher:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       runtimeMappingService:
@@ -1485,6 +1486,21 @@ global:
         - "certificate_subject_mapping:write"
         - "certificate_subject_mapping:read"
       managed_application_consumer: []
+      application_consumer:
+        - "runtime:read"
+        - "runtime:write"
+        - "application:read"
+        - "application:write"
+        - "runtime.auths:read"
+        - "bundle.instance_auths:read"
+        - "runtime.webhooks:read"
+        - "webhook:write"
+        - "application_template:read"
+        - "application_template:write"
+        - "application_template.webhooks:read"
+        - "formation_template:read"
+        - "formation_template:write"
+        - "formation_template.webhooks:read"
       formation_viewer:
         - "formation:read"
       landscape_resource_operator:

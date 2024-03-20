@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -191,6 +192,7 @@ func CleanupApplication(t require.TestingT, ctx context.Context, gqlClient *gcli
 		}
 		return nil
 	}
+	fmt.Println("ALEX", app.Name, time.Now().String())
 	err := retry.Do(deleteApplicationFunc,
 		retry.Attempts(retryAttempts),
 		retry.Delay(retryDelayMilliseconds*time.Millisecond),

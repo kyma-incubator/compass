@@ -64,7 +64,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, p.tenantKeys, scopes, mergeWithOtherScopes, "", "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, p.tenantKeys, scopes, mergeWithOtherScopes, "", "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -72,7 +72,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	authDetails.Region = region
 
 	objCtx := NewObjectContext(tenantMapping, p.tenantKeys, scopes, mergeWithOtherScopes,
-		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider)
+		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil
 }
@@ -82,15 +82,18 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
 	//In case there are tenant access levels the accessLevelContextProvider should be matched
 	//and there is no need to generate object context for the certServiceContextProvider
+	fmt.Println("ALEX NewCertServiceContextProvider data.TenantAccessLevels()", data.TenantAccessLevels())
 	if len(data.TenantAccessLevels()) != 0 {
 		return false, nil, nil
 	}
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-
+	subject1 := data.Body.Header.Get(oathkeeper.SubjectKey)
+	subject2 := data.Body.Extra[oathkeeper.SubjectKey]
+	fmt.Println("ALEX NewCertServiceContextProvider", subject1, subject2)
 	if idVal != "" && certIssuer == oathkeeper.ExternalIssuer {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject1}, nil
 	}
 
 	return false, nil, nil
@@ -105,6 +108,8 @@ func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAut
 }
 
 func getConsumerID(data oathkeeper.ReqData, details oathkeeper.AuthDetails) string {
+	fmt.Println("getConsumerID id", data.InternalConsumerID())
+	fmt.Println("getConsumerID details.AuthID", details.AuthID)
 	if id := data.InternalConsumerID(); id != "" {
 		return id
 	}

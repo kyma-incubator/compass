@@ -98,6 +98,19 @@ func (h *Handler) HandleSelfRegCleanup(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fmt.Println("ALEX")
+	empJSON1, err := json.MarshalIndent(subscription.Subscriptions, "", "  ")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Printf("subscription.Subscriptions \n %s\n", string(empJSON1))
+
+	empJSON2, err := json.MarshalIndent(SelfRegistrations[name], "", "  ")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Printf(" SelfRegistrations[name] \n %s\n", string(empJSON2))
+
 	if cloningExists && subscriberExists {
 		// We swallow their error msg and print only the status code
 		err := errors.New("")

@@ -3,6 +3,7 @@ package certsubjmapping
 import (
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"

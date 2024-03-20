@@ -52,6 +52,8 @@ const (
 	// ScopesKey missing godoc
 	ScopesKey = "scope"
 
+	SubjectKey = "subject-from-certificate"
+
 	// ConnectorIssuer missing godoc
 	ConnectorIssuer = "connector"
 	// ExternalIssuer missing godoc
@@ -65,6 +67,7 @@ type AuthDetails struct {
 	CertIssuer    string
 	Authenticator *authenticator.Config
 	ScopePrefixes []string
+	Subject       string
 	Region        string
 }
 

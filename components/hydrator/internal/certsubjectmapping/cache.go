@@ -1,6 +1,7 @@
 package certsubjectmapping
 
 import (
+	csm "github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
 	"sync"
 )
 
@@ -8,22 +9,22 @@ import (
 //
 //go:generate mockery --name=Cache --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Cache interface {
-	Get() []SubjectConsumerTypeMapping
-	Put(certSubjectMappings []SubjectConsumerTypeMapping)
+	Get() []csm.SubjectConsumerTypeMapping
+	Put(certSubjectMappings []csm.SubjectConsumerTypeMapping)
 }
 
 type certSubjectMappingCache struct {
 	mutex    sync.RWMutex
-	mappings []SubjectConsumerTypeMapping
+	mappings []csm.SubjectConsumerTypeMapping
 }
 
 // NewCertSubjectMappingCache creates a new certificate subject mapping cache
 func NewCertSubjectMappingCache() *certSubjectMappingCache {
-	return &certSubjectMappingCache{mappings: []SubjectConsumerTypeMapping{}}
+	return &certSubjectMappingCache{mappings: []csm.SubjectConsumerTypeMapping{}}
 }
 
 // Get returns a slice of SubjectConsumerTypeMapping
-func (cc *certSubjectMappingCache) Get() []SubjectConsumerTypeMapping {
+func (cc *certSubjectMappingCache) Get() []csm.SubjectConsumerTypeMapping {
 	cc.mutex.RLock()
 	defer cc.mutex.RUnlock()
 
@@ -31,7 +32,7 @@ func (cc *certSubjectMappingCache) Get() []SubjectConsumerTypeMapping {
 }
 
 // Put updates the cache with the given slice of SubjectConsumerTypeMapping
-func (cc *certSubjectMappingCache) Put(mappings []SubjectConsumerTypeMapping) {
+func (cc *certSubjectMappingCache) Put(mappings []csm.SubjectConsumerTypeMapping) {
 	cc.mutex.Lock()
 	defer cc.mutex.Unlock()
 

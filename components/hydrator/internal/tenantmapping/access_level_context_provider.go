@@ -54,6 +54,8 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", consumerType))
 	}
 
+	fmt.Println("ALEX NewAccessLevelContextProvider consumer", consumerType)
+
 	externalTenantID, err := reqData.GetExternalTenantID()
 	if err != nil {
 		if apperrors.IsKeyDoesNotExist(err) {
@@ -64,7 +66,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 			}
 
 			return NewObjectContext(&graphql.Tenant{}, p.tenantKeys, scopes, mergeWithOtherScopes,
-				"", "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
+				"", "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject), nil
 		}
 		return ObjectContext{}, err
 	}
@@ -77,7 +79,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
 			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, p.tenantKeys, scopes, mergeWithOtherScopes, "",
-				"", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
+				"", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -90,7 +92,7 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 	}
 
 	objCtx := NewObjectContext(tenantMapping, p.tenantKeys, scopes, mergeWithOtherScopes,
-		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider)
+		authDetails.Region, "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil
 }
@@ -103,6 +105,9 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+	subject1 := data.Body.Header.Get(oathkeeper.SubjectKey)
+	subject2 := data.Body.Extra[oathkeeper.SubjectKey]
+	fmt.Println("ALEX NewAccessLevelContextProvider", subject1, subject2)
 
 	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
 		return false, nil, nil
@@ -114,7 +119,7 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 		}
 	}
 
-	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject1}, nil
 }
 
 func (p *accessLevelContextProvider) verifyTenantAccessLevels(accessLevel string, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {

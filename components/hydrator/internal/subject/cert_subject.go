@@ -2,6 +2,7 @@ package subject
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
@@ -85,9 +86,14 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 		}
 
 		for _, m := range mappings {
+			//if m.ConsumerType == string(consumer.ApplicationConsumer) {
+			//	continue
+			//}
+
 			log.C(ctx).Infof("Trying to match the consumer subject DN with certificate subject mappings DN: %q", m.Subject)
 			if subjectsMatch(subject, m.Subject) {
 				log.C(ctx).Infof("Subject's DNs matched!")
+				fmt.Println(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
 				return cert.GetAuthSessionExtra(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
 			}
 		}
@@ -122,6 +128,9 @@ func (p *processor) authIDFromMappings() func(subject string) string {
 			if subjectsMatch(subject, m.Subject) {
 				return m.InternalConsumerID
 			}
+			//if subjectsMatch(subject, m.Subject) && m.ConsumerType != string(consumer.ApplicationConsumer) {
+			//	return m.InternalConsumerID
+			//}
 		}
 		return ""
 	}

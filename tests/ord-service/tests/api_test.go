@@ -22,13 +22,13 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
@@ -55,7 +55,7 @@ const (
 	applicationTenantIDHeaderKey = "applicationTenantId"
 )
 
-func TestORDService(t *testing.T) {
+func TestORDServiceAlex(t *testing.T) {
 	ctx := context.Background()
 
 	defaultTestTenant := tenant.TestTenants.GetIDByName(t, tenant.TenantSeparationTenantName)
@@ -289,6 +289,7 @@ func TestORDService(t *testing.T) {
 
 	// create label definition
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
+	fmt.Println("ALEX", time.Now().String())
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
 
 	// create automatic scenario assigment for subTenant
@@ -665,6 +666,10 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, false)
 
+	certDirectorGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+	// HTTP client configured with certificate with patched subject, issued from cert-rotation job
+	certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
 	// The external cert secret created by the NewExternalCertFromConfig above is used by the external-services-mock for the async formation status API call,
 	// that's why in the function above there is a false parameter that don't delete it and an explicit defer deletion func is added here
 	// so, the secret could be deleted at the end of the test. Otherwise, it will remain as leftover resource in the cluster
@@ -683,8 +688,8 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 
 	appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, "test-app-region", "compass.test", namePlaceholder, displayNamePlaceholder)
 	appTemplateInput.Labels[conf.ApplicationTemplateProductLabel] = productLabelValue
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantID, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certDirectorGQLClient, tenantID, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certDirectorGQLClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTmpl.ID)
 
@@ -694,24 +699,16 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	require.NoError(t, err)
 	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
 	application := directorSchema.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, createAppFromTmplRequest, &application)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &application)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certDirectorGQLClient, tenantID, createAppFromTmplRequest, &application)
+	defer fixtures.CleanupApplication(t, ctx, certDirectorGQLClient, tenantID, &application)
 	require.NoError(t, err)
 	require.NotEmpty(t, application.ID)
 	t.Logf("app ID: %q", application.ID)
 
-	// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
-	consumerType := string(consumer.ManagedApplicationProviderOperator)
-	tenantAccessLevels := []string{"global"} // should be a valid tenant access level
-	internalConsumerID := appTmpl.ID         // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
-	certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
-
-	csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
-	t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, tenantAccessLevels)
-
-	var csmCreate directorSchema.CertificateSubjectMapping
-	defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
-	csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
+	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTmpl.ID)
+	fmt.Println(certSubject)
+	require.NotNil(t, csm)
+	fmt.Println(*csm)
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
 
@@ -721,12 +718,9 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, consumerApp.ID)
 
-	// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-	certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
-
 	headers := map[string][]string{applicationTenantIDHeaderKey: {localTenantID}}
 	// Make a request to the ORD service with http client containing custom certificate and application tenant ID header
-	t.Log("Getting application using custom certificate and appplicationTenantId header before a formation is created...")
+	t.Log("Getting application using custom certificate and applicationTenantId header before a formation is created...")
 	respBody := makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 	require.Empty(t, gjson.Get(respBody, "value").Array())
 	t.Log("No system instance details are returned due to missing formation")
@@ -754,7 +748,10 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	defer unassignFromFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
 
 	t.Log("Getting application using custom certificate and appplicationTenantId header after formation is created...")
+	fmt.Println("ALEX time", time.Now().String())
 	respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+	fmt.Println(respBody)
+
 	require.Len(t, gjson.Get(respBody, "value").Array(), 2)
 
 	isSystemFound := false
