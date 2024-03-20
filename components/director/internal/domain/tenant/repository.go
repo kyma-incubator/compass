@@ -453,6 +453,10 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	}
 
 	if tnt.Type != tenant.CostObject {
+		if err = r.deleteChildTenantsRecursively(ctx, tnt.ID); err != nil {
+			return err
+		}
+
 		for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
 			if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
 				log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
@@ -464,28 +468,17 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
 			}
 
-			tenantAccesses := repo.TenantAccessCollection{}
-
-			tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
-			if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, tnt.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
-				return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", tnt.ID)
+			resourceIDs, err := r.retrieveOwningResources(ctx, m2mTable, tnt.ID)
+			if err != nil {
+				return errors.Wrapf(err, "while retrieving owning resources for tenant with id %s", tnt.ID)
 			}
 
-			if len(tenantAccesses) > 0 {
-				resourceIDs := make([]string, 0, len(tenantAccesses))
-				for _, ta := range tenantAccesses {
-					resourceIDs = append(resourceIDs, ta.ResourceID)
-				}
-
+			if len(resourceIDs) > 0 {
 				deleter := repo.NewDeleterGlobal(topLevelEntity, topLevelEntityTable)
 				if err := deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", resourceIDs)}); err != nil {
 					return errors.Wrapf(err, "while deleting resources owned by tenant %s", tnt.ID)
 				}
 			}
-		}
-
-		if err = r.deleteChildTenantsRecursively(ctx, tnt.ID); err != nil {
-			return err
 		}
 	}
 
@@ -725,6 +718,50 @@ func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenan
 	}
 
 	return r.enrichManyWithParents(ctx, entityCollection)
+}
+
+func (r *pgRepository) retrieveOwningResources(ctx context.Context, m2mTable, tenantID string) ([]string, error) {
+	rawStmt := `SELECT DISTINCT ta1.{{ .m2mID }}
+				FROM {{ .m2mTable }} ta1
+         			LEFT JOIN {{ .m2mTable }} ta2
+                	   ON ta1.{{ .m2mID }} = ta2.{{ .m2mID }}
+                    	   AND ta2.{{ .m2mTenantID }} = ta2.{{ .m2mSource }}
+                    	   AND ta2.{{ .m2mTenantID }} <> ta1.{{ .m2mTenantID }}
+				WHERE ta1.{{ .m2mTenantID }} = ? AND ta2.{{ .m2mID }} IS NULL`
+
+	t, err := template.New("").Parse(rawStmt)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]string{
+		"m2mTable":    m2mTable,
+		"m2mTenantID": repo.M2MTenantIDColumn,
+		"m2mID":       repo.M2MResourceIDColumn,
+		"m2mSource":   repo.M2MSourceColumn,
+	}
+
+	res := new(bytes.Buffer)
+	if err = t.Execute(res, data); err != nil {
+		return nil, errors.Wrapf(err, "while executing template")
+	}
+
+	stmt := res.String()
+	stmt = sqlx.Rebind(sqlx.DOLLAR, stmt)
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+
+	var dest []string
+	if err := persist.SelectContext(ctx, &dest, stmt, tenantID); err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.List, "while listing owning resources from %s table for tenant %s", m2mTable, tenantID)
+	}
+
+	return dest, nil
 }
 
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {

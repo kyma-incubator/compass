@@ -166,7 +166,7 @@ global:
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3751"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
@@ -202,7 +202,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3716"
+      version: "PR-3744"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3720"
+      version: "PR-3759"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
