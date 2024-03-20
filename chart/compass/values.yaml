@@ -202,7 +202,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3716"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
