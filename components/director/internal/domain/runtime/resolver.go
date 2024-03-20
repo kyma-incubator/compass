@@ -165,6 +165,11 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
+//go:generate mockery --exported --name=tenantSvc --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantSvc interface {
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -185,13 +190,14 @@ type Resolver struct {
 	webhookConverter          WebhookConverter
 	fetcher                   TenantFetcher
 	formationSvc              formationService
+	tenantSvc                 tenantSvc
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher, formationSvc formationService) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher, formationSvc formationService, tenantSvc tenantSvc) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -211,6 +217,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		webhookConverter:          webhookConverter,
 		fetcher:                   fetcher,
 		formationSvc:              formationSvc,
+		tenantSvc:                 tenantSvc,
 	}
 }
 
@@ -333,11 +340,16 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
 		}
 
-		parentTenant, err := tenant.LoadFromContext(ctx)
+		parentTenantInternalID, err := tenant.LoadFromContext(ctx) // should be external
+		parentTenant, err := r.tenantSvc.GetTenantByID(ctx, parentTenantInternalID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", parentTenantInternalID)
+		}
+
 		if err != nil {
 			return nil, err
 		}
-		if err := r.fetcher.FetchOnDemand(ctx, sa, parentTenant); err != nil {
+		if err := r.fetcher.FetchOnDemand(ctx, sa, parentTenant.ExternalTenant); err != nil {
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
 		}
 	}
