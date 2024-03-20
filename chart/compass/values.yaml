@@ -166,7 +166,7 @@ global:
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3721"
+      version: "PR-3751"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
