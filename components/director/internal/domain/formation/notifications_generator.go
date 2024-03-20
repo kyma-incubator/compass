@@ -81,7 +81,7 @@ func NewNotificationsGenerator(
 }
 
 // GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned generates notification with target the application that is assigned about for each runtime and each runtimeContext that is part of the formation
-func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications during %q operation about runtimes and runtime contexts in the same formation for application with ID: %q", model.WebhookTypeConfigurationChanged, operation, appID)
 	applicationWithLabels, appTemplateWithLabels, err := ns.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 	if err != nil {
@@ -106,7 +106,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		return nil, errors.Wrap(err, "while preparing runtime and runtime contexts mappings")
 	}
 
-	requests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(runtimesMapping))
+	requests := make([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, 0, len(runtimesMapping))
 	for rtID := range runtimesMapping {
 		rtCtx := runtimesToRuntimeContextsMapping[rtID]
 		if rtCtx == nil {
@@ -133,18 +133,19 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 		if err != nil {
 			return nil, err
 		}
+
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhook)
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, req)
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 	return requests, nil
 }
 
 // GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned generates notification per runtime that is part of the formation with target the runtime and source the application on which `operation` is performed
-func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications during %q operation about application with ID: %q for all listening runtimes in the same formation", model.WebhookTypeConfigurationChanged, operation, appID)
 	applicationWithLabels, appTemplateWithLabels, err := ns.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 	if err != nil {
@@ -187,7 +188,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 		}
 	}
 
-	requests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(runtimeIDsToBeNotified))
+	requests := make([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, 0, len(runtimeIDsToBeNotified))
 	for rtID := range runtimeIDsToBeNotified {
 		rtCtx := runtimeIDToRuntimeContextInFormationMappings[rtID]
 		if rtCtx == nil {
@@ -215,11 +216,15 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 			return nil, err
 		}
 
+		target := rtID
+		if rtCtx != nil {
+			target = rtCtx.ID
+		}
 		req, err := ns.notificationBuilder.BuildFormationAssignmentNotificationRequest(ctx, details, webhooksToCall[runtime.ID])
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, req)
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: target, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
@@ -227,7 +232,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 }
 
 // GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned generates notification per application that is part of the formation with target the application and source the application on which `operation` is performed
-func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications during %q operation for application with ID: %q", model.WebhookTypeApplicationTenantMapping, operation, appID)
 	applicationWithLabels, appTemplateWithLabels, err := ns.webhookDataInputBuilder.PrepareApplicationAndAppTemplateWithLabels(ctx, tenant, appID)
 	if err != nil {
@@ -278,7 +283,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		return nil, errors.Wrap(err, "while preparing application and application template mappings")
 	}
 
-	requests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(listeningAppsByID))
+	requests := make([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, 0, len(listeningAppsByID))
 	if listeningAppsByID[appID] != nil {
 		log.C(ctx).Infof("The application with ID: %q that is being %q is also listening for %q notifications. Will create notifications about all other apps in the formation...", appID, operation, model.WebhookTypeApplicationTenantMapping)
 		webhook := appIDToWebhookMapping[appID]
@@ -322,7 +327,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 			if err != nil {
 				return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 			} else if req != nil {
-				requests = append(requests, req)
+				requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 			}
 		}
 	}
@@ -367,7 +372,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, req)
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
@@ -377,7 +382,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 }
 
 // GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned generates notification per application that is part of the formation with target the application and source the runtime context on which `operation` is performed
-func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications about runtime context with ID: %q for all interested applications in the formation", operation, runtimeCtxID)
 	runtimeCtxWithLabels, err := ns.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
 	if err != nil {
@@ -395,7 +400,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 }
 
 // GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned generates notification per application that is part of the formation with target the application and source the runtime on which `operation` is performed
-func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications during %q operation about runtime with ID: %q for all interested applications in the formation", model.WebhookTypeConfigurationChanged, operation, runtimeID)
 	runtimeWithLabels, err := ns.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
 	if err != nil {
@@ -452,7 +457,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 		}
 	}
 
-	requests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(applicationsInFormationMapping))
+	requests := make([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, 0, len(applicationsInFormationMapping))
 	for _, appID := range listeningApplicationsInFormationIds {
 		app := applicationsInFormationMapping[appID]
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
@@ -484,14 +489,14 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, req)
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: appID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 	return requests, nil
 }
 
 // GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned generates notification per runtime context that is part of the formation with target the runtime context and source the application on which `operation` is performed
-func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications during %q operation for runtime context with ID: %q", model.WebhookTypeConfigurationChanged, operation, runtimeCtxID)
 	runtimeCtxWithLabels, err := ns.webhookDataInputBuilder.PrepareRuntimeContextWithLabels(ctx, tenant, runtimeCtxID)
 	if err != nil {
@@ -519,7 +524,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		return nil, err
 	}
 
-	requests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(applicationMapping))
+	requests := make([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, 0, len(applicationMapping))
 	for _, app := range applicationMapping {
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
 		if app.ApplicationTemplateID != nil {
@@ -550,7 +555,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, req)
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: runtimeCtxID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
@@ -558,7 +563,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 }
 
 // GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned generates notification per runtime that is part of the formation with target the runtime and source the application on which `operation` is performed
-func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	log.C(ctx).Infof("Generating %q notifications during %q operation about all applications in the formation for runtime with ID: %q", model.WebhookTypeConfigurationChanged, operation, runtimeID)
 	runtimeWithLabels, err := ns.webhookDataInputBuilder.PrepareRuntimeWithLabels(ctx, tenant, runtimeID)
 	if err != nil {
@@ -579,7 +584,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		return nil, err
 	}
 
-	requests := make([]*webhookclient.FormationAssignmentNotificationRequest, 0, len(applicationMapping))
+	requests := make([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, 0, len(applicationMapping))
 	for _, app := range applicationMapping {
 		var appTemplate *webhookdir.ApplicationTemplateWithLabels
 		if app.ApplicationTemplateID != nil {
@@ -610,7 +615,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 		if err != nil {
 			return nil, errors.Wrap(err, "Failed to build formation assignment notification request")
 		} else if req != nil {
-			requests = append(requests, req)
+			requests = append(requests, &webhookclient.FormationAssignmentNotificationRequestTargetMapping{Target: runtimeID, FormationAssignmentNotificationRequest: req})
 		}
 	}
 
