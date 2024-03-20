@@ -334,26 +334,6 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		return nil, err
 	}
 
-	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
-		sa, err := convertLabelValue(saVal)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
-		}
-
-		parentTenantInternalID, err := tenant.LoadFromContext(ctx) // should be external
-		parentTenant, err := r.tenantSvc.GetTenantByID(ctx, parentTenantInternalID)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", parentTenantInternalID)
-		}
-
-		if err != nil {
-			return nil, err
-		}
-		if err := r.fetcher.FetchOnDemand(ctx, sa, parentTenant.ExternalTenant); err != nil {
-			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
-		}
-	}
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -375,6 +355,26 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	if saVal, ok := in.Labels[scenarioassignment.SubaccountIDKey]; ok {
+		sa, err := convertLabelValue(saVal)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
+		}
+
+		parentTenantInternalID, err := tenant.LoadFromContext(ctx) // should be external
+		parentTenant, err := r.tenantSvc.GetTenantByID(ctx, parentTenantInternalID)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", parentTenantInternalID)
+		}
+
+		if err != nil {
+			return nil, err
+		}
+		if err := r.fetcher.FetchOnDemand(ctx, sa, parentTenant.ExternalTenant); err != nil {
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", sa)
+		}
+	}
 
 	if err = r.checkProviderRuntimeExistence(ctx, selfRegLabels); err != nil {
 		return nil, err

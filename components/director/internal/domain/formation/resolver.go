@@ -282,6 +282,14 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		return nil, err
 	}
 
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	tenantMapping, err := r.tenantSvc.GetTenantByID(ctx, tnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", tnt)
@@ -293,14 +301,6 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
 		}
 	}
-
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
 
 	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
 	if err != nil {
