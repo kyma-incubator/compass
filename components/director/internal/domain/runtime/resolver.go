@@ -362,7 +362,7 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 			return nil, errors.Wrapf(err, "while converting %s label", scenarioassignment.SubaccountIDKey)
 		}
 
-		parentTenantInternalID, err := tenant.LoadFromContext(ctx) // should be external
+		parentTenantInternalID, err := tenant.LoadFromContext(ctx)
 		parentTenant, err := r.tenantSvc.GetTenantByID(ctx, parentTenantInternalID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", parentTenantInternalID)
