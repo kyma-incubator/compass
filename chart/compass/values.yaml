@@ -166,11 +166,11 @@ global:
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3721"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3715"
+      version: "PR-3742"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -202,7 +202,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3716"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
