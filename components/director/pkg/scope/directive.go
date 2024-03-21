@@ -2,6 +2,7 @@ package scope
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/99designs/gqlgen/graphql"

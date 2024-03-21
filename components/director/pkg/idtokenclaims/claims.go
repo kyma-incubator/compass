@@ -3,7 +3,6 @@ package idtokenclaims
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -49,9 +48,6 @@ func (c *Claims) UnmarshalJSON(b []byte) error {
 		ZID           string              `json:"zid"`
 		jwt.StandardClaims
 	}{}
-
-	fmt.Println("ALEX UnmarshalJSON")
-	//debug.PrintStack()
 
 	err := json.Unmarshal(b, &tokenClaims)
 	if err != nil {

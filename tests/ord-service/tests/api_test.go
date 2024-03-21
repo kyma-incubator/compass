@@ -289,7 +289,6 @@ func TestORDServiceAlex(t *testing.T) {
 
 	// create label definition
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
-	fmt.Println("ALEX", time.Now().String())
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantFilteringTenant, scenarioName)
 
 	// create automatic scenario assigment for subTenant
@@ -706,9 +705,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	t.Logf("app ID: %q", application.ID)
 
 	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTmpl.ID)
-	fmt.Println(certSubject)
 	require.NotNil(t, csm)
-	fmt.Println(*csm)
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
 
@@ -748,9 +745,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	defer unassignFromFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
 
 	t.Log("Getting application using custom certificate and appplicationTenantId header after formation is created...")
-	fmt.Println("ALEX time", time.Now().String())
 	respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
-	fmt.Println(respBody)
 
 	require.Len(t, gjson.Get(respBody, "value").Array(), 2)
 

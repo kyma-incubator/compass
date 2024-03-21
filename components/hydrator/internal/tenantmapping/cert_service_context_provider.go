@@ -82,18 +82,16 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.ReqData) (bool, *oathkeeper.AuthDetails, error) {
 	//In case there are tenant access levels the accessLevelContextProvider should be matched
 	//and there is no need to generate object context for the certServiceContextProvider
-	fmt.Println("ALEX NewCertServiceContextProvider data.TenantAccessLevels()", data.TenantAccessLevels())
 	if len(data.TenantAccessLevels()) != 0 {
 		return false, nil, nil
 	}
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-	subject1 := data.Body.Header.Get(oathkeeper.SubjectKey)
-	subject2 := data.Body.Extra[oathkeeper.SubjectKey]
-	fmt.Println("ALEX NewCertServiceContextProvider", subject1, subject2)
+	subject := data.Body.Header.Get(oathkeeper.SubjectKey)
+
 	if idVal != "" && certIssuer == oathkeeper.ExternalIssuer {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject1}, nil
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject}, nil
 	}
 
 	return false, nil, nil
@@ -108,8 +106,6 @@ func (p *certServiceContextProvider) directorScopes(consumerType model.SystemAut
 }
 
 func getConsumerID(data oathkeeper.ReqData, details oathkeeper.AuthDetails) string {
-	fmt.Println("getConsumerID id", data.InternalConsumerID())
-	fmt.Println("getConsumerID details.AuthID", details.AuthID)
 	if id := data.InternalConsumerID(); id != "" {
 		return id
 	}

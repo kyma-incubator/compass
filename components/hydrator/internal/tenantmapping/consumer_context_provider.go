@@ -2,7 +2,6 @@ package tenantmapping
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/url"
 
@@ -84,12 +83,6 @@ func (c *consumerContextProvider) Match(_ context.Context, data oathkeeper.ReqDa
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-
-	empJSON1, err := json.MarshalIndent(data.Body.Header, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("ConsumerProviderObjectContextProvider Matcher header \n %s\n", string(empJSON1))
 
 	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
 		return false, nil, nil

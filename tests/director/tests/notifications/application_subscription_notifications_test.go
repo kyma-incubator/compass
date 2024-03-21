@@ -56,7 +56,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		},
 	}
 
-	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1)
+	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-formation-notifications-cn", -1)
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
@@ -107,7 +107,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])

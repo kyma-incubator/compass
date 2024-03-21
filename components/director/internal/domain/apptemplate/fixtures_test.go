@@ -5,10 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 

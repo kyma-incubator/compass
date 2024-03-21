@@ -1,8 +1,9 @@
 package certsubjectmapping
 
 import (
-	csm "github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
 	"sync"
+
+	csm "github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
 )
 
 // Cache is responsible for the read and write operation of the cert subject mapping in-memory storage

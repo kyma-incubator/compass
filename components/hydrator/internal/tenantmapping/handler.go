@@ -258,8 +258,6 @@ func (h *Handler) addTenantsToExtra(tenants map[string]string, reqData oathkeepe
 
 	tenantsStr := string(tenantsJSON)
 
-	fmt.Println("ALEX TenantMapping Handler tenants", tenantsStr)
-
 	escaped := strings.ReplaceAll(tenantsStr, `"`, `\"`)
 	reqData.Body.Extra["tenant"] = escaped
 
@@ -314,14 +312,6 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	region := deriveRegionFromObjectContexts(objectContexts)
 
 	c := consumer.Consumer{}
-
-	for _, objectContext := range objectContexts {
-		empJSON1, err := json.MarshalIndent(objectContext, "", "  ")
-		if err != nil {
-			fmt.Println("err", err)
-		}
-		fmt.Printf("objectContext \n %s\n", string(empJSON1))
-	}
 
 	if len(objectContexts) == 1 {
 		c.ConsumerID = objectContexts[0].ConsumerID

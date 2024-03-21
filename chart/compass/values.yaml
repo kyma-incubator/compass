@@ -1487,20 +1487,9 @@ global:
         - "certificate_subject_mapping:read"
       managed_application_consumer: []
       application_consumer:
-        - "runtime:read"
-        - "runtime:write"
-        - "application:read"
-        - "application:write"
-        - "runtime.auths:read"
-        - "bundle.instance_auths:read"
-        - "runtime.webhooks:read"
-        - "webhook:write"
         - "application_template:read"
         - "application_template:write"
         - "application_template.webhooks:read"
-        - "formation_template:read"
-        - "formation_template:write"
-        - "formation_template.webhooks:read"
       formation_viewer:
         - "formation:read"
       landscape_resource_operator:

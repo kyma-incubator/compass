@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -201,8 +200,6 @@ func getClaims(ctx context.Context, headers http.Header) (Claims, error) {
 		OnBehalfOf:     tokenClaims.OnBehalfOf,
 		Subject:        tokenClaims.Subject,
 	}
-
-	fmt.Println("ALEX getClaims", claims)
 
 	if provider, exists := tenants["providerTenant"]; exists {
 		claims.Tenant = provider

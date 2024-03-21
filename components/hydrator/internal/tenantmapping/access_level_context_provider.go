@@ -54,8 +54,6 @@ func (p *accessLevelContextProvider) GetObjectContext(ctx context.Context, reqDa
 		return ObjectContext{}, apperrors.NewInternalError(fmt.Sprintf("Failed to extract scopes for consumer with type %s", consumerType))
 	}
 
-	fmt.Println("ALEX NewAccessLevelContextProvider consumer", consumerType)
-
 	externalTenantID, err := reqData.GetExternalTenantID()
 	if err != nil {
 		if apperrors.IsKeyDoesNotExist(err) {
@@ -105,9 +103,7 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-	subject1 := data.Body.Header.Get(oathkeeper.SubjectKey)
-	subject2 := data.Body.Extra[oathkeeper.SubjectKey]
-	fmt.Println("ALEX NewAccessLevelContextProvider", subject1, subject2)
+	subject := data.Body.Header.Get(oathkeeper.SubjectKey)
 
 	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
 		return false, nil, nil
@@ -119,10 +115,14 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 		}
 	}
 
-	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject1}, nil
+	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject}, nil
 }
 
 func (p *accessLevelContextProvider) verifyTenantAccessLevels(accessLevel string, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
+	//if reqData.ConsumerType() == model.ApplicationConsumerReference {
+	//	return nil
+	//}
+
 	grantedAccessLevels := reqData.TenantAccessLevels()
 	for _, al := range grantedAccessLevels {
 		if accessLevel == al {

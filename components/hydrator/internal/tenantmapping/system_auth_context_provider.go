@@ -114,12 +114,10 @@ func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.Req
 	// Certificate flow
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-	subject1 := data.Body.Header.Get(oathkeeper.SubjectKey)
-	subject2 := data.Body.Extra[oathkeeper.SubjectKey]
-	fmt.Println("ALEX NewSystemAuthContextProvider", subject1, subject2)
+	subject := data.Body.Header.Get(oathkeeper.SubjectKey)
 
 	if idVal != "" && certIssuer != oathkeeper.ExternalIssuer {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject1}, nil
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject}, nil
 	}
 
 	// One-Time Token flow
