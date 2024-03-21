@@ -1064,7 +1064,7 @@ func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID,
 	model := &model.CertSubjectMapping{
 		ID:                 id,
 		Subject:            subject,
-		ConsumerType:       string(consumer.ApplicationConsumer),
+		ConsumerType:       string(consumer.ApplicationProvider),
 		InternalConsumerID: &appTemplateID,
 		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel, "account", "subaccount"},
 	}

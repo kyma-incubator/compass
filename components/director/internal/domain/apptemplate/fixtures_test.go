@@ -910,7 +910,7 @@ func fixCertSubjectMappingModel(appTemplateID string) *model.CertSubjectMapping 
 	return &model.CertSubjectMapping{
 		ID:                 testUUID,
 		Subject:            certSubject,
-		ConsumerType:       string(consumer.ApplicationConsumer),
+		ConsumerType:       string(consumer.ApplicationProvider),
 		InternalConsumerID: &appTemplateID,
 		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel},
 	}

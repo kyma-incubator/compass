@@ -122,9 +122,6 @@ func (p *processor) authIDFromMappings() func(subject string) string {
 			if subjectsMatch(subject, m.Subject) {
 				return m.InternalConsumerID
 			}
-			//if subjectsMatch(subject, m.Subject) && m.ConsumerType != string(consumer.ApplicationConsumer) {
-			//	return m.InternalConsumerID
-			//}
 		}
 		return ""
 	}

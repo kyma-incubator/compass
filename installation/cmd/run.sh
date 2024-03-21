@@ -273,6 +273,10 @@ if [[ ! ${SKIP_K3D_START} ]]; then
   $SUDO sh -c "echo \"\n127.0.0.1 k3d-kyma-registry\" >> /etc/hosts"
 fi
 
+
+echo "Adding Compass entries to /etc/hosts..."
+$SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"
+
 echo "Label k3d node for benchmark execution..."
 NODE=$("$KUBECTL" get nodes | grep agent | tail -n 1 | cut -d ' ' -f 1)
 "$KUBECTL" label --overwrite node "$NODE" benchmark=true || true
@@ -316,6 +320,3 @@ else # this is the case when the script is ran on non-Mac OSX machines, ex. as p
   $SUDO cp "${COMPASS_CERT_PATH}" /etc/ssl/certs
   $SUDO update-ca-certificates
 fi
-
-echo "Adding Compass entries to /etc/hosts..."
-$SUDO sh -c "echo \"\n127.0.0.1 adapter-gateway.local.kyma.dev adapter-gateway-mtls.local.kyma.dev compass-gateway-mtls.local.kyma.dev compass-gateway-xsuaa.local.kyma.dev compass-gateway-sap-mtls.local.kyma.dev compass-gateway-auth-oauth.local.kyma.dev compass-gateway.local.kyma.dev compass-gateway-int.local.kyma.dev compass.local.kyma.dev compass-mf.local.kyma.dev kyma-env-broker.local.kyma.dev director.local.kyma.dev compass-external-services-mock.local.kyma.dev compass-external-services-mock-sap-mtls.local.kyma.dev compass-external-services-mock-sap-mtls-ord.local.kyma.dev compass-external-services-mock-sap-mtls-global-ord-registry.local.kyma.dev discovery.api.local compass-director-internal.local.kyma.dev connector.local.kyma.dev hydrator.local.kyma.dev compass-gateway-internal.local.kyma.dev\" >> /etc/hosts"

@@ -23,7 +23,7 @@ var SupportedConsumerTypes = map[consumer.Type]bool{
 	consumer.SuperAdmin:                         true,
 	consumer.BusinessIntegration:                true,
 	consumer.ManagedApplicationProviderOperator: true,
-	consumer.ApplicationConsumer:                true,
+	consumer.ApplicationProvider:                true,
 	consumer.ManagedApplicationConsumer:         true,
 	consumer.LandscapeResourceOperator:          true,
 	consumer.TenantDiscoveryOperator:            true,
