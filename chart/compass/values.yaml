@@ -1556,6 +1556,7 @@ global:
         - "automatic_scenario_assignment:read"
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
+        - "formation.state:write"
         - "formation:write"
         - "formation:read"
         - "internal_visibility:read"
