@@ -119,10 +119,6 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 }
 
 func (p *accessLevelContextProvider) verifyTenantAccessLevels(accessLevel string, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {
-	//if reqData.ConsumerType() == model.ApplicationConsumerReference {
-	//	return nil
-	//}
-
 	grantedAccessLevels := reqData.TenantAccessLevels()
 	for _, al := range grantedAccessLevels {
 		if accessLevel == al {
