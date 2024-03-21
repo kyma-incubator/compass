@@ -78,17 +78,19 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	uclAppID := assignedTenant.UCLApplicationID
 
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
+
+	if assignedTenant.UCLApplicationType == types.S4ApplicationType && !tenantMappingAlreadyInDB {
+		if err := s.createIASApplication(ctx, tenantMapping); err != nil {
+			return errors.Newf("could not create IAS application: %w", err)
+		}
+	}
+
 	if tenantMappingAlreadyInDB && len(assignedTenant.Configuration.ConsumedAPIs) == 0 {
 		// Safeguard for empty consumedAPIs
 		logger.FromContext(ctx).Warn().Msgf(
 			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping upsert.",
 			uclAppID, formationID)
 	} else {
-		if assignedTenant.UCLApplicationType == types.S4ApplicationType {
-			if err := s.createIASApplication(ctx, tenantMapping); err != nil {
-				return errors.Newf("could not create IAS application: %w", err)
-			}
-		}
 		if err := s.upsertTenantMappingInDB(ctx, tenantMapping); err != nil {
 			return err
 		}

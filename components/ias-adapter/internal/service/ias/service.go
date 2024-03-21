@@ -109,9 +109,9 @@ func (s Service) CreateApplication(ctx context.Context, iasHost string, app *typ
 	url := buildCreateApplicationURL(iasHost)
 	appBytes, err := json.Marshal(app)
 	if err != nil {
-		return errors.Newf("failed to marshal body: %w", err)
+		return errors.Newf("failed to marshal request body: %w", err)
 	}
-	log.Info().Msgf("creating application with body: %s", appBytes)
+	log.Info().Msgf("Creating application with body: %s", appBytes)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(appBytes))
 	if err != nil {
 		return errors.Newf("failed to create request: %w", err)
