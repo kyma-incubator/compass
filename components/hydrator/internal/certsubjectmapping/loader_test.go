@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -182,12 +184,12 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		input          certsubjectmapping.SubjectConsumerTypeMapping
+		input          certsubjmapping.SubjectConsumerTypeMapping
 		expectedErrMsg string
 	}{
 		{
 			name: "Success",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{
+			input: certsubjmapping.SubjectConsumerTypeMapping{
 				Subject:            validSubject,
 				ConsumerType:       string(validConsumerType),
 				TenantAccessLevels: validTntAccessLevels,
@@ -195,12 +197,12 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 		},
 		{
 			name:           "Error when the subject is invalid",
-			input:          certsubjectmapping.SubjectConsumerTypeMapping{},
+			input:          certsubjmapping.SubjectConsumerTypeMapping{},
 			expectedErrMsg: "subject is not provided",
 		},
 		{
 			name: "Error when the consumer type is unsupported",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{
+			input: certsubjmapping.SubjectConsumerTypeMapping{
 				Subject:      validSubject,
 				ConsumerType: invalidConsumerType,
 			},
@@ -208,7 +210,7 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 		},
 		{
 			name: "Error when the tenant access levels are unsupported",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{
+			input: certsubjmapping.SubjectConsumerTypeMapping{
 				Subject:            validSubject,
 				ConsumerType:       string(validConsumerType),
 				TenantAccessLevels: invalidTntAccessLevels,
