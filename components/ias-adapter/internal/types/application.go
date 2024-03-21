@@ -9,7 +9,7 @@ type Applications struct {
 type Application struct {
 	ID             string                    `json:"id"`
 	Authentication ApplicationAuthentication `json:"urn:sap:identity:application:schemas:extension:sci:1.0:Authentication"`
-	// TODO do we need to specify type for S/4?
+	// TODO do we need to specify type for S/4 when creating the application in IAS?
 }
 
 type ApplicationAuthentication struct {

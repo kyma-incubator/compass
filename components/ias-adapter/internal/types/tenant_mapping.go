@@ -88,7 +88,8 @@ func (at *AssignedTenant) SetConfiguration(ctx context.Context) error {
 }
 
 type AssignedTenantParameters struct {
-	ClientID string `json:"technicalIntegrationId"`
+	ClientID         string `json:"technicalIntegrationId"`
+	IASApplicationID string
 }
 
 type AssignedTenantConfiguration struct {

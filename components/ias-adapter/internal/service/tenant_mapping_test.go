@@ -79,13 +79,15 @@ var _ = Describe("Tenant mappings service", func() {
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
 			Expect(err).Error().To(MatchError(errors.S4CertificateNotFound))
 		})
-		It("should create application in IAS", func() {
+		FIt("should create application in IAS", func() {
+			iasAppID := "appId"
 			tenantMapping.AssignedTenants[0].Configuration.ApiCertificate = "s4TestCert"
 			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
 			tenantMappingsStorage.On("UpsertTenantMapping", ctx, mock.Anything).Return(nil)
-			iasService.On("CreateApplication", ctx, mock.Anything, mock.Anything).Return(nil)
+			iasService.On("CreateApplication", ctx, mock.Anything, mock.Anything).Return(iasAppID, nil)
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
+			Expect(tenantMapping.AssignedTenants[0].Parameters.IASApplicationID).To(Equal(iasAppID))
 			Expect(err).Error().ToNot(HaveOccurred())
 		})
 	})

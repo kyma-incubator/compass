@@ -17,21 +17,31 @@ type IASService struct {
 }
 
 // CreateApplication provides a mock function with given fields: ctx, iasHost, app
-func (_m *IASService) CreateApplication(ctx context.Context, iasHost string, app *types.Application) error {
+func (_m *IASService) CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error) {
 	ret := _m.Called(ctx, iasHost, app)
 
 	if len(ret) == 0 {
 		panic("no return value specified for CreateApplication")
 	}
 
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *types.Application) error); ok {
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, *types.Application) (string, error)); ok {
+		return rf(ctx, iasHost, app)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, *types.Application) string); ok {
 		r0 = rf(ctx, iasHost, app)
 	} else {
-		r0 = ret.Error(0)
+		r0 = ret.Get(0).(string)
 	}
 
-	return r0
+	if rf, ok := ret.Get(1).(func(context.Context, string, *types.Application) error); ok {
+		r1 = rf(ctx, iasHost, app)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // GetApplication provides a mock function with given fields: ctx, iasHost, clientID, appTenantID

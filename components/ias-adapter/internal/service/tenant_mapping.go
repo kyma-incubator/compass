@@ -20,7 +20,7 @@ type TenantMappingsStorage interface {
 //go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
 	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
-	CreateApplication(ctx context.Context, iasHost string, app *types.Application) error
+	CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error)
 	// TODO Delete application on unassign?
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
 }
@@ -80,9 +80,11 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
 
 	if assignedTenant.UCLApplicationType == types.S4ApplicationType && !tenantMappingAlreadyInDB {
-		if err := s.createIASApplication(ctx, tenantMapping); err != nil {
+		appID, err := s.createIASApplication(ctx, tenantMapping)
+		if err != nil {
 			return errors.Newf("could not create IAS application: %w", err)
 		}
+		tenantMapping.AssignedTenants[0].Parameters.IASApplicationID = appID
 	}
 
 	if tenantMappingAlreadyInDB && len(assignedTenant.Configuration.ConsumedAPIs) == 0 {
@@ -180,6 +182,11 @@ func (s TenantMappingsService) getIASApplication(
 	tenantMappingUCLApplicationID := tenantMapping.AssignedTenants[0].UCLApplicationID
 	clientID := tenantMapping.AssignedTenants[0].Parameters.ClientID
 	localTenantID := tenantMapping.AssignedTenants[0].LocalTenantID
+	iasAppID := tenantMapping.AssignedTenants[0].Parameters.IASApplicationID
+
+	if iasAppID != "" {
+		return types.Application{ID: iasAppID}, nil
+	}
 
 	iasApplication, err := s.IASService.GetApplication(ctx, iasHost, clientID, localTenantID)
 	if err != nil {
@@ -209,11 +216,11 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 	return iasApps, nil
 }
 
-func (s TenantMappingsService) createIASApplication(ctx context.Context, tenantMapping types.TenantMapping) error {
+func (s TenantMappingsService) createIASApplication(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
 	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.ApiCertificate
 	if s4Certificate == "" {
-		return errors.S4CertificateNotFound
+		return "", errors.S4CertificateNotFound
 	}
 	s4App := types.Application{
 		Authentication: types.ApplicationAuthentication{
