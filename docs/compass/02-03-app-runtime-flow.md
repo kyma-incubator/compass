@@ -1,4 +1,4 @@
-# Interactions between Application, Runtime, and Compass
+# Interactions Between Application, Runtime, and Compass
 
 The basic flow of interactions between an Application, Runtime, and Compass is as follows:
 1. Connecting Application
@@ -9,7 +9,7 @@ The basic flow of interactions between an Application, Runtime, and Compass is a
 
 Connecting an Application consists of two phases: Application pairing and API registration. In the process of connecting a new Application, two Compass components are involved: the Director and the Connector.
 
-### Application pairing phase
+### Application Pairing Phase
 
 Application pairing phase is a process of creating a new Application and establishing a trusted connection between the Application and Compass. The workflow looks as follows:
 
@@ -23,7 +23,7 @@ Application pairing phase is a process of creating a new Application and establi
 6. Administrator passes the one-time token to the Application.
 7. Application uses this token to establish a trusted connection with Compass.
 
-### API registration phase
+### API Registration Phase
 
 API registration phase is a process of registering new API and Event Definitions, which consists of two steps:
 
@@ -50,11 +50,11 @@ The process of registering a new Runtime looks as follows:
 
 When the Runtime is ready, Runtime Agent notifies the Director about the Runtime status. When the Director receives a notification that a Runtime is ready, it passes the notification to every Application in a group assigned to this Runtime using Application Webhook API.
 
-## Changing configuration
+## Changing Configuration
 
 The following section describes how configuration updates work for Applications and Runtimes.
 
-### Application configuration update
+### Application Configuration Update
 
 There are two options for updating Application configuration:
 - Periodically fetching Application configuration
@@ -73,7 +73,7 @@ In the second case, if configuration for any connected Runtime changes, Applicat
 3. Application changes configuration for the Runtime.
 4. Runtime Agent gets a new configuration from the Director.
 
-### Runtime configuration update
+### Runtime Configuration Update
 
 Runtime Agent gets Runtime configuration details from the Director and applies the configuration asynchronously. The configuration details include information such as the list of Applications and their credentials. Runtime Agent periodically checks for new configuration details and applies the changes.
 

@@ -1,4 +1,4 @@
-# Gateway architecture
+# Gateway Architecture
 
 ## Overview
 
@@ -8,9 +8,9 @@ We discussed three different approaches to exposing our API to users.
 2. Stitching multiple GraphQL schemas written for internal services into a single one and proxying the traffic to those internal GraphQL servers
 3. Having separate HTTP endpoints proxying traffic to specific internal servers (exposing many separate GraphQL APIs)
 
-## Possible solutions
+## Possible Solutions
 
-### 1. Schema on Gateway delegating to other services via gRPC
+### 1. Schema on Gateway Delegating to Other Services via gRPC
 
 The first option is to use a single GraphQL server on the gateway with manually written schema and resolvers, that would delegate the operations to internal services. We could use for example gRPC to communicate with them (a PoC of this can be found [here](https://github.com/kyma-incubator/compass/pull/21/)).
 
@@ -39,7 +39,7 @@ Cons
 - need to maintain almost identical protobuf schema to relay requests to internal services
 - each resolver sends a separate call to proxied API (although it's worth noting that thanks to gRPC connection pool active connection can be maintained making the cost of remote calls not that high)
 
-### 2. Multiple schemas stitched into one
+### 2. Multiple Schemas Stitched into One
 
 #### 2.1. Apollo Server
 
@@ -61,7 +61,7 @@ Cons
 - we expose 1:1 schemas from internal APIs
 - introduces dependencies on internal APIs that have to expose their schemas before stitching, in case one of them is modified at runtime of system, the gateway needs to update its stitched schema
 
-#### 2.2. Custom HTTP proxy in Go
+#### 2.2. Custom HTTP Proxy in Go
 
 Another idea was to implement an HTTP proxy that would first create a mapping of queries and remote servers they should access. Then it would forward received queries and mutations to remote servers using the mapped relations.
 
@@ -82,7 +82,7 @@ Cons
 - we expose 1:1 schemas from internal APIs
 - introduces dependencies on internal APIs that have to expose their schemas before stitching, in case one of them is modified at runtime of system, the gateway needs to update its stitched schema
 
-#### 2.3. Custom stitching implementation in Go
+#### 2.3. Custom Stitching Implementation in Go
 
 In this approach, we would have to either write our custom solution that would stitch remote schemas in a similar manner to how it's done in Apollo library or contribute to [gqlgen](https://github.com/99designs/gqlgen/issues/5). Either way, it seems like a lot of work to support all edge cases and the gqlgen issue that's open for over a year and still not implemented seems to be proof of that.
 
@@ -102,7 +102,7 @@ Cons
 - we expose 1:1 schemas from internal APIs
 - introduces dependencies on internal APIs that have to expose their schemas before stitching, in case one of them is modified at runtime of system, the gateway needs to update its stitched schema
 
-### 3. Separate HTTP endpoints
+### 3. Separate HTTP Endpoints
 
 This approach requires us to write a reverse proxy server that would expose a separate endpoint for each internal API we want to expose. This way we wouldn't be limited to GraphQL APIs, we could, for example, have one endpoint with REST API and a different one with GraphQL API.
 

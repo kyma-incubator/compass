@@ -1,10 +1,10 @@
-# Tenant loading
+# Tenant Loading
 
 There are two ways in which Compass loads a list of tenants:
 - Initial loading of the default tenants that occurs after the chart installation
 - Manual loading of tenants provided in a ConfigMap
 
-## Initial tenant loading
+## Initial Tenant Loading
 
 There are three default tenants predefined for Compass:
 - `default`
@@ -16,7 +16,7 @@ The list of default tenants is specified in the **global.tenants** parameter in 
 The `compass-director-tenant-loader-default` job that loads the list of default tenants is executed only once after the installation of the Compass chart. It is enabled by default. To disable it, set **global.tenantConfig.useDefaultTenants** to `false`. 
 
 
-## Manual tenant loading
+## Manual Tenant Loading
 
 You can load external tenants manually at any time by following these steps:
 
