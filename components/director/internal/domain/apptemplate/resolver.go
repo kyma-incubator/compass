@@ -1066,7 +1066,7 @@ func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID,
 		Subject:            subject,
 		ConsumerType:       string(consumer.ApplicationProvider),
 		InternalConsumerID: &appTemplateID,
-		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel, "account", "subaccount"},
+		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel},
 	}
 
 	if _, err := r.certSubjectMappingSvc.Create(ctx, model); err != nil {
