@@ -1151,12 +1151,3 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 
 	return fmHandler
 }
-
-func unmarshalSubjectMappings(certSubjectMappingsFromEnv string) ([]certsubjmapping.SubjectConsumerTypeMapping, error) {
-	var mappingsFromEnv []certsubjmapping.SubjectConsumerTypeMapping
-	if err := json.Unmarshal([]byte(certSubjectMappingsFromEnv), &mappingsFromEnv); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling mappings")
-	}
-
-	return mappingsFromEnv, nil
-}
