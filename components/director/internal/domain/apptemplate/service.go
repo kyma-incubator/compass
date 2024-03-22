@@ -495,7 +495,7 @@ func validatePlaceholderValue(placeholder model.ApplicationTemplatePlaceholder, 
 	return nil
 }
 
-func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string) (string, error) {
+func enrichWithApplicationTypeLabel(applicationInputJSON, appTemplateInputName string) (string, error) {
 	var appInput map[string]interface{}
 
 	if err := json.Unmarshal([]byte(applicationInputJSON), &appInput); err != nil {
@@ -509,21 +509,14 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, applicationType string
 			return "", fmt.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
 		}
 
-		if appType, ok := labelsMap[applicationTypeLabelKey]; ok {
-			appTypeValue, ok := appType.(string)
-			if !ok {
-				return "", fmt.Errorf("%q label value must be string", applicationTypeLabelKey)
-			}
-			if applicationType != otherSystemType && appTypeValue != applicationType {
-				return "", fmt.Errorf("%q label value does not match the application template name", applicationTypeLabelKey)
-			}
+		if _, exists := labelsMap[applicationTypeLabelKey]; exists {
 			return applicationInputJSON, nil
 		}
 
-		labelsMap[applicationTypeLabelKey] = applicationType
+		labelsMap[applicationTypeLabelKey] = appTemplateInputName
 		appInput[labelsKey] = labelsMap
 	} else {
-		appInput[labelsKey] = map[string]interface{}{applicationTypeLabelKey: applicationType}
+		appInput[labelsKey] = map[string]interface{}{applicationTypeLabelKey: appTemplateInputName}
 	}
 
 	inputJSON, err := json.Marshal(appInput)
