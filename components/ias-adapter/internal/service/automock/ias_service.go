@@ -44,12 +44,12 @@ func (_m *IASService) CreateApplication(ctx context.Context, iasHost string, app
 	return r0, r1
 }
 
-// GetApplication provides a mock function with given fields: ctx, iasHost, clientID, appTenantID
-func (_m *IASService) GetApplication(ctx context.Context, iasHost string, clientID string, appTenantID string) (types.Application, error) {
+// GetApplicationByClientID provides a mock function with given fields: ctx, iasHost, clientID, appTenantID
+func (_m *IASService) GetApplicationByClientID(ctx context.Context, iasHost string, clientID string, appTenantID string) (types.Application, error) {
 	ret := _m.Called(ctx, iasHost, clientID, appTenantID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for GetApplication")
+		panic("no return value specified for GetApplicationByClientID")
 	}
 
 	var r0 types.Application
@@ -65,6 +65,34 @@ func (_m *IASService) GetApplication(ctx context.Context, iasHost string, client
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, string) error); ok {
 		r1 = rf(ctx, iasHost, clientID, appTenantID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GetApplicationByName provides a mock function with given fields: ctx, iasHost, name
+func (_m *IASService) GetApplicationByName(ctx context.Context, iasHost string, name string) (types.Application, error) {
+	ret := _m.Called(ctx, iasHost, name)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetApplicationByName")
+	}
+
+	var r0 types.Application
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (types.Application, error)); ok {
+		return rf(ctx, iasHost, name)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) types.Application); ok {
+		r0 = rf(ctx, iasHost, name)
+	} else {
+		r0 = ret.Get(0).(types.Application)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, iasHost, name)
 	} else {
 		r1 = ret.Error(1)
 	}

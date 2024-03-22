@@ -19,7 +19,8 @@ type TenantMappingsStorage interface {
 
 //go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
-	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	GetApplicationByClientID(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	GetApplicationByName(ctx context.Context, iasHost, name string) (types.Application, error)
 	CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error)
 	// TODO Delete application on unassign?
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
@@ -188,7 +189,7 @@ func (s TenantMappingsService) getIASApplication(
 		return types.Application{ID: iasAppID}, nil
 	}
 
-	iasApplication, err := s.IASService.GetApplication(ctx, iasHost, clientID, localTenantID)
+	iasApplication, err := s.IASService.GetApplicationByClientID(ctx, iasHost, clientID, localTenantID)
 	if err != nil {
 		return iasApplication, errors.Newf(
 			"failed to get IAS application with clientID '%s' and tenantID '%s' for UCL App ID '%s': %w",
@@ -218,11 +219,22 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 
 func (s TenantMappingsService) createIASApplication(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
-	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.ApiCertificate
+	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate
 	if s4Certificate == "" {
 		return "", errors.S4CertificateNotFound
 	}
+	s4AppName := string(types.S4ApplicationType) + "-" + tenantMapping.AssignedTenants[0].LocalTenantID
+
+	existingS4App, err := s.IASService.GetApplicationByName(ctx, iasHost, s4AppName)
+	if err == nil {
+		return existingS4App.ID, nil
+	}
+	if !errors.Is(err, errors.IASApplicationNotFound) {
+		return "", err
+	}
+
 	s4App := types.Application{
+		Name: s4AppName,
 		Authentication: types.ApplicationAuthentication{
 			APICertificates: []types.ApiCertificateData{
 				{Base64Certificate: s4Certificate},

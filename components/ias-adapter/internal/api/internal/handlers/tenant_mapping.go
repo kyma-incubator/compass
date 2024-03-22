@@ -78,7 +78,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 				logger.FromContext(ctx).Info().Msgf("Expecting S/4 certificate to be provided: %s", err.Error())
 				s4Config := &types.TenantMappingConfiguration{
 					Credentials: types.Credentials{
-						OutboundCommunicationCredentials: types.OutboundCommunicationCredentials{
+						OutboundCommunicationCredentials: types.CommunicationCredentials{
 							OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
 								CorrelationIds: []string{S4SAPManagedCommunicationScenario},
 							},

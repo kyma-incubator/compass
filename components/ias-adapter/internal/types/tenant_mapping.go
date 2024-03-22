@@ -48,7 +48,7 @@ const (
 	StateReady         State = "READY"
 	StateConfigPending State = "CONFIG_PENDING"
 
-	S4ApplicationType ApplicationType = "SAP S/4HANA Cloud" // SAP S/4HANA On-Premise?
+	S4ApplicationType ApplicationType = "SAP S/4HANA Cloud"
 )
 
 type AssignedTenant struct {
@@ -93,8 +93,8 @@ type AssignedTenantParameters struct {
 }
 
 type AssignedTenantConfiguration struct {
-	ConsumedAPIs   []string `json:"apis"`
-	ApiCertificate string   `json:"apiCertificate,omitempty"` // TODO property name?
+	ConsumedAPIs []string    `json:"apis"`
+	Credentials  Credentials `json:"credentials"`
 }
 
 func (tm TenantMapping) Validate() error {
@@ -133,13 +133,15 @@ type TenantMappingConfiguration struct {
 }
 
 type Credentials struct {
-	OutboundCommunicationCredentials OutboundCommunicationCredentials `json:"outboundCommunication"`
+	OutboundCommunicationCredentials CommunicationCredentials `json:"outboundCommunication"`
+	InboundCommunicationCredentials  CommunicationCredentials `json:"inboundCommunication"`
 }
 
-type OutboundCommunicationCredentials struct {
+type CommunicationCredentials struct {
 	OAuth2mTLSAuthentication OAuth2mTLSAuthentication `json:"oauth2mtls"`
 }
 
 type OAuth2mTLSAuthentication struct {
 	CorrelationIds []string `json:"correlationIds"`
+	Certificate    string   `json:"certificate"`
 }

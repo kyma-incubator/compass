@@ -61,7 +61,7 @@ var _ = Describe("Tenant mappings service", func() {
 			}
 			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(tenantMappingsInDB, nil)
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
-			iasService.On("GetApplication", ctx, mock.Anything, mock.Anything, mock.Anything).Return(types.Application{}, errors.New("error"))
+			iasService.On("GetApplicationByClientID", ctx, mock.Anything, mock.Anything, mock.Anything).Return(types.Application{}, errors.New("error"))
 			Expect(tenantMappingsStorage.AssertNotCalled(GinkgoT(), "UpsertTenantMapping")).To(BeTrue())
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
 			Expect(err).Error().To(HaveOccurred())
@@ -69,22 +69,33 @@ var _ = Describe("Tenant mappings service", func() {
 		})
 	})
 
-	When("receive tenant mapping with S/4 participant", func() {
+	When("tenant mapping with S/4 participant is received", func() {
 		BeforeEach(func() {
 			tenantMapping.AssignedTenants[0].UCLApplicationType = types.S4ApplicationType
+			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
 		})
 		It("should return error when default S/4 certificate is not provided", func() {
-			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
 			Expect(err).Error().To(MatchError(errors.S4CertificateNotFound))
 		})
-		FIt("should create application in IAS", func() {
+		It("should create application for S/4 in IAS if it doesn't exist", func() {
 			iasAppID := "appId"
-			tenantMapping.AssignedTenants[0].Configuration.ApiCertificate = "s4TestCert"
-			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
+			tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate = "s4TestCert"
 			tenantMappingsStorage.On("UpsertTenantMapping", ctx, mock.Anything).Return(nil)
+			iasService.On("GetApplicationByName", ctx, mock.Anything, mock.Anything).Return(types.Application{}, errors.IASApplicationNotFound)
 			iasService.On("CreateApplication", ctx, mock.Anything, mock.Anything).Return(iasAppID, nil)
+			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
+			err := tms.ProcessTenantMapping(ctx, tenantMapping)
+			Expect(tenantMapping.AssignedTenants[0].Parameters.IASApplicationID).To(Equal(iasAppID))
+			Expect(err).Error().ToNot(HaveOccurred())
+		})
+		It("should get the application for S/4 in IAS if it exists", func() {
+			iasAppID := "appId"
+			tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate = "s4TestCert"
+			tenantMappingsStorage.On("UpsertTenantMapping", ctx, mock.Anything).Return(nil)
+			iasService.On("GetApplicationByName", ctx, mock.Anything, mock.Anything).Return(types.Application{ID: iasAppID}, nil)
+			Expect(tenantMappingsStorage.AssertNotCalled(GinkgoT(), "CreateApplication")).To(BeTrue())
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
 			Expect(tenantMapping.AssignedTenants[0].Parameters.IASApplicationID).To(Equal(iasAppID))
