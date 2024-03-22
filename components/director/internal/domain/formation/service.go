@@ -443,12 +443,17 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
 
+	hasWebhook := false
 	if formation.State == model.DraftFormationState {
 		log.C(ctx).Infof("Formation is in %q state. Skipping notifications...", model.DraftFormationState)
 	} else {
 		formationTemplateWebhooks, err := s.webhookRepository.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
 		if err != nil {
 			return nil, errors.Wrapf(err, "when listing formation lifecycle webhooks for formation template with ID: %q", formationTemplateID)
+		}
+
+		if len(formationTemplateWebhooks) > 0 {
+			hasWebhook = true
 		}
 
 		formationReqs, err := s.notificationsService.GenerateFormationNotifications(ctx, formationTemplateWebhooks, tnt, ft.formation, formationTemplateName, formationTemplateID, model.DeleteFormation)
@@ -465,7 +470,7 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		}
 	}
 
-	if ft.formation.State == model.ReadyFormationState || ft.formation.State == model.DraftFormationState {
+	if !hasWebhook || ft.formation.State == model.ReadyFormationState || ft.formation.State == model.DraftFormationState {
 		if err := s.DeleteFormationEntityAndScenarios(ctx, tnt, formationName); err != nil {
 			return nil, errors.Wrapf(err, "An error occurred while deleting formation entity with name: %q and its scenarios label", formationName)
 		}
