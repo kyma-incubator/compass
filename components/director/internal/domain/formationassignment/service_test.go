@@ -45,12 +45,13 @@ var (
 	first = 2
 	after = "test"
 
-	readyAssignmentState         = string(model.ReadyAssignmentState)
-	configPendingAssignmentState = string(model.ConfigPendingAssignmentState)
-	createErrorAssignmentState   = string(model.CreateErrorAssignmentState)
-	initialAssignmentState       = string(model.InitialAssignmentState)
-	deleteErrorAssignmentState   = string(model.DeleteErrorAssignmentState)
-	invalidState                 = "invalidState"
+	readyAssignmentState                      = string(model.ReadyAssignmentState)
+	configPendingAssignmentState              = string(model.ConfigPendingAssignmentState)
+	createErrorAssignmentState                = string(model.CreateErrorAssignmentState)
+	initialAssignmentState                    = string(model.InitialAssignmentState)
+	deleteErrorAssignmentState                = string(model.DeleteErrorAssignmentState)
+	instanceCreatorDeleteErrorAssignmentState = string(model.InstanceCreatorDeleteErrorAssignmentState)
+	invalidState                              = "invalidState"
 
 	formation = &model.Formation{
 		ID:                  TestFormationID,
