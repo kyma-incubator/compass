@@ -24,15 +24,17 @@ var (
 	assignmentConfigOld    = json.RawMessage(`{"old": "config"}`)
 	assignmentError        = json.RawMessage(`{"error":{"message":"error from report","errorCode":2}}`)
 
-	assignmentWithStateAndConfig          = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ReadyAssignmentState), assignmentConfig, nil)
-	assignmentWithoutConfig               = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ReadyAssignmentState), nil, nil)
-	assignmentWithStateAndOldConfig       = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ConfigPendingAssignmentState), assignmentConfigOld, nil)
-	assignmentWithConfigAndError          = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.DeleteErrorAssignmentState), assignmentConfig, assignmentError)
-	notificationStatusReport              = fixNotificationStatusReport()
-	statusReportWithConfig                = fixNotificationStatusReportWithStateAndConfig(assignmentConfig, readyAssignmentState)
-	statusReportWithoutConfigAndError     = fixNotificationStatusReportWithStateAndConfig(nil, readyAssignmentState)
-	statusReportWithConfigConsideredEmpty = fixNotificationStatusReportWithStateAndConfig(json.RawMessage("{}"), readyAssignmentState)
-	statusReportWithError                 = fixNotificationStatusReportWithStateAndError(deleteErrorAssignmentState, "error from report")
+	assignmentWithStateAndConfig                = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ReadyAssignmentState), assignmentConfig, nil)
+	assignmentWithoutConfig                     = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ReadyAssignmentState), nil, nil)
+	assignmentWithStateAndOldConfig             = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.ConfigPendingAssignmentState), assignmentConfigOld, nil)
+	assignmentWithConfigAndError                = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.DeleteErrorAssignmentState), assignmentConfig, assignmentError)
+	assignmentWithConfigAndInstanceCreatorError = fixFormationAssignmentModelWithParameters(TestID, TestFormationID, TestTenantID, TestSource, TestTarget, TestSourceType, TestTargetType, string(model.InstanceCreatorDeleteErrorAssignmentState), assignmentConfig, assignmentError)
+	notificationStatusReport                    = fixNotificationStatusReport()
+	statusReportWithConfig                      = fixNotificationStatusReportWithStateAndConfig(assignmentConfig, readyAssignmentState)
+	statusReportWithoutConfigAndError           = fixNotificationStatusReportWithStateAndConfig(nil, readyAssignmentState)
+	statusReportWithConfigConsideredEmpty       = fixNotificationStatusReportWithStateAndConfig(json.RawMessage("{}"), readyAssignmentState)
+	statusReportWithError                       = fixNotificationStatusReportWithStateAndError(deleteErrorAssignmentState, "error from report")
+	statusReportWithInstanceCreatorError        = fixNotificationStatusReportWithStateAndError(instanceCreatorDeleteErrorAssignmentState, "error from report")
 )
 
 func TestStatusService_UpdateWithConstraints(t *testing.T) {
@@ -159,6 +161,28 @@ func TestStatusService_UpdateWithConstraints(t *testing.T) {
 				return notificationSvc
 			},
 			NotificationStatusReport: statusReportWithError,
+		},
+		{
+			Name:                "Success with instance creator error in notification status report - do not clear config",
+			Context:             ctxWithTenant,
+			FormationAssignment: assignmentWithStateAndConfig,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Update", ctxWithTenant, assignmentWithConfigAndInstanceCreatorError).Return(nil).Once()
+				return repo
+			},
+			ConstraintEngine: func() *automock.ConstraintEngine {
+				constraintEngine := &automock.ConstraintEngine{}
+				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PreNotificationStatusReturned, preJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
+				constraintEngine.On("EnforceConstraints", ctxWithTenant, formationconstraint.PostNotificationStatusReturned, postJoinPointDetails, formation.FormationTemplateID).Return(nil).Once()
+				return constraintEngine
+			},
+			NotificationSvc: func() *automock.FaNotificationService {
+				notificationSvc := &automock.FaNotificationService{}
+				notificationSvc.On("PrepareDetailsForNotificationStatusReturned", ctxWithTenant, TestTenantID, assignmentWithStateAndConfig, model.AssignFormation, statusReportWithInstanceCreatorError).Return(preJoinPointDetails, nil).Once()
+				return notificationSvc
+			},
+			NotificationStatusReport: statusReportWithInstanceCreatorError,
 		},
 		{
 			Name:                "Error while enforcing constraints POST",
