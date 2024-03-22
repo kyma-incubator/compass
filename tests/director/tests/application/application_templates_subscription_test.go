@@ -448,22 +448,6 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		},
 	}
 
-	//// We need an externally issued cert with a subject that is not part of the access level mappings
-	//externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-	//	ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-	//	ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-	//	CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-	//	ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-	//	ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-	//	TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-discovery-label-cn", -1),
-	//	ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-	//	ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-	//	ExternalCertProvider:                  certprovider.CertificateService,
-	//}
-	//
-	//// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	//providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig, true)
-	//appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, "app-template-subscription-discovery-label-cn")
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
@@ -555,23 +539,6 @@ func TestSubscriptionApplicationTemplateFlowWithIndirectDependency(baseT *testin
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
 		},
 	}
-
-	//// We need an externally issued cert with a subject that is not part of the access level mappings
-	//externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-	//	ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-	//	ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-	//	CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-	//	ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-	//	ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-	//	TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-indirect-dependency-cn", -1),
-	//	ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-	//	ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-	//	ExternalCertProvider:                  certprovider.CertificateService,
-	//}
-	//
-	//// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	//providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig, true)
-
 	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, "app-template-subscription-indirect-dependency-cn")
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.IndirectDependencySubscriptionProviderAppNameValue)
