@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
 	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -137,8 +136,8 @@ func TestInstanceCreator(t *testing.T) {
 		appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 	}
 
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTmpl.ID)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
