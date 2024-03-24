@@ -2,12 +2,12 @@ package tests
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"strings"
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
-
-	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
@@ -476,14 +476,30 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	appTemplateName := fixtures.CreateAppTemplateName("validation-test-app-tpl")
-	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	t.Log("Creating integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "update-app-template-validation")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
-	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTpl)
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issuing a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	appTemplateName := fixtures.CreateAppTemplateName("validation-test-app-tpl")
+	input := fixtures.FixApplicationTemplate(appTemplateName)
+
+	appTpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, input)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTpl.ID)
-	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTpl.Labels[tenantfetcher.RegionKey])
 
 	appCreateInput := fixtures.FixSampleApplicationJSONInputWithWebhooks("placeholder")
 	invalidInput := graphql.ApplicationTemplateInput{
@@ -498,7 +514,7 @@ func TestUpdateApplicationTemplate_Validation(t *testing.T) {
 	request := fixtures.FixUpdateApplicationTemplateRequest(appTpl.ID, inputString)
 
 	// WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &result)
+	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, request, &result)
 
 	// THEN
 	require.Error(t, err)
@@ -511,21 +527,37 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
+	t.Log("Creating integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "register-app-template-validation")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issuing a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	appTemplateName := fixtures.CreateAppTemplateName("validation-app")
 	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 
-	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, input)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, tmpl)
+	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, input)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, tmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, tmpl.ID)
-	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, tmpl.Labels[tenantfetcher.RegionKey])
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{}
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
 	registerAppFromTmpl := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 	//WHEN
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, registerAppFromTmpl, nil)
+	err = testctx.Tc.RunOperation(ctx, oauthGraphQLClient, registerAppFromTmpl, nil)
 
 	//THEN
 	require.Error(t, err)

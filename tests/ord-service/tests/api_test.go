@@ -593,8 +593,25 @@ func TestORDService(t *testing.T) {
 		expectedProductType := fmt.Sprintf("SAP %s", "productType")
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTmplInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTmpl)
+		t.Log("Creating integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, "ord-service-non-ord-details")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issuing a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, oauthGraphQLClient, appTmplInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTmpl)
 		require.NoError(t, err)
 
 		appFromTmpl := directorSchema.ApplicationFromTemplateInput{
@@ -616,8 +633,8 @@ func TestORDService(t *testing.T) {
 		createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
 		outputApp := directorSchema.ApplicationExt{}
 		//WHEN
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &outputApp)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, defaultTestTenant, createAppFromTmplRequest, &outputApp)
+		defer fixtures.CleanupApplication(t, ctx, oauthGraphQLClient, defaultTestTenant, &outputApp)
 		require.NoError(t, err)
 
 		getSystemInstanceURL := fmt.Sprintf("%s/systemInstances(%s)?$format=json", conf.ORDServiceURL, outputApp.ID)

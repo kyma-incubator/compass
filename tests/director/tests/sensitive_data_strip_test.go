@@ -27,12 +27,29 @@ func TestSensitiveDataStrip(t *testing.T) {
 	ctx := context.Background()
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
+	t.Log("Creating integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "update-app-template-with-override")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issuing a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	intSystemOAuthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	t.Log("Creating application template")
 	appTemplateName := fixtures.CreateAppTemplateName("app-template-test")
 	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
 
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmpInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, intSystemOAuthGraphQLClient, tenantId, appTmpInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, intSystemOAuthGraphQLClient, appTemplate)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 
@@ -85,13 +102,13 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, integrationSystem.ID)
 
-	t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), certSecuredGraphQLClient, tenantId, integrationSystem.ID)
-	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
-	require.True(t, ok)
-	require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
-	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
-	intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	//t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
+	//intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), certSecuredGraphQLClient, tenantId, integrationSystem.ID)
+	//intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	//require.True(t, ok)
+	//require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
+	//require.NotEmpty(t, intSysOauthCredentialData.ClientID)
+	//intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 
 	t.Log(fmt.Sprintf("assign runtime and app to scenario: %q", testScenario))
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)

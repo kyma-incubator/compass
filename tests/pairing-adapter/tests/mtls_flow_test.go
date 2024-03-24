@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+	"github.com/machinebox/graphql"
 	"net/http"
 	"strings"
 	"testing"
@@ -39,6 +42,23 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	appTemplate := &directorSchema.ApplicationTemplate{}
 	newIntSys := directorSchema.IntegrationSystemExt{}
 
+	t.Log("Creating integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, "update-app-template-with-override")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issuing a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	if conf.IsLocalEnv {
 		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf) // pre-clean-up
 
@@ -47,8 +67,8 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 
 		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
 
-		appTemplate = createAppTemplate(t, ctx, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", *appTemplate)
+		appTemplate = createAppTemplate(t, ctx, oauthGraphQLClient, newIntSys.ID, templateName, namePlaceholderKey, displayNamePlaceholderKey)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", *appTemplate)
 	}
 
 	appTmplInput := directorSchema.ApplicationFromTemplateInput{
@@ -194,7 +214,7 @@ func updateAdaptersConfigmapWithDefaultValues(t *testing.T, ctx context.Context,
 	t.Log("Successfully updated adapters configmap with default values")
 }
 
-func createAppTemplate(t *testing.T, ctx context.Context, newIntSysID, templateName, namePlaceholderKey, displayNamePlaceholderKey string) *directorSchema.ApplicationTemplate {
+func createAppTemplate(t *testing.T, ctx context.Context, client *graphql.Client, newIntSysID, templateName, namePlaceholderKey, displayNamePlaceholderKey string) *directorSchema.ApplicationTemplate {
 	appTemplateDesc := "pairing-adapter-app-template-desc"
 	providerName := "compass-e2e-tests"
 	namePlaceholderDescription := "name-description"
@@ -232,7 +252,7 @@ func createAppTemplate(t *testing.T, ctx context.Context, newIntSysID, templateN
 	}
 
 	t.Logf("Registering application template with name %q...", templateName)
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTemplateInput)
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, client, appTemplateInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTmpl.ID)
 	require.NotEmpty(t, appTmpl.Name)

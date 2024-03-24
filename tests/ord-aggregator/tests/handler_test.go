@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"io"
 	"net/http"
 	"strings"
@@ -700,6 +701,7 @@ func TestORDAggregator(stdT *testing.T) {
 	})
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		ctx := context.Background()
+		appTechnicalProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-verify-ord-doc-technical-cn")
 
 		packagesMap := make(map[string]string)
 		packagesMap[firstExpectedPackageTitle] = firstExpectedPackageDescription
@@ -813,8 +815,8 @@ func TestORDAggregator(stdT *testing.T) {
 				JSONPath:    str.Ptr(fmt.Sprintf("$.%s", testConfig.SubscriptionProviderAppNameProperty)),
 			},
 		}
-		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestSubaccount, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestSubaccount, appTemplate)
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appTechnicalProviderDirectorCertSecuredClient, testConfig.DefaultTestSubaccount, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appTechnicalProviderDirectorCertSecuredClient, appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
@@ -1209,12 +1211,19 @@ func TestORDAggregator(stdT *testing.T) {
 
 		intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
 		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
+		intSysOauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issuing a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.GatewayOauth)
 
 		// Create Application Template
 		appTemplateInput := fixtures.FixApplicationTemplate(testConfig.ProxyApplicationTemplateName)
 
-		appTemplate, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, certSecuredGraphQLClient, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTemplate)
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, oauthGraphQLClient, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTemplate)
 
@@ -1801,4 +1810,22 @@ func fixAppTemplateInputWitSelfRegLabel(name, webhookURL string) directorSchema.
 	input.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue
 
 	return input
+}
+
+func createDirectorCertClientWithOtherSubject(t *testing.T, ctx context.Context, subject string) *gcli.Client {
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      testConfig.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: testConfig.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         testConfig.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      testConfig.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               testConfig.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(testConfig.ExternalCertProviderConfig.TestExternalCertSubject, testConfig.ExternalCertProviderConfig.TestExternalCertCN, subject, -1),
+		ExternalClientCertCertKey:             testConfig.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              testConfig.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 }
