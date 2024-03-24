@@ -26,8 +26,8 @@ var exactJSONConfigMatcher = func(t require.TestingT, expectedConfig, actualConf
 type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
 	formationName string
-	timeout time.Duration
-	tick    time.Duration
+	timeout       time.Duration
+	tick          time.Duration
 }
 
 func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsyncAsserter {
@@ -49,23 +49,23 @@ func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx
 	if a.formationName != "" {
 		formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenantID)
 		formationID = formation.ID
-	}else {
+	} else {
 		formationID = ctx.Value(context_keys.FormationIDKey).(string)
 	}
 	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations, exactJSONConfigMatcher)
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithFormationName(formationName string)  *FormationAssignmentsAsyncAsserter{
+func (a *FormationAssignmentsAsyncAsserter) WithFormationName(formationName string) *FormationAssignmentsAsyncAsserter {
 	a.formationName = formationName
 	return a
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration)  *FormationAssignmentsAsyncAsserter{
+func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration) *FormationAssignmentsAsyncAsserter {
 	a.timeout = timeout
 	return a
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration)  *FormationAssignmentsAsyncAsserter{
+func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration) *FormationAssignmentsAsyncAsserter {
 	a.tick = tick
 	return a
 }
