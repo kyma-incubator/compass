@@ -38,7 +38,7 @@ spec:
             - name: APP_FQDN_PAIRING_ADAPTER_URL
               value: "http://compass-pairing-adapter.{{ $.Release.Namespace }}.svc.cluster.local/{{ $adapterName }}"
             - name: APP_GATEWAY_OAUTH
-              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+              value: "https://{{ $.Values.global.gateway.tls.secure.oauth.host }}.{{ $.Values.global.ingress.domainName }}/director/graphql"
             - name: APP_TEST_TENANT
               value: "{{ $.Values.global.pairingAdapter.e2e.tenant }}"
             - name: APP_TEST_CLIENT_USER
