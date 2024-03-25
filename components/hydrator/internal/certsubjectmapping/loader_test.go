@@ -47,7 +47,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		TenantAccessLevels: validTntAccessLevels,
 	}
 
-	certSubjcetMappingPageWithoutNextPage := &graphql.CertificateSubjectMappingPage{
+	certSubjectMappingPageWithoutNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping},
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
@@ -57,12 +57,12 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		TotalCount: 1,
 	}
 
-	certSubjcetMappingPageWithoutPageInfo := &graphql.CertificateSubjectMappingPage{
+	certSubjectMappingPageWithoutPageInfo := &graphql.CertificateSubjectMappingPage{
 		Data:       []*graphql.CertificateSubjectMapping{certSubjectMapping},
 		TotalCount: 1,
 	}
 
-	certSubjcetMappingWithNextPage := &graphql.CertificateSubjectMappingPage{
+	certSubjectMappingWithNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping, certSubjectMapping},
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
@@ -84,7 +84,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Twice()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil).Twice()
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -95,8 +95,8 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingWithNextPage, nil)
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingWithNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            30 * time.Millisecond,
@@ -108,7 +108,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, nil).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -119,8 +119,8 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutPageInfo, nil).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutPageInfo, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -132,7 +132,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, testErr).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,

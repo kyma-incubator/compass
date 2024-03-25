@@ -69,10 +69,10 @@ func TestInstanceCreator(t *testing.T) {
 
 	formationTemplateName := "instance-creator-formation-template-name"
 
-	certSubjcetMappingCN := "csm-async-callback-cn"
-	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
-	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
+	certSubjectMappingCN := "csm-async-ic-callback-cn"
+	certSubjectMappingCNSecond := "csm-async-ic-callback-cn-second"
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCN, -1)
+	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCNSecond, -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component
