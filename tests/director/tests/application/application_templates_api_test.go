@@ -577,7 +577,7 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 	appTemplateTwoInput := fixAppTemplateInputWithDistinguishLabel(appTemplateName, "other-distinguished-label")
 
-	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
+	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx, "create_app_template")
 
 	t.Log("Create second application template")
 	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenantID, appTemplateTwoInput)
@@ -1762,7 +1762,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplate1)
 	require.NoError(t, err)
 
-	directorCertClientRegion2 := createDirectorCertClientForAnotherRegion(t, ctx)
+	directorCertClientRegion2 := createDirectorCertClientForAnotherRegion(t, ctx, "query_app_template")
 
 	appTmplInput2 := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(name2, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenantId, appTmplInput2)
@@ -1879,35 +1879,53 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	//GIVEN
 	ctx := context.Background()
 	appTemplateName := fixtures.CreateAppTemplateName("template")
+	appTemplateName2 := fixtures.CreateAppTemplateName("template-1")
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-other-region-cn")
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "int-system-ord-service-consumption")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	t.Log("Create application template in the first region")
-	appTemplateOneInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
-	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenantId, appTemplateOneInput)
-	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, appTemplateOne)
+	appTemplateOneInput := fixtures.FixApplicationTemplate(appTemplateName)
+	appTemplateOneInput.Labels[tenantfetcher.RegionKey] = region1
+	appTemplateOne, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTemplateOneInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplateOne)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateOne.ID)
 	require.Equal(t, appTemplateName, appTemplateOne.Name)
 
 	t.Log("Check if application template in the first region was created")
-	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantId, appTemplateOne.ID)
+	appTemplateOneOutput := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplateOne.ID)
 	require.NotEmpty(t, appTemplateOneOutput)
 
 	t.Log("Create application template in the second region")
-	appTemplateTwoInput := fixAppTemplateInputWithDistinguishLabel(appTemplateName, "other-distinguished-label")
-	directorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
-	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientForAnotherRegion, tenantId, appTemplateTwoInput)
-	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, directorCertClientForAnotherRegion, appTemplateTwo)
+	appTemplateTwoInput := fixtures.FixApplicationTemplate(appTemplateName2)
+	appTemplateTwoInput.Labels[tenantfetcher.RegionKey] = region2
+
+	appTemplateTwo, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTemplateTwoInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplateTwo)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplateTwo.ID)
-	require.Equal(t, appTemplateName, appTemplateTwo.Name)
+	require.Equal(t, appTemplateName2, appTemplateTwo.Name)
 
 	t.Log("Check if application template in the second region was created")
-	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, directorCertClientForAnotherRegion, tenantId, appTemplateTwo.ID)
+	appTemplateTwoOutput := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTemplateTwo.ID)
 	require.NotEmpty(t, appTemplateTwoOutput)
 
 	require.NotEqual(t, appTemplateOne.ID, appTemplateTwo.ID)
@@ -1933,8 +1951,8 @@ func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	outputApp := graphql.ApplicationExt{}
 
 	//WHEN
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, directorCertClientForAnotherRegion, tenantId, createAppFromTmplRequest, &outputApp)
-	defer fixtures.UnregisterApplication(t, ctx, directorCertClientForAnotherRegion, tenantId, outputApp.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantId, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
@@ -2035,7 +2053,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
 
-	directorCertSecuredClient := createDirectorCertClientForAnotherRegion(t, ctx)
+	directorCertSecuredClient := createDirectorCertClientForAnotherRegion(t, ctx, "register")
 
 	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
 		{
@@ -2229,7 +2247,7 @@ func TestAddWebhookToApplicationTemplateWithoutTenant(t *testing.T) {
 	require.NoError(t, err)
 }
 
-func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context) *gcli.Client {
+func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context, subjectSuffix string) *gcli.Client {
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:         conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
@@ -2237,7 +2255,7 @@ func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context)
 		CertSvcInstanceTestRegion2SecretName:     conf.ExternalCertProviderConfig.CertSvcInstanceTestRegion2SecretName,
 		ExternalCertCronjobContainerName:         conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:                  conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:                  conf.ExternalCertProviderConfig.TestExternalCertSubjectRegion2,
+		TestExternalCertSubject:                  conf.ExternalCertProviderConfig.TestExternalCertSubjectRegion2 + subjectSuffix,
 		ExternalClientCertCertKey:                conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:                 conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
 		ExternalClientCertExpectedIssuerLocality: &conf.ExternalClientCertExpectedIssuerLocalityRegion2,
