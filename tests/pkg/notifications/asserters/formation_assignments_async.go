@@ -26,8 +26,8 @@ var exactJSONConfigMatcher = func(t require.TestingT, expectedConfig, actualConf
 type FormationAssignmentsAsyncAsserter struct {
 	FormationAssignmentsAsserter
 	formationName string
-	timeout time.Duration
-	tick    time.Duration
+	timeout       time.Duration
+	tick          time.Duration
 }
 
 func NewFormationAssignmentAsyncAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsyncAsserter {
@@ -49,23 +49,23 @@ func (a *FormationAssignmentsAsyncAsserter) AssertExpectations(t *testing.T, ctx
 	if a.formationName != "" {
 		formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenantID)
 		formationID = formation.ID
-	}else {
+	} else {
 		formationID = ctx.Value(context_keys.FormationIDKey).(string)
 	}
 	a.assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, a.certSecuredGraphQLClient, a.tenantID, formationID, a.expectedAssignmentsCount, a.expectations, exactJSONConfigMatcher)
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithFormationName(formationName string)  *FormationAssignmentsAsyncAsserter{
+func (a *FormationAssignmentsAsyncAsserter) WithFormationName(formationName string) *FormationAssignmentsAsyncAsserter {
 	a.formationName = formationName
 	return a
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration)  *FormationAssignmentsAsyncAsserter{
+func (a *FormationAssignmentsAsyncAsserter) WithTimeout(timeout time.Duration) *FormationAssignmentsAsyncAsserter {
 	a.timeout = timeout
 	return a
 }
 
-func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration)  *FormationAssignmentsAsyncAsserter{
+func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration) *FormationAssignmentsAsyncAsserter {
 	a.tick = tick
 	return a
 }
@@ -73,12 +73,14 @@ func (a *FormationAssignmentsAsyncAsserter) WithTick(tick time.Duration)  *Forma
 func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, configMatcher func(t require.TestingT, expectedConfig, actualConfig *string) bool) {
 	t.Logf("Asserting formation assignments with eventually...")
 	tOnce := testingx.NewOnceLogger(t)
+
 	require.Eventually(t, func() (isOkay bool) {
 		tOnce.Logf("Getting formation assignments...")
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(tOnce, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
 			tOnce.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			tOnce.Logf("The expected assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 			return
 		}
 		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
@@ -88,23 +90,28 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
 				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
+				tOnce.Logf("The expected assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
 				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
+				tOnce.Logf("The expected assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if assignmentExpectation.State != assignment.State {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+				tOnce.Logf("The expected assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if isEqual := json.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+				tOnce.Logf("The expected assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if isEqual := configMatcher(t, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+				tOnce.Logf("The expected assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
 		}
