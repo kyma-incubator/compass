@@ -124,7 +124,6 @@ func (s Service) getApplication(ctx context.Context, iasHost, filterQuery string
 		return []types.Application{}, err
 	}
 
-	// TODO IAS returns http status code 404 now?
 	if len(applications.Applications) == 0 {
 		return []types.Application{}, errors.Newf("no applications found with filter '%s': %w", filterQuery, errors.IASApplicationNotFound)
 	}

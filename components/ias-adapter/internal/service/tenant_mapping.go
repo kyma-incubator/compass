@@ -22,7 +22,6 @@ type IASService interface {
 	GetApplicationByClientID(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
 	GetApplicationByName(ctx context.Context, iasHost, name string) (types.Application, error)
 	CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error)
-	// TODO Delete application on unassign?
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
 }
 
@@ -81,7 +80,7 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
 
 	if assignedTenant.UCLApplicationType == types.S4ApplicationType && !tenantMappingAlreadyInDB {
-		appID, err := s.createIASApplication(ctx, tenantMapping)
+		appID, err := s.createIfNotExistsIASApp(ctx, tenantMapping)
 		if err != nil {
 			return errors.Newf("could not create IAS application: %w", err)
 		}
@@ -217,7 +216,7 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 	return iasApps, nil
 }
 
-func (s TenantMappingsService) createIASApplication(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
+func (s TenantMappingsService) createIfNotExistsIASApp(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
 	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate
 	if s4Certificate == "" {

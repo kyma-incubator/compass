@@ -110,7 +110,6 @@ func (tm TenantMapping) Validate() error {
 	if tm.AssignedTenants[0].LocalTenantID == "" {
 		return errors.New("$.assignedTenants[0].localTenantId is required")
 	}
-	// TODO do we need to check the application type?
 	if tm.AssignedTenants[0].UCLApplicationType == "" {
 		return errors.New("$.assignedTenants[0].uclApplicationType is required")
 	}
