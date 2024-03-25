@@ -861,18 +861,18 @@ func validateResponseState(newState, previousState string) bool {
 
 	// handles synchronous "delete/unassign" statuses
 	if previousState == string(model.DeletingAssignmentState) &&
-		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.DeleteReadyFormationAssignmentState)) {
 		return false
 	}
 
 	// handles synchronous "create/assign" statuses
 	if previousState == string(model.InitialAssignmentState) &&
-		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.CreateReadyFormationAssignmentState)) {
 		return false
 	}
 
 	if previousState == string(model.DeleteErrorAssignmentState) &&
-		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.DeletingAssignmentState)) {
+		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.DeletingAssignmentState) && newState != string(model.DeleteReadyFormationAssignmentState)) {
 		return false
 	}
 
@@ -1080,8 +1080,12 @@ func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Respons
 }
 
 func calculateStateFromWebhookResponse(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) string {
-	if response.State != nil && *response.State != "" {
+	if response.State != nil && *response.State != "" && *response.State != string(model.CreateReadyFormationAssignmentState) && *response.State != string(model.DeleteReadyFormationAssignmentState) {
 		return *response.State
+	}
+
+	if response.State != nil && *response.State != "" && (*response.State == string(model.CreateReadyFormationAssignmentState) || *response.State == string(model.DeleteReadyFormationAssignmentState)) {
+		return string(model.ReadyAssignmentState)
 	}
 
 	if response.Error != nil && *response.Error != "" {
@@ -1126,11 +1130,11 @@ func validateNotificationResponse(response *webhookdir.Response, assignment *mod
 		validation.Field(&response.State, validation.When(response.State != nil && *response.State != "",
 			validation.When(isErrorNotEmpty(response.Error) && operation == model.AssignFormation, validation.In(string(model.CreateErrorAssignmentState))),
 			validation.When(isErrorNotEmpty(response.Error) && operation == model.UnassignFormation, validation.In(string(model.DeleteErrorAssignmentState))),
-			validation.When(isConfigNotEmpty(response.Config), validation.In(string(model.ReadyAssignmentState), string(model.ConfigPendingAssignmentState))),
+			validation.When(isConfigNotEmpty(response.Config), validation.In(string(model.ReadyAssignmentState), string(model.CreateReadyFormationAssignmentState), string(model.ConfigPendingAssignmentState))),
 			validation.When(actualCode == incompleteCode, validation.In(string(model.ConfigPendingAssignmentState))),
 			validation.When(actualCode != incompleteCode && actualCode != successCode, validation.In(string(model.DeleteErrorAssignmentState), string(model.CreateErrorAssignmentState))),
 			// in case of empty error and configuration
-			validation.In(string(model.ReadyAssignmentState), string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState), string(model.ConfigPendingAssignmentState)),
+			validation.In(string(model.ReadyAssignmentState), string(model.CreateReadyFormationAssignmentState), string(model.DeleteReadyFormationAssignmentState), string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState), string(model.ConfigPendingAssignmentState)),
 		)),
 		validation.Field(&response.Config, validation.When(isConfigNotEmpty(response.Config),
 			validation.By(func(val interface{}) error {
