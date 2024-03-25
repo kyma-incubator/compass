@@ -423,30 +423,42 @@ func TestCreateApplicationTemplate(t *testing.T) {
 func TestCreateApplicationTemplate_WhenApplicationTypeLabelIsSameAsApplicationTemplateName(t *testing.T) {
 	ctx := context.Background()
 
-	appProviderDirectorOnboardingCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "WhenApplicationTypeLabelIsSameAsApplicationTemplateName-technical")
-
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "int-system-ord-service-consumption")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	// GIVEN
 	appTemplateName := "SAP app-template"
-	appTemplateInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	appTemplateInput := fixtures.FixApplicationTemplate(appTemplateName)
 	appTemplateInput.ApplicationInput.Labels["applicationType"] = appTemplateName
 
 	// WHEN
 	t.Log("Create application template")
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorOnboardingCertSecuredClient, tenantID, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorOnboardingCertSecuredClient, appTemplate)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantID, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 	require.NotEmpty(t, appTemplate.Name)
-	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTemplate.Labels[tenantfetcher.RegionKey])
 
 	t.Log("Check if application template was created")
-	appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, appProviderDirectorOnboardingCertSecuredClient, tenantID, appTemplate.ID)
-	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountID
-	appTemplateInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
+	appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantID, appTemplate.ID)
 
 	require.NotEmpty(t, appTemplateOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
@@ -455,29 +467,40 @@ func TestCreateApplicationTemplate_WhenApplicationTypeLabelIsSameAsApplicationTe
 func TestCreateApplicationTemplate_WhenApplicationTypeLabelIsDifferentFromApplicationTemplateName(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
-	appProviderDirectorOnboardingCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "WhenApplicationTypeLabelIsDifferentFromApplicationTemplateName-technical")
 
-	appTemplateInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel("SAP app-template", conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	appTemplateInput := fixtures.FixApplicationTemplate("SAP app-template")
 	appTemplateInput.ApplicationInput.Labels["applicationType"] = "random-app-type"
 
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "int-system-ord-service-consumption")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	// WHEN
 	t.Log("Create application template")
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorOnboardingCertSecuredClient, tenantID, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorOnboardingCertSecuredClient, appTemplate)
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantID, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 
 	// THEN
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
 	require.NotEmpty(t, appTemplate.Name)
-	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTemplate.Labels[tenantfetcher.RegionKey])
 
 	t.Log("Check if application template was created")
-	appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, appProviderDirectorOnboardingCertSecuredClient, tenantID, appTemplate.ID)
-	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey] = appTemplateOutput.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey]
-	appTemplateInput.Labels[conf.GlobalSubaccountIDLabelKey] = conf.TestProviderSubaccountID
-	appTemplateInput.Labels[tenantfetcher.RegionKey] = conf.SubscriptionConfig.SelfRegRegion
+	appTemplateOutput := fixtures.GetApplicationTemplate(t, ctx, oauthGraphQLClient, tenantID, appTemplate.ID)
 
 	require.NotEmpty(t, appTemplateOutput)
 	assertions.AssertApplicationTemplate(t, appTemplateInput, appTemplateOutput)
