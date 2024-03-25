@@ -439,6 +439,15 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 		TenantID:            tnt,
 	}
 
+	assignmentsForFormation, err := s.formationAssignmentService.GetAssignmentsForFormation(ctx, tnt, formationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formation assignments for formation with ID %q", formationID)
+	}
+
+	if len(assignmentsForFormation) > 0 {
+		return nil, errors.Errorf("cannot delete formation with ID %q, because it is not empty", formationID)
+	}
+
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, formationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.DeleteFormationOperation, model.PreOperation)
 	}
