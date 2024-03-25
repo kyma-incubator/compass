@@ -363,6 +363,10 @@ func (r *Resolver) RegisterRuntime(ctx context.Context, in graphql.RuntimeRegist
 		}
 
 		parentTenantInternalID, err := tenant.LoadFromContext(ctx)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while loading tenant from context")
+		}
+
 		parentTenant, err := r.tenantSvc.GetTenantByID(ctx, parentTenantInternalID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", parentTenantInternalID)
