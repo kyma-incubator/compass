@@ -546,7 +546,7 @@ func TestRegisterApplicationFromTemplate_Validation(t *testing.T) {
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 	appTemplateName := fixtures.CreateAppTemplateName("validation-app")
-	input := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	input := fixtures.FixApplicationTemplate(appTemplateName)
 
 	tmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, input)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, tmpl)

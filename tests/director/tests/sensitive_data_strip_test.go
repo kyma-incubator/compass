@@ -46,7 +46,7 @@ func TestSensitiveDataStrip(t *testing.T) {
 
 	t.Log("Creating application template")
 	appTemplateName := fixtures.CreateAppTemplateName("app-template-test")
-	appTmpInput := fixAppTemplateWithWebhookInput(appTemplateName)
+	appTmpInput := fixtures.FixApplicationTemplateWithWebhook(appTemplateName)
 
 	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, intSystemOAuthGraphQLClient, tenantId, appTmpInput)
 	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, intSystemOAuthGraphQLClient, appTemplate)
@@ -323,11 +323,4 @@ func appWithAPIsAndEvents(name string) graphql.ApplicationRegisterInput {
 			OutputTemplate: &webhookOutputTemplate,
 		}},
 	}
-}
-
-func fixAppTemplateWithWebhookInput(name string) graphql.ApplicationTemplateInput {
-	input := fixtures.FixApplicationTemplateWithWebhook(name)
-	input.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
-
-	return input
 }
