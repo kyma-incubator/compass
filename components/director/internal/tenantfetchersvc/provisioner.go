@@ -77,7 +77,7 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 // ProvisionMissingTenants provisions tenants according to their type
 func (p *provisioner) ProvisionMissingTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
 	var newBusinessTenantMappings = []model.BusinessTenantMappingInput{}
-	requestedBusinessTenantMappingInputs := p.tenantsFromRequest(*request)
+	requestedBusinessTenantMappingInputs := p.tenantsFromRequest(ctx, *request)
 	for _, currentBusinessTenantMappingInput := range requestedBusinessTenantMappingInputs {
 		exists, err := p.gqlClient.ExistsTenantByExternalID(ctx, currentBusinessTenantMappingInput.ExternalTenant)
 		if err != nil {
