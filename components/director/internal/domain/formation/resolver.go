@@ -79,6 +79,11 @@ type TenantFetcher interface {
 	FetchOnDemand(ctx context.Context, tenant, parentTenant string) error
 }
 
+//go:generate mockery --exported --name=tenantSvc --output=automock --outpkg=automock --case=underscore --disable-version-string
+type tenantSvc interface {
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
 // Resolver is the formation resolver
 type Resolver struct {
 	transact                persistence.Transactioner
@@ -87,10 +92,11 @@ type Resolver struct {
 	formationAssignmentSvc  formationAssignmentService
 	formationAssignmentConv FormationAssignmentConverter
 	fetcher                 TenantFetcher
+	tenantSvc               tenantSvc
 }
 
 // NewResolver creates formation resolver
-func NewResolver(transact persistence.Transactioner, service Service, conv Converter, formationAssignmentSvc formationAssignmentService, formationAssignmentConv FormationAssignmentConverter, fetcher TenantFetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, service Service, conv Converter, formationAssignmentSvc formationAssignmentService, formationAssignmentConv FormationAssignmentConverter, fetcher TenantFetcher, tenantSvc tenantSvc) *Resolver {
 	return &Resolver{
 		transact:                transact,
 		service:                 service,
@@ -98,6 +104,7 @@ func NewResolver(transact persistence.Transactioner, service Service, conv Conve
 		formationAssignmentSvc:  formationAssignmentSvc,
 		formationAssignmentConv: formationAssignmentConv,
 		fetcher:                 fetcher,
+		tenantSvc:               tenantSvc,
 	}
 }
 
@@ -275,12 +282,6 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		return nil, err
 	}
 
-	if objectType == graphql.FormationObjectTypeTenant {
-		if err := r.fetcher.FetchOnDemand(ctx, objectID, tnt); err != nil {
-			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
-		}
-	}
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -288,6 +289,18 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	tenantMapping, err := r.tenantSvc.GetTenantByID(ctx, tnt)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", tnt)
+	}
+	externalTnt := tenantMapping.ExternalTenant
+
+	if objectType == graphql.FormationObjectTypeTenant {
+		if err := r.fetcher.FetchOnDemand(ctx, objectID, externalTnt); err != nil {
+			return nil, errors.Wrapf(err, "while trying to create if not exists subaccount %s", objectID)
+		}
+	}
 
 	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
 	if err != nil {
