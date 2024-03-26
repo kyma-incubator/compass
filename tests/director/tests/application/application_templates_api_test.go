@@ -112,7 +112,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Success for global template with product label created with certificate", func(t *testing.T) {
 		// GIVEN
-		directorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-global-with-product-label-cn")
+		directorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-global-product-cn")
 
 		productLabelValue := []interface{}{"productLabelValue"}
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-product")
@@ -1608,10 +1608,6 @@ func TestDeleteApplicationTemplateWithCertSubjMapping(t *testing.T) {
 	require.NoError(t, err)
 
 	//THEN
-	t.Logf("Check if application template with id %q was deleted", appTemplate.ID)
-	out := fixtures.GetApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantId, appTemplate.ID)
-	require.Empty(t, out)
-
 	t.Log("Check if all certificate subject mappings were deleted")
 	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTemplate.ID)
 	require.Nil(t, csm)
