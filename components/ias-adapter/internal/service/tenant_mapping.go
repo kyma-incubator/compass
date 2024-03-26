@@ -82,7 +82,8 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	if assignedTenant.UCLApplicationType == types.S4ApplicationType && !tenantMappingAlreadyInDB {
 		appID, err := s.createIfNotExistsIASApp(ctx, tenantMapping)
 		if err != nil {
-			return errors.Newf("could not create IAS application: %w", err)
+			logger.FromContext(ctx).Err(err).Msgf("Failed to create/find suitable IAS application")
+			return errors.Newf("could not create/find suitable IAS application: %w", err)
 		}
 		tenantMapping.AssignedTenants[0].Parameters.IASApplicationID = appID
 	}
@@ -226,6 +227,7 @@ func (s TenantMappingsService) createIfNotExistsIASApp(ctx context.Context, tena
 
 	existingS4App, err := s.IASService.GetApplicationByName(ctx, iasHost, s4AppName)
 	if err == nil {
+		logger.FromContext(ctx).Info().Msgf("Found existing IAS application with name: %s", s4AppName)
 		return existingS4App.ID, nil
 	}
 	if !errors.Is(err, errors.IASApplicationNotFound) {

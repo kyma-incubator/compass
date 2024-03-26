@@ -114,7 +114,7 @@ func (s Service) getApplication(ctx context.Context, iasHost, filterQuery string
 		}
 		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Warn().Msgf("failed to read GET application response body: %s", err)
+			log.Warn().Msgf("Failed to read GET application response body: %s", err)
 		}
 		return []types.Application{}, errors.Newf("failed to get application, status '%d', body '%s'", resp.StatusCode, respBytes)
 	}
@@ -152,7 +152,7 @@ func (s Service) CreateApplication(ctx context.Context, iasHost string, app *typ
 	if resp.StatusCode != http.StatusCreated {
 		respBytes, err := io.ReadAll(resp.Body)
 		if err != nil {
-			log.Warn().Msgf("failed to create application response body: %s", err)
+			log.Warn().Msgf("Failed to read create application response body: %s", err)
 		}
 		return "", errors.Newf("failed to create application, status '%d', body '%s'", resp.StatusCode, respBytes)
 	}
@@ -222,7 +222,7 @@ func (s Service) updateApplication(ctx context.Context, iasHost, applicationID s
 	if err != nil {
 		return errors.Newf("failed to marshal body: %w", err)
 	}
-	log.Info().Msgf("executing patch with body: %s", appUpdateBytes)
+	log.Info().Msgf("Executing patch with body: %s", appUpdateBytes)
 	url := buildPatchApplicationURL(iasHost, applicationID)
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(appUpdateBytes))
 	if err != nil {

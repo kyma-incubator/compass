@@ -75,7 +75,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 			}
 
 			if errors.Is(err, errors.S4CertificateNotFound) {
-				logger.FromContext(ctx).Info().Msgf("Expecting S/4 certificate to be provided: %s", err.Error())
+				logger.FromContext(ctx).Info().Msgf("S/4 certificate not provided. Responding with CONFIG_PENDING.")
 				s4Config := &types.TenantMappingConfiguration{
 					Credentials: types.Credentials{
 						OutboundCommunicationCredentials: types.CommunicationCredentials{
