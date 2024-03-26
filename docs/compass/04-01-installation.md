@@ -1,19 +1,19 @@
-# Compass installation
+# Compass Installation
 
 You can install Compass both on a cluster and on your local machine in the following modes:
 - Single Kyma cluster
 - Compass as a Central Management Plane
 
-## Prerequisites for cluster installation
+## Prerequisites for Cluster Installation
 
-### Required versions
+### Required Versions
 
 - Kubernetes 1.25a
 - For more information about the required CLI tools versions, see: [Compass Prerequisites](https://github.com/kyma-incubator/compass#prerequisites) 
 
 ### Managed PostgreSQL Database
 
-For more information about how you can use GCP managed PostgreSQL database instance with Compass, see: [Configure Managed GCP PostgreSQL](https://github.com/kyma-incubator/compass/blob/main/chart/compass/configure-managed-gcp-postgresql.md).
+For more information about how you can use GCP managed PostgreSQL database instance with Compass, see: [Configure Managed GCP PostgreSQL](https://github.com/kyma-incubator/compass/blob/main/chart/docs/configure-managed-gcp-postgresql.md).
 
 ## Compass as a Central Management Plane
 
@@ -21,7 +21,7 @@ This is a multi-cluster installation mode, in which one cluster needs to be dedi
 
 Compass as a Central Management Plane cluster requires minimal Kyma installation. The installation steps can vary depending on the installation environment.
 
-### Cluster installation
+### Cluster Installation
 
 **Security Prerequisites**
 
@@ -42,11 +42,11 @@ Therefore, `serviceAccountTokenJWKS` and `serviceAccountTokenIssuer` need to be 
 
 > **NOTE:** The `serviceAccountTokenIssuer` must match exactly to the value in the `iss` claim of the service account token mounted to a pod (in `/var/run/secrets/kubernetes.io/serviceaccount/token`). This value can differ from the `iss` claim of the token in the service account secret.
 
-#### Perform minimal Kyma installation
+#### Perform Minimal Kyma Installation
 
 > **NOTE:** During the installation of Compass, the installed Kyma version (as a basis to Compass) must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.13.1/docs/03-tutorials/00-security/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
+If custom domains and certificates are needed, see the [Set Up Your Custom Domain TLS Certificate](https://github.com/kyma-project/kyma/blob/2.13.1/docs/03-tutorials/00-security/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
 Save the following .yaml code with installation overrides into a file (for example: additionalKymaOverrides.yaml)
 ```yaml
@@ -83,9 +83,9 @@ Compass has a dependency on [Ory Hydra](https://github.com/ory/hydra) and [Ory O
 
 The Ory Hydra requires persistence storage; the database can be in-cluster or on Google Cloud Platform - depending on the case different additional overrides are required.
 
-##### In-cluster database
+##### In-Cluster Database
 
-In-cluster persistence is achieved with the usage of [Compass' localdb Helm chart](https://github.com/kyma-incubator/compass/tree/main/chart/localdb). 
+In-cluster persistence is achieved with the usage of [Compass' LocalDB Helm Chart](https://github.com/kyma-incubator/compass/tree/main/chart/localdb). 
 Firstly, `localdb` needs to be installed by running:
 
 ```bash
@@ -115,11 +115,10 @@ Initiate the Ory installation with the following command:
 
 The script applies the necessary overrides for Ory Hydra to connect to the database (situated under `../../chart/ory/values.yaml`); the Oathkeeper Secret is created by a pre-install Helm hook.
 
-##### Google Cloud Platform database
+##### Google Cloud Platform Database
 
 The Ory Hydra component can authenticate to Google Cloud Platform by using [gcloud-sqlproxy](https://github.com/rimusz/charts/tree/master/stable/gcloud-sqlproxy). 
-Firstly, install the `gcloud-sqlproxy` mentioned above - another useful source is [the Ory Hydra documentation (With Google Cloud SQL
-)](https://k8s.ory.sh/helm/hydra.html). An example YAML could look like this:
+Firstly, install the `gcloud-sqlproxy` mentioned above - another useful source is the [Ory Hydra Documentation (with Google Cloud SQL)](https://k8s.ory.sh/helm/hydra.html). An example YAML could look like this:
 ```yaml
 serviceAccount:
   create: true
@@ -208,7 +207,7 @@ global:
 #      tlsKey: ${TLS_KEY}
 ```
 
-Start the Database installation by using the following command, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
+Start the Database installation by using the following command, can be skipped if it was installed during [Ory Installation with Local Persistence](#in-cluster-database):
 
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
@@ -228,7 +227,7 @@ The following certificates can be rotated:
 * Istio gateway certificate for the regular HTTPS gateway.
 * Istio gateway certificate for the mTLS gateway.
 
-#### Create issuers
+#### Create Issuers
 
 To issue certificates, the Certificate Manager requires a resource called issuer.
 
@@ -268,7 +267,7 @@ spec:
 
 For more information about the different cluster issuer configurations, see: [ACME Issuer](https://cert-manager.io/docs/configuration/acme/)
 
-#### Connector certificate
+#### Connector Certificate
 
 ```yaml
 apiVersion: cert-manager.io/v1alpha2
@@ -296,7 +295,7 @@ spec:
 
 Certificate Manager's role is to rotate certificates as defined in the resources. Make sure that the certificate as shown in the example is specified as `isCA: true`. This means that the certificate is used to issue other certificates.
 
-#### Domain certificates
+#### Domain Certificates
 
 Certificate Manager can also rotate Istio gateway certificates. The following example shows such certificate:
 
@@ -319,7 +318,7 @@ spec:
 
 In this case, as this certificate is not used to issue other certificates, it is not a CA certificate. Additionally, its validity depends on the settings by the issuer (for example **Let's encrypt**).
 
-### Local k3d installation
+### Local k3d Installation
 
 For local development, install Compass with the minimal Kyma installation on k3d from the `main` branch. To do so, run the following script:
 
@@ -339,6 +338,11 @@ Note that using this flag also results in building a new `schema-migrator` image
 ./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
+To enable the API Metadata Validator that is used for validating Open Resource Discovery (ORD) documents (https://github.com/SAP/open-resource-discovery), run the installation script with an additional flag that sets the required container image of the validator.
+If this flag is not set when running the command, the validator won't be enabled.
+```bash
+./installation/cmd/run.sh --api-metadata-validator-image {IMAGE_VALUE}
+```
 
 >**NOTE:** The versions of the components that are installed depend on their tag versions listed in the `values.yaml` file in the Helm charts.
 If you want to build and deploy the local source code version of a component (for example, Director), you can run the following command in the component directory:
@@ -358,12 +362,12 @@ If you want to build and deploy the local source code version of a component (fo
 >
 > Note that the JWT flows work properly only when the configuration arguments are passed and the **~.compass.yaml** file exists.
 
-## Single cluster with Compass and Runtime Agent
+## Single Cluster with Compass and Runtime Agent
 
 This is a single-tenant mode, which provides the complete cluster Kyma installation with all components, including the Runtime Agent. You can install Compass on top of it.
 In this mode, the Runtime Agent is already connected to Compass. This mode facilitates various kind of testing and development.
 
-### Cluster installation
+### Cluster Installation
 
 **Security Prerequisites**
 
@@ -390,9 +394,9 @@ To install the Compass and Runtime components on a single cluster, perform the f
 
 > **NOTE:** During the installation of Kyma, the installed version must match to the one in the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file in the specific Compass commit.
 
-You must have a Kyma installation with enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.13.1/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the kyma-system namespace to the list of [minimal kyma components file](../../installation/resources/kyma/kyma-components-minimal.yaml).
+You must have a Kyma installation with enabled Runtime Agent. For more information, see [Enable Kyma with Runtime Agent](https://github.com/kyma-project/kyma/blob/2.13.1/docs/04-operation-guides/operations/ra-01-enable-kyma-with-runtime-agent.md). Therefore, you must add the compass-runtime-agent module in the kyma-system namespace to the list of the minimal Kyma components file. See [Minimal Kyma Components File](../../installation/resources/kyma/kyma-components-minimal.yaml).
 
-If custom domains and certificates are needed, see the [Set up your custom domain TLS certificate](https://github.com/kyma-project/kyma/blob/2.13.1/docs/03-tutorials/00-security/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
+If custom domains and certificates are needed, see the [Set Up Your Custom Domain TLS Certificate](https://github.com/kyma-project/kyma/blob/2.13.1/docs/03-tutorials/00-security/sec-01-tls-certificates-security.md) document in the Kyma installation guide, as well as the resources in the [Certificate Management](#certificate-management) section in this document.
 
 Save the following .yaml code with installation overrides to a file (for example: additionalKymaOverrides.yaml)
 ```yaml
@@ -428,7 +432,7 @@ kyma deploy --source <version from ../../installation/resources/KYMA_VERSION> -c
 
 Compass has a dependency on [Ory Hydra](https://github.com/ory/hydra) and [Ory Oathkeeper](https://github.com/ory/oathkeeper); they need to be successfully deployed before the Compass installation.
 
-For installation steps please have a look at [the following chapter](#install-ory).
+For installation steps please have a look at the [Install Ory](#install-ory) chapter.
 
 #### Install Compass
 
@@ -459,7 +463,7 @@ global:
 #      tlsCrt: ${TLS_CERT}
 #      tlsKey: ${TLS_KEY}
 ```
-Start the Database installation, can be skipped if it was installed during [Ory installation with local persistence](#in-cluster-database):
+Start the Database installation, can be skipped if it was installed during the Ory installation with local persistence. See [Ory Installation with Local Persistence](#in-cluster-database):
 ```bash
 <script from ../../installation/scripts/install-db.sh> --overrides-file <file from ../../installation/resources/compass-overrides-local.yaml> --overrides-file <file from above step - e.g. additionalCompassOverrides.yaml> --timeout <e.g: 30m0s>
 ```

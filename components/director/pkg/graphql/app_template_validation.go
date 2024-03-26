@@ -166,17 +166,43 @@ func validPlaceholders(placeholders []*PlaceholderDefinitionInput, appInput *App
 		return errors.Wrap(err, "while marshalling application json input")
 	}
 
-	appInputString := string(appInputMarshalled)
+	trimmedAppInput, err := trimAppInputFromWebhookTemplateProperties(appInputMarshalled)
+	if err != nil {
+		return err
+	}
+
+	appInputMarshalledWithoutWebhookTemplates, err := json.Marshal(trimmedAppInput)
+	if err != nil {
+		return errors.Wrap(err, "while marshalling application json input without webhook templates")
+	}
 
 	if err = ensureUniquePlaceholders(placeholders); err != nil {
 		return err
 	}
-	if err = ensurePlaceholdersUsed(placeholders, appInputString); err != nil {
+	if err = ensurePlaceholdersUsed(placeholders, string(appInputMarshalled)); err != nil {
 		return err
 	}
-	if err = ensurePlaceholdersDefined(placeholders, appInputString); err != nil {
+	if err = ensurePlaceholdersDefined(placeholders, string(appInputMarshalledWithoutWebhookTemplates)); err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func trimAppInputFromWebhookTemplateProperties(appInput []byte) (ApplicationJSONInput, error) {
+	var appIn ApplicationJSONInput
+	err := json.Unmarshal(appInput, &appIn)
+	if err != nil {
+		return ApplicationJSONInput{}, errors.Wrap(err, "while unmarshalling ApplicationJSONInput")
+	}
+
+	for idx := range appIn.Webhooks {
+		appIn.Webhooks[idx].InputTemplate = nil
+		appIn.Webhooks[idx].URLTemplate = nil
+		appIn.Webhooks[idx].HeaderTemplate = nil
+		appIn.Webhooks[idx].OutputTemplate = nil
+		appIn.Webhooks[idx].StatusTemplate = nil
+	}
+
+	return appIn, nil
 }

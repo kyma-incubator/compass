@@ -147,7 +147,7 @@ func (g txCtxGenerator) ThatDoesntExpectCommit() (*automock.PersistenceTx, *auto
 
 func (g txCtxGenerator) ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(times int) (*automock.PersistenceTx, *automock.Transactioner) {
 	persistTx := &automock.PersistenceTx{}
-	persistTx.On("Commit").Return(nil).Once()
+	persistTx.On("Commit").Return(nil).Times(times)
 
 	transact := &automock.Transactioner{}
 	transact.On("Begin").Return(persistTx, nil).Times(times + 1)

@@ -194,29 +194,6 @@ func TestService_Create(t *testing.T) {
 			ExpectedError:     errors.New("app input json labels are type map[string]interface {} instead of map[string]interface{}"),
 		},
 		{
-			Name: "Error when checking application type label - application type is not string",
-			Input: func() *model.ApplicationTemplateInput {
-				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":123,"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateInput(testName, appInputJSON)
-			},
-			AppTemplateRepoFn: UnusedAppTemplateRepo,
-			WebhookRepoFn:     UnusedWebhookRepo,
-			LabelUpsertSvcFn:  UnusedLabelUpsertSvc,
-			LabelRepoFn:       UnusedLabelRepo,
-			ExpectedError:     errors.New("\"applicationType\" label value must be string"),
-		},
-		{
-			Name: "Error when checking application type label - application type does not match the application template name",
-			Input: func() *model.ApplicationTemplateInput {
-				return fixModelAppTemplateInput(testName, fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name"))
-			},
-			AppTemplateRepoFn: UnusedAppTemplateRepo,
-			WebhookRepoFn:     UnusedWebhookRepo,
-			LabelUpsertSvcFn:  UnusedLabelUpsertSvc,
-			LabelRepoFn:       UnusedLabelRepo,
-			ExpectedError:     errors.New("\"applicationType\" label value does not match the application template name"),
-		},
-		{
 			Name: "No error when checking application type label - application type does not match the application template name",
 			Input: func() *model.ApplicationTemplateInput {
 				return fixModelAppTemplateInput(testNameOtherSystemType, fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name"))
@@ -1522,54 +1499,6 @@ func TestService_Update(t *testing.T) {
 			AppRepoFn:     UnusedAppRepo,
 			UIDService:    UnusedUIDService,
 			ExpectedError: errors.New("app input json labels are type map[string]interface {} instead of map[string]interface{}"),
-		},
-		{
-			Name: "Error when func enriching app input json with applicationType label - application type is not string",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":123,"test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
-			},
-			InputOverride: true,
-			TimeSvcFn:     UnusedTimeService,
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-				return appTemplateRepo
-			},
-			WebhookRepoFn:    UnusedWebhookRepo,
-			LabelUpsertSvcFn: UnusedLabelUpsertSvc,
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
-				return labelRepo
-			},
-			AppRepoFn:     UnusedAppRepo,
-			UIDService:    UnusedUIDService,
-			ExpectedError: errors.New("\"applicationType\" label value must be string"),
-		},
-		{
-			Name: "Error when func enriching app input json with applicationType label - application type value does not match the application template name",
-			Input: func() *model.ApplicationTemplateUpdateInput {
-				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
-				return fixModelAppTemplateUpdateInput(testName, appInputJSON)
-			},
-			InputOverride: true,
-			TimeSvcFn:     UnusedTimeService,
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("Get", ctx, modelAppTemplate.ID).Return(modelAppTemplate, nil).Once()
-				return appTemplateRepo
-			},
-			WebhookRepoFn:    UnusedWebhookRepo,
-			LabelUpsertSvcFn: UnusedLabelUpsertSvc,
-			LabelRepoFn: func() *automock.LabelRepository {
-				labelRepo := &automock.LabelRepository{}
-				labelRepo.On("GetByKey", ctx, "", model.AppTemplateLabelableObject, modelAppTemplate.ID, "region").Return(&model.Label{Value: "eu-1"}, nil).Once()
-				return labelRepo
-			},
-			AppRepoFn:     UnusedAppRepo,
-			UIDService:    UnusedUIDService,
-			ExpectedError: errors.New("\"applicationType\" label value does not match the application template name"),
 		},
 		{
 			Name: "No error in func enriching app input json with applicationType label when application type value does not match the application template name for Other System Type",
