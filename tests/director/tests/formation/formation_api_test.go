@@ -349,7 +349,8 @@ func TestApplicationFormationFlow(t *testing.T) {
 	var nilFormation *graphql.Formation
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteRequest, nilFormation)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "are not valid against empty schema")
+	assert.Contains(t, err.Error(), "cannot delete formation with ID")
+	assert.Contains(t, err.Error(), "because it is not empty")
 	assert.Nil(t, nilFormation)
 
 	t.Logf("Add access to application: %s for tenant: %s", app.ID, secondTenantID)
@@ -1033,11 +1034,11 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		t.Run("Create Automatic Scenario Assignment BEFORE runtime creation", func(t *testing.T) {
 			// Create Automatic Scenario Assignment for kyma formation
-			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 
 			// Create Automatic Scenario Assignment for provider formation
-			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 
 			// Register kyma runtime
@@ -1095,6 +1096,9 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			// Validate kyma and provider runtimes scenarios labels
 			validateRuntimesScenariosLabels(t, ctx, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntime.ID, providerRuntime.ID)
+
+			unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 		})
 
 		t.Run("Create Automatic Scenario Assignment AFTER runtime creation", func(t *testing.T) {
@@ -1153,11 +1157,11 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			subscription.CreateRuntimeSubscription(t, conf.SubscriptionConfig, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, conf.SubscriptionConfig.StandardFlow)
 
 			// Create Automatic Scenario Assignment for kyma formation
-			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 
 			// Create Automatic Scenario Assignment for provider formation
-			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 
 			// Validate kyma and provider runtimes scenarios labels
@@ -1269,6 +1273,16 @@ func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, te
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
 	require.NoError(t, err)
 	require.Equal(t, formationName, formation.Name)
+	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
+}
+
+func cleanupTenantFromFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
+	t.Logf("Unassign tenant: %q from formation with name: %q...", objectID, formationName)
+	unassignReq := fixtures.FixUnassignFormationRequest(objectID, string(graphql.FormationObjectTypeTenant), formationName)
+	var formation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+
 	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
 }
 

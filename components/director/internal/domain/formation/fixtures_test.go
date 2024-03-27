@@ -153,7 +153,8 @@ var (
 	)
 	TestConfigValueStr = "{\"configKey\":\"configValue\"}"
 
-	emptyFormationAssignment = &webhook.FormationAssignment{}
+	emptyFormationAssignment  = &webhook.FormationAssignment{}
+	emptyFormationAssignments = make([]*model.FormationAssignment, 0)
 
 	// Formation assignment notification variables
 	runtimeCtxNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
