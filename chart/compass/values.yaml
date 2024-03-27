@@ -102,6 +102,7 @@ global:
     - name: TestConsumerSubaccount
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
+      subdomain: compass-external-services-mock-sap-mtls
       parents: [5984a414-1eed-4972-af2c-b2b6a415c7d7]
     - name: TestTenantsOnDemandAPI
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
@@ -174,7 +175,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3774"
+      version: "PR-3695"
       name: compass-director
     hydrator:
       dir: dev/incubator/
