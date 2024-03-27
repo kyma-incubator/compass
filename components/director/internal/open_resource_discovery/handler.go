@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"net/http"
 	"time"
 
@@ -67,7 +68,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 	}
 
 	log.C(ctx).Infof("Rescheduling ord data aggregation for application with id %q and application template with id %q", payload.ApplicationID, payload.ApplicationTemplateID)
-	operation, err := h.opMgr.FindOperationByData(ctx, NewOrdOperationData(payload.ApplicationID, payload.ApplicationTemplateID))
+	operation, err := h.opMgr.FindOperationByData(ctx, data.NewOrdOperationData(payload.ApplicationID, payload.ApplicationTemplateID))
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			log.C(ctx).WithError(err).Errorf("Loading Operation for ORD data aggregation failed")
@@ -143,7 +144,7 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		}
 
 		now := time.Now()
-		data := NewOrdOperationData(payload.ApplicationID, payload.ApplicationTemplateID)
+		data := data.NewOrdOperationData(payload.ApplicationID, payload.ApplicationTemplateID)
 		rawData, err := data.GetData()
 		if err != nil {
 			log.C(ctx).WithError(err).Errorf("Preparing Operation for ORD data aggregation failed")

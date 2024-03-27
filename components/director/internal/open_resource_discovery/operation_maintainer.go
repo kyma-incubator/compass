@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	data2 "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -95,7 +96,7 @@ func (oc *ORDOperationMaintainer) buildNonExistingOperationInputs(ctx context.Co
 			}
 			desiredStateOperations = append(desiredStateOperations, ops...)
 		case model.ApplicationWebhookReference:
-			opData := NewOrdOperationData(webhook.ObjectID, "")
+			opData := data2.NewOrdOperationData(webhook.ObjectID, "")
 			data, err := opData.GetData()
 			if err != nil {
 				return nil, nil, err
@@ -132,12 +133,12 @@ func (oc *ORDOperationMaintainer) getOperationsToCreate(desiredOperations []*mod
 	result := make([]*model.OperationInput, 0)
 	for _, currentDesiredOperation := range desiredOperations {
 		found := false
-		currentDesiredOperationData, err := ParseOrdOperationData(currentDesiredOperation.Data)
+		currentDesiredOperationData, err := data2.ParseOrdOperationData(currentDesiredOperation.Data)
 		if err != nil {
 			return nil, err
 		}
 		for _, currentExistingOperation := range existingOperations {
-			currentExistingOperationData, err := ParseOrdOperationData(currentExistingOperation.Data)
+			currentExistingOperationData, err := data2.ParseOrdOperationData(currentExistingOperation.Data)
 			if err != nil {
 				return nil, err
 			}
@@ -157,12 +158,12 @@ func (oc *ORDOperationMaintainer) getOperationsToDelete(existingOperations []*mo
 	result := make([]*model.Operation, 0)
 	for _, currentExistingOperation := range existingOperations {
 		found := false
-		currentExistingOperationData, err := ParseOrdOperationData(currentExistingOperation.Data)
+		currentExistingOperationData, err := data2.ParseOrdOperationData(currentExistingOperation.Data)
 		if err != nil {
 			return nil, err
 		}
 		for _, currentDesiredOperation := range desiredOperations {
-			currentDesiredOperationData, err := ParseOrdOperationData(currentDesiredOperation.Data)
+			currentDesiredOperationData, err := data2.ParseOrdOperationData(currentDesiredOperation.Data)
 			if err != nil {
 				return nil, err
 			}
@@ -190,7 +191,7 @@ func (oc *ORDOperationMaintainer) appTemplateWebhookToOperations(ctx context.Con
 	}
 
 	for _, app := range apps {
-		opData := NewOrdOperationData(app.ID, webhook.ObjectID)
+		opData := data2.NewOrdOperationData(app.ID, webhook.ObjectID)
 		data, err := opData.GetData()
 		if err != nil {
 			return nil, err
@@ -212,7 +213,7 @@ func (oc *ORDOperationMaintainer) appTemplateOperations(ctx context.Context) ([]
 		if staticOrdWh.ObjectType != model.ApplicationTemplateWebhookReference {
 			continue
 		}
-		opData := NewOrdOperationData("", staticOrdWh.ObjectID)
+		opData := data2.NewOrdOperationData("", staticOrdWh.ObjectID)
 		data, err := opData.GetData()
 		if err != nil {
 			return nil, err

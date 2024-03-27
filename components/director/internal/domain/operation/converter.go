@@ -1,8 +1,12 @@
 package operation
 
 import (
+	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/pkg/errors"
 )
 
 type converter struct {
@@ -38,5 +42,74 @@ func (c *converter) ToEntity(operationModel *model.Operation) *Entity {
 		Priority:  operationModel.Priority,
 		CreatedAt: operationModel.CreatedAt,
 		UpdatedAt: operationModel.UpdatedAt,
+	}
+}
+
+// ToGraphQL converts the provided service-layer representation of an Operation to the graphql-layer one.
+func (c *converter) ToGraphQL(in *model.Operation) (*graphql.Operation, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	opType, err := c.operationTypeModelToGraphQL(in.OpType)
+	if err != nil {
+		return nil, err
+	}
+
+	opStatus, err := c.operationStatusModelToGraphQL(in.Status)
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphql.Operation{
+		ID:            in.ID,
+		OperationType: opType,
+		Status:        opStatus,
+		Error:         str.StringifyJSONRawMessage(in.Error),
+		CreatedAt:     graphql.Timestamp(*in.CreatedAt),
+		UpdatedAt:     graphql.Timestamp(*in.UpdatedAt),
+	}, nil
+}
+
+// MultipleToGraphQL missing godoc
+func (c *converter) MultipleToGraphQL(in []*model.Operation) ([]*graphql.Operation, error) {
+	operations := make([]*graphql.Operation, 0, len(in))
+	for _, o := range in {
+		if o == nil {
+			continue
+		}
+		operation, err := c.ToGraphQL(o)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Operation to GraphQL")
+		}
+		operations = append(operations, operation)
+	}
+
+	return operations, nil
+}
+
+func (c *converter) operationTypeModelToGraphQL(in model.OperationType) (graphql.ScheduledOperationType, error) {
+	switch in {
+	case model.OperationTypeSystemFetching:
+		return graphql.ScheduledOperationTypeSystemFetching, nil
+	case model.OperationTypeOrdAggregation:
+		return graphql.ScheduledOperationTypeOrdAggregation, nil
+	default:
+		return "", fmt.Errorf("unknown operation type %v", in)
+	}
+}
+
+func (c *converter) operationStatusModelToGraphQL(in model.OperationStatus) (graphql.OperationStatus, error) {
+	switch in {
+	case model.OperationStatusScheduled:
+		return graphql.OperationStatusScheduled, nil
+	case model.OperationStatusInProgress:
+		return graphql.OperationStatusInProgress, nil
+	case model.OperationStatusCompleted:
+		return graphql.OperationStatusCompleted, nil
+	case model.OperationStatusFailed:
+		return graphql.OperationStatusFailed, nil
+	default:
+		return "", fmt.Errorf("unknown operation status %v", in)
 	}
 }

@@ -1,9 +1,9 @@
-package ord_test
+package data_test
 
 import (
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"testing"
 
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

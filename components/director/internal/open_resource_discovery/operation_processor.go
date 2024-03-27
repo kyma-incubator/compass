@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -26,7 +27,7 @@ type OperationsProcessor struct {
 
 // Process processes the given operation
 func (p *OperationsProcessor) Process(ctx context.Context, operation *model.Operation) error {
-	var opData OrdOperationData
+	var opData data.OrdOperationData
 	if err := json.Unmarshal(operation.Data, &opData); err != nil {
 		return errors.Wrapf(err, "while unmarshalling operation with id %q", operation.ID)
 	}
