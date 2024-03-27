@@ -2,9 +2,10 @@ package operation_test
 
 import (
 	"database/sql"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/model"

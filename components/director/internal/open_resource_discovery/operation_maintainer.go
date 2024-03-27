@@ -3,8 +3,9 @@ package ord
 import (
 	"context"
 	"encoding/json"
-	data2 "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"time"
+
+	data2 "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"

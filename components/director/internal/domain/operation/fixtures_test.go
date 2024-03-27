@@ -3,11 +3,13 @@ package operation_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"

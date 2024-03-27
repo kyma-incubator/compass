@@ -3,9 +3,10 @@ package application_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"

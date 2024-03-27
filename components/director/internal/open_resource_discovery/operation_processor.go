@@ -3,6 +3,7 @@ package ord
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
