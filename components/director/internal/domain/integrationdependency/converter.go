@@ -137,7 +137,7 @@ func (c *converter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.
 		return nil, err
 	}
 
-	var labels *graphql.Labels
+	var labels graphql.Labels
 	if in.Labels != nil {
 		if err := json.Unmarshal(in.Labels, &labels); err != nil {
 			return nil, err

@@ -111,7 +111,7 @@ func fixGQLIntegrationDependency(id string) *graphql.IntegrationDependency {
 			DeprecatedSince: &versionDeprecatedSince,
 			ForRemoval:      &versionForRemoval,
 		},
-		Labels: &defaultLabelsModel,
+		Labels: defaultLabelsModel,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        id,
 			Ready:     true,
