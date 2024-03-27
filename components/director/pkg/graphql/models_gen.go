@@ -671,6 +671,7 @@ type IntegrationDependencyInput struct {
 	Mandatory     *bool          `json:"mandatory,omitempty"`
 	Aspects       []*AspectInput `json:"aspects,omitempty"`
 	Version       *VersionInput  `json:"version,omitempty"`
+	Labels        Labels         `json:"labels,omitempty"`
 }
 
 type IntegrationDependencyPage struct {

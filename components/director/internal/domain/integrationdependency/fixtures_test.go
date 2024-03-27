@@ -31,6 +31,7 @@ const (
 	sunsetDate              = "2022-01-08T15:47:04+00:00"
 	lastUpdate              = "2022-01-08T15:47:04+00:00"
 	resourceHash            = "123456"
+	defaultLabelsRaw        = `{"displayName":"bar","test":["val","val2"]}`
 )
 
 var (
@@ -45,6 +46,13 @@ var (
 	versionDeprecatedSince   = "v1.0"
 	versionForRemoval        = false
 	testErr                  = errors.New("test error")
+	defaultLabelsModel       = graphql.Labels{
+		"displayName": "bar",
+		"test": []interface{}{
+			"val",
+			"val2",
+		},
+	}
 )
 
 func fixIntegrationDependencyModel(integrationDependencyID string) *model.IntegrationDependency {
@@ -75,7 +83,7 @@ func fixIntegrationDependencyModel(integrationDependencyID string) *model.Integr
 		Mandatory:                      &mandatory,
 		Links:                          json.RawMessage("[]"),
 		Tags:                           json.RawMessage("[]"),
-		Labels:                         json.RawMessage("[]"),
+		Labels:                         json.RawMessage(defaultLabelsRaw),
 		DocumentationLabels:            json.RawMessage("[]"),
 		ResourceHash:                   str.Ptr(resourceHash),
 		Version: &model.Version{
@@ -103,6 +111,7 @@ func fixGQLIntegrationDependency(id string) *graphql.IntegrationDependency {
 			DeprecatedSince: &versionDeprecatedSince,
 			ForRemoval:      &versionForRemoval,
 		},
+		Labels: &defaultLabelsModel,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        id,
 			Ready:     true,
@@ -142,7 +151,7 @@ func fixIntegrationDependencyEntity(integrationDependencyID, appID string) *inte
 		Mandatory:                      repo.NewValidNullableBool(mandatory),
 		Links:                          repo.NewValidNullableString("[]"),
 		Tags:                           repo.NewValidNullableString("[]"),
-		Labels:                         repo.NewValidNullableString("[]"),
+		Labels:                         repo.NewValidNullableString(defaultLabelsRaw),
 		DocumentationLabels:            repo.NewValidNullableString("[]"),
 		ResourceHash:                   repo.NewValidNullableString(resourceHash),
 		Version: version.Version{
@@ -323,7 +332,7 @@ func fixIntegrationDependenciesColumns() []string {
 func fixIntegrationDependenciesRow(id, appID string) []driver.Value {
 	return []driver.Value{id, ready, fixedTimestamp, time.Time{}, time.Time{}, nil, appID, repo.NewValidNullableString(appTemplateVersionID), ordID, localTenantID,
 		repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), title, repo.NewValidNullableString(shortDescription), repo.NewValidNullableString(description), packageID, publicVisibility,
-		repo.NewValidNullableString(lastUpdate), releaseStatus, repo.NewValidNullableString(sunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableBool(&mandatory), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")),
+		repo.NewValidNullableString(lastUpdate), releaseStatus, repo.NewValidNullableString(sunsetDate), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableBool(&mandatory), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewNullableStringFromJSONRawMessage(json.RawMessage(defaultLabelsRaw)),
 		repo.NewNullableStringFromJSONRawMessage(json.RawMessage("[]")), repo.NewValidNullableString(resourceHash), repo.NewNullableString(&versionValue), repo.NewNullableBool(&versionDeprecated), repo.NewNullableString(&versionDeprecatedSince), repo.NewNullableBool(&versionForRemoval)}
 }
 
