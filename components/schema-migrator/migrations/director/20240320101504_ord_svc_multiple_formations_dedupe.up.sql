@@ -75,7 +75,7 @@ DROP VIEW IF EXISTS api_product;
 CREATE VIEW api_product AS
 SELECT api_definitions.id     AS api_definition_id,
        p.id                   AS product_id,
-       formation_apps.formation_id
+       COALESCE(formation_apps.formation_id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') as formation_id
 FROM api_definitions, jsonb_array_elements_text(api_definitions.part_of_products) AS elements
          JOIN products p ON elements.value = p.ord_id LEFT JOIN (SELECT a1.id, --left join so that we keep the global products the app_id of which will be null
                                                                         'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
@@ -92,7 +92,7 @@ DROP VIEW IF EXISTS event_product;
 CREATE VIEW event_product AS
 SELECT event_api_definitions.id     AS event_definition_id,
        p.id                         AS product_id,
-       formation_apps.formation_id
+       COALESCE(formation_apps.formation_id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') AS formation_id
 FROM event_api_definitions, jsonb_array_elements_text(event_api_definitions.part_of_products) AS elements
                           JOIN products p ON elements.value = p.ord_id LEFT JOIN (SELECT a1.id, --left join so that we keep the global products the app_id of which will be null
                                                                                          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
@@ -109,7 +109,7 @@ DROP VIEW IF EXISTS package_product;
 CREATE VIEW package_product AS
 SELECT pkgs.id          AS package_id,
        pr.id            AS product_id,
-       formation_apps.formation_id
+       COALESCE(formation_apps.formation_id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') AS formation_id
 FROM packages pkgs, jsonb_array_elements_text(pkgs.part_of_products) AS elements
                         JOIN products pr ON elements.value = pr.ord_id LEFT JOIN (SELECT a1.id, -- left join so that we keep the global products the app_id of which will be null
                                                                                          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
@@ -127,7 +127,7 @@ DROP VIEW IF EXISTS entity_type_product;
 CREATE VIEW entity_type_product AS
 SELECT et.id           AS entity_type_id,
        p.id            AS product_id,
-       formation_apps.formation_id
+       COALESCE(formation_apps.formation_id, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa') AS formation_id
 FROM entity_types et, jsonb_array_elements_text(et.part_of_products) AS elements
                           JOIN products p ON elements.value = p.ord_id LEFT JOIN (SELECT a1.id, -- left join so that we keep the global products the app_id of which will be null
                                                                                          'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'::uuid AS formation_id
