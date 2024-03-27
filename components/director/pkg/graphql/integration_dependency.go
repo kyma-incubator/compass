@@ -11,6 +11,7 @@ type IntegrationDependency struct {
 	Mandatory     *bool     `json:"mandatory"`
 	Aspects       []*Aspect `json:"aspects"`
 	Version       *Version  `json:"version"`
+	Labels        Labels    `json:"labels"`
 	*BaseEntity
 }
 

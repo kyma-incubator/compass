@@ -495,6 +495,7 @@ type ComplexityRoot struct {
 		Description   func(childComplexity int) int
 		Error         func(childComplexity int) int
 		ID            func(childComplexity int) int
+		Labels        func(childComplexity int) int
 		Mandatory     func(childComplexity int) int
 		Name          func(childComplexity int) int
 		OrdID         func(childComplexity int) int
@@ -3132,6 +3133,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.IntegrationDependency.ID(childComplexity), true
+
+	case "IntegrationDependency.labels":
+		if e.complexity.IntegrationDependency.Labels == nil {
+			break
+		}
+
+		return e.complexity.IntegrationDependency.Labels(childComplexity), true
 
 	case "IntegrationDependency.mandatory":
 		if e.complexity.IntegrationDependency.Mandatory == nil {
@@ -23507,6 +23515,47 @@ func (ec *executionContext) fieldContext_IntegrationDependency_version(ctx conte
 	return fc, nil
 }
 
+func (ec *executionContext) _IntegrationDependency_labels(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_IntegrationDependency_labels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Labels, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(Labels)
+	fc.Result = res
+	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_IntegrationDependency_labels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "IntegrationDependency",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Labels does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _IntegrationDependency_created_at(ctx context.Context, field graphql.CollectedField, obj *IntegrationDependency) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_IntegrationDependency_created_at(ctx, field)
 	if err != nil {
@@ -23730,6 +23779,8 @@ func (ec *executionContext) fieldContext_IntegrationDependencyPage_data(ctx cont
 				return ec.fieldContext_IntegrationDependency_aspects(ctx, field)
 			case "version":
 				return ec.fieldContext_IntegrationDependency_version(ctx, field)
+			case "labels":
+				return ec.fieldContext_IntegrationDependency_labels(ctx, field)
 			case "created_at":
 				return ec.fieldContext_IntegrationDependency_created_at(ctx, field)
 			case "updated_at":
@@ -27456,6 +27507,8 @@ func (ec *executionContext) fieldContext_Mutation_addIntegrationDependencyToAppl
 				return ec.fieldContext_IntegrationDependency_aspects(ctx, field)
 			case "version":
 				return ec.fieldContext_IntegrationDependency_version(ctx, field)
+			case "labels":
+				return ec.fieldContext_IntegrationDependency_labels(ctx, field)
 			case "created_at":
 				return ec.fieldContext_IntegrationDependency_created_at(ctx, field)
 			case "updated_at":
@@ -27565,6 +27618,8 @@ func (ec *executionContext) fieldContext_Mutation_deleteIntegrationDependency(ct
 				return ec.fieldContext_IntegrationDependency_aspects(ctx, field)
 			case "version":
 				return ec.fieldContext_IntegrationDependency_version(ctx, field)
+			case "labels":
+				return ec.fieldContext_IntegrationDependency_labels(ctx, field)
 			case "created_at":
 				return ec.fieldContext_IntegrationDependency_created_at(ctx, field)
 			case "updated_at":
@@ -46176,7 +46231,7 @@ func (ec *executionContext) unmarshalInputIntegrationDependencyInput(ctx context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "description", "ordID", "partOfPackage", "visibility", "releaseStatus", "mandatory", "aspects", "version"}
+	fieldsInOrder := [...]string{"name", "description", "ordID", "partOfPackage", "visibility", "releaseStatus", "mandatory", "aspects", "version", "labels"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -46246,6 +46301,13 @@ func (ec *executionContext) unmarshalInputIntegrationDependencyInput(ctx context
 				return it, err
 			}
 			it.Version = data
+		case "labels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
 		}
 	}
 
@@ -50907,6 +50969,8 @@ func (ec *executionContext) _IntegrationDependency(ctx context.Context, sel ast.
 			out.Values[i] = ec._IntegrationDependency_aspects(ctx, field, obj)
 		case "version":
 			out.Values[i] = ec._IntegrationDependency_version(ctx, field, obj)
+		case "labels":
+			out.Values[i] = ec._IntegrationDependency_labels(ctx, field, obj)
 		case "created_at":
 			out.Values[i] = ec._IntegrationDependency_created_at(ctx, field, obj)
 		case "updated_at":

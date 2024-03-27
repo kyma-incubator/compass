@@ -1,6 +1,8 @@
 package integrationdependency
 
 import (
+	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -135,6 +137,13 @@ func (c *converter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.
 		return nil, err
 	}
 
+	var labels graphql.Labels
+	if in.Labels != nil {
+		if err := json.Unmarshal(in.Labels, &labels); err != nil {
+			return nil, err
+		}
+	}
+
 	return &graphql.IntegrationDependency{
 		Name:          in.Title,
 		Description:   in.Description,
@@ -145,6 +154,7 @@ func (c *converter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.
 		Mandatory:     in.Mandatory,
 		Aspects:       gqlAspects,
 		Version:       c.version.ToGraphQL(in.Version),
+		Labels:        labels,
 		BaseEntity: &graphql.BaseEntity{
 			ID:        in.ID,
 			Ready:     in.Ready,
@@ -167,6 +177,14 @@ func (c *converter) InputFromGraphQL(in *graphql.IntegrationDependencyInput) (*m
 		return nil, err
 	}
 
+	var labels []byte
+	if in.Labels != nil {
+		labels, err = json.Marshal(in.Labels)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	return &model.IntegrationDependencyInput{
 		Title:         in.Name,
 		Description:   in.Description,
@@ -177,5 +195,6 @@ func (c *converter) InputFromGraphQL(in *graphql.IntegrationDependencyInput) (*m
 		Mandatory:     in.Mandatory,
 		Aspects:       aspects,
 		VersionInput:  c.version.InputFromGraphQL(in.Version),
+		Labels:        labels,
 	}, nil
 }

@@ -807,6 +807,7 @@ func (fp *GqlFieldsProvider) ForIntegrationDependency() string {
 		releaseStatus
 		mandatory
 		version {value}
+		labels
 		aspects {%s}
 		`, fp.ForAspects())
 }
