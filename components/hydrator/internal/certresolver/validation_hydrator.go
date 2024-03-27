@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/connector/pkg/oathkeeper"
 
@@ -87,9 +86,7 @@ func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	authSession.Header.Add(oathkeeper.ClientIdFromCertificateHeader, certData.ClientID)
 	authSession.Header.Add(oathkeeper.ClientCertificateHashHeader, certData.CertificateHash)
-	//authSession.Header.Add(oathkeeper.SubjectHeader, certData.Subject)
-	//authSession.Header.Add("Subject-From-Certificate", certData.Subject)
-	authSession.Header.Add("Subject-From-Certificate", strings.ReplaceAll(strings.TrimLeft(certData.Subject, "/"), "/", ","))
+	authSession.Header.Add(oathkeeper.SubjectHeader, certData.Subject)
 	authSession.Header.Add(oathkeeper.ClientCertificateIssuerHeader, issuer)
 
 	authSession.Extra = appendExtra(authSession.Extra, certData.AuthSessionExtra)

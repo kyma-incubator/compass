@@ -798,7 +798,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 
 	technicalCertSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-svc-system-with-csm-discovery-test", -1)
 	technicalCertProvider := createExternalConfigProvider(technicalCertSubject)
-	technicalProviderClientKey, technicalProviderRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, technicalCertProvider, true)
+	technicalProviderClientKey, technicalProviderRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, technicalCertProvider, false)
 	technicalCertDirectorGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, technicalProviderClientKey, technicalProviderRawCertChain, conf.SkipSSLValidation)
 
 	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-svc-system-with-csm-discovery", -1)
