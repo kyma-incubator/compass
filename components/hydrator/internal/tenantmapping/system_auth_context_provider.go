@@ -97,7 +97,7 @@ func (m *systemAuthContextProvider) GetObjectContext(ctx context.Context, reqDat
 		return ObjectContext{}, apperrors.NewInternalError("while mapping reference type to consumer type")
 	}
 
-	objCtx := NewObjectContext(tenant, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider, authDetails.Subject)
+	objCtx := NewObjectContext(tenant, m.tenantKeys, scopes, intersectWithOtherScopes, authDetails.Region, "", refObjectID, authDetails.AuthFlow, consumerType, tenantmapping.SystemAuthObjectContextProvider, "")
 	log.C(ctx).Infof("Object context: %+v", RedactConsumerIDForLogging(objCtx))
 
 	return objCtx, nil
