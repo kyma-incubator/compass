@@ -39,6 +39,8 @@ const (
 	InstanceCreator Type = "Instance Creator"
 	// FormationViewer is a consumer type that is used by Instance Creator operator
 	FormationViewer Type = "Formation Viewer"
+	// ApplicationProvider is type that provides application templates and consumes ORD data
+	ApplicationProvider Type = "Application Provider"
 )
 
 // Consumer missing godoc
@@ -49,6 +51,7 @@ type Consumer struct {
 	OnBehalfOf    string              `json:"onBehalfOf"`
 	Region        string              `json:"region"`
 	TokenClientID string              `json:"tokenClientID"`
+	Subject       string              `json:"subject"`
 }
 
 // MapSystemAuthToConsumerType missing godoc
@@ -80,6 +83,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Ty
 		return FormationViewer, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
+	case model.ApplicationProviderReference:
+		return ApplicationProvider, nil
 	}
 	return "", apperrors.NewInternalError("unknown reference object type")
 }

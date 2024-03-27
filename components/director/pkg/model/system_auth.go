@@ -79,6 +79,8 @@ const (
 	InstanceCreatorConsumerReference SystemAuthReferenceObjectType = "Instance Creator"
 	// FormationViewerConsumerReference is a reference to the formation viewer consumer type
 	FormationViewerConsumerReference SystemAuthReferenceObjectType = "Formation Viewer"
+	// ApplicationProviderReference is a reference to the application provider type
+	ApplicationProviderReference SystemAuthReferenceObjectType = "Application Provider"
 )
 
 // IsIntegrationSystemNoTenantFlow missing godoc

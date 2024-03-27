@@ -25,6 +25,7 @@ var SupportedConsumerTypes = map[consumer.Type]bool{
 	consumer.ManagedApplicationProviderOperator: true,
 	consumer.ManagedApplicationConsumer:         true,
 	consumer.LandscapeResourceOperator:          true,
+	consumer.ApplicationProvider:                true,
 	consumer.TenantDiscoveryOperator:            true,
 	consumer.InstanceCreator:                    true,
 	consumer.FormationViewer:                    true,
