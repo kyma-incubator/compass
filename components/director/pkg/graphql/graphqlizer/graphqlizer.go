@@ -493,6 +493,9 @@ func (g *Graphqlizer) IntegrationDependencyInputToGQL(in graphql.IntegrationDepe
 		{{- if .Version }}
 		version: {{- VersionInputToGQL .Version }},
 		{{- end}}
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
 	}`)
 }
 

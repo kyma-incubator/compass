@@ -786,6 +786,7 @@ input IntegrationDependencyInput {
 	mandatory: Boolean
 	aspects: [AspectInput!]
 	version: VersionInput
+	labels: Labels
 }
 
 input IntegrationSystemInput {
@@ -1437,6 +1438,7 @@ type IntegrationDependency {
 	mandatory: Boolean
 	aspects: [Aspect!]
 	version: Version
+	labels: Labels
 	created_at: Timestamp
 	updated_at: Timestamp
 	deleted_at: Timestamp
