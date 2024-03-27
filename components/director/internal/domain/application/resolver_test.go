@@ -3,6 +3,7 @@ package application_test
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"testing"
 	"time"
 
@@ -2503,6 +2504,130 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 		assert.Contains(t, err.Error(), "Application cannot be empty")
 		assert.Nil(t, result)
 	})
+}
+
+func TestResolver_Operations(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	now := time.Now()
+
+	operations := []*model.Operation{
+		{
+			ID:        "operation-id",
+			OpType:    model.OperationTypeOrdAggregation,
+			Status:    model.OperationStatusScheduled,
+			Error:     nil,
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		},
+	}
+	gqlOperations := []*graphql.Operation{
+		{
+			ID:            "operation-id",
+			OperationType: graphql.ScheduledOperationTypeOrdAggregation,
+			Status:        graphql.OperationStatusScheduled,
+			Error:         nil,
+			CreatedAt:     graphql.Timestamp(now),
+			UpdatedAt:     graphql.Timestamp(now),
+		},
+	}
+	gqlApp := fixGQLApplication("application-id", "bar", "baz")
+
+	converterMock := func() *automock.OperationConverter {
+		converter := &automock.OperationConverter{}
+		converter.On("MultipleToGraphQL", operations).Return(gqlOperations, nil).Once()
+		return converter
+	}
+	applicationTemplateID := ""
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		OperationSvcFn  func() *automock.OperationService
+		OperationConvFn func() *automock.OperationConverter
+		ExpectedOutput  []*graphql.Operation
+		ExpectedError   error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
+				return operationSvc
+			},
+			OperationConvFn: converterMock,
+			ExpectedOutput:  gqlOperations,
+			ExpectedError:   nil,
+		},
+		{
+			Name:            "Get operation by data and type returns error",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
+				return operationSvc
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Fail while beginning transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			OperationSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Fail while committing transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
+				return operationSvc
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			operationSvc := testCase.OperationSvcFn()
+			operationConv := testCase.OperationConvFn()
+
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, operationSvc, operationConv, "", "")
+
+			// WHEN
+			result, err := resolver.Operations(ctx, gqlApp)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, operationSvc, transact, persist, operationConv)
+		})
+	}
 }
 
 func TestResolver_Bundles(t *testing.T) {

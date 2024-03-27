@@ -113,8 +113,9 @@ func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 		healthCheckURL
 		bundles {%s}
 		auths {%s}
+		operations {%s}
 		eventingConfiguration { defaultURL }
-	`, fp.ForWebhooks(), fp.Page(fp.ForIntegrationDependency()), fp.Page(fp.ForBundle()), fp.ForSystemAuth()),
+	`, fp.ForWebhooks(), fp.Page(fp.ForIntegrationDependency()), fp.Page(fp.ForBundle()), fp.ForSystemAuth(), fp.ForOperation()),
 		ctx, []string{"Application.bundle", "Application.apiDefinition", "Application.eventDefinition"})
 }
 
@@ -694,6 +695,17 @@ func (fp *GqlFieldsProvider) OmitForBundle(omittedProperties []string) string {
 		"eventDefinitions":               fmt.Sprintf("eventDefinitions {%s}", fp.Page(fp.OmitForEventDefinition(eventDefOmittedProperties))),
 		"documents":                      fmt.Sprintf("documents {%s}", fp.Page(fp.OmitForDocument(documentsOmittedProperties))),
 	}, omittedProperties)
+}
+
+// ForOperation missing godoc
+func (fp *GqlFieldsProvider) ForOperation() string {
+	return `
+		id
+        operationType
+        status
+        error
+		createdAt
+        updatedAt`
 }
 
 // ForBundle missing godoc
