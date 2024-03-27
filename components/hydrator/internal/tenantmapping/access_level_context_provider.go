@@ -103,7 +103,6 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-	subject := data.Body.Header.Get(oathkeeper.SubjectKey)
 
 	if idVal == "" || certIssuer != oathkeeper.ExternalIssuer {
 		return false, nil, nil
@@ -115,7 +114,7 @@ func (p *accessLevelContextProvider) Match(_ context.Context, data oathkeeper.Re
 		}
 	}
 
-	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject}, nil
+	return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
 }
 
 func (p *accessLevelContextProvider) verifyTenantAccessLevels(accessLevel string, authDetails oathkeeper.AuthDetails, reqData oathkeeper.ReqData) error {

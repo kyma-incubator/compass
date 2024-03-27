@@ -327,7 +327,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		// WHEN
 		t.Log("Create application template")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantID, createApplicationTemplateRequest, &output)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantID, output)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, output)
 
 		// THEN
 		require.Error(t, err)
@@ -352,7 +352,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		// WHEN
 		t.Log("Create application template")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantID, createApplicationTemplateRequest, &output)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenantID, output)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, output)
 
 		// THEN
 		require.Error(t, err)
@@ -383,7 +383,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 		t.Log("Create first application template")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient1, tenantID, createApplicationTemplateRequest1, &output1)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient1, tenantID, output1)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient1, output1)
 
 		require.NoError(t, err)
 		require.NotEmpty(t, output1.ID)
@@ -392,7 +392,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		// WHEN
 		t.Log("Create second application template")
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient2, tenantID, createApplicationTemplateRequest2, &output2)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient2, tenantID, output2)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient2, output2)
 
 		//THEN
 		require.Error(t, err)
@@ -1762,7 +1762,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 
 	appTmplInput2 := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(name2, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTemplate2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, directorCertClientRegion2, tenantId, appTmplInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, directorCertClientRegion2, tenantId, appTemplate2)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, directorCertClientRegion2, appTemplate2)
 	require.NoError(t, err)
 
 	pageSize := 200
