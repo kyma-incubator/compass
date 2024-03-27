@@ -116,7 +116,8 @@ func (tm TenantMapping) Validate() error {
 	if tm.AssignedTenants[0].Operation != OperationAssign && tm.AssignedTenants[0].Operation != OperationUnassign {
 		return errors.New("$.assignedTenants[0].operation can only be assign or unassign")
 	}
-	if tm.AssignedTenants[0].Parameters.ClientID == "" {
+	// S/4 applications are created by the IAS adapter and therefore the tenant mapping does not contain its clientID
+	if tm.AssignedTenants[0].UCLApplicationType != S4ApplicationType && tm.AssignedTenants[0].Parameters.ClientID == "" {
 		return errors.New("$.assignedTenants[0].parameters.technicalIntegrationId is required")
 	}
 	return nil

@@ -154,6 +154,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 		BeforeEach(func() {
 			tenantMapping.AssignedTenants[0].ReverseAssignmentState = types.StateInitial
 			tenantMapping.AssignedTenants[0].UCLApplicationType = types.S4ApplicationType
+			tenantMapping.AssignedTenants[0].Parameters.ClientID = ""
 		})
 		It("Should return 200 and CONFIG_PENDING with S/4 configuration", func() {
 			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.S4CertificateNotFound)

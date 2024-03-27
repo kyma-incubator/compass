@@ -72,6 +72,7 @@ var _ = Describe("Tenant mappings service", func() {
 	When("tenant mapping with S/4 participant is received", func() {
 		BeforeEach(func() {
 			tenantMapping.AssignedTenants[0].UCLApplicationType = types.S4ApplicationType
+			tenantMapping.AssignedTenants[0].Parameters.ClientID = ""
 			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
 		})
 		It("should return error when default S/4 certificate is not provided", func() {
