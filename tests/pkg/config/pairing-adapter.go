@@ -24,4 +24,5 @@ type PairingAdapterConfig struct {
 	SelfRegRegion                  string
 	SelfRegLabelKey                string
 	ExternalClientCertSecretName   string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	GatewayOauth                   string `envconfig:"APP_GATEWAY_OAUTH"`
 }

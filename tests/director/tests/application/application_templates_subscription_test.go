@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -21,9 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
@@ -54,22 +53,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 		},
 	}
 
-	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig, true)
-	appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+	appProviderDirectorOnboardingCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-cn", -1))
+	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1))
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
@@ -84,8 +69,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(stdT, ctx, appProviderDirectorOnboardingCertSecuredClient, appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, appProviderDirectorOnboardingCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -278,7 +263,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			bundleOutput := graphql.BundleExt{}
 
 			t.Log("Try to create bundle")
-			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, addBndlRequest, &bundleOutput)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultSubaccountTenantID(), addBndlRequest, &bundleOutput)
 
 			// Verify that Bundle can be created
 			require.NoError(t, err)
@@ -290,7 +275,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			// Ensure fetching application returns also the added bundle
 			actualAppPageExt := graphql.ApplicationPageExt{}
 			getSrcAppReq.Header = headers
-			err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &actualAppPageExt)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultSubaccountTenantID(), getSrcAppReq, &actualAppPageExt)
 			require.NoError(t, err)
 
 			require.Len(t, actualAppPageExt.Data, 1)
@@ -353,7 +338,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			require.Equal(t, appTmpl.ID, *subscribedApplication.ApplicationTemplateID)
 
 			// Create second certificate client representing an Application Provider from a different region
-			appProviderDirectorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx)
+			appProviderDirectorCertClientForAnotherRegion := createDirectorCertClientForAnotherRegion(t, ctx, "subscription")
 
 			// Create consumer token
 			consumerToken := token.GetUserToken(t, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
@@ -388,8 +373,9 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	})
 
 	t.Run("When creating app template with optional placeholders", func(stdT *testing.T) {
+		appProviderDirectorOnboardingCertSecuredClient = createDirectorCertClientWithOtherSubject(baseT, ctx, strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-optional-placeholders-cn", -1))
+
 		t := testingx.NewT(stdT)
-		ctx := context.Background()
 
 		// Create Application Template
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-subscription-with-optional-placeholders")
@@ -398,8 +384,13 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		queryCertSubjectMappingReq := fixtures.FixQueryCertificateSubjectMappingsRequestWithPageSize(100)
+		currentCertSubjectMappings := graphql.CertificateSubjectMappingPage{}
+		err := testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, queryCertSubjectMappingReq, &currentCertSubjectMappings)
+		require.NoError(t, err)
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorOnboardingCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, appProviderDirectorOnboardingCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -458,22 +449,7 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		},
 	}
 
-	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig, true)
-	appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, "app-template-subscription-discovery-label-cn")
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
@@ -494,7 +470,7 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		appTemplateInput.Labels["systemFieldDiscovery"] = true
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -564,23 +540,7 @@ func TestSubscriptionApplicationTemplateFlowWithIndirectDependency(baseT *testin
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
 		},
 	}
-
-	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(baseT, ctx, externalCertProviderConfig, true)
-	appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, "app-template-subscription-indirect-dependency-cn")
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.IndirectDependencySubscriptionProviderAppNameValue)
 
@@ -596,7 +556,7 @@ func TestSubscriptionApplicationTemplateFlowWithIndirectDependency(baseT *testin
 		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])

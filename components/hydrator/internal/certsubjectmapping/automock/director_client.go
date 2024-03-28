@@ -40,12 +40,13 @@ func (_m *DirectorClient) ListCertificateSubjectMappings(ctx context.Context, af
 	return r0, r1
 }
 
-// NewDirectorClient creates a new instance of DirectorClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewDirectorClient(t interface {
+type mockConstructorTestingTNewDirectorClient interface {
 	mock.TestingT
 	Cleanup(func())
-}) *DirectorClient {
+}
+
+// NewDirectorClient creates a new instance of DirectorClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewDirectorClient(t mockConstructorTestingTNewDirectorClient) *DirectorClient {
 	mock := &DirectorClient{}
 	mock.Mock.Test(t)
 

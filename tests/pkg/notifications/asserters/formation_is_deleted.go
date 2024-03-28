@@ -2,10 +2,11 @@ package asserters
 
 import (
 	"context"
-	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
-	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"testing"
 	"time"
+
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
+	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/machinebox/graphql"

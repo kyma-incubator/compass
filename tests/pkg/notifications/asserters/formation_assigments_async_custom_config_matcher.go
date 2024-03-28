@@ -2,12 +2,13 @@ package asserters
 
 import (
 	"context"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 type FormationAssignmentsAsyncCustomConfigMatcherAsserter struct {

@@ -2,8 +2,9 @@ package operations
 
 import (
 	"context"
-	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"testing"
+
+	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"

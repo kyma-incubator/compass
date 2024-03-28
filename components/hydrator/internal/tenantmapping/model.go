@@ -25,6 +25,7 @@ type ObjectContext struct {
 	AuthFlow            oathkeeper.AuthFlow
 	ConsumerType        consumer.Type
 	ContextProvider     string
+	Subject             string
 }
 
 type scopesMergeStrategy string
@@ -42,7 +43,7 @@ type KeysExtra struct {
 }
 
 // NewObjectContext missing godoc
-func NewObjectContext(tenant *graphql.Tenant, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.Type, contextProvider string) ObjectContext {
+func NewObjectContext(tenant *graphql.Tenant, keysExtra KeysExtra, scopes string, scopesMergeStrategy scopesMergeStrategy, region, clientID, consumerID string, authFlow oathkeeper.AuthFlow, consumerType consumer.Type, contextProvider string, subject string) ObjectContext {
 	return ObjectContext{
 		Tenant:              tenant,
 		KeysExtra:           keysExtra,
@@ -54,6 +55,7 @@ func NewObjectContext(tenant *graphql.Tenant, keysExtra KeysExtra, scopes string
 		AuthFlow:            authFlow,
 		ConsumerType:        consumerType,
 		ContextProvider:     contextProvider,
+		Subject:             subject,
 	}
 }
 
@@ -70,6 +72,7 @@ func RedactConsumerIDForLogging(original ObjectContext) ObjectContext {
 			AuthFlow:            original.AuthFlow,
 			ConsumerType:        original.ConsumerType,
 			ContextProvider:     original.ContextProvider,
+			Subject:             original.Subject,
 		}
 	}
 	return original

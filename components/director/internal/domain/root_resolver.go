@@ -145,6 +145,7 @@ func NewRootResolver(
 	destinationCreatorConfig *destinationcreator.Config,
 	ordAggregatorClientConfig ordapiclient.OrdAggregatorClientConfig,
 	systemFetcherClientConfig sfapiclient.SystemFetcherSyncClientConfig,
+	environmentConsumerSubjects []string,
 ) (*RootResolver, error) {
 	timeService := time.NewService()
 
@@ -299,7 +300,7 @@ func NewRootResolver(
 
 	return &RootResolver{
 		appNameNormalizer:     appNameNormalizer,
-		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, labelSvc, selfRegisterManager, uidSvc, systemFieldDiscoveryEngine, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
+		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, labelSvc, selfRegisterManager, uidSvc, systemFieldDiscoveryEngine, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig, environmentConsumerSubjects),
 		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
 		api:                   api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:              eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),

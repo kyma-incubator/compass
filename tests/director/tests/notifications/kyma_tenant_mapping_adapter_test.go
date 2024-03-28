@@ -8,7 +8,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 )
 
@@ -55,7 +57,6 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	baseUrl := "url"
 	t.Logf("Create application template for type %q", applicationType)
 	appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 	appTemplateInput.ApplicationInput.BaseURL = &baseUrl
 	appTemplateInput.ApplicationInput.Bundles = []*graphql.BundleCreateInput{{
 		Name: "bndl-1",
@@ -87,8 +88,25 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 		},
 	}
 
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, appTemplate)
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, "int-kyma-tma-notifications")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, oauthGraphQLClient, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)

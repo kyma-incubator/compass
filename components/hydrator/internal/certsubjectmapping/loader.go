@@ -2,16 +2,13 @@ package certsubjectmapping
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
 
 	"github.com/avast/retry-go/v4"
 
 	schema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 )
@@ -21,13 +18,6 @@ import (
 //go:generate mockery --name=DirectorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type DirectorClient interface {
 	ListCertificateSubjectMappings(ctx context.Context, after string) (*schema.CertificateSubjectMappingPage, error)
-}
-
-type SubjectConsumerTypeMapping struct {
-	Subject            string   `json:"subject"`
-	ConsumerType       string   `json:"consumer_type"`
-	InternalConsumerID string   `json:"internal_consumer_id"`
-	TenantAccessLevels []string `json:"tenant_access_levels"`
 }
 
 // Loader provide mechanism to load certificate subject mappings' data into in-memory storage
@@ -56,24 +46,6 @@ func NewCertSubjectMappingLoader(certSubjectMappingCache *certSubjectMappingCach
 	}
 }
 
-func (s *SubjectConsumerTypeMapping) Validate() error {
-	if len(s.Subject) < 1 {
-		return errors.New("subject is not provided")
-	}
-
-	if !inputvalidation.SupportedConsumerTypes[consumer.Type(s.ConsumerType)] {
-		return fmt.Errorf("consumer type %s is not valid", s.ConsumerType)
-	}
-
-	for _, al := range s.TenantAccessLevels {
-		if !inputvalidation.SupportedAccessLevels[al] {
-			return fmt.Errorf("tenant access level %s is not valid", al)
-		}
-	}
-
-	return nil
-}
-
 func StartCertSubjectMappingLoader(ctx context.Context, certSubjectMappingCfg Config, directorClient DirectorClient) (Cache, error) {
 	cache := NewCertSubjectMappingCache()
 	certSubjectLoader := NewCertSubjectMappingLoader(cache, certSubjectMappingCfg, directorClient)
@@ -93,7 +65,7 @@ func (cl *certSubjectMappingLoader) InitialiseCertSubjectMappings(ctx context.Co
 	entry = entry.WithField(log.FieldRequestID, CertSubjectMappingInitialLoaderCorrelationID)
 	ctx = log.ContextWithLogger(ctx, entry)
 
-	var mappings []SubjectConsumerTypeMapping
+	var mappings []certsubjmapping.SubjectConsumerTypeMapping
 	var err error
 
 	err = retry.Do(func() error {
@@ -144,13 +116,13 @@ func (cl *certSubjectMappingLoader) Run(ctx context.Context, certSubjectMappings
 	}
 }
 
-func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context, certSubjectMappingsFromEnv string) ([]SubjectConsumerTypeMapping, error) {
+func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context, certSubjectMappingsFromEnv string) ([]certsubjmapping.SubjectConsumerTypeMapping, error) {
 	after := ""
-	mappings := make([]SubjectConsumerTypeMapping, 0)
+	mappings := make([]certsubjmapping.SubjectConsumerTypeMapping, 0)
 	hasNextPage := true
 	csmTotalCount := 0
 	log.C(ctx).Infof("Getting certificate subject mapping(s) from environment.")
-	mappingsFromEnv, err := unmarshalMappings(certSubjectMappingsFromEnv)
+	mappingsFromEnv, err := certsubjmapping.UnmarshalMappings(certSubjectMappingsFromEnv)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting certificate subject mappings from environment")
 	}
@@ -183,14 +155,14 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 	return mappings, nil
 }
 
-func convertGQLCertSubjectMappings(gqlMappings []*schema.CertificateSubjectMapping) []SubjectConsumerTypeMapping {
-	m := make([]SubjectConsumerTypeMapping, 0, len(gqlMappings))
+func convertGQLCertSubjectMappings(gqlMappings []*schema.CertificateSubjectMapping) []certsubjmapping.SubjectConsumerTypeMapping {
+	m := make([]certsubjmapping.SubjectConsumerTypeMapping, 0, len(gqlMappings))
 	var internalConsumerID string
 	for _, e := range gqlMappings {
 		if e.InternalConsumerID != nil {
 			internalConsumerID = *e.InternalConsumerID
 		}
-		scm := SubjectConsumerTypeMapping{
+		scm := certsubjmapping.SubjectConsumerTypeMapping{
 			Subject:            e.Subject,
 			ConsumerType:       e.ConsumerType,
 			InternalConsumerID: internalConsumerID,
@@ -199,13 +171,4 @@ func convertGQLCertSubjectMappings(gqlMappings []*schema.CertificateSubjectMappi
 		m = append(m, scm)
 	}
 	return m
-}
-
-func unmarshalMappings(certSubjectMappingsFromEnv string) ([]SubjectConsumerTypeMapping, error) {
-	var mappingsFromEnv []SubjectConsumerTypeMapping
-	if err := json.Unmarshal([]byte(certSubjectMappingsFromEnv), &mappingsFromEnv); err != nil {
-		return nil, errors.Wrap(err, "while unmarshalling mappings")
-	}
-
-	return mappingsFromEnv, nil
 }

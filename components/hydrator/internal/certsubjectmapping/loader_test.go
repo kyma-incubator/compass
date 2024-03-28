@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -45,7 +47,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		TenantAccessLevels: validTntAccessLevels,
 	}
 
-	certSubjcetMappingPageWithoutNextPage := &graphql.CertificateSubjectMappingPage{
+	certSubjectMappingPageWithoutNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping},
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
@@ -55,12 +57,12 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 		TotalCount: 1,
 	}
 
-	certSubjcetMappingPageWithoutPageInfo := &graphql.CertificateSubjectMappingPage{
+	certSubjectMappingPageWithoutPageInfo := &graphql.CertificateSubjectMappingPage{
 		Data:       []*graphql.CertificateSubjectMapping{certSubjectMapping},
 		TotalCount: 1,
 	}
 
-	certSubjcetMappingWithNextPage := &graphql.CertificateSubjectMappingPage{
+	certSubjectMappingWithNextPage := &graphql.CertificateSubjectMappingPage{
 		Data: []*graphql.CertificateSubjectMapping{certSubjectMapping, certSubjectMapping},
 		PageInfo: &graphql.PageInfo{
 			StartCursor: "",
@@ -82,7 +84,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil).Twice()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil).Twice()
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -93,8 +95,8 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingWithNextPage, nil)
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingWithNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), endCursor).Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            30 * time.Millisecond,
@@ -106,7 +108,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, nil).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -117,8 +119,8 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			certSubjectMappingCfg: cfg,
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutPageInfo, nil).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutPageInfo, nil).Once()
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -130,7 +132,7 @@ func TestNewCertSubjectMappingLoader(t *testing.T) {
 			directorClientFn: func() *automock.DirectorClient {
 				directorClient := &automock.DirectorClient{}
 				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(nil, testErr).Once()
-				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjcetMappingPageWithoutNextPage, nil)
+				directorClient.On("ListCertificateSubjectMappings", ctxWithCorrelationIDMatcher(), "").Return(certSubjectMappingPageWithoutNextPage, nil)
 				return directorClient
 			},
 			eventualTickInterval:            100 * time.Millisecond,
@@ -182,12 +184,12 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 
 	testCases := []struct {
 		name           string
-		input          certsubjectmapping.SubjectConsumerTypeMapping
+		input          certsubjmapping.SubjectConsumerTypeMapping
 		expectedErrMsg string
 	}{
 		{
 			name: "Success",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{
+			input: certsubjmapping.SubjectConsumerTypeMapping{
 				Subject:            validSubject,
 				ConsumerType:       string(validConsumerType),
 				TenantAccessLevels: validTntAccessLevels,
@@ -195,12 +197,12 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 		},
 		{
 			name:           "Error when the subject is invalid",
-			input:          certsubjectmapping.SubjectConsumerTypeMapping{},
+			input:          certsubjmapping.SubjectConsumerTypeMapping{},
 			expectedErrMsg: "subject is not provided",
 		},
 		{
 			name: "Error when the consumer type is unsupported",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{
+			input: certsubjmapping.SubjectConsumerTypeMapping{
 				Subject:      validSubject,
 				ConsumerType: invalidConsumerType,
 			},
@@ -208,7 +210,7 @@ func TestSubjectConsumerTypeMapping_Validate(t *testing.T) {
 		},
 		{
 			name: "Error when the tenant access levels are unsupported",
-			input: certsubjectmapping.SubjectConsumerTypeMapping{
+			input: certsubjmapping.SubjectConsumerTypeMapping{
 				Subject:            validSubject,
 				ConsumerType:       string(validConsumerType),
 				TenantAccessLevels: invalidTntAccessLevels,

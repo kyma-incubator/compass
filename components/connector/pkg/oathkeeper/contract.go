@@ -10,6 +10,7 @@ const (
 	ClientIdFromTokenHeader       = "Client-Id-From-Token"
 	ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
 	ClientCertificateHashHeader   = "Client-Certificate-Hash"
+	SubjectHeader                 = "Subject-From-Certificate"
 	ClientCertificateIssuerHeader = "Client-Certificate-Issuer"
 
 	ConnectorIssuer = "connector"

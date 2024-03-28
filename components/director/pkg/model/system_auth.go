@@ -71,6 +71,8 @@ const (
 	ManagedApplicationProviderOperatorReference SystemAuthReferenceObjectType = "Managed Application Provider Operator"
 	// ManagedApplicationConsumerReference is a reference to the managed application consumer type
 	ManagedApplicationConsumerReference SystemAuthReferenceObjectType = "Managed Application Consumer"
+	// ApplicationProviderReference is a reference to the application provider type
+	ApplicationProviderReference SystemAuthReferenceObjectType = "Application Provider"
 	// LandscapeResourceOperatorConsumerReference is a reference to the landscape resource operator consumer type
 	LandscapeResourceOperatorConsumerReference SystemAuthReferenceObjectType = "Landscape Resource Operator"
 	// TenantDiscoveryOperatorConsumerReference is a reference to the tenant discovery operator consumer type

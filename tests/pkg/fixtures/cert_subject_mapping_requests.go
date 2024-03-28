@@ -51,3 +51,13 @@ func FixQueryCertificateSubjectMappingsRequestWithPageSize(pageSize int) *gcli.R
 					}
 				}`, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForCertificateSubjectMapping())))
 }
+
+func FixQueryCertificateSubjectMappingsRequestWithPagination(first int, after string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+				  result: certificateSubjectMappings(first: %d, after:"%s") {
+    					%s
+					}
+				}`,
+			first, after, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForCertificateSubjectMapping())))
+}

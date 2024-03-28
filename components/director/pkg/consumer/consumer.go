@@ -31,6 +31,8 @@ const (
 	// ManagedApplicationConsumer is a consumer type that is used by Managed Application Provider operator
 	// when creating Certificate Subject Mappings
 	ManagedApplicationConsumer Type = "Managed Application Consumer"
+	// ApplicationProvider is type that provides application templates and consumes ORD data
+	ApplicationProvider Type = "Application Provider"
 	// LandscapeResourceOperator is a consumer type that is used by Landscape Resource operator
 	LandscapeResourceOperator Type = "Landscape Resource Operator"
 	// TenantDiscoveryOperator is a consumer type that is used by Tenant Discovery operator
@@ -48,6 +50,7 @@ type Consumer struct {
 	Flow          oathkeeper.AuthFlow `json:"Flow"`
 	OnBehalfOf    string              `json:"onBehalfOf"`
 	Region        string              `json:"region"`
+	Subject       string              `json:"subject"`
 	TokenClientID string              `json:"tokenClientID"`
 }
 
@@ -68,6 +71,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Ty
 		return BusinessIntegration, nil
 	case model.ManagedApplicationProviderOperatorReference:
 		return ManagedApplicationProviderOperator, nil
+	case model.ApplicationProviderReference:
+		return ApplicationProvider, nil
 	case model.ManagedApplicationConsumerReference:
 		return ManagedApplicationConsumer, nil
 	case model.LandscapeResourceOperatorConsumerReference:

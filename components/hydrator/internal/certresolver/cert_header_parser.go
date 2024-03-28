@@ -19,6 +19,7 @@ type CertificateData struct {
 	ClientID         string
 	CertificateHash  string
 	AuthSessionExtra map[string]interface{}
+	Subject          string
 }
 
 type certificateInfo struct {
@@ -61,7 +62,6 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 
 	subjects := extractFromHeader(certHeader, subjectRegex)
 	hashes := extractFromHeader(certHeader, hashRegex)
-
 	certificateInfos := createCertInfos(subjects, hashes)
 
 	log.C(ctx).Debugf("Trying to match certificate subjects [%s] for issuer %s", strings.Join(subjects, ","), hp.GetIssuer())
@@ -75,6 +75,7 @@ func (hp *headerParser) GetCertificateData(r *http.Request) *CertificateData {
 		ClientID:         hp.clientIDRetrieverFn(certificateInfo.Subject),
 		CertificateHash:  certificateInfo.Hash,
 		AuthSessionExtra: hp.authSessionExtraRetrieverFn(ctx, certificateInfo.Subject),
+		Subject:          certificateInfo.Subject,
 	}
 
 	return certData

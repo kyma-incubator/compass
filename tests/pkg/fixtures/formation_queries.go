@@ -79,7 +79,7 @@ func CreateFormationFromTemplateWithinTenant(t *testing.T, ctx context.Context, 
 	formationInput := FixFormationInput(formationName, formationTemplateName)
 	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formationInput)
 	require.NoError(t, err)
-	return CreateFormationFromTemplateWithInputWithinTenant(t, ctx, gqlClient, tenantID,formationName, formationInputGQL)
+	return CreateFormationFromTemplateWithInputWithinTenant(t, ctx, gqlClient, tenantID, formationName, formationInputGQL)
 }
 
 func CreateFormationFromTemplateWithStateWithinTenant(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationName string, formationTemplateName, formationState *string) graphql.FormationExt {

@@ -3,7 +3,7 @@
 package automock
 
 import (
-	certsubjectmapping "github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
+	certsubjmapping "github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -13,15 +13,15 @@ type Cache struct {
 }
 
 // Get provides a mock function with given fields:
-func (_m *Cache) Get() []certsubjectmapping.SubjectConsumerTypeMapping {
+func (_m *Cache) Get() []certsubjmapping.SubjectConsumerTypeMapping {
 	ret := _m.Called()
 
-	var r0 []certsubjectmapping.SubjectConsumerTypeMapping
-	if rf, ok := ret.Get(0).(func() []certsubjectmapping.SubjectConsumerTypeMapping); ok {
+	var r0 []certsubjmapping.SubjectConsumerTypeMapping
+	if rf, ok := ret.Get(0).(func() []certsubjmapping.SubjectConsumerTypeMapping); ok {
 		r0 = rf()
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]certsubjectmapping.SubjectConsumerTypeMapping)
+			r0 = ret.Get(0).([]certsubjmapping.SubjectConsumerTypeMapping)
 		}
 	}
 
@@ -29,16 +29,17 @@ func (_m *Cache) Get() []certsubjectmapping.SubjectConsumerTypeMapping {
 }
 
 // Put provides a mock function with given fields: certSubjectMappings
-func (_m *Cache) Put(certSubjectMappings []certsubjectmapping.SubjectConsumerTypeMapping) {
+func (_m *Cache) Put(certSubjectMappings []certsubjmapping.SubjectConsumerTypeMapping) {
 	_m.Called(certSubjectMappings)
 }
 
-// NewCache creates a new instance of Cache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewCache(t interface {
+type mockConstructorTestingTNewCache interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Cache {
+}
+
+// NewCache creates a new instance of Cache. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewCache(t mockConstructorTestingTNewCache) *Cache {
 	mock := &Cache{}
 	mock.Mock.Test(t)
 

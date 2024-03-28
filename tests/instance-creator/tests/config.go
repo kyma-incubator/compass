@@ -1,12 +1,13 @@
 package tests
 
 import (
+	"time"
+
 	directorcfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/config"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"time"
 )
 
 type InstanceCreatorConfig struct {

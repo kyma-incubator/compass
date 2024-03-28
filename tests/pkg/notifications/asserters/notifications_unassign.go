@@ -2,10 +2,11 @@ package asserters
 
 import (
 	"context"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/machinebox/graphql"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/machinebox/graphql"
 
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/stretchr/testify/require"

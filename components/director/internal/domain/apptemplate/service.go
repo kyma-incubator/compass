@@ -72,6 +72,7 @@ type LabelUpsertService interface {
 //go:generate mockery --name=CertSubjectMappingService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type CertSubjectMappingService interface {
 	DeleteByConsumerID(ctx context.Context, consumerID string) error
+	Create(ctx context.Context, item *model.CertSubjectMapping) (string, error)
 }
 
 // TimeService is responsible for time operations

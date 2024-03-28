@@ -207,6 +207,8 @@ spec:
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
             - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}
