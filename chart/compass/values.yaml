@@ -1554,6 +1554,7 @@ global:
         - "application:write"
         - "application.local_tenant_id:write"
         - "application.application_template:read"
+        - "application.webhooks:read"
         - "application_template:read"
         - "application_template:write"
         - "runtime:read"
