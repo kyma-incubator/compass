@@ -2036,6 +2036,25 @@ func TestListApplicationsByLocalTenantID(t *testing.T) {
 	displayNameField := "displayName"
 	localTenantIDField := "localTenantId"
 
+	createIntegrationSystem := func() *graphql.IntegrationSystemExt {
+		integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "integration-system-name")
+		require.NoError(t, err)
+		require.NotEmpty(t, integrationSystem.ID)
+		return integrationSystem
+	}
+
+	createIntegrationSystemCredentials := func(integrationSystem *graphql.IntegrationSystemExt) *graphql.IntSysSystemAuth {
+		integrationSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem.ID)
+		require.NotEmpty(t, integrationSystemAuth)
+		return integrationSystemAuth
+	}
+
+	createIntegrationSystemOauthClient := func(integrationSystemAuth *graphql.IntSysSystemAuth) *gcli.Client {
+		integrationSystemOauthCredentialData, ok := integrationSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+		return gql.NewAuthorizedGraphQLClientWithCustomURL(token.GetAccessToken(t, integrationSystemOauthCredentialData, token.IntegrationSystemScopes), conf.GatewayOauth)
+	}
+
 	createAppTemplate := func(client *gcli.Client, appTemplateName string) graphql.ApplicationTemplate {
 		input := fixtures.FixApplicationTemplate(appTemplateName)
 		input.Placeholders = []*graphql.PlaceholderDefinitionInput{
@@ -2096,19 +2115,13 @@ func TestListApplicationsByLocalTenantID(t *testing.T) {
 		return page, err
 	}
 
-	integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "integration-system-name")
+	integrationSystem := createIntegrationSystem()
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem)
-	require.NoError(t, err)
-	require.NotEmpty(t, integrationSystem.ID)
 
-	integrationSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem.ID)
-	require.NotEmpty(t, integrationSystemAuth)
+	integrationSystemAuth := createIntegrationSystemCredentials(integrationSystem)
 	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, integrationSystemAuth.ID)
 
-	integrationSystemOauthCredentialData, ok := integrationSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
-	require.True(t, ok)
-
-	integrationSystemOAuthClient := gql.NewAuthorizedGraphQLClientWithCustomURL(token.GetAccessToken(t, integrationSystemOauthCredentialData, token.IntegrationSystemScopes), conf.GatewayOauth)
+	integrationSystemOAuthClient := createIntegrationSystemOauthClient(integrationSystemAuth)
 
 	appTemplateOneName := fixtures.CreateAppTemplateName("template one")
 	appTemplateOne := createAppTemplate(integrationSystemOAuthClient, appTemplateOneName)
