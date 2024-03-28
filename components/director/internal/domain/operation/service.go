@@ -195,7 +195,7 @@ func (s *service) GetByDataAndType(ctx context.Context, data interface{}, opType
 	return s.opRepo.GetByDataAndType(ctx, data, opType)
 }
 
-// ListAllByType returns all operations for specifiet operation type
+// ListAllByType returns all operations for specified operation type
 func (s *service) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
 	return s.opRepo.ListAllByType(ctx, opType)
 }

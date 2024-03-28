@@ -73,6 +73,8 @@ models:
         resolver: true
       bundle:
         resolver: true
+      operations:
+        resolver: true
       applicationTemplate:
         resolver: true
   Bundle:

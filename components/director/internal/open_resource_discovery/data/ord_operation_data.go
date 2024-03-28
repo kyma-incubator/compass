@@ -1,4 +1,4 @@
-package ord
+package data
 
 import (
 	"encoding/json"
