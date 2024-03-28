@@ -254,6 +254,25 @@ func FixGetApplicationBySystemNumberRequest(systemNumber string) *gcli.Request {
 			}`, systemNumber, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
+func FixListApplicationsByLocalTenantID(localTenantID string, labelFilterInGQL string, first int, after string) *gcli.Request {
+	if labelFilterInGQL != "" {
+		labelFilterInGQL = ", filter: " + labelFilterInGQL
+	}
+
+	applicationFields := fmt.Sprintf(`
+		localTenantID
+		%s
+	`, testctx.Tc.GQLFieldsProvider.ForApplication())
+
+	return gcli.NewRequest(
+		fmt.Sprintf(`query {
+			result: applicationsByLocalTenantID(localTenantID: "%s", first: %d, after: "%s" %s) {
+					%s
+				}
+			}`,
+			localTenantID, first, after, labelFilterInGQL, testctx.Tc.GQLFieldsProvider.Page(applicationFields)))
+}
+
 func FixGetApplicationByLocalTenantIDAndAppTemplateIDRequest(localTenantID, appTemplateID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
@@ -287,7 +306,7 @@ func FixUnregisterApplicationRequest(id string) *gcli.Request {
 		fmt.Sprintf(`mutation {
 		unregisterApplication(id: "%s") {
 			%s
-		}	
+		}
 	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
@@ -305,7 +324,7 @@ func FixUnpairApplicationRequest(id string) *gcli.Request {
 		fmt.Sprintf(`mutation {
 		unpairApplication(id: "%s") {
 			%s
-		}	
+		}
 	}`, id, testctx.Tc.GQLFieldsProvider.ForApplication()))
 }
 
@@ -343,8 +362,8 @@ func FixApplicationForRuntimeRequest(runtimeID string) *gcli.Request {
 func FixApplicationForRuntimeRequestWithPageSize(runtimeID string, pageSize int) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query {
-  			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") { 
-					%s 
+  			result: applicationsForRuntime(runtimeID: "%s", first:%d, after:"") {
+					%s
 				}
 			}`, runtimeID, pageSize, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForApplication())))
 }
