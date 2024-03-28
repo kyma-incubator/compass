@@ -481,6 +481,28 @@ spec:
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
+  name: compass-async-formation-mapping-{{ .Values.global.oathkeeper.mutators.authenticationMappingServices.user_name_authenticator.name }}
+spec:
+  # Configuration of oathkeeper for endpoint secured with token
+  upstream:
+    url: "http://compass-director.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+  match:
+    methods: ["PATCH"]
+    url: <http|https>://{{ .Values.global.oathkeeper.mutators.authenticationMappingServices.user_name_authenticator.authenticator.gatewayHost }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators: # TODO:: maybe add tokenResolverService too? but isn't it for one time token only?
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
   name: compass-gateway-ias-adapter
 spec:
   upstream:

@@ -803,7 +803,8 @@ global:
             attributes: '{"uniqueAttribute": { "key": "subsc-key-test", "value": "subscription-flow" }, "tenants": [{ "key": "tenant" }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
             path: /<.*>
             checkSuffix: false
-        user-name-authenticator:
+        user_name_authenticator:
+          name: user-name
           cfg:
             config:
               api:
