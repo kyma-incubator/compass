@@ -1604,6 +1604,7 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	assert.Equal(t, 2, found)
 }
 
+// TODO HERE
 func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
@@ -1655,6 +1656,50 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	require.NotNil(t, outputApp.Application.Description)
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
 	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template")
+}
+
+func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	appTemplateName := fixtures.CreateAppTemplateName("template")
+	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	appTmplInput.Webhooks = []*graphql.WebhookInput{{
+		Type: graphql.WebhookTypeOpenResourceDiscovery,
+		URL:  ptr.String("http://test.test"),
+	}}
+
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	t.Log("Create application template")
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
+	require.NoError(t, err)
+
+	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
+		{
+			Placeholder: "name",
+			Value:       "new-name",
+		},
+		{
+			Placeholder: "display-name",
+			Value:       "new-display-name",
+		}}}
+	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
+	require.NoError(t, err)
+
+	createAppFromTmplRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplGQL)
+	outputApp := graphql.ApplicationExt{}
+
+	//WHEN
+	t.Log("Create application from application template")
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+
+	//THEN
+	require.NoError(t, err)
+	require.NotEmpty(t, outputApp)
+	require.Equal(t, 1, len(outputApp.Operations))
+	require.Equal(t, graphql.ScheduledOperationTypeOrdAggregation, outputApp.Operations[0].OperationType)
 }
 
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
