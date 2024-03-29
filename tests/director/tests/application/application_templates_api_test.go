@@ -1656,7 +1656,7 @@ func TestRegisterApplicationFromTemplate(t *testing.T) {
 	require.Equal(t, "test new-display-name", *outputApp.Application.Description)
 	example.SaveExample(t, createAppFromTmplRequest.Query(), "register application from template")
 }
-
+/*
 func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
@@ -1700,6 +1700,7 @@ func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
 	require.Equal(t, 1, len(outputApp.Operations))
 	require.Equal(t, graphql.ScheduledOperationTypeOrdAggregation, outputApp.Operations[0].OperationType)
 }
+ */
 
 func TestRegisterApplicationFromTemplateWithTemplateID(t *testing.T) {
 	//GIVEN

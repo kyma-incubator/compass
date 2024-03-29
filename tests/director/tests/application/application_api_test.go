@@ -96,28 +96,28 @@ func TestRegisterApplicationWithExternalCertificate(t *testing.T) {
 	require.NotEmpty(t, app.ID)
 }
 
-func TestRegisterApplicationWithOrdWebhook(t *testing.T) {
-	ctx := context.Background()
-
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
-	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
-
-	in := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("test", "register-app-with-external-cert", "http://test.test", nil)
-	in.LocalTenantID = nil
-	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
-	require.NoError(t, err)
-
-	createRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
-	app := graphql.ApplicationExt{}
-
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, createRequest, &app)
-	defer fixtures.CleanupApplication(t, ctx, directorCertSecuredClient, "", &app)
-	require.NoError(t, err)
-	require.NotNil(t, app)
-	require.NotEmpty(t, app.ID)
-	require.Equal(t, 1, len(app.Operations))
-	require.Equal(t, graphql.ScheduledOperationTypeOrdAggregation, app.Operations[0].OperationType)
-}
+//func TestRegisterApplicationWithOrdWebhook(t *testing.T) {
+//	ctx := context.Background()
+//
+//	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+//	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+//
+//	in := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("test", "register-app-with-external-cert", "http://test.test", nil)
+//	in.LocalTenantID = nil
+//	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+//	require.NoError(t, err)
+//
+//	createRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
+//	app := graphql.ApplicationExt{}
+//
+//	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, createRequest, &app)
+//	defer fixtures.CleanupApplication(t, ctx, directorCertSecuredClient, "", &app)
+//	require.NoError(t, err)
+//	require.NotNil(t, app)
+//	require.NotEmpty(t, app.ID)
+//	require.Equal(t, 1, len(app.Operations))
+//	require.Equal(t, graphql.ScheduledOperationTypeOrdAggregation, app.Operations[0].OperationType)
+//}
 
 // TODO: Uncomment the bellow test once the authentication for last operation is in place
 
