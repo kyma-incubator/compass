@@ -2691,8 +2691,8 @@ func TestResolver_Operations(t *testing.T) {
 			OperationType: graphql.ScheduledOperationTypeOrdAggregation,
 			Status:        graphql.OperationStatusScheduled,
 			Error:         nil,
-			CreatedAt:     graphql.Timestamp(now),
-			UpdatedAt:     graphql.Timestamp(now),
+			CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(&now),
+			UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(&now),
 		},
 	}
 	gqlApp := fixGQLApplication("application-id", "bar", "baz")
