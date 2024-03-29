@@ -1527,8 +1527,8 @@ type Operation {
 	operationType: ScheduledOperationType!
 	status: OperationStatus!
 	error: String
-	createdAt: Timestamp!
-	updatedAt: Timestamp!
+	createdAt: Timestamp
+	updatedAt: Timestamp
 }
 
 type PageInfo {

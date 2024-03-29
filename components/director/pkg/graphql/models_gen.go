@@ -768,8 +768,8 @@ type Operation struct {
 	OperationType ScheduledOperationType `json:"operationType"`
 	Status        OperationStatus        `json:"status"`
 	Error         *string                `json:"error,omitempty"`
-	CreatedAt     Timestamp              `json:"createdAt"`
-	UpdatedAt     Timestamp              `json:"updatedAt"`
+	CreatedAt     *Timestamp             `json:"createdAt,omitempty"`
+	UpdatedAt     *Timestamp             `json:"updatedAt,omitempty"`
 }
 
 type PageInfo struct {

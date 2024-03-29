@@ -86,14 +86,14 @@ func fixOperationModelWithIDAndTimestamp(id string, opType model.OperationType, 
 	}
 }
 
-func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOperationType, opStatus graphql.OperationStatus, errorMsg string, timestamp time.Time) *graphql.Operation {
+func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOperationType, opStatus graphql.OperationStatus, errorMsg string, timestamp *time.Time) *graphql.Operation {
 	return &graphql.Operation{
 		ID:            id,
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         &errorMsg,
-		CreatedAt:     graphql.Timestamp(timestamp),
-		UpdatedAt:     graphql.Timestamp(timestamp),
+		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
+		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
 	}
 }
 

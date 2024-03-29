@@ -119,7 +119,7 @@ func TestConverter_ToGraphQL(t *testing.T) {
 		{
 			Name:     "Success",
 			Input:    fixOperationModelWithIDAndTimestamp("operation-id", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, errorMsg, 1, &now),
-			Expected: fixOperationGraphqlWithIDAndTimestamp("operation-id", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, now),
+			Expected: fixOperationGraphqlWithIDAndTimestamp("operation-id", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, &now),
 		},
 		{
 			Name:                 "Error - invalid operation type",
@@ -166,8 +166,8 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		nil,
 	}
 	expected := []*graphql.Operation{
-		fixOperationGraphqlWithIDAndTimestamp("operation-id-1", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, now),
-		fixOperationGraphqlWithIDAndTimestamp("operation-id-2", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, now),
+		fixOperationGraphqlWithIDAndTimestamp("operation-id-1", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, &now),
+		fixOperationGraphqlWithIDAndTimestamp("operation-id-2", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, &now),
 	}
 
 	// WHEN

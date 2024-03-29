@@ -67,8 +67,8 @@ func (c *converter) ToGraphQL(in *model.Operation) (*graphql.Operation, error) {
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         str.StringifyJSONRawMessage(in.Error),
-		CreatedAt:     graphql.Timestamp(*in.CreatedAt),
-		UpdatedAt:     graphql.Timestamp(*in.UpdatedAt),
+		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
+		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
 	}, nil
 }
 
