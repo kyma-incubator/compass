@@ -1604,7 +1604,6 @@ func TestQueryApplicationTemplates(t *testing.T) {
 	assert.Equal(t, 2, found)
 }
 
-// TODO HERE
 func TestRegisterApplicationFromTemplate(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
