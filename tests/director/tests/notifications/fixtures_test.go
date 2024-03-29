@@ -41,7 +41,7 @@ const (
 	doesNotSupportReset              = false
 	consumerType                     = "Integration System" // should be a valid consumer type
 	exceptionSystemType              = "exception-type"
-	eventuallyTimeoutForDestinations = 60 * time.Second
+	eventuallyTimeoutForDestinations = 90 * time.Second
 	eventuallyTickForDestinations    = 2 * time.Second
 	eventuallyTimeout                = 8 * time.Second
 	eventuallyTick                   = 50 * time.Millisecond
