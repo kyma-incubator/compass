@@ -2,12 +2,8 @@ BEGIN;
 
 -- Add columns
 ALTER TABLE business_tenant_mappings
-    ADD COLUMN created_at timestamp,
-    ADD COLUMN updated_at timestamp;
-
--- Update all existing records with initial data
-UPDATE business_tenant_mappings SET created_at=NOW() WHERE created_at IS NULL;
-UPDATE business_tenant_mappings SET updated_at=NOW() WHERE updated_at IS NULL;
+    ADD COLUMN created_at timestamp DEFAULT NOW(),
+    ADD COLUMN updated_at timestamp DEFAULT NOW();
 
 -- Introduce funciton that sets the created_at to now
 CREATE OR REPLACE FUNCTION set_created_at()
@@ -38,7 +34,7 @@ BEGIN
 END
 $$ LANGUAGE plpgsql;
 
--- Define a trigger that uses funciton for created_at on business_tenant_mappings table
+-- Define a trigger that uses funciton for updated_at on business_tenant_mappings table
 CREATE TRIGGER set_updated_at_on_business_tenant_mappings
     BEFORE INSERT OR UPDATE 
     ON business_tenant_mappings
