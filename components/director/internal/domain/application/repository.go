@@ -172,6 +172,44 @@ func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumb
 	return appModel, nil
 }
 
+// ListByLocalTenantID returns applications with matching local tenant id and optionally - a filter
+func (r *pgRepository) ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+	conditions := repo.Conditions{repo.NewEqualCondition("local_tenant_id", localTenantID)}
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(appsCollection))
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
 // GetByLocalTenantIDAndAppTemplateID returns the application with matching local tenant id and app template id from the Compass DB
 func (r *pgRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error) {
 	var appEnt Entity
