@@ -102,6 +102,7 @@ global:
     - name: TestConsumerSubaccount
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
+      subdomain: compass-external-services-mock-sap-mtls
       parents: [5984a414-1eed-4972-af2c-b2b6a415c7d7]
     - name: TestTenantsOnDemandAPI
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
@@ -166,15 +167,15 @@ global:
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3751"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3715"
+      version: "PR-3742"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3711"
+      version: "PR-3776"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -182,7 +183,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3768"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -202,7 +203,7 @@ global:
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3734"
+      version: "PR-3744"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -223,7 +224,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3712"
+      version: "PR-3771"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +232,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3720"
+      version: "PR-3776"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1558,6 +1559,7 @@ global:
         - "automatic_scenario_assignment:read"
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
+        - "formation.state:write"
         - "formation:write"
         - "formation:read"
         - "internal_visibility:read"

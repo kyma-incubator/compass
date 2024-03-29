@@ -8,6 +8,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
 const (
@@ -28,4 +29,14 @@ func RespondWithError(ctx *gin.Context, statusCode int, err error) {
 	requestID, _ := ctx.Get(logCtx.RequestIDCtxKey)
 	errorMessage := url.QueryEscape(err.Error())
 	ctx.AbortWithStatusJSON(statusCode, errorResponse{Error: errorMessage, RequestID: requestID.(string)})
+}
+
+func RespondWithConfigPending(ctx *gin.Context, config *types.TenantMappingConfiguration) {
+	tenantMappingResponse := types.TenantMappingResponse{
+		State: types.StateConfigPending,
+	}
+	if config != nil {
+		tenantMappingResponse.Configuration = *config
+	}
+	ctx.AbortWithStatusJSON(http.StatusOK, tenantMappingResponse)
 }

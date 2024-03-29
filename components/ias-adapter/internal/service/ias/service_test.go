@@ -99,7 +99,7 @@ var _ = Describe("Removing consumed API", func() {
 	})
 })
 
-var _ = Describe("Getting application", func() {
+var _ = Describe("Getting application by client ID", func() {
 	config := config.IAS{}
 	ctx := context.Background()
 	iasHost := "ias-host"
@@ -110,7 +110,7 @@ var _ = Describe("Getting application", func() {
 		It("Returns an error", func() {
 			err := errors.New("connection reset")
 			service := NewService(config, &http.Client{Transport: &testTransport{err: err}})
-			_, err = service.GetApplication(ctx, iasHost, clientID, appTenantId)
+			_, err = service.GetApplicationByClientID(ctx, iasHost, clientID, appTenantId)
 			Expect(err).To(Equal(err))
 		})
 	})
@@ -122,7 +122,7 @@ var _ = Describe("Getting application", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			service := NewService(config, &http.Client{Transport: &testTransport{status: http.StatusOK, body: string(b)}})
-			_, err = service.GetApplication(ctx, iasHost, clientID, appTenantId)
+			_, err = service.GetApplicationByClientID(ctx, iasHost, clientID, appTenantId)
 			Expect(err).To(MatchError(errors.IASApplicationNotFound))
 		})
 	})
@@ -144,7 +144,31 @@ var _ = Describe("Getting application", func() {
 			Expect(err).ToNot(HaveOccurred())
 
 			service := NewService(config, &http.Client{Transport: &testTransport{status: http.StatusOK, body: string(b)}})
-			_, err = service.GetApplication(ctx, iasHost, clientID, appTenantId)
+			_, err = service.GetApplicationByClientID(ctx, iasHost, clientID, appTenantId)
+			Expect(err).To(MatchError(errors.IASApplicationNotFound))
+		})
+	})
+})
+
+var _ = Describe("Getting application by name", func() {
+	config := config.IAS{}
+	ctx := context.Background()
+	iasHost := "ias-host"
+	name := "ias-app-name"
+
+	When("IAS returns an error", func() {
+		It("Returns an error", func() {
+			err := errors.New("connection reset")
+			service := NewService(config, &http.Client{Transport: &testTransport{err: err}})
+			_, err = service.GetApplicationByName(ctx, iasHost, name)
+			Expect(err).To(Equal(err))
+		})
+	})
+
+	When("There are no applications with the specified name and IAS returns 404", func() {
+		It("Returns IAS App not found error", func() {
+			service := NewService(config, &http.Client{Transport: &testTransport{status: http.StatusNotFound}})
+			_, err := service.GetApplicationByName(ctx, iasHost, name)
 			Expect(err).To(MatchError(errors.IASApplicationNotFound))
 		})
 	})

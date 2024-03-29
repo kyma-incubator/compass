@@ -582,9 +582,9 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 //
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
-func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	var errs *multierror.Error
-	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, runtimeContextIDToRuntimeIDMapping, applicationIDToApplicationTemplateIDMapping, requests)
+	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, requests)
 	alreadyProcessedFAs := make(map[string]bool, 0)
 	for _, mapping := range assignmentRequestMappings {
 		if alreadyProcessedFAs[mapping.AssignmentReqMapping.FormationAssignment.ID] {
@@ -861,18 +861,18 @@ func validateResponseState(newState, previousState string) bool {
 
 	// handles synchronous "delete/unassign" statuses
 	if previousState == string(model.DeletingAssignmentState) &&
-		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.DeleteReadyFormationAssignmentState)) {
 		return false
 	}
 
 	// handles synchronous "create/assign" statuses
 	if previousState == string(model.InitialAssignmentState) &&
-		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState)) {
+		(newState != string(model.CreateErrorAssignmentState) && newState != string(model.ConfigPendingAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.CreateReadyFormationAssignmentState)) {
 		return false
 	}
 
 	if previousState == string(model.DeleteErrorAssignmentState) &&
-		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.DeletingAssignmentState)) {
+		(newState != string(model.DeleteErrorAssignmentState) && newState != string(model.ReadyAssignmentState) && newState != string(model.DeletingAssignmentState) && newState != string(model.DeleteReadyFormationAssignmentState)) {
 		return false
 	}
 
@@ -897,37 +897,17 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	return nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, runtimeContextIDToRuntimeIDMapping map[string]string, applicationIDToApplicationTemplateIDMapping map[string]string, requests []*webhookclient.FormationAssignmentNotificationRequest) []*AssignmentMappingPair {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*AssignmentMappingPair {
 	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
 		mappingObject := &FormationAssignmentRequestMapping{
 			Request:             nil,
 			FormationAssignment: assignments[i],
 		}
-
 		target := assignment.Target
-		if assignment.TargetType == model.FormationAssignmentTypeRuntimeContext {
-			log.C(ctx).Infof("Matching for runtime context, fetching associated runtime for runtime context with ID %s", target)
-
-			target = runtimeContextIDToRuntimeIDMapping[assignment.Target]
-			log.C(ctx).Infof("Fetched associated runtime with ID %s for runtime context with ID %s", target, assignment.Target)
-		}
-
 	assignment:
 		for j, request := range requests {
-			var objectID string
-			if request.Webhook != nil && request.Webhook.RuntimeID != nil {
-				objectID = *request.Webhook.RuntimeID
-			}
-
-			// It is possible for both the application and the application template to have registered webhooks.
-			// In such case the application webhook should be used.
-			if request.Webhook != nil && request.Webhook.ApplicationID != nil {
-				objectID = *request.Webhook.ApplicationID
-			} else if request.Webhook != nil && request.Webhook.ApplicationTemplateID != nil &&
-				*request.Webhook.ApplicationTemplateID == applicationIDToApplicationTemplateIDMapping[target] {
-				objectID = target
-			}
+			var objectID = request.Target
 
 			if objectID != target {
 				continue
@@ -943,7 +923,7 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 			}
 			for _, id := range participants {
 				if assignment.Source == id {
-					mappingObject.Request = requests[j]
+					mappingObject.Request = requests[j].FormationAssignmentNotificationRequest
 					break assignment
 				}
 			}
@@ -1100,8 +1080,12 @@ func newNotificationStatusReportFromWebhookResponse(response *webhookdir.Respons
 }
 
 func calculateStateFromWebhookResponse(response *webhookdir.Response, operation model.FormationOperation, webhookMode graphql.WebhookMode) string {
-	if response.State != nil && *response.State != "" {
+	if response.State != nil && *response.State != "" && *response.State != string(model.CreateReadyFormationAssignmentState) && *response.State != string(model.DeleteReadyFormationAssignmentState) {
 		return *response.State
+	}
+
+	if response.State != nil && *response.State != "" && (*response.State == string(model.CreateReadyFormationAssignmentState) || *response.State == string(model.DeleteReadyFormationAssignmentState)) {
+		return string(model.ReadyAssignmentState)
 	}
 
 	if response.Error != nil && *response.Error != "" {
@@ -1146,11 +1130,11 @@ func validateNotificationResponse(response *webhookdir.Response, assignment *mod
 		validation.Field(&response.State, validation.When(response.State != nil && *response.State != "",
 			validation.When(isErrorNotEmpty(response.Error) && operation == model.AssignFormation, validation.In(string(model.CreateErrorAssignmentState))),
 			validation.When(isErrorNotEmpty(response.Error) && operation == model.UnassignFormation, validation.In(string(model.DeleteErrorAssignmentState))),
-			validation.When(isConfigNotEmpty(response.Config), validation.In(string(model.ReadyAssignmentState), string(model.ConfigPendingAssignmentState))),
+			validation.When(isConfigNotEmpty(response.Config), validation.In(string(model.ReadyAssignmentState), string(model.CreateReadyFormationAssignmentState), string(model.ConfigPendingAssignmentState))),
 			validation.When(actualCode == incompleteCode, validation.In(string(model.ConfigPendingAssignmentState))),
 			validation.When(actualCode != incompleteCode && actualCode != successCode, validation.In(string(model.DeleteErrorAssignmentState), string(model.CreateErrorAssignmentState))),
 			// in case of empty error and configuration
-			validation.In(string(model.ReadyAssignmentState), string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState), string(model.ConfigPendingAssignmentState)),
+			validation.In(string(model.ReadyAssignmentState), string(model.CreateReadyFormationAssignmentState), string(model.DeleteReadyFormationAssignmentState), string(model.CreateErrorAssignmentState), string(model.DeleteErrorAssignmentState), string(model.ConfigPendingAssignmentState)),
 		)),
 		validation.Field(&response.Config, validation.When(isConfigNotEmpty(response.Config),
 			validation.By(func(val interface{}) error {

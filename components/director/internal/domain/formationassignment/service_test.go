@@ -45,12 +45,14 @@ var (
 	first = 2
 	after = "test"
 
-	readyAssignmentState         = string(model.ReadyAssignmentState)
-	configPendingAssignmentState = string(model.ConfigPendingAssignmentState)
-	createErrorAssignmentState   = string(model.CreateErrorAssignmentState)
-	initialAssignmentState       = string(model.InitialAssignmentState)
-	deleteErrorAssignmentState   = string(model.DeleteErrorAssignmentState)
-	invalidState                 = "invalidState"
+	readyAssignmentState                      = string(model.ReadyAssignmentState)
+	configPendingAssignmentState              = string(model.ConfigPendingAssignmentState)
+	createErrorAssignmentState                = string(model.CreateErrorAssignmentState)
+	createReadyAssignmentState                = string(model.CreateReadyFormationAssignmentState)
+	initialAssignmentState                    = string(model.InitialAssignmentState)
+	deleteErrorAssignmentState                = string(model.DeleteErrorAssignmentState)
+	instanceCreatorDeleteErrorAssignmentState = string(model.InstanceCreatorDeleteErrorAssignmentState)
+	invalidState                              = "invalidState"
 
 	formation = &model.Formation{
 		ID:                  TestFormationID,
@@ -1836,7 +1838,6 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 	appID := "app"
 	appID2 := "app2"
 	appTemplateID := "appTemplate"
-	runtimeID := "runtime"
 	runtimeCtxID := "runtimeCtx"
 	matchedApplicationAssignment := &model.FormationAssignment{
 		Source:     appID2,
@@ -1894,7 +1895,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 
 	appToAppRequests, appToAppInputTemplate, appToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
 	appToAppRequests2, appToAppInputTemplate2, appToAppInputTemplateReverse2 := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
-	rtmCtxToAppRequests, rtmCtxToAppInputTemplate, rtmCtxToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(runtimeID, appID, []string{appID, runtimeCtxID}, matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse, "runtime", "application", true)
+	rtmCtxToAppRequests, rtmCtxToAppInputTemplate, rtmCtxToAppInputTemplateReverse := fixNotificationRequestAndReverseRequest(runtimeCtxID, appID, []string{appID, runtimeCtxID}, matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse, "runtime", "application", true)
 
 	appToAppRequestsWithAppTemplateWebhook, _, _ := fixNotificationRequestAndReverseRequest(appID, appID2, []string{appID, appID2}, matchedApplicationAssignment, matchedApplicationAssignmentReverse, "application", "application", true)
 	appToAppRequestsWithAppTemplateWebhook[0].Webhook.ApplicationID = nil
@@ -1905,18 +1906,16 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 
 	//TODO test two apps and one runtime to verify the mapping
 	var testCases = []struct {
-		Name                                      string
-		Context                                   context.Context
-		TemplateInput                             *automock.TemplateInput
-		TemplateInputReverse                      *automock.TemplateInput
-		FormationAssignments                      []*model.FormationAssignment
-		Requests                                  []*webhookclient.FormationAssignmentNotificationRequest
-		Operation                                 func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
-		FormationOperation                        model.FormationOperation
-		RuntimeContextToRuntimeMapping            map[string]string
-		ApplicationsToApplicationTemplatesMapping map[string]string
-		ExpectedMappings                          []*formationassignment.AssignmentMappingPairWithOperation
-		ExpectedErrorMsg                          string
+		Name                 string
+		Context              context.Context
+		TemplateInput        *automock.TemplateInput
+		TemplateInputReverse *automock.TemplateInput
+		FormationAssignments []*model.FormationAssignment
+		Requests             []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
+		Operation            func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+		FormationOperation   model.FormationOperation
+		ExpectedMappings     []*formationassignment.AssignmentMappingPairWithOperation
+		ExpectedErrorMsg     string
 	}{
 		{
 			Name:                 "Success when match assignment for application",
@@ -1931,11 +1930,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequests[0],
+							Request:             appToAppRequests[0].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedApplicationAssignment,
 						},
 						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequests[1],
+							Request:             appToAppRequests[1].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
 					},
@@ -1944,50 +1943,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequests[1],
+							Request:             appToAppRequests[1].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
 						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequests[0],
-							FormationAssignment: matchedApplicationAssignment,
-						},
-					},
-					Operation: assignOperation,
-				},
-			},
-		},
-		{
-			Name:                 "Success when match assignment for application when webhook comes from applicationTemplate",
-			Context:              ctxWithTenant,
-			TemplateInput:        appToAppInputTemplate,
-			TemplateInputReverse: appToAppInputTemplateReverse,
-			FormationAssignments: []*model.FormationAssignment{matchedApplicationAssignment, matchedApplicationAssignmentReverse},
-			Requests:             appToAppRequestsWithAppTemplateWebhook,
-			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
-			ApplicationsToApplicationTemplatesMapping: map[string]string{appID: appTemplateID},
-			FormationOperation:                        assignOperation,
-			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
-				{
-					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequestsWithAppTemplateWebhook[0],
-							FormationAssignment: matchedApplicationAssignment,
-						},
-						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequestsWithAppTemplateWebhook[1],
-							FormationAssignment: matchedApplicationAssignmentReverse,
-						},
-					},
-					Operation: assignOperation,
-				},
-				{
-					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequestsWithAppTemplateWebhook[1],
-							FormationAssignment: matchedApplicationAssignmentReverse,
-						},
-						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequestsWithAppTemplateWebhook[0],
+							Request:             appToAppRequests[0].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedApplicationAssignment,
 						},
 					},
@@ -2008,11 +1968,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequests2[0],
+							Request:             appToAppRequests2[0].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedApplicationAssignment,
 						},
 						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             appToAppRequests2[1],
+							Request:             appToAppRequests2[1].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedApplicationAssignmentReverse,
 						},
 					},
@@ -2021,24 +1981,23 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			},
 		},
 		{
-			Name:                           "Success when match assignment for runtimeContext",
-			Context:                        ctxWithTenant,
-			TemplateInput:                  rtmCtxToAppInputTemplate,
-			TemplateInputReverse:           rtmCtxToAppInputTemplateReverse,
-			FormationAssignments:           []*model.FormationAssignment{matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse},
-			Requests:                       rtmCtxToAppRequests,
-			Operation:                      operationContainer.appendThatDoesNotProcessedReverse,
-			RuntimeContextToRuntimeMapping: map[string]string{runtimeCtxID: runtimeID},
-			FormationOperation:             assignOperation,
+			Name:                 "Success when match assignment for runtimeContext",
+			Context:              ctxWithTenant,
+			TemplateInput:        rtmCtxToAppInputTemplate,
+			TemplateInputReverse: rtmCtxToAppInputTemplateReverse,
+			FormationAssignments: []*model.FormationAssignment{matchedRuntimeContextAssignment, matchedRuntimeContextAssignmentReverse},
+			Requests:             rtmCtxToAppRequests,
+			Operation:            operationContainer.appendThatDoesNotProcessedReverse,
+			FormationOperation:   assignOperation,
 			ExpectedMappings: []*formationassignment.AssignmentMappingPairWithOperation{
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             rtmCtxToAppRequests[0],
+							Request:             rtmCtxToAppRequests[0].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedRuntimeContextAssignment,
 						},
 						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             rtmCtxToAppRequests[1],
+							Request:             rtmCtxToAppRequests[1].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedRuntimeContextAssignmentReverse,
 						},
 					},
@@ -2047,11 +2006,11 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 				{
 					AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 						AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             rtmCtxToAppRequests[1],
+							Request:             rtmCtxToAppRequests[1].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedRuntimeContextAssignmentReverse,
 						},
 						ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
-							Request:             rtmCtxToAppRequests[0],
+							Request:             rtmCtxToAppRequests[0].FormationAssignmentNotificationRequest,
 							FormationAssignment: matchedRuntimeContextAssignment,
 						},
 					},
@@ -2065,12 +2024,16 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			TemplateInput:        sourceNotMatchTemplateInput,
 			TemplateInputReverse: &automock.TemplateInput{},
 			FormationAssignments: []*model.FormationAssignment{sourseNotMatchedAssignment, sourseNotMatchedAssignmentReverse},
-			Requests: []*webhookclient.FormationAssignmentNotificationRequest{
+			Requests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
 				{
-					Webhook: &graphql.Webhook{
-						ApplicationID: &appID,
+					FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
+						Webhook: &graphql.Webhook{
+							ApplicationID: &appID,
+						},
+						Object: sourceNotMatchTemplateInput,
 					},
-					Object: sourceNotMatchTemplateInput},
+					Target: appID,
+				},
 			},
 			Operation:          operationContainer.appendThatDoesNotProcessedReverse,
 			FormationOperation: assignOperation,
@@ -2159,7 +2122,7 @@ func TestService_ProcessFormationAssignments(t *testing.T) {
 			svc := formationassignment.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
 
 			//WHEN
-			err := svc.ProcessFormationAssignments(testCase.Context, testCase.FormationAssignments, testCase.RuntimeContextToRuntimeMapping, testCase.ApplicationsToApplicationTemplatesMapping, testCase.Requests, testCase.Operation, testCase.FormationOperation)
+			err := svc.ProcessFormationAssignments(testCase.Context, testCase.FormationAssignments, testCase.Requests, testCase.Operation, testCase.FormationOperation)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -2857,6 +2820,35 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			ExpectedErrorMsg:                     "while validating notification response for formation assignment with ID",
 		},
 		//++ validate state to previous state
+		{
+			Name:    "Success: update initial assignment with CREATE_READY",
+			Context: ctxWithTenant,
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				return repo
+			},
+			NotificationService: func() *automock.NotificationService {
+				svc := &automock.NotificationService{}
+				svc.On("SendNotification", ctxWithTenant, extendedFaNotificationInitialSelfReferencedReq).Return(&webhook.Response{
+					State:             &createReadyAssignmentState,
+					SuccessStatusCode: &ok,
+					ActualStatusCode:  &ok,
+				}, nil)
+				return svc
+			},
+			FANotificationSvc: func() *automock.FaNotificationService {
+				faNotificationSvc := &automock.FaNotificationService{}
+				assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment, reqWebhook)
+				faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedFaNotificationInitialSelfReferencedReq, nil).Once()
+				return faNotificationSvc
+			},
+			FAStatusService: func() *automock.StatusService {
+				updater := &automock.StatusService{}
+				updater.On("UpdateWithConstraints", ctxWithTenant, readyNotificationReport, initialStateSelfReferencingAssignment, assignOperation).Return(nil).Once()
+				return updater
+			},
+			FormationAssignmentPairWithOperation: fixAssignmentMappingPairWithAssignmentAndRequest(initialStateSelfReferencingAssignment, reqWebhook),
+		},
 		{
 			Name:    "Success: update self-referenced assignment to ready state without sending reverse notification",
 			Context: ctxWithTenant,
