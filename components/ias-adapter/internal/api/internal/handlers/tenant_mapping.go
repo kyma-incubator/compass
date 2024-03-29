@@ -15,6 +15,10 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
+const (
+	S4SAPManagedCommunicationScenario = "SAP_COM_1002"
+)
+
 //go:generate mockery --name=TenantMappingsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantMappingsService interface {
 	CanSafelyRemoveTenantMapping(ctx context.Context, formationID string) (bool, error)
@@ -64,9 +68,26 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
 		operation := tenantMapping.AssignedTenants[0].Operation
 
-		if operation == types.OperationAssign && errors.Is(err, errors.IASApplicationNotFound) {
-			internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
-			return
+		if operation == types.OperationAssign {
+			if errors.Is(err, errors.IASApplicationNotFound) {
+				internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
+				return
+			}
+
+			if errors.Is(err, errors.S4CertificateNotFound) {
+				logger.FromContext(ctx).Info().Msgf("S/4 certificate not provided. Responding with CONFIG_PENDING.")
+				s4Config := &types.TenantMappingConfiguration{
+					Credentials: types.Credentials{
+						OutboundCommunicationCredentials: types.CommunicationCredentials{
+							OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
+								CorrelationIds: []string{S4SAPManagedCommunicationScenario},
+							},
+						},
+					},
+				}
+				internal.RespondWithConfigPending(ctx, s4Config)
+				return
+			}
 		}
 
 		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)

@@ -45,6 +45,7 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
+	ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
@@ -413,6 +414,49 @@ func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber s
 	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
 		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
 	})
+}
+
+// ApplicationsByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
+func (r *Resolver) ApplicationsByLocalTenantID(ctx context.Context, localTenantID string, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	appPage, err := r.appSvc.ListByLocalTenantID(ctx, localTenantID, labelFilter, *first, cursor)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing applications by local tenant id '%s'", localTenantID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: appPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 // ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id

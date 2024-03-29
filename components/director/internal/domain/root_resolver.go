@@ -576,6 +576,11 @@ func (r *queryResolver) ApplicationBySystemNumber(ctx context.Context, systemNum
 	return r.app.ApplicationBySystemNumber(ctx, systemNumber)
 }
 
+// ApplicationsByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
+func (r *queryResolver) ApplicationsByLocalTenantID(ctx context.Context, localTenantID string, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	return r.app.ApplicationsByLocalTenantID(ctx, localTenantID, filter, first, after)
+}
+
 // ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
 func (r *queryResolver) ApplicationByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*graphql.Application, error) {
 	return r.app.ApplicationByLocalTenantIDAndAppTemplateID(ctx, localTenantID, appTemplateID)
