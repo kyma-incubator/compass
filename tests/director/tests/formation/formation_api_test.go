@@ -188,12 +188,12 @@ func TestListFormationsForObjectGlobal(t *testing.T) {
 	ctx = context.WithValue(ctx, context_keys.FormationTemplateNameKey, ftplID)
 
 	t.Logf("Create application 1 from template: %q", applicationType1)
-	appProvider1 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
+	appProvider1 := resource_providers.NewApplicationFromTemplateProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
 	defer appProvider1.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app1ID := appProvider1.Provide(t, ctx, certSecuredGraphQLClient)
 
 	t.Logf("Create application 2 from template: %q", applicationType1)
-	appProvider2 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
+	appProvider2 := resource_providers.NewApplicationFromTemplateProvider(applicationType1, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
 	defer appProvider2.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app2ID := appProvider2.Provide(t, ctx, certSecuredGraphQLClient)
 
