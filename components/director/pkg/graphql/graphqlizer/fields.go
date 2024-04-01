@@ -705,7 +705,8 @@ func (fp *GqlFieldsProvider) ForOperation() string {
         status
         error
 		createdAt
-        updatedAt`
+        updatedAt
+	`
 }
 
 // ForBundle missing godoc
