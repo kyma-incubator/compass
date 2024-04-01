@@ -181,8 +181,8 @@ global:
       version: "v20240318-fbc94dc7"
       name: compass-hydrator
     ias_adapter:
-      dir: dev/incubator/
-      version: "PR-3780"
+      dir: prod/incubator/
+      version: "v20240329-f79a9bc0"
       name: compass-ias-adapter
     kyma_adapter:
       dir: prod/incubator/
