@@ -1187,7 +1187,7 @@ func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *gr
 	return r.app.EventingConfiguration(ctx, obj)
 }
 
-// Operations missing godoc
+// Operations retrieves all operations for the provided application
 func (r *applicationResolver) Operations(ctx context.Context, obj *graphql.Application) ([]*graphql.Operation, error) {
 	return r.app.Operations(ctx, obj)
 }

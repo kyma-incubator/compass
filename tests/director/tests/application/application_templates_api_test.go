@@ -1674,15 +1674,7 @@ func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
 	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
 	require.NoError(t, err)
 
-	appFromTmpl := graphql.ApplicationFromTemplateInput{TemplateName: appTemplateName, Values: []*graphql.TemplateValueInput{
-		{
-			Placeholder: "name",
-			Value:       "new-name",
-		},
-		{
-			Placeholder: "display-name",
-			Value:       "new-display-name",
-		}}}
+	appFromTmpl := fixtures.FixApplicationFromTemplateInput(appTemplateName, "name", "new-name", "display-name", "new-display-name")
 	appFromTmplGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmpl)
 	require.NoError(t, err)
 

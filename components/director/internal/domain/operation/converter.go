@@ -1,8 +1,6 @@
 package operation
 
 import (
-	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -96,7 +94,7 @@ func (c *converter) operationTypeModelToGraphQL(in model.OperationType) (graphql
 	case model.OperationTypeOrdAggregation:
 		return graphql.ScheduledOperationTypeOrdAggregation, nil
 	default:
-		return "", fmt.Errorf("unknown operation type %v", in)
+		return "", errors.Errorf("unknown operation type %v", in)
 	}
 }
 
@@ -111,6 +109,6 @@ func (c *converter) operationStatusModelToGraphQL(in model.OperationStatus) (gra
 	case model.OperationStatusFailed:
 		return graphql.OperationStatusFailed, nil
 	default:
-		return "", fmt.Errorf("unknown operation status %v", in)
+		return "", errors.Errorf("unknown operation status %v", in)
 	}
 }

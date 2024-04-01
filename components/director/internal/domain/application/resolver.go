@@ -132,7 +132,7 @@ type BundleService interface {
 	CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error
 }
 
-// OperationService missing godoc
+// OperationService is responsible for the service-layer Operation operations
 //
 //go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationService interface {
@@ -211,7 +211,7 @@ type BundleConverter interface {
 	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
-// OperationConverter missing godoc
+// OperationConverter is responsible for converting between graphql and model objects
 //
 //go:generate mockery --name=OperationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type OperationConverter interface {

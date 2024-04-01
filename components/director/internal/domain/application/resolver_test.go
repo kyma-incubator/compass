@@ -2696,6 +2696,8 @@ func TestResolver_Operations(t *testing.T) {
 		},
 	}
 	gqlApp := fixGQLApplication("application-id", "bar", "baz")
+	gqlAppWithAppTemplateID := fixGQLApplication("application-id", "bar", "baz")
+	gqlAppWithAppTemplateID.ApplicationTemplateID = str.Ptr("app-template-id")
 
 	converterMock := func() *automock.OperationConverter {
 		converter := &automock.OperationConverter{}
@@ -2712,6 +2714,7 @@ func TestResolver_Operations(t *testing.T) {
 		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		OperationSvcFn  func() *automock.OperationService
 		OperationConvFn func() *automock.OperationConverter
+		Input           *graphql.Application
 		ExpectedOutput  []*graphql.Operation
 		ExpectedError   error
 	}{
@@ -2724,6 +2727,20 @@ func TestResolver_Operations(t *testing.T) {
 				return operationSvc
 			},
 			OperationConvFn: converterMock,
+			Input:           gqlApp,
+			ExpectedOutput:  gqlOperations,
+			ExpectedError:   nil,
+		},
+		{
+			Name:            "Success - with application template id",
+			TransactionerFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlAppWithAppTemplateID.ID, *gqlAppWithAppTemplateID.ApplicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
+				return operationSvc
+			},
+			OperationConvFn: converterMock,
+			Input:           gqlAppWithAppTemplateID,
 			ExpectedOutput:  gqlOperations,
 			ExpectedError:   nil,
 		},
@@ -2738,6 +2755,7 @@ func TestResolver_Operations(t *testing.T) {
 			OperationConvFn: func() *automock.OperationConverter {
 				return &automock.OperationConverter{}
 			},
+			Input:          gqlApp,
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		},
@@ -2750,6 +2768,7 @@ func TestResolver_Operations(t *testing.T) {
 			OperationConvFn: func() *automock.OperationConverter {
 				return &automock.OperationConverter{}
 			},
+			Input:          gqlApp,
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		},
@@ -2764,8 +2783,22 @@ func TestResolver_Operations(t *testing.T) {
 			OperationConvFn: func() *automock.OperationConverter {
 				return &automock.OperationConverter{}
 			},
+			Input:          gqlApp,
 			ExpectedOutput: nil,
 			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Fail when application is nil",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			OperationSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			Input:          nil,
+			ExpectedOutput: nil,
+			ExpectedError:  errors.New("Application cannot be empty"),
 		},
 	}
 
@@ -2778,7 +2811,7 @@ func TestResolver_Operations(t *testing.T) {
 			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, operationSvc, operationConv, "", "")
 
 			// WHEN
-			result, err := resolver.Operations(ctx, gqlApp)
+			result, err := resolver.Operations(ctx, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
