@@ -42,6 +42,9 @@ const (
 
 	uriKey      = "uri"
 	usernameKey = "username"
+
+	eventuallyTimeoutForInstances = 60 * time.Second
+	eventuallyTickForInstances    = 2 * time.Second
 )
 
 var (
@@ -118,7 +121,7 @@ func TestInstanceCreator(t *testing.T) {
 
 	namePlaceholder := "name"
 	displayNamePlaceholder := "display-name"
-	appRegion := "eu-1"
+	appRegion := conf.InstanceCreatorRegion
 	appNamespace := "compass.test"
 	localTenantID := "local-tenant-id"
 	applicationType1 := "app-type-1"
@@ -324,7 +327,9 @@ func TestInstanceCreator(t *testing.T) {
 			return assertExactConfig(t, expectedConfig, actualConfig)
 		}
 
-		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt)
+		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt).
+			WithTimeout(eventuallyTimeoutForInstances).
+			WithTick(eventuallyTickForInstances)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(asserterWithCustomConfigMatcher, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
@@ -332,7 +337,9 @@ func TestInstanceCreator(t *testing.T) {
 
 		t.Logf("Unassign Application 1 from formation: %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().WithParticipant(app2ID)
-		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		faAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
+			WithTimeout(eventuallyTimeoutForInstances).
+			WithTick(eventuallyTickForInstances)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		unassignNotificationsAsserter := asserters.NewUnassignNotificationsAsserter(1, app1ID, app2ID, subscriptionConsumerTenantID, appNamespace, appRegion, tnt, emptyParentCustomerID, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewUnassignAppToFormationOperationGlobal(app1ID).WithAsserters(faAsserter, statusAsserter, unassignNotificationsAsserter).Operation()

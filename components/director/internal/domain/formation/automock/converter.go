@@ -18,10 +18,6 @@ type Converter struct {
 func (_m *Converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 	ret := _m.Called(i)
 
-	if len(ret) == 0 {
-		panic("no return value specified for FromGraphQL")
-	}
-
 	var r0 model.Formation
 	if rf, ok := ret.Get(0).(func(graphql.FormationInput) model.Formation); ok {
 		r0 = rf(i)
@@ -35,10 +31,6 @@ func (_m *Converter) FromGraphQL(i graphql.FormationInput) model.Formation {
 // MultipleToGraphQL provides a mock function with given fields: in
 func (_m *Converter) MultipleToGraphQL(in []*model.Formation) ([]*graphql.Formation, error) {
 	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MultipleToGraphQL")
-	}
 
 	var r0 []*graphql.Formation
 	var r1 error
@@ -65,10 +57,6 @@ func (_m *Converter) MultipleToGraphQL(in []*model.Formation) ([]*graphql.Format
 // ToGraphQL provides a mock function with given fields: i
 func (_m *Converter) ToGraphQL(i *model.Formation) (*graphql.Formation, error) {
 	ret := _m.Called(i)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
 
 	var r0 *graphql.Formation
 	var r1 error

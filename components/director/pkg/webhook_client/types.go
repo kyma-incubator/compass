@@ -66,6 +66,12 @@ type FormationAssignmentNotificationRequest struct {
 	CorrelationID string
 }
 
+// FormationAssignmentNotificationRequestTargetMapping represents a formation assignment webhook request to be executed mapped to a target that is to be notified.
+type FormationAssignmentNotificationRequestTargetMapping struct {
+	*FormationAssignmentNotificationRequest
+	Target string
+}
+
 // FormationAssignmentNotificationRequestExt is extended FormationAssignmentRequest with Operation, FA, ReverseFA, Formation and Target subtype.
 type FormationAssignmentNotificationRequestExt struct {
 	*FormationAssignmentNotificationRequest

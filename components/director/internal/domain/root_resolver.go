@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
+
 	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
@@ -292,6 +294,10 @@ func NewRootResolver(
 	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
 	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
 
+	opConv := operation.NewConverter()
+	opRepo := operation.NewRepository(opConv)
+	opSvc := operation.NewService(opRepo, uidSvc)
+
 	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
 	if err != nil {
 		return nil, err
@@ -300,15 +306,15 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:     appNameNormalizer,
 		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, labelSvc, selfRegisterManager, uidSvc, systemFieldDiscoveryEngine, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig),
-		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
+		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, opSvc, opConv, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
 		api:                   api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:              eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:              eventing.NewResolver(transact, eventingSvc, appSvc),
 		integrationDependency: integrationdependency.NewResolver(transact, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, appSvc, appTemplateSvc, packageSvc),
 		doc:                   document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
-		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc),
+		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc, tenantSvc),
 		formationAssignment:   formationassignment.NewResolver(transact, applicationRepo, appConverter, runtimeRepo, runtimeConverter, runtimeContextRepo, runtimeContextConverter),
-		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc),
+		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc, tenantSvc),
 		runtimeContext:        runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:           healthcheck.NewResolver(healthCheckSvc),
 		webhook:               webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, runtimeSvc, formationTemplateSvc, webhookConverter),
@@ -568,6 +574,11 @@ func (r *queryResolver) Application(ctx context.Context, id string) (*graphql.Ap
 // ApplicationBySystemNumber returns an application retrieved by systemNumber
 func (r *queryResolver) ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*graphql.Application, error) {
 	return r.app.ApplicationBySystemNumber(ctx, systemNumber)
+}
+
+// ApplicationsByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
+func (r *queryResolver) ApplicationsByLocalTenantID(ctx context.Context, localTenantID string, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	return r.app.ApplicationsByLocalTenantID(ctx, localTenantID, filter, first, after)
 }
 
 // ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
@@ -1174,6 +1185,11 @@ func (r *applicationResolver) Webhooks(ctx context.Context, obj *graphql.Applica
 // EventingConfiguration missing godoc
 func (r *applicationResolver) EventingConfiguration(ctx context.Context, obj *graphql.Application) (*graphql.ApplicationEventingConfiguration, error) {
 	return r.app.EventingConfiguration(ctx, obj)
+}
+
+// Operations retrieves all operations for the provided application
+func (r *applicationResolver) Operations(ctx context.Context, obj *graphql.Application) ([]*graphql.Operation, error) {
+	return r.app.Operations(ctx, obj)
 }
 
 // Bundles missing godoc

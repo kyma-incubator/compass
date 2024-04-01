@@ -18,5 +18,6 @@ var (
 	EntityAlreadyExists    = New("entity already exists")
 	Internal               = New("internal error")
 	InvalidAccessToken     = New("invalid access token")
-	IASApplicationNotFound = errors.New("application in IAS not found")
+	IASApplicationNotFound = New("application in IAS not found")
+	S4CertificateNotFound  = New("S/4 certificate not found")
 )

@@ -4,10 +4,12 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -68,6 +70,30 @@ func fixOperationModelWithID(id string, opType model.OperationType, opStatus mod
 		Priority:  priority,
 		CreatedAt: &time.Time{},
 		UpdatedAt: &time.Time{},
+	}
+}
+
+func fixOperationModelWithIDAndTimestamp(id string, opType model.OperationType, opStatus model.OperationStatus, errorMsg string, priority int, timestamp *time.Time) *model.Operation {
+	return &model.Operation{
+		ID:        id,
+		OpType:    opType,
+		Status:    opStatus,
+		Data:      json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
+		Error:     json.RawMessage(errorMsg),
+		Priority:  priority,
+		CreatedAt: timestamp,
+		UpdatedAt: timestamp,
+	}
+}
+
+func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOperationType, opStatus graphql.OperationStatus, errorMsg string, timestamp *time.Time) *graphql.Operation {
+	return &graphql.Operation{
+		ID:            id,
+		OperationType: opType,
+		Status:        opStatus,
+		Error:         &errorMsg,
+		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
+		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
 	}
 }
 
