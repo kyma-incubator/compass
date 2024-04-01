@@ -257,6 +257,40 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 	h.syncFAResponse(ctx, writer, r, responseFunc)
 }
 
+// PatchWithCreateReadyState handles synchronous formation assignment notification requests for Assign operation and returns CREATE_READY state in the response body
+func (h *Handler) PatchWithCreateReadyState(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBodyWithState{
+			State: CreateReadyAssignmentState,
+			Config: &FormationAssignmentResponseConfig{
+				Key: "value",
+				Key2: struct {
+					Key string `json:"key"`
+				}{Key: "value2"},
+			},
+		}
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// DeleteWithDeleteReadyState handles synchronous formation assignment notification requests for Unassign operation and returns DELETE_READY state in the response body
+func (h *Handler) DeleteWithDeleteReadyState(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBodyWithState{
+			State: DeleteReadyAssignmentState,
+		}
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
 // RespondWithNoConfig handles synchronous formation assignment notification requests for Assign operation
 // It always returns no configuration
 func (h *Handler) RespondWithNoConfig(writer http.ResponseWriter, r *http.Request) {

@@ -226,6 +226,32 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 	return r0, r1
 }
 
+// ListByLocalTenantID provides a mock function with given fields: ctx, localTenantID, filter, pageSize, cursor
+func (_m *ApplicationService) ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	ret := _m.Called(ctx, localTenantID, filter, pageSize, cursor)
+
+	var r0 *model.ApplicationPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.ApplicationPage, error)); ok {
+		return rf(ctx, localTenantID, filter, pageSize, cursor)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.ApplicationPage); ok {
+		r0 = rf(ctx, localTenantID, filter, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationPage)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, localTenantID, filter, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByRuntimeID provides a mock function with given fields: ctx, runtimeUUID, pageSize, cursor
 func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, runtimeUUID, pageSize, cursor)

@@ -786,6 +786,7 @@ input IntegrationDependencyInput {
 	mandatory: Boolean
 	aspects: [AspectInput!]
 	version: VersionInput
+	labels: Labels
 }
 
 input IntegrationSystemInput {
@@ -1437,6 +1438,7 @@ type IntegrationDependency {
 	mandatory: Boolean
 	aspects: [Aspect!]
 	version: Version
+	labels: Labels
 	created_at: Timestamp
 	updated_at: Timestamp
 	deleted_at: Timestamp
@@ -1663,6 +1665,7 @@ type Query {
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
+	applicationsByLocalTenantID(localTenantID: String!, filter: [LabelFilter], first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsByLocalTenantID")
 	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: ID!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
 	"""
 	Maximum `first` parameter value is 100

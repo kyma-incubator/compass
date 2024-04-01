@@ -102,6 +102,7 @@ global:
     - name: TestConsumerSubaccount
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
+      subdomain: compass-external-services-mock-sap-mtls
       parents: [5984a414-1eed-4972-af2c-b2b6a415c7d7]
     - name: TestTenantsOnDemandAPI
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
@@ -182,7 +183,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3730"
+      version: "PR-3768"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -206,11 +207,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-127"
+      version: "PR-128"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3704"
+      version: "PR-3763"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -223,7 +224,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3712"
+      version: "PR-3771"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
