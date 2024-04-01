@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"regexp"
 	"strings"
 
@@ -335,6 +336,25 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	ctx = persistence.SaveToContext(ctx, tx)
 	if err := r.checkProviderAppTemplateExistence(ctx, labels, convertedIn); err != nil {
 		return nil, err
+	}
+
+	cldSystemRole, hasCldSystemRole := labels["cldSystemRole"]
+	_, exists := labels["cldFilter"]
+
+	if hasCldSystemRole && !exists {
+		cldSystemRoleValues, _ := cldSystemRole.([]interface{})
+		filters := make([]systemfetcher.ProductIDFilterMapping, 0)
+
+		for _, v := range cldSystemRoleValues {
+			cldFilter := systemfetcher.ProductIDFilterMapping{
+				ProductID: v.(string),
+			}
+
+			filters = append(filters, cldFilter)
+		}
+
+		labels["cldFilter"] = filters
+
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)

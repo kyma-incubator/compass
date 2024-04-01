@@ -14,8 +14,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -641,7 +639,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping, renderer systemfetcher.TemplateRenderer) error {
-	applicationTemplates := make(map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping)
+	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
 
 	tx, err := transact.Begin()
 	if err != nil {
@@ -657,39 +655,41 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
-		templateMappingKey := systemfetcher.TemplateMappingKey{}
+		//templateMappingKey := systemfetcher.TemplateMappingKey{}
 
 		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
-		if hasRegionLabel {
-			regionValue, ok := regionModel.Value.(string)
-			if !ok {
-				return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
-			}
+		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels})
 
-			templateMappingKey.Region = regionValue
-		}
-
-		systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
-		appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
-		if !ok {
-			continue
-		}
-
-		for _, systemRoleValue := range appTemplateLblFilterArr {
-			systemRoleStrValue, ok := systemRoleValue.(string)
-			if !ok {
-				continue
-			}
-
-			templateMappingKey.Label = systemRoleStrValue
-
-			applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
-		}
+		//regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
+		//if hasRegionLabel {
+		//	regionValue, ok := regionModel.Value.(string)
+		//	if !ok {
+		//		return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
+		//	}
+		//
+		//	templateMappingKey.Region = regionValue
+		//}
+		//
+		//systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
+		//appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
+		//if !ok {
+		//	continue
+		//}
+		//
+		//for _, systemRoleValue := range appTemplateLblFilterArr {
+		//	systemRoleStrValue, ok := systemRoleValue.(string)
+		//	if !ok {
+		//		continue
+		//	}
+		//
+		//	templateMappingKey.Label = systemRoleStrValue
+		//
+		//	applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
+		//}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}

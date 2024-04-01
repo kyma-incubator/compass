@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
@@ -24,6 +25,7 @@ func (i ApplicationTemplateInput) Validate() error {
 		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 		"webhooks":               validation.Validate(i.Webhooks, validation.By(webhooksRuleFunc)),
 		"applicationNamespace":   validation.Validate(i.ApplicationNamespace, validation.Length(1, longStringLengthLimit)),
+		"labels":                 validation.Validate(i.Labels, validation.By(labelsRuleFunc)),
 	}.Filter()
 }
 
@@ -88,6 +90,100 @@ func (i TemplateValueInput) Validate() error {
 		validation.Field(&i.Placeholder, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.Value, validation.RuneLength(0, shortStringLengthLimit)),
 	)
+}
+
+type CldFilterOperationType string
+
+const (
+	IncludeOperationType CldFilterOperationType = "include"
+	ExcludeOperationType CldFilterOperationType = "exclude"
+)
+
+type CldFilter struct {
+	Key       string
+	Value     []string
+	Operation CldFilterOperationType
+}
+
+type ProductIDFilterMapping struct {
+	ProductID string      `json:"productID"`
+	Filter    []CldFilter `json:"filter"`
+}
+
+// check for cldFilter and cldSystemRole presence and validate product ids
+func labelsRuleFunc(value interface{}) error {
+	labels, ok := value.(Labels)
+	if !ok {
+		return errors.New("value could not be cast to Labels object")
+	}
+
+	systemRolesLabel, hasCldSystemRoles := labels["cldSystemRole"]
+	cldFilterLabel, hasCldFilter := labels["cldFilter"]
+	if !hasCldSystemRoles && hasCldFilter {
+		return errors.New("cld system role is required when cld filter is defined")
+	}
+
+	if !hasCldFilter {
+		return nil
+	}
+
+	systemRoles := make([]string, 0)
+	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
+	if !ok {
+		return errors.New("invalid format of cld system roles label")
+	}
+
+	for _, systemRoleValue := range systemRolesLabelValue {
+		if systemRoleValueStr, ok := systemRoleValue.(string); ok {
+			systemRoles = append(systemRoles, systemRoleValueStr)
+		}
+	}
+
+	cldFilterLabelValue, ok := cldFilterLabel.([]interface{})
+	if !ok {
+		return errors.New("invalid format of cld filter label")
+	}
+
+	productIds := make([]string, 0)
+
+	for _, cldFilterValue := range cldFilterLabelValue {
+		filter, ok := cldFilterValue.(map[string]interface{})
+		if !ok {
+			return errors.New("invalid format of cld filter value")
+		}
+
+		productId, ok := filter["productId"]
+		if !ok {
+			return errors.New("missing productId in cld filter")
+		}
+
+		productIdStr, ok := productId.(string)
+		if !ok {
+			return errors.New("invalid format of productId value")
+		}
+
+		productIds = append(productIds, productIdStr)
+	}
+
+	systemRolesNumber := len(systemRoles)
+	cldFilterProductIdsNumber := len(productIds)
+
+	if systemRolesNumber != cldFilterProductIdsNumber {
+		return errors.New("cld system roles number does not match the product ids number in cld filter")
+	}
+
+	sort.Strings(systemRoles)
+	sort.Strings(productIds)
+
+	fmt.Println(systemRoles, productIds)
+
+	for i, s := range systemRoles {
+		if s != productIds[i] {
+			return errors.New("cld system roles dont match product ids in cld filter")
+		}
+	}
+
+	return nil
 }
 
 func webhooksRuleFunc(value interface{}) error {
