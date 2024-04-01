@@ -174,7 +174,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3774"
+      version: "PR-3782"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -231,7 +231,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3772"
+      version: "PR-3782"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -285,15 +285,15 @@ global:
       formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset"
       formationPath: "/{ucl-formation-id}/status"
       authentication:
-        name: "external-token" # xsuaa on real env
-        gatewayHost: "compass-gateway-external-token" # compass-gateway-xsuaa on real env
+        name: "external-token-status"
+        gatewayHost: "compass-gateway-external-token"
         trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix.", "prefix2."], "protocol": "http", "region": "eu-1"}]'
         attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }' # different on real env
-        upstreamComponent: "compass-director" # same on real env
-        checkSuffix: false # same on real env
+        upstreamComponent: "compass-director"
+        checkSuffix: false
         retry:
-          give_up_after: 6s # same on real env
-          max_delay: 2000ms # same on real env
+          give_up_after: 6s
+          max_delay: 2000ms
     prefix: /director
     graphql:
       external:

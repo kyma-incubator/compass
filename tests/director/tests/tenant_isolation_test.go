@@ -2,10 +2,6 @@ package tests
 
 import (
 	"context"
-	"fmt"
-	"testing"
-	"time"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -19,6 +15,7 @@ import (
 	gcli "github.com/machinebox/graphql"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 func TestTenantIsolation(t *testing.T) {
@@ -48,11 +45,9 @@ func TestTenantIsolationWithMultipleUsernameAuthenticators(t *testing.T) {
 
 	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'ApplicationsForRuntimeTenantName'
 	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
-	fmt.Println("Bearer token: ", accountToken)
 	// The subaccountToken is JWT token containing claim with subaccount ID for tenant. In local setup that's 'TestTenantSubstitutionSubaccount2' test tenant, and it has 'customerId' label with value external tenant ID of 'ApplicationsForRuntimeTenantName'
 	subaccountToken := token.GetUserToken(t, ctx, subaccountTokenURL, conf.UsernameAuthCfg.Subaccount.ClientID, conf.UsernameAuthCfg.Subaccount.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubaccountAuthenticatorClaimKey)
 
-	time.Sleep(time.Second * 120)
 	accountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accountToken, conf.DirectorUserNameAuthenticatorURL)
 	subaccountGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(subaccountToken, conf.DirectorUserNameAuthenticatorURL)
 
