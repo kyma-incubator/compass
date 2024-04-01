@@ -4,11 +4,7 @@
 apiVersion: oathkeeper.ory.sh/v1alpha1
 kind: Rule
 metadata:
-  {{ if $value.name }}
-  name: "compass-gateway-{{ $value.name }}"
-  {{ else }}
   name: "compass-gateway-{{ $authenMappingServiceName }}"
-  {{ end }}
 spec:
   # Configuration of oathkeeper for secure endpoint of compass <authenticatorName> gateway
   upstream:

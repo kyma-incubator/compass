@@ -83,7 +83,7 @@ global:
         nsadapter:
           authenticator:
             enabled: true
-        user_name_authenticator:
+        user-name-authenticator:
           authenticator:
             enabled: true
   ordService:

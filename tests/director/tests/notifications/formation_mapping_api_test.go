@@ -497,6 +497,98 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 	})
 }
 
+func Test_UpdateFormationAssignmentStatusWithExternalToken(t *testing.T) {
+	ctx := context.Background()
+
+	tnt := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+
+	appName := "testAsyncApp"
+	appType := "async-app-type-1"
+	t.Logf("Register application with name: %q", appName)
+	app, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName, conf.ApplicationTypeLabelKey, appType, tnt)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &app)
+	require.NoError(t, err)
+	require.NotEmpty(t, app.ID)
+
+	appName2 := "testAsyncApp2"
+	appType2 := "async-app-type-2"
+	t.Logf("Register application with name: %q", appName2)
+	app2, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, appName2, conf.ApplicationTypeLabelKey, appType2, tnt)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tnt, &app2)
+	require.NoError(t, err)
+	require.NotEmpty(t, app2.ID)
+
+	formationTmplName := "formation-template-name"
+	t.Logf("Create formation template with name %q", formationTmplName)
+	var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
+	ft = fixtures.CreateFormationTemplateWithoutInput(t, ctx, certSecuredGraphQLClient, formationTmplName, conf.KymaRuntimeTypeLabelValue, []string{appType, appType2}, graphql.ArtifactTypeEnvironmentInstance)
+
+	draftFormationName := "draft-formation-name"
+	t.Logf("Create formation with name %q in DRAFT state", draftFormationName)
+	draftState := "DRAFT"
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, draftFormationName)
+	formation := fixtures.CreateFormationFromTemplateWithStateWithinTenant(t, ctx, certSecuredGraphQLClient, tnt, draftFormationName, &formationTmplName, &draftState)
+	formationID := formation.ID
+	require.NotEmpty(t, formationID)
+
+	t.Logf("Assign application with name: %q to formation %q", app.Name, draftFormationName)
+	assignReq := fixtures.FixAssignFormationRequest(app.ID, string(graphql.FormationObjectTypeApplication), draftFormationName)
+	var assignedFormation graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: draftFormationName}, app.ID, graphql.FormationObjectTypeApplication, tnt)
+	require.NoError(t, err)
+	require.Equal(t, draftFormationName, assignedFormation.Name)
+
+	t.Logf("Assign application with name: %q to formation %q", app2.Name, draftFormationName)
+	assignReq2 := fixtures.FixAssignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), draftFormationName)
+	var assignedFormation2 graphql.Formation
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq2, &assignedFormation2)
+	defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: draftFormationName}, app2.ID, graphql.FormationObjectTypeApplication, tnt)
+	require.NoError(t, err)
+	require.Equal(t, draftFormationName, assignedFormation2.Name)
+
+	t.Logf("Listing formation assignments for formation with ID: %q", formationID)
+	listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
+	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tnt, listFormationAssignmentsReq)
+	require.Len(t, assignmentsPage.Data, 4)
+	require.Equal(t, 4, assignmentsPage.TotalCount)
+	formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, app.ID)
+	t.Logf("Successfully listed FAs for formation ID: %q", formationID)
+
+	accountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Account.TokenURL, conf.UsernameAuthCfg.Account.Subdomain, conf.UsernameAuthCfg.Account.OAuthTokenPath)
+	require.NoError(t, err)
+	require.NotEmpty(t, accountTokenURL)
+
+	// The accountToken is JWT token containing claim with account ID for tenant. In local setup that's 'ApplicationsForRuntimeTenantName'
+	accountToken := token.GetUserToken(t, ctx, accountTokenURL, conf.UsernameAuthCfg.Account.ClientID, conf.UsernameAuthCfg.Account.ClientSecret, conf.BasicUsername, conf.BasicPassword, claims.AccountAuthenticatorClaimKey)
+
+	testConfig := `{"test":"something"}`
+	client := &http.Client{
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		},
+	}
+	executeFAStatusUpdateReqWithExternalToken(t, client, accountToken, testConfig, formationID, formationAssignmentID, http.StatusOK)
+
+	t.Logf("List formation assignments for formation with ID: %q", formationID)
+	assignmentsPage = fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tnt, listFormationAssignmentsReq)
+	require.Len(t, assignmentsPage.Data, 4)
+	require.Equal(t, 4, assignmentsPage.TotalCount)
+
+	t.Logf("Asserting all FAs are in INITIAL state and the FA with ID %q is with updated config", formationAssignmentID)
+	for _, a := range assignmentsPage.Data {
+		require.Equal(t, "INITIAL", a.State)
+
+		if a.ID == formationAssignmentID {
+			require.NotNil(t, a.Value)
+			require.Equal(t, testConfig, *a.Value)
+		}
+	}
+}
+
 func Test_UpdateFormationStatus(t *testing.T) {
 	ctx := context.Background()
 
@@ -540,6 +632,25 @@ func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTT
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
 	response, err := certSecuredHTTPClient.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
+func executeFAStatusUpdateReqWithExternalToken(t *testing.T, client *http.Client, token, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
+	reqBody := FormationAssignmentRequestBody{}
+	if testConfig != "" {
+		reqBody.Configuration = json.RawMessage(testConfig)
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	formationAssignmentAsyncStatusAPIExternalTokenEndpoint := resolveFAAsyncStatusAPIURLWithExternalToken(formationID, formationAssignmentID)
+	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIExternalTokenEndpoint, bytes.NewBuffer(marshalBody))
+	require.NoError(t, err)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+token)
+
+	response, err := client.Do(request)
 	require.NoError(t, err)
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
@@ -593,6 +704,10 @@ func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *gr
 
 func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) string {
 	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncStatusURL, formationID, formationAssignmentID)
+}
+
+func resolveFAAsyncStatusAPIURLWithExternalToken(formationID, formationAssignmentID string) string {
+	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncStatusExternalTokenURL, formationID, formationAssignmentID)
 }
 
 func resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID string) string {
