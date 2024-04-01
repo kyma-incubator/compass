@@ -127,6 +127,7 @@ type ComplexityRoot struct {
 		Labels                  func(childComplexity int, key *string) int
 		LocalTenantID           func(childComplexity int) int
 		Name                    func(childComplexity int) int
+		Operations              func(childComplexity int) int
 		ProviderName            func(childComplexity int) int
 		Status                  func(childComplexity int) int
 		SystemNumber            func(childComplexity int) int
@@ -660,6 +661,15 @@ type ComplexityRoot struct {
 		UsedAt       func(childComplexity int) int
 	}
 
+	Operation struct {
+		CreatedAt     func(childComplexity int) int
+		Error         func(childComplexity int) int
+		ID            func(childComplexity int) int
+		OperationType func(childComplexity int) int
+		Status        func(childComplexity int) int
+		UpdatedAt     func(childComplexity int) int
+	}
+
 	PageInfo struct {
 		EndCursor   func(childComplexity int) int
 		HasNextPage func(childComplexity int) int
@@ -844,6 +854,7 @@ type ApplicationResolver interface {
 	Labels(ctx context.Context, obj *Application, key *string) (Labels, error)
 
 	Webhooks(ctx context.Context, obj *Application) ([]*Webhook, error)
+	Operations(ctx context.Context, obj *Application) ([]*Operation, error)
 
 	Bundles(ctx context.Context, obj *Application, first *int, after *PageCursor) (*BundlePage, error)
 	Bundle(ctx context.Context, obj *Application, id string) (*Bundle, error)
@@ -1422,6 +1433,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Application.Name(childComplexity), true
+
+	case "Application.operations":
+		if e.complexity.Application.Operations == nil {
+			break
+		}
+
+		return e.complexity.Application.Operations(childComplexity), true
 
 	case "Application.providerName":
 		if e.complexity.Application.ProviderName == nil {
@@ -4531,6 +4549,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.OneTimeTokenForRuntime.UsedAt(childComplexity), true
+
+	case "Operation.createdAt":
+		if e.complexity.Operation.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.Operation.CreatedAt(childComplexity), true
+
+	case "Operation.error":
+		if e.complexity.Operation.Error == nil {
+			break
+		}
+
+		return e.complexity.Operation.Error(childComplexity), true
+
+	case "Operation.id":
+		if e.complexity.Operation.ID == nil {
+			break
+		}
+
+		return e.complexity.Operation.ID(childComplexity), true
+
+	case "Operation.operationType":
+		if e.complexity.Operation.OperationType == nil {
+			break
+		}
+
+		return e.complexity.Operation.OperationType(childComplexity), true
+
+	case "Operation.status":
+		if e.complexity.Operation.Status == nil {
+			break
+		}
+
+		return e.complexity.Operation.Status(childComplexity), true
+
+	case "Operation.updatedAt":
+		if e.complexity.Operation.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.Operation.UpdatedAt(childComplexity), true
 
 	case "PageInfo.endCursor":
 		if e.complexity.PageInfo.EndCursor == nil {
@@ -11555,6 +11615,61 @@ func (ec *executionContext) fieldContext_Application_webhooks(ctx context.Contex
 	return fc, nil
 }
 
+func (ec *executionContext) _Application_operations(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Application_operations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Application().Operations(rctx, obj)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Operation)
+	fc.Result = res
+	return ec.marshalOOperation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Application_operations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Application",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Operation_id(ctx, field)
+			case "operationType":
+				return ec.fieldContext_Operation_operationType(ctx, field)
+			case "status":
+				return ec.fieldContext_Operation_status(ctx, field)
+			case "error":
+				return ec.fieldContext_Operation_error(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Operation_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Operation_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Operation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Application_healthCheckURL(ctx context.Context, field graphql.CollectedField, obj *Application) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Application_healthCheckURL(ctx, field)
 	if err != nil {
@@ -12409,6 +12524,8 @@ func (ec *executionContext) fieldContext_ApplicationPage_data(ctx context.Contex
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -24449,6 +24566,8 @@ func (ec *executionContext) fieldContext_Mutation_registerApplication(ctx contex
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -24598,6 +24717,8 @@ func (ec *executionContext) fieldContext_Mutation_updateApplication(ctx context.
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -24751,6 +24872,8 @@ func (ec *executionContext) fieldContext_Mutation_unregisterApplication(ctx cont
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -24904,6 +25027,8 @@ func (ec *executionContext) fieldContext_Mutation_unpairApplication(ctx context.
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -25152,6 +25277,8 @@ func (ec *executionContext) fieldContext_Mutation_registerApplicationFromTemplat
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -25493,6 +25620,8 @@ func (ec *executionContext) fieldContext_Mutation_mergeApplications(ctx context.
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -34371,6 +34500,261 @@ func (ec *executionContext) fieldContext_OneTimeTokenForRuntime_type(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Operation_id(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Operation_operationType(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_operationType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OperationType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(ScheduledOperationType)
+	fc.Result = res
+	return ec.marshalNScheduledOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScheduledOperationType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_operationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ScheduledOperationType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Operation_status(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_status(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Status, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OperationStatus)
+	fc.Result = res
+	return ec.marshalNOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationStatus(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_status(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OperationStatus does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Operation_error(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_error(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Operation_createdAt(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Operation_updatedAt(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _PageInfo_startCursor(ctx context.Context, field graphql.CollectedField, obj *PageInfo) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_PageInfo_startCursor(ctx, field)
 	if err != nil {
@@ -35025,6 +35409,8 @@ func (ec *executionContext) fieldContext_Query_application(ctx context.Context, 
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -35157,6 +35543,8 @@ func (ec *executionContext) fieldContext_Query_applicationBySystemNumber(ctx con
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -35376,6 +35764,8 @@ func (ec *executionContext) fieldContext_Query_applicationByLocalTenantIDAndAppT
 				return ec.fieldContext_Application_status(ctx, field)
 			case "webhooks":
 				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
 			case "healthCheckURL":
 				return ec.fieldContext_Application_healthCheckURL(ctx, field)
 			case "bundles":
@@ -47487,6 +47877,39 @@ func (ec *executionContext) _Application(ctx context.Context, sel ast.SelectionS
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "operations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Application_operations(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		case "healthCheckURL":
 			out.Values[i] = ec._Application_healthCheckURL(ctx, field, obj)
 		case "bundles":
@@ -51938,6 +52361,61 @@ func (ec *executionContext) _OneTimeTokenForRuntime(ctx context.Context, sel ast
 	return out
 }
 
+var operationImplementors = []string{"Operation"}
+
+func (ec *executionContext) _Operation(ctx context.Context, sel ast.SelectionSet, obj *Operation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, operationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Operation")
+		case "id":
+			out.Values[i] = ec._Operation_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "operationType":
+			out.Values[i] = ec._Operation_operationType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "status":
+			out.Values[i] = ec._Operation_status(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "error":
+			out.Values[i] = ec._Operation_error(ctx, field, obj)
+		case "createdAt":
+			out.Values[i] = ec._Operation_createdAt(ctx, field, obj)
+		case "updatedAt":
+			out.Values[i] = ec._Operation_updatedAt(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var pageInfoImplementors = []string{"PageInfo"}
 
 func (ec *executionContext) _PageInfo(ctx context.Context, sel ast.SelectionSet, obj *PageInfo) graphql.Marshaler {
@@ -55905,6 +56383,16 @@ func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkym
 	return ec._OneTimeTokenForRuntime(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationStatus(ctx context.Context, v interface{}) (OperationStatus, error) {
+	var res OperationStatus
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationStatus(ctx context.Context, sel ast.SelectionSet, v OperationStatus) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx context.Context, v interface{}) (OperationType, error) {
 	var res OperationType
 	err := res.UnmarshalGQL(v)
@@ -56187,6 +56675,16 @@ func (ec *executionContext) marshalNRuntimeSystemAuth2ᚖgithubᚗcomᚋkymaᚑi
 func (ec *executionContext) unmarshalNRuntimeUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntimeUpdateInput(ctx context.Context, v interface{}) (RuntimeUpdateInput, error) {
 	res, err := ec.unmarshalInputRuntimeUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNScheduledOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScheduledOperationType(ctx context.Context, v interface{}) (ScheduledOperationType, error) {
+	var res ScheduledOperationType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNScheduledOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐScheduledOperationType(ctx context.Context, sel ast.SelectionSet, v ScheduledOperationType) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNSpecFormat2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐSpecFormat(ctx context.Context, v interface{}) (SpecFormat, error) {
@@ -58002,6 +58500,54 @@ func (ec *executionContext) marshalOOneTimeTokenType2ᚖgithubᚗcomᚋkymaᚑin
 		return graphql.Null
 	}
 	return v
+}
+
+func (ec *executionContext) marshalOOperation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperation(ctx context.Context, sel ast.SelectionSet, v []*Operation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOOperation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOOperation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperation(ctx context.Context, sel ast.SelectionSet, v *Operation) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Operation(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, v interface{}) (*OperationMode, error) {
