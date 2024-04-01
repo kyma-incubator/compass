@@ -289,7 +289,7 @@ global:
         name: "external-token-status"
         gatewayHost: "compass-gateway-external-token"
         trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix.", "prefix2."], "protocol": "http", "region": "eu-1"}]'
-        attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }' # different on real env
+        attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
         upstreamComponent: "compass-director"
         checkSuffix: false
         retry:
