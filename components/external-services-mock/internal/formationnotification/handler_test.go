@@ -490,7 +490,7 @@ func TestGetResponses(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	require.NoError(t, err)
 
-	h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{},"", "")
+	h := formationnotification.NewHandler(formationnotification.Configuration{}, formationnotification.ProviderDestinationConfig{}, "", "")
 	h.Mappings = assignMappingsWithoutConfig
 	r := httptest.NewRecorder()
 

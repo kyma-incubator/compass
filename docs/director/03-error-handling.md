@@ -1,8 +1,8 @@
-# Error handling
+# Error Handling
 
 Director API returns custom errors when there are problems with handling the request. 
 
-## GraphQL errors
+## GraphQL Errors
 
 These are the GraphQL errors that may occur when calling the Director API:
 

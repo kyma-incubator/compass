@@ -369,23 +369,22 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
+	// Service Manager handlers
 	serviceManagerHandler := service_manager.NewServiceManagerHandler(cfg.ServiceManagerConfig)
-	serviceManagerRouter := router.PathPrefix(cfg.ServiceManagerConfig.Path).Subrouter()
-	//serviceManagerRouter.Use(oauthMiddleware(&key.PublicKey, noopClaimsValidator)) // TODO:: Not sure what middleware to put here
 	// Service Offerings
-	serviceManagerRouter.HandleFunc(service_manager.ServiceOfferingsPath, serviceManagerHandler.HandleServiceOfferingsList).Methods(http.MethodGet)
+	router.HandleFunc(service_manager.ServiceOfferingsPath, serviceManagerHandler.HandleServiceOfferingsList).Methods(http.MethodGet)
 	// Service Plans
-	serviceManagerRouter.HandleFunc(service_manager.ServicePlansPath, serviceManagerHandler.HandleServicePlansList).Methods(http.MethodGet)
+	router.HandleFunc(service_manager.ServicePlansPath, serviceManagerHandler.HandleServicePlansList).Methods(http.MethodGet)
 	// Service Instances
-	serviceManagerRouter.HandleFunc(service_manager.ServiceInstancesPath, serviceManagerHandler.HandleServiceInstancesList).Methods(http.MethodGet)
-	serviceManagerRouter.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceInstancesPath, service_manager.ServiceInstanceIDPath), serviceManagerHandler.HandleServiceInstanceGet).Methods(http.MethodGet)
-	serviceManagerRouter.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceInstancesPath, service_manager.ServiceInstanceIDPath), serviceManagerHandler.HandleServiceInstanceDelete).Methods(http.MethodDelete)
-	serviceManagerRouter.HandleFunc(service_manager.ServiceInstancesPath, serviceManagerHandler.HandleServiceInstanceCreate).Methods(http.MethodPost)
+	router.HandleFunc(service_manager.ServiceInstancesPath, serviceManagerHandler.HandleServiceInstancesList).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceInstancesPath, service_manager.ServiceInstanceIDPath), serviceManagerHandler.HandleServiceInstanceGet).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceInstancesPath, service_manager.ServiceInstanceIDPath), serviceManagerHandler.HandleServiceInstanceDelete).Methods(http.MethodDelete)
+	router.HandleFunc(service_manager.ServiceInstancesPath, serviceManagerHandler.HandleServiceInstanceCreate).Methods(http.MethodPost)
 	// Service Bindings
-	serviceManagerRouter.HandleFunc(service_manager.ServiceBindingsPath, serviceManagerHandler.HandleServiceBindingsList).Methods(http.MethodGet)
-	serviceManagerRouter.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceBindingsPath, service_manager.ServiceBindingIDPath), serviceManagerHandler.HandleServiceBindingGet).Methods(http.MethodGet)
-	serviceManagerRouter.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceBindingsPath, service_manager.ServiceBindingIDPath), serviceManagerHandler.HandleServiceBindingDelete).Methods(http.MethodDelete)
-	serviceManagerRouter.HandleFunc(service_manager.ServiceBindingsPath, serviceManagerHandler.HandleServiceBindingCreate).Methods(http.MethodPost)
+	router.HandleFunc(service_manager.ServiceBindingsPath, serviceManagerHandler.HandleServiceBindingsList).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceBindingsPath, service_manager.ServiceBindingIDPath), serviceManagerHandler.HandleServiceBindingGet).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceBindingsPath, service_manager.ServiceBindingIDPath), serviceManagerHandler.HandleServiceBindingDelete).Methods(http.MethodDelete)
+	router.HandleFunc(service_manager.ServiceBindingsPath, serviceManagerHandler.HandleServiceBindingCreate).Methods(http.MethodPost)
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),

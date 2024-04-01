@@ -74,6 +74,6 @@ type Mutation {
 }
 ```
 
-## Bundle credentials
+## Bundle Credentials
 
 To learn about credentials flow for Bundles and how to provide optional input parameters when provisioning a ServiceInstance, read [this](./03-bundles-credential-requests.md) document.

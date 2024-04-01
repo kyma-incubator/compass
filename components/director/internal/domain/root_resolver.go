@@ -306,9 +306,9 @@ func NewRootResolver(
 		eventing:              eventing.NewResolver(transact, eventingSvc, appSvc),
 		integrationDependency: integrationdependency.NewResolver(transact, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, appSvc, appTemplateSvc, packageSvc),
 		doc:                   document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
-		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc),
+		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc, tenantSvc),
 		formationAssignment:   formationassignment.NewResolver(transact, applicationRepo, appConverter, runtimeRepo, runtimeConverter, runtimeContextRepo, runtimeContextConverter),
-		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc),
+		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc, tenantSvc),
 		runtimeContext:        runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:           healthcheck.NewResolver(healthCheckSvc),
 		webhook:               webhook.NewResolver(transact, webhookSvc, appSvc, appTemplateSvc, runtimeSvc, formationTemplateSvc, webhookConverter),
@@ -728,6 +728,10 @@ func (r *mutationResolver) UpdateFormationConstraint(ctx context.Context, id str
 
 func (r *mutationResolver) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*graphql.Formation, error) {
 	return r.formation.ResynchronizeFormationNotifications(ctx, formationID, reset)
+}
+
+func (r *mutationResolver) FinalizeDraftFormation(ctx context.Context, formationID string) (*graphql.Formation, error) {
+	return r.formation.FinalizeDraftFormation(ctx, formationID)
 }
 
 func (r *mutationResolver) AttachConstraintToFormationTemplate(ctx context.Context, constraintID string, formationTemplateID string) (*graphql.ConstraintReference, error) {
