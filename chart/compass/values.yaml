@@ -207,11 +207,11 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-127"
+      version: "PR-128"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3779"
+      version: "PR-3763"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -232,7 +232,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3702"
+      version: "PR-3777"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
