@@ -28,6 +28,7 @@ type TenantMappingsService interface {
 	RemoveTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 }
 
+//go:generate mockery --name=UCLService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type UCLService interface {
 	ReportStatus(ctx context.Context, url string, statusReport ucl.StatusReport) error
 }

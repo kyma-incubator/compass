@@ -19,10 +19,6 @@ type TenantMappingsService struct {
 func (_m *TenantMappingsService) CanSafelyRemoveTenantMapping(ctx context.Context, formationID string) (bool, error) {
 	ret := _m.Called(ctx, formationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CanSafelyRemoveTenantMapping")
-	}
-
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
@@ -47,10 +43,6 @@ func (_m *TenantMappingsService) CanSafelyRemoveTenantMapping(ctx context.Contex
 func (_m *TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	ret := _m.Called(ctx, tenantMapping)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ProcessTenantMapping")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, types.TenantMapping) error); ok {
 		r0 = rf(ctx, tenantMapping)
@@ -65,10 +57,6 @@ func (_m *TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenan
 func (_m *TenantMappingsService) RemoveTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	ret := _m.Called(ctx, tenantMapping)
 
-	if len(ret) == 0 {
-		panic("no return value specified for RemoveTenantMapping")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, types.TenantMapping) error); ok {
 		r0 = rf(ctx, tenantMapping)
@@ -79,12 +67,13 @@ func (_m *TenantMappingsService) RemoveTenantMapping(ctx context.Context, tenant
 	return r0
 }
 
-// NewTenantMappingsService creates a new instance of TenantMappingsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewTenantMappingsService(t interface {
+type mockConstructorTestingTNewTenantMappingsService interface {
 	mock.TestingT
 	Cleanup(func())
-}) *TenantMappingsService {
+}
+
+// NewTenantMappingsService creates a new instance of TenantMappingsService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewTenantMappingsService(t mockConstructorTestingTNewTenantMappingsService) *TenantMappingsService {
 	mock := &TenantMappingsService{}
 	mock.Mock.Test(t)
 

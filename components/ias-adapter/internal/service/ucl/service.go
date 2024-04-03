@@ -30,7 +30,7 @@ type StatusReport struct {
 func (s Service) ReportStatus(ctx context.Context, url string, statusReport StatusReport) error {
 	body, err := json.Marshal(statusReport)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to json marshal status report %+v: %w", statusReport, err)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPatch, url, bytes.NewBuffer(body))
@@ -47,9 +47,9 @@ func (s Service) ReportStatus(ctx context.Context, url string, statusReport Stat
 	if resp.StatusCode != http.StatusOK {
 		responseBody, err := io.ReadAll(resp.Body)
 		if err != nil {
-			return fmt.Errorf("unexpected response status %s: failed to read response body %w", resp.Status, err)
+			return fmt.Errorf("unexpected response status %d, failed to read response body %w", resp.StatusCode, err)
 		}
-		return fmt.Errorf("unexpected response status: %s, body: %s", resp.Status, string(responseBody))
+		return fmt.Errorf("unexpected response status %d, body: %s", resp.StatusCode, string(responseBody))
 	}
 
 	return nil
