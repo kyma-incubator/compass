@@ -19,7 +19,9 @@ type TenantMappingsStorage interface {
 
 //go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
-	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	GetApplicationByClientID(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	GetApplicationByName(ctx context.Context, iasHost, name string) (types.Application, error)
+	CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error)
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
 }
 
@@ -72,10 +74,21 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	tenantMapping types.TenantMapping, tenantMappingsFromDB map[string]types.TenantMapping) error {
 
 	formationID := tenantMapping.FormationID
-	uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
+	assignedTenant := tenantMapping.AssignedTenants[0]
+	uclAppID := assignedTenant.UCLApplicationID
 
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
-	if tenantMappingAlreadyInDB && len(tenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs) == 0 {
+
+	if assignedTenant.UCLApplicationType == types.S4ApplicationType && !tenantMappingAlreadyInDB {
+		appID, err := s.createIfNotExistsIASApp(ctx, tenantMapping)
+		if err != nil {
+			logger.FromContext(ctx).Err(err).Msgf("Failed to create/find suitable IAS application")
+			return errors.Newf("could not create/find suitable IAS application: %w", err)
+		}
+		tenantMapping.AssignedTenants[0].Parameters.IASApplicationID = appID
+	}
+
+	if tenantMappingAlreadyInDB && len(assignedTenant.Configuration.ConsumedAPIs) == 0 {
 		// Safeguard for empty consumedAPIs
 		logger.FromContext(ctx).Warn().Msgf(
 			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping upsert.",
@@ -170,8 +183,13 @@ func (s TenantMappingsService) getIASApplication(
 	tenantMappingUCLApplicationID := tenantMapping.AssignedTenants[0].UCLApplicationID
 	clientID := tenantMapping.AssignedTenants[0].Parameters.ClientID
 	localTenantID := tenantMapping.AssignedTenants[0].LocalTenantID
+	iasAppID := tenantMapping.AssignedTenants[0].Parameters.IASApplicationID
 
-	iasApplication, err := s.IASService.GetApplication(ctx, iasHost, clientID, localTenantID)
+	if iasAppID != "" {
+		return types.Application{ID: iasAppID}, nil
+	}
+
+	iasApplication, err := s.IASService.GetApplicationByClientID(ctx, iasHost, clientID, localTenantID)
 	if err != nil {
 		return iasApplication, errors.Newf(
 			"failed to get IAS application with clientID '%s' and tenantID '%s' for UCL App ID '%s': %w",
@@ -197,6 +215,35 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 		iasApps = append(iasApps, iasApp)
 	}
 	return iasApps, nil
+}
+
+func (s TenantMappingsService) createIfNotExistsIASApp(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
+	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
+	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate
+	if s4Certificate == "" {
+		return "", errors.S4CertificateNotFound
+	}
+	s4AppName := string(types.S4ApplicationType) + "-" + tenantMapping.AssignedTenants[0].LocalTenantID
+
+	existingS4App, err := s.IASService.GetApplicationByName(ctx, iasHost, s4AppName)
+	if err == nil {
+		logger.FromContext(ctx).Info().Msgf("Found existing IAS application with name: %s", s4AppName)
+		return existingS4App.ID, nil
+	}
+	if !errors.Is(err, errors.IASApplicationNotFound) {
+		return "", err
+	}
+
+	s4App := types.Application{
+		Name: s4AppName,
+		Authentication: types.ApplicationAuthentication{
+			APICertificates: []types.ApiCertificateData{
+				{Base64Certificate: s4Certificate},
+			},
+		},
+	}
+
+	return s.IASService.CreateApplication(ctx, iasHost, &s4App)
 }
 
 func abs(x int) int {

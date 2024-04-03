@@ -9,11 +9,17 @@ type Applications struct {
 type Application struct {
 	ID             string                    `json:"id"`
 	Authentication ApplicationAuthentication `json:"urn:sap:identity:application:schemas:extension:sci:1.0:Authentication"`
+	Name           string                    `json:"name"`
 }
 
 type ApplicationAuthentication struct {
 	ConsumedAPIs         []ApplicationConsumedAPI `json:"consumedApis"`
 	SAPManagedAttributes SAPManagedAttributes     `json:"sapManagedAttributes"`
+	APICertificates      []ApiCertificateData     `json:"apiCertificates"`
+}
+
+type ApiCertificateData struct {
+	Base64Certificate string `json:"base64Certificate"`
 }
 
 type SAPManagedAttributes struct {

@@ -671,6 +671,7 @@ type IntegrationDependencyInput struct {
 	Mandatory     *bool          `json:"mandatory,omitempty"`
 	Aspects       []*AspectInput `json:"aspects,omitempty"`
 	Version       *VersionInput  `json:"version,omitempty"`
+	Labels        Labels         `json:"labels,omitempty"`
 }
 
 type IntegrationDependencyPage struct {
@@ -760,6 +761,15 @@ type OneTimeTokenInput struct {
 	Raw          *string           `json:"raw,omitempty"`
 	RawEncoded   *string           `json:"rawEncoded,omitempty"`
 	Type         *OneTimeTokenType `json:"type,omitempty"`
+}
+
+type Operation struct {
+	ID            string                 `json:"id"`
+	OperationType ScheduledOperationType `json:"operationType"`
+	Status        OperationStatus        `json:"status"`
+	Error         *string                `json:"error,omitempty"`
+	CreatedAt     *Timestamp             `json:"createdAt,omitempty"`
+	UpdatedAt     *Timestamp             `json:"updatedAt,omitempty"`
 }
 
 type PageInfo struct {
@@ -1813,6 +1823,51 @@ func (e OperationMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type OperationStatus string
+
+const (
+	OperationStatusScheduled  OperationStatus = "SCHEDULED"
+	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
+	OperationStatusCompleted  OperationStatus = "COMPLETED"
+	OperationStatusFailed     OperationStatus = "FAILED"
+)
+
+var AllOperationStatus = []OperationStatus{
+	OperationStatusScheduled,
+	OperationStatusInProgress,
+	OperationStatusCompleted,
+	OperationStatusFailed,
+}
+
+func (e OperationStatus) IsValid() bool {
+	switch e {
+	case OperationStatusScheduled, OperationStatusInProgress, OperationStatusCompleted, OperationStatusFailed:
+		return true
+	}
+	return false
+}
+
+func (e OperationStatus) String() string {
+	return string(e)
+}
+
+func (e *OperationStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationStatus", str)
+	}
+	return nil
+}
+
+func (e OperationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type OperationType string
 
 const (
@@ -1945,6 +2000,47 @@ func (e *RuntimeStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e RuntimeStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ScheduledOperationType string
+
+const (
+	ScheduledOperationTypeOrdAggregation ScheduledOperationType = "ORD_AGGREGATION"
+	ScheduledOperationTypeSystemFetching ScheduledOperationType = "SYSTEM_FETCHING"
+)
+
+var AllScheduledOperationType = []ScheduledOperationType{
+	ScheduledOperationTypeOrdAggregation,
+	ScheduledOperationTypeSystemFetching,
+}
+
+func (e ScheduledOperationType) IsValid() bool {
+	switch e {
+	case ScheduledOperationTypeOrdAggregation, ScheduledOperationTypeSystemFetching:
+		return true
+	}
+	return false
+}
+
+func (e ScheduledOperationType) String() string {
+	return string(e)
+}
+
+func (e *ScheduledOperationType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ScheduledOperationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ScheduledOperationType", str)
+	}
+	return nil
+}
+
+func (e ScheduledOperationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
