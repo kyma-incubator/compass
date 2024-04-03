@@ -8,15 +8,17 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
 const (
 	S4SAPManagedCommunicationScenario = "SAP_COM_1002"
+
+	locationHeader = "Location"
 )
 
 //go:generate mockery --name=TenantMappingsService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -26,11 +28,18 @@ type TenantMappingsService interface {
 	RemoveTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 }
 
+type UCLService interface {
+	ReportStatus(ctx context.Context, url string, statusReport ucl.StatusReport) error
+}
+
 type TenantMappingsHandler struct {
 	Service TenantMappingsService
+	UCLService
 }
 
 func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
+	log := logger.FromContext(ctx)
+
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
@@ -55,22 +64,26 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
+	ctx.AbortWithStatus(http.StatusAccepted)
+
 	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
 	if tenantMapping.AssignedTenants[0].Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
-			errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
-			err := errors.Newf(errMsgf, reverseAssignmentState)
-			internal.RespondWithError(ctx, internal.IncompleteStatusCode, err)
+			log.Warn().Msgf("skipping processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'",
+				reverseAssignmentState)
+			h.reportStatus(ctx, ucl.StatusReport{State: types.StateConfigPending})
 			return
 		}
 	}
+
+	operation := tenantMapping.AssignedTenants[0].Operation
+
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
-		operation := tenantMapping.AssignedTenants[0].Operation
 
 		if operation == types.OperationAssign {
 			if errors.Is(err, errors.IASApplicationNotFound) {
-				internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
+				h.reportStatus(ctx, ucl.StatusReport{State: errorState(operation), Error: err.Error()})
 				return
 			}
 
@@ -85,16 +98,39 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 						},
 					},
 				}
-				internal.RespondWithConfigPending(ctx, s4Config)
+				h.reportStatus(ctx, ucl.StatusReport{State: types.StateConfigPending, Configuration: s4Config})
 				return
 			}
 		}
 
-		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)
+		h.reportStatus(ctx, ucl.StatusReport{State: errorState(operation)})
 		return
 	}
 
-	ctx.Status(http.StatusOK)
+	h.reportStatus(ctx, ucl.StatusReport{State: readyState(operation)})
+}
+
+func readyState(operation types.Operation) types.State {
+	if operation == types.OperationAssign {
+		return types.StateCreateReady
+	}
+	return types.StateDeleteReady
+}
+
+func errorState(operation types.Operation) types.State {
+	if operation == types.OperationAssign {
+		return types.StateCreateError
+	}
+	return types.StateDeleteError
+}
+
+func (h TenantMappingsHandler) reportStatus(ctx *gin.Context, statusReport ucl.StatusReport) {
+	log := logger.FromContext(ctx)
+	statusReportURL := ctx.GetHeader(locationHeader)
+
+	if err := h.ReportStatus(ctx, statusReportURL, statusReport); err != nil {
+		log.Error().Msgf("failed to report status to '%s': %s", statusReportURL, err)
+	}
 }
 
 func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, tenantMapping *types.TenantMapping) {

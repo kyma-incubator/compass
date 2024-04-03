@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
@@ -19,13 +18,11 @@ import (
 const applicationsPath = "/Applications/v1"
 
 type Service struct {
-	cfg    config.IAS
 	client *http.Client
 }
 
-func NewService(cfg config.IAS, client *http.Client) Service {
+func NewService(client *http.Client) Service {
 	return Service{
-		cfg:    cfg,
 		client: client,
 	}
 }

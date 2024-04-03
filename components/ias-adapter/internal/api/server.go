@@ -22,6 +22,7 @@ func init() {
 type Services struct {
 	HealthService         handlers.HealthService
 	TenantMappingsService handlers.TenantMappingsService
+	UCLService            handlers.UCLService
 }
 
 func NewServer(ctx context.Context, cfg config.Config, services Services) (*http.Server, error) {
@@ -49,7 +50,8 @@ func NewServer(ctx context.Context, cfg config.Config, services Services) (*http
 	routerGroup.Use(authMiddleware.Auth)
 	tenantMappingRouter.Use(authMiddleware.Auth)
 	tenantMappingsHandler := handlers.TenantMappingsHandler{
-		Service: services.TenantMappingsService,
+		Service:    services.TenantMappingsService,
+		UCLService: services.UCLService,
 	}
 	tenantMappingRouter.PATCH(paths.TenantMappingsPath, tenantMappingsHandler.Patch)
 

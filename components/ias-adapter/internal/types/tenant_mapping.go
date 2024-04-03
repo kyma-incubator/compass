@@ -45,8 +45,12 @@ const (
 	OperationUnassign Operation = "unassign"
 
 	StateInitial       State = "INITIAL"
-	StateReady         State = "READY"
 	StateConfigPending State = "CONFIG_PENDING"
+	StateCreateError   State = "CREATE_ERROR"
+	StateDeleteError   State = "DELETE_ERROR"
+	StateCreateReady   State = "CREATE_READY"
+	StateDeleteReady   State = "DELETE_READY"
+	StateReady         State = "READY"
 
 	S4ApplicationType ApplicationType = "SAP S/4HANA Cloud"
 )
@@ -121,11 +125,6 @@ func (tm TenantMapping) Validate() error {
 		return errors.New("$.assignedTenants[0].parameters.technicalIntegrationId is required")
 	}
 	return nil
-}
-
-type TenantMappingResponse struct {
-	State         State                      `json:"state"`
-	Configuration TenantMappingConfiguration `json:"configuration"`
 }
 
 type TenantMappingConfiguration struct {

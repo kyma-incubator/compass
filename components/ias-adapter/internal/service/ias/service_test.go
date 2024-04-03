@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 	. "github.com/onsi/ginkgo/v2"
@@ -100,7 +99,6 @@ var _ = Describe("Removing consumed API", func() {
 })
 
 var _ = Describe("Getting application by client ID", func() {
-	config := config.IAS{}
 	ctx := context.Background()
 	iasHost := "ias-host"
 	clientID := "client-id"
@@ -109,7 +107,7 @@ var _ = Describe("Getting application by client ID", func() {
 	When("IAS returns an error", func() {
 		It("Returns an error", func() {
 			err := errors.New("connection reset")
-			service := NewService(config, &http.Client{Transport: &testTransport{err: err}})
+			service := NewService(&http.Client{Transport: &testTransport{err: err}})
 			_, err = service.GetApplicationByClientID(ctx, iasHost, clientID, appTenantId)
 			Expect(err).To(Equal(err))
 		})
@@ -121,7 +119,7 @@ var _ = Describe("Getting application by client ID", func() {
 			b, err := json.Marshal(apps)
 			Expect(err).ToNot(HaveOccurred())
 
-			service := NewService(config, &http.Client{Transport: &testTransport{status: http.StatusOK, body: string(b)}})
+			service := NewService(&http.Client{Transport: &testTransport{status: http.StatusOK, body: string(b)}})
 			_, err = service.GetApplicationByClientID(ctx, iasHost, clientID, appTenantId)
 			Expect(err).To(MatchError(errors.IASApplicationNotFound))
 		})
@@ -143,7 +141,7 @@ var _ = Describe("Getting application by client ID", func() {
 			b, err := json.Marshal(apps)
 			Expect(err).ToNot(HaveOccurred())
 
-			service := NewService(config, &http.Client{Transport: &testTransport{status: http.StatusOK, body: string(b)}})
+			service := NewService(&http.Client{Transport: &testTransport{status: http.StatusOK, body: string(b)}})
 			_, err = service.GetApplicationByClientID(ctx, iasHost, clientID, appTenantId)
 			Expect(err).To(MatchError(errors.IASApplicationNotFound))
 		})
@@ -151,7 +149,6 @@ var _ = Describe("Getting application by client ID", func() {
 })
 
 var _ = Describe("Getting application by name", func() {
-	config := config.IAS{}
 	ctx := context.Background()
 	iasHost := "ias-host"
 	name := "ias-app-name"
@@ -159,7 +156,7 @@ var _ = Describe("Getting application by name", func() {
 	When("IAS returns an error", func() {
 		It("Returns an error", func() {
 			err := errors.New("connection reset")
-			service := NewService(config, &http.Client{Transport: &testTransport{err: err}})
+			service := NewService(&http.Client{Transport: &testTransport{err: err}})
 			_, err = service.GetApplicationByName(ctx, iasHost, name)
 			Expect(err).To(Equal(err))
 		})
@@ -167,7 +164,7 @@ var _ = Describe("Getting application by name", func() {
 
 	When("There are no applications with the specified name and IAS returns 404", func() {
 		It("Returns IAS App not found error", func() {
-			service := NewService(config, &http.Client{Transport: &testTransport{status: http.StatusNotFound}})
+			service := NewService(&http.Client{Transport: &testTransport{status: http.StatusNotFound}})
 			_, err := service.GetApplicationByName(ctx, iasHost, name)
 			Expect(err).To(MatchError(errors.IASApplicationNotFound))
 		})
