@@ -28,14 +28,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/tidwall/sjson"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -146,6 +146,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	destinationProviderToken := token.GetClientCredentialsToken(stdT, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderClaimKey)
 
 	t.Run("ConsumerProvider flow with runtime as provider", func(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
@@ -342,17 +344,19 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
-			Type:            "HTTP",
-			URL:             "http://localhost",
-			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
-			XSystemTenantID: localTenantID,
-			XSystemType:     string(util.ApplicationTypeC4C),
+			Name:           "test",
+			Type:           "HTTP",
+			URL:            "http://localhost",
+			Authentication: "BasicAuthentication",
+			AdditionalProperties: clients.DestinationAdditionalProperties{
+				XCorrelationID:  correlationID,
+				XSystemTenantID: localTenantID,
+				XSystemType:     string(util.ApplicationTypeC4C),
+			},
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestinationInDestService(stdT, destination, destinationProviderToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationProviderToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -410,8 +414,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationProviderToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationProviderToken)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
@@ -652,17 +656,19 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
-			Type:            "HTTP",
-			URL:             "http://localhost",
-			Authentication:  "BasicAuthentication",
-			XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
-			XSystemTenantID: localTenantID,
-			XSystemType:     string(util.ApplicationTypeC4C),
+			Name:           "test",
+			Type:           "HTTP",
+			URL:            "http://localhost",
+			Authentication: "BasicAuthentication",
+			AdditionalProperties: clients.DestinationAdditionalProperties{
+				XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
+				XSystemTenantID: localTenantID,
+				XSystemType:     string(util.ApplicationTypeC4C),
+			},
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestinationInDestService(stdT, destination, destinationProviderToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationProviderToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -732,8 +738,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationProviderToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationProviderToken)
 
 		// With destinations - reload
 		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", consumerApp.ID), headers)
@@ -967,17 +973,19 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
-			Type:            "HTTP",
-			URL:             "http://localhost",
-			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
-			XSystemTenantID: localTenantID,
-			XSystemType:     string(util.ApplicationTypeC4C),
+			Name:           "test",
+			Type:           "HTTP",
+			URL:            "http://localhost",
+			Authentication: "BasicAuthentication",
+			AdditionalProperties: clients.DestinationAdditionalProperties{
+				XCorrelationID:  correlationID,
+				XSystemTenantID: localTenantID,
+				XSystemType:     string(util.ApplicationTypeC4C),
+			},
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestinationInDestService(stdT, destination, destinationProviderToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationProviderToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -1035,8 +1043,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationProviderToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationProviderToken)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")

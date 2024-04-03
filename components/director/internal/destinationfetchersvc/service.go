@@ -426,6 +426,10 @@ func (d *DestinationService) getRegionLabel(ctx context.Context, tenantID string
 func (d *DestinationService) fetchBundlesByFormationAssignment(ctx context.Context, tenantID, destinationName, correlationIDs string) ([]*model.Bundle, error) {
 	destination, err := d.DestinationRepo.GetDestinationByNameAndTenant(ctx, destinationName, tenantID)
 	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("No destination found by name %q and tenant %q", destinationName, tenantID)
+			return nil, nil
+		}
 		log.C(ctx).WithError(err).Errorf("Failed get destination by name %q and tenant %q", destinationName, tenantID)
 		return nil, errors.Wrapf(err, "while getting desination by name %q and tenant %q", destinationName, tenantID)
 	}

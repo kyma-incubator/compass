@@ -614,7 +614,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		})
 
 		t.Run("Create a destination associated with a bundle using existing destinations created from destination creator", func(t *testing.T) {
-			const correlationID = "correlationID"
+			const correlationID = "e2e-client-cert-auth-correlation-ids"
 			bndlInput := graphql.BundleCreateInput{
 				Name:           "test-bundle",
 				CorrelationIDs: []string{correlationID},
@@ -638,7 +638,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\":\\\"{{.Body.error}}\\\",\\\"success_status_code\\\":202}"
 
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication)
+			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication, emptyHeaderTemplate)
 
 			stdT.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, asyncCallbackWebhookMode, app2.ID)
 			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(stdT, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, subscriptionConsumerAccountID, app2.ID)
@@ -649,7 +649,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			urlTemplateSyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/destinations/configuration/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 			outputTemplateSyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\":200}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication, emptyHeaderTemplate)
 
 			stdT.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(stdT, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
@@ -731,23 +731,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNoAuthDestination(stdT, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken)
 			stdT.Log("Destinations and destination certificates have been successfully created")
 
-			// Create destination that matches to the created bundle
-			subdomain := conf.DestinationConsumerSubdomainMtls
-			client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
-			require.NoError(stdT, err)
-
-			destinationName := "e2e-client-cert-auth-destination-name"
-			destination := clients.Destination{
-				Name:           destinationName,
-				Type:           "HTTP",
-				URL:            "http://e2e-client-cert-auth-url-example.com",
-				Authentication: "ClientCertificateAuthentication",
-				XCorrelationID: correlationID,
-			}
-
-			client.CreateDestination(stdT, destination)
-			defer client.DeleteDestination(stdT, destination.Name)
-
 			stdT.Log("Getting consumer application using both provider and consumer credentials...")
 
 			consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
@@ -759,7 +742,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			// HTTP client configured with certificate with patched subject, issued from cert-rotation job
 			certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-			fmt.Println(consumerToken)
 			// Make a request to the ORD service with http client.
 			respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", app1.ID), headers)
 
@@ -784,8 +766,9 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				}
 				require.Len(stdT, appDestinations, 1)
 
+				expectedDestinationName := "e2e-client-cert-auth-destination-name"
 				appDestinationName := gjson.Get(respBody, "consumptionBundles.0.destinations.0.name").String()
-				require.Equal(t, destinationName, appDestinationName)
+				require.Equal(t, expectedDestinationName, appDestinationName)
 
 				return true
 			}, time.Second*30, time.Second)
