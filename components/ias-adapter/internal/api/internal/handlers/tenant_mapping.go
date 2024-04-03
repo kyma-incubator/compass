@@ -48,7 +48,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		return
 	}
 
-	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
+	if err := tenantMapping.AssignedTenant.SetConfiguration(ctx); err != nil {
 		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
@@ -67,8 +67,8 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 
 	ctx.AbortWithStatus(http.StatusAccepted)
 
-	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
-	if tenantMapping.AssignedTenants[0].Operation == types.OperationAssign {
+	reverseAssignmentState := tenantMapping.AssignedTenant.ReverseAssignmentState
+	if tenantMapping.Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
 			log.Warn().Msgf("skipping processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'",
 				reverseAssignmentState)
@@ -77,7 +77,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		}
 	}
 
-	operation := tenantMapping.AssignedTenants[0].Operation
+	operation := tenantMapping.Operation
 
 	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
@@ -104,7 +104,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 			}
 		}
 
-		h.reportStatus(ctx, ucl.StatusReport{State: errorState(operation)})
+		h.reportStatus(ctx, ucl.StatusReport{State: errorState(operation), Error: err.Error()})
 		return
 	}
 
@@ -135,7 +135,7 @@ func (h TenantMappingsHandler) reportStatus(ctx *gin.Context, statusReport ucl.S
 }
 
 func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, tenantMapping *types.TenantMapping) {
-	operation := tenantMapping.AssignedTenants[0].Operation
+	operation := tenantMapping.Operation
 	if operation != types.OperationUnassign ||
 		errors.Is(err, types.ErrInvalidFormationID) ||
 		errors.Is(err, types.ErrInvalidAssignedTenantID) {

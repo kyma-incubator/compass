@@ -35,7 +35,7 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
-	consumerTenant := data.TenantMapping.AssignedTenants[0]
+	consumerTenant := data.TenantMapping.AssignedTenant
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
 

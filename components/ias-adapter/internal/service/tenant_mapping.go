@@ -46,22 +46,21 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 		logger.FromContext(ctx).Err(err).Msgf("Failed to get tenant mappings for formation '%s'", formationID)
 		return errors.Newf("failed to get tenant mappings for formation '%s': %w", formationID, postgres.Error(err))
 	}
-	operation := tenantMapping.AssignedTenants[0].Operation
 
-	switch operation {
+	switch tenantMapping.Operation {
 	case types.OperationAssign:
 		return s.handleAssign(ctx, tenantMapping, tenantMappingsFromDB)
 	case types.OperationUnassign:
 		return s.handleUnassign(ctx, tenantMapping, tenantMappingsFromDB)
 	default:
-		panic(errors.Newf("invalid tenant mapping operation %s", operation))
+		panic(errors.Newf("invalid tenant mapping operation %s", tenantMapping.Operation))
 	}
 }
 
 func (s TenantMappingsService) RemoveTenantMapping(
 	ctx context.Context, tenantMapping types.TenantMapping) error {
 	formationID := tenantMapping.FormationID
-	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenants[0].UCLApplicationID)
+	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenant.UCLApplicationID)
 	if err != nil {
 		logger.FromContext(ctx).Err(err).Msgf("Failed to clean up tenant mapping for formation '%s'", formationID)
 		return errors.Newf("failed to clean up tenant mapping for formation '%s': %w",
@@ -74,7 +73,7 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 	tenantMapping types.TenantMapping, tenantMappingsFromDB map[string]types.TenantMapping) error {
 
 	formationID := tenantMapping.FormationID
-	assignedTenant := tenantMapping.AssignedTenants[0]
+	assignedTenant := tenantMapping.AssignedTenant
 	uclAppID := assignedTenant.UCLApplicationID
 
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
@@ -85,7 +84,7 @@ func (s TenantMappingsService) handleAssign(ctx context.Context,
 			logger.FromContext(ctx).Err(err).Msgf("Failed to create/find suitable IAS application")
 			return errors.Newf("could not create/find suitable IAS application: %w", err)
 		}
-		tenantMapping.AssignedTenants[0].Parameters.IASApplicationID = appID
+		tenantMapping.AssignedTenant.Parameters.IASApplicationID = appID
 	}
 
 	if tenantMappingAlreadyInDB && len(assignedTenant.Configuration.ConsumedAPIs) == 0 {
@@ -144,7 +143,7 @@ func (s TenantMappingsService) updateIASAppsConsumedAPIs(ctx context.Context,
 
 	for idx, consumerApp := range iasApps {
 		tenantMapping := tenantMappings[idx]
-		uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
+		uclAppID := tenantMapping.AssignedTenant.UCLApplicationID
 		providerAppID := iasApps[abs(idx-1)].ID
 
 		log.Info().Msgf(
@@ -180,10 +179,10 @@ func (s TenantMappingsService) handleUnassign(ctx context.Context,
 func (s TenantMappingsService) getIASApplication(
 	ctx context.Context, tenantMapping types.TenantMapping) (types.Application, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
-	tenantMappingUCLApplicationID := tenantMapping.AssignedTenants[0].UCLApplicationID
-	clientID := tenantMapping.AssignedTenants[0].Parameters.ClientID
-	localTenantID := tenantMapping.AssignedTenants[0].LocalTenantID
-	iasAppID := tenantMapping.AssignedTenants[0].Parameters.IASApplicationID
+	tenantMappingUCLApplicationID := tenantMapping.AssignedTenant.UCLApplicationID
+	clientID := tenantMapping.AssignedTenant.Parameters.ClientID
+	localTenantID := tenantMapping.AssignedTenant.LocalTenantID
+	iasAppID := tenantMapping.AssignedTenant.Parameters.IASApplicationID
 
 	if iasAppID != "" {
 		return types.Application{ID: iasAppID}, nil
@@ -219,11 +218,11 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 
 func (s TenantMappingsService) createIfNotExistsIASApp(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
-	s4Certificate := tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate
+	s4Certificate := tenantMapping.AssignedTenant.Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate
 	if s4Certificate == "" {
 		return "", errors.S4CertificateNotFound
 	}
-	s4AppName := string(types.S4ApplicationType) + "-" + tenantMapping.AssignedTenants[0].LocalTenantID
+	s4AppName := string(types.S4ApplicationType) + "-" + tenantMapping.AssignedTenant.LocalTenantID
 
 	existingS4App, err := s.IASService.GetApplicationByName(ctx, iasHost, s4AppName)
 	if err == nil {

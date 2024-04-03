@@ -31,24 +31,24 @@ var _ = Describe("Tenant mappings service", func() {
 		tenantMappingsStorage = &automock.TenantMappingsStorage{}
 		iasService = &automock.IASService{}
 		tenantMapping = types.TenantMapping{
-			FormationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+			Context: types.Context{
+				Operation:   types.OperationAssign,
+				FormationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+			},
 			ReceiverTenant: types.ReceiverTenant{
 				ApplicationURL: "localhost",
 			},
-			AssignedTenants: []types.AssignedTenant{
-				{
-					UCLApplicationID:   "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
-					UCLApplicationType: "test-app-type",
-					LocalTenantID:      "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
-					Operation:          types.OperationAssign,
-					Parameters: types.AssignedTenantParameters{
-						ClientID: "clientID",
-					},
-					Configuration: types.AssignedTenantConfiguration{
-						ConsumedAPIs: []string{},
-					},
-					ReverseAssignmentState: "",
+			AssignedTenant: types.AssignedTenant{
+				UCLApplicationID:   "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				UCLApplicationType: "test-app-type",
+				LocalTenantID:      "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				Parameters: types.AssignedTenantParameters{
+					ClientID: "clientID",
 				},
+				Configuration: types.AssignedTenantConfiguration{
+					ConsumedAPIs: []string{},
+				},
+				ReverseAssignmentState: "",
 			},
 		}
 	})
@@ -71,36 +71,47 @@ var _ = Describe("Tenant mappings service", func() {
 
 	When("tenant mapping with S/4 participant is received", func() {
 		BeforeEach(func() {
-			tenantMapping.AssignedTenants[0].UCLApplicationType = types.S4ApplicationType
-			tenantMapping.AssignedTenants[0].Parameters.ClientID = ""
+			tenantMapping.AssignedTenant.UCLApplicationType = types.S4ApplicationType
+			tenantMapping.AssignedTenant.Parameters.ClientID = ""
 			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
 		})
+
 		It("should return error when default S/4 certificate is not provided", func() {
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
 			Expect(err).Error().To(MatchError(errors.S4CertificateNotFound))
 		})
+
 		It("should create application for S/4 in IAS if it doesn't exist", func() {
 			iasAppID := "appId"
-			tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate = "s4TestCert"
-			tenantMappingsStorage.On("UpsertTenantMapping", ctx, mock.Anything).Return(nil)
+			tenantMapping.AssignedTenant.Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate = "s4TestCert"
+
+			expectedTenantMapping := tenantMapping
+			expectedTenantMapping.AssignedTenant.Parameters.IASApplicationID = iasAppID
+			tenantMappingsStorage.On("UpsertTenantMapping", ctx, expectedTenantMapping).Return(nil)
+
 			iasService.On("GetApplicationByName", ctx, mock.Anything, mock.Anything).Return(types.Application{}, errors.IASApplicationNotFound)
 			iasService.On("CreateApplication", ctx, mock.Anything, mock.Anything).Return(iasAppID, nil)
+
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
-			Expect(tenantMapping.AssignedTenants[0].Parameters.IASApplicationID).To(Equal(iasAppID))
 			Expect(err).Error().ToNot(HaveOccurred())
 		})
+
 		It("should get the application for S/4 in IAS if it exists", func() {
 			iasAppID := "appId"
-			tenantMapping.AssignedTenants[0].Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate = "s4TestCert"
-			tenantMappingsStorage.On("UpsertTenantMapping", ctx, mock.Anything).Return(nil)
+			tenantMapping.AssignedTenant.Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate = "s4TestCert"
+
+			expectedTenantMapping := tenantMapping
+			expectedTenantMapping.AssignedTenant.Parameters.IASApplicationID = iasAppID
+			tenantMappingsStorage.On("UpsertTenantMapping", ctx, expectedTenantMapping).Return(nil)
+
 			iasService.On("GetApplicationByName", ctx, mock.Anything, mock.Anything).Return(types.Application{ID: iasAppID}, nil)
-			Expect(tenantMappingsStorage.AssertNotCalled(GinkgoT(), "CreateApplication")).To(BeTrue())
+
 			tms := TenantMappingsService{Storage: tenantMappingsStorage, IASService: iasService}
 			err := tms.ProcessTenantMapping(ctx, tenantMapping)
-			Expect(tenantMapping.AssignedTenants[0].Parameters.IASApplicationID).To(Equal(iasAppID))
 			Expect(err).Error().ToNot(HaveOccurred())
+			Expect(tenantMappingsStorage.AssertNotCalled(GinkgoT(), "CreateApplication")).To(BeTrue())
 		})
 	})
 })

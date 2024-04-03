@@ -6,12 +6,18 @@ import (
 	"io"
 	"net/http"
 	"strings"
+	"testing"
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
+
+func TestIASService(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "IAS Service Test Suite")
+}
 
 var testConsumedAPI = types.ApplicationConsumedAPI{
 	Name:    "name1",
