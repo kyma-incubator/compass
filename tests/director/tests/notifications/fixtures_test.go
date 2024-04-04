@@ -51,6 +51,7 @@ const (
 	initialAssignmentState           = "INITIAL"
 	configPendingAssignmentState     = "CONFIG_PENDING"
 	deletingAssignmentState          = "DELETING"
+	draftFormationState              = "DRAFT"
 	basicAuthType                    = "Basic"
 	samlAuthType                     = "SAML2.0"
 	oauth2AuthType                   = "bearer"

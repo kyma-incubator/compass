@@ -498,6 +498,28 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			expectedErrOutput:  fmt.Sprintf("An invalid state: %s is provided for %s operation", model.CreateReadyFormationAssignmentState, model.UnassignFormation),
 		},
 		{
+			name:       "Error when consumer is external token(static user),but formation is NOT in DRAFT state",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			context:    ctxWithExternalTokenConsumer,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithInitialState, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrOutput:  fmt.Sprintf("An invalid state: %s is provided for %s operation", model.InitialFormationState, model.AssignFormation),
+			shouldSleep:        true,
+		},
+		{
 			name:       "Error when fail to set the formation assignment to error state",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
