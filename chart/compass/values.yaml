@@ -175,7 +175,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3777"
+      version: "PR-3782"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -232,7 +232,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3777"
+      version: "PR-3782"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -285,6 +285,16 @@ global:
       formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
       formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset"
       formationPath: "/{ucl-formation-id}/status"
+      authentication:
+        name: "external-token-status"
+        gatewayHost: "compass-gateway-external-token"
+        trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix.", "prefix2."], "protocol": "http", "region": "eu-1"}]'
+        attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
+        upstreamComponent: "compass-director"
+        checkSuffix: false
+        retry:
+          give_up_after: 6s
+          max_delay: 2000ms
     prefix: /director
     graphql:
       external:
