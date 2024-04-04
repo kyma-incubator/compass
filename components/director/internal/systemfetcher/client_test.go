@@ -3,6 +3,7 @@ package systemfetcher_test
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -11,9 +12,6 @@ import (
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/automock"
-	mockery "github.com/stretchr/testify/mock"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -96,6 +94,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
+		fmt.Println(systemfetcher.ApplicationTemplates)
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 1)
@@ -113,13 +112,9 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Success with template mappings", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1')"
-		templateMappingKey := systemfetcher.TemplateMappingKey{
-			Label:  "type1",
-			Region: "",
-		}
 
-		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
-			templateMappingKey: {
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -127,6 +122,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					labelFilter: {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
+					},
+					"slisFilter": {
+						Key: "slisFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type1",
+							Filter:    make([]systemfetcher.SlisFilter, 0),
+						}},
 					},
 				},
 			},
@@ -143,7 +145,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"key": "type2"
+			"key": "type1"
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
@@ -151,19 +153,12 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, systems[0].TemplateID, "type1")
-		require.Equal(t, systems[1].TemplateID, "")
+		require.Equal(t, systems[1].TemplateID, "type1")
 	})
 
 	t.Run("Success with regional template mappings", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
-		templateMappingKey1 := systemfetcher.TemplateMappingKey{
-			Label:  "type1",
-			Region: "us10",
-		}
-		templateMappingKey2 := systemfetcher.TemplateMappingKey{
-			Label:  "type1",
-			Region: "us20",
-		}
+
 		appTemplate1 := &model.ApplicationTemplate{
 			ID: "id-1",
 		}
@@ -171,77 +166,53 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			ID: "id-2",
 		}
 
-		appRegisterInput1 := &model.ApplicationRegisterInput{
-			Labels: map[string]interface{}{
-				selfregmanager.RegionLabel: "us10",
-			},
-		}
-		appRegisterInput2 := &model.ApplicationRegisterInput{
-			Labels: map[string]interface{}{
-				selfregmanager.RegionLabel: "us20",
-			},
-		}
-
-		s1 := systemfetcher.System{
-			SystemPayload: map[string]interface{}{
-				"displayName":            "name1",
-				"productDescription":     "description",
-				"baseUrl":                "url",
-				"infrastructureProvider": "provider1",
-				"key":                    "type1",
-				"regionKey":              "us10",
-			},
-			TemplateID:      "",
-			StatusCondition: "",
-		}
-
-		s2 := systemfetcher.System{
-			SystemPayload: map[string]interface{}{
-				"displayName":            "name2",
-				"productDescription":     "description",
-				"baseUrl":                "url",
-				"infrastructureProvider": "provider1",
-				"key":                    "type2",
-			},
-			TemplateID:      "",
-			StatusCondition: "",
-		}
-
-		renderer := &automock.TemplateRenderer{}
-		renderer.On("GenerateAppRegisterInput", mockery.Anything, s1, appTemplate1, false).Return(appRegisterInput1, nil)
-		renderer.On("GenerateAppRegisterInput", mockery.Anything, s2, appTemplate2, false).Return(appRegisterInput2, nil)
-		// GenerateAppRegisterInput is mainly used to resolve the label placeholder for the application.
-		// When given the appTemplate2 it should resolve the label to the system's payload "regionKey": "us10" and that is why the appRegisterInput1 is expected to be returned
-		renderer.On("GenerateAppRegisterInput", mockery.Anything, s1, appTemplate2, false).Return(appRegisterInput1, nil).Maybe()
-
-		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
-			templateMappingKey1: {
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
 				AppTemplate: appTemplate1,
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
+					"slisFilter": {
+						Key: "slisFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type1",
+							Filter: []systemfetcher.SlisFilter{{
+								Key:       "$.regionKey",
+								Value:     []string{"us10"},
+								Operation: "include",
+							}},
+						},
+						},
+					},
 					selfregmanager.RegionLabel: {
-						Key:   selfregmanager.RegionLabel,
-						Value: templateMappingKey1.Region,
+						Key: selfregmanager.RegionLabel,
 					},
 				},
-				Renderer: renderer,
 			},
-			templateMappingKey2: {
+			{
 				AppTemplate: appTemplate2,
 				Labels: map[string]*model.Label{
 					labelFilter: {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
+					"slisFilter": {
+						Key: "slisFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type1",
+							Filter: []systemfetcher.SlisFilter{{
+								Key:       "$.regionKey",
+								Value:     []string{"us20"},
+								Operation: "include",
+							}},
+						}},
+					},
 					selfregmanager.RegionLabel: {
-						Key:   selfregmanager.RegionLabel,
-						Value: templateMappingKey2.Region,
+						Key: selfregmanager.RegionLabel,
 					},
 				},
-				Renderer: renderer,
 			},
 		}
 
@@ -264,7 +235,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"key": "type2"
+			"key": "type1",
+			"regionKey": "us20"
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
@@ -272,18 +244,14 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, systems, 2)
 		require.Equal(t, "id-1", systems[0].TemplateID)
-		require.Equal(t, "", systems[1].TemplateID)
+		require.Equal(t, "id-2", systems[1].TemplateID)
 	})
 
 	t.Run("Success with template mappings and SystemSynchronizationTimestamps exist", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1' and lastChangeDateTime gt '2023-05-02 20:30:00 +0000 UTC')"
-		templateMappingKey := systemfetcher.TemplateMappingKey{
-			Label:  "type1",
-			Region: "",
-		}
 
-		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
-			templateMappingKey: {
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -291,6 +259,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					labelFilter: {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
+					},
+					"slisFilter": {
+						Key: "slisFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type1",
+							Filter:    make([]systemfetcher.SlisFilter, 0),
+						}},
 					},
 				},
 			},
@@ -319,19 +294,15 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, systemSynchronizationTimestamps)
 		require.NoError(t, err)
-		require.Len(t, systems, 2)
+		require.Len(t, systems, 1)
 		require.Equal(t, systems[0].TemplateID, "type1")
-		require.Equal(t, systems[1].TemplateID, "")
 	})
 
 	t.Run("Success for more than one page", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1')"
-		templateMappingKey := systemfetcher.TemplateMappingKey{
-			Label:  "type1",
-			Region: "",
-		}
-		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
-			templateMappingKey: {
+
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -339,6 +310,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					labelFilter: {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
+					},
+					"slisFilter": {
+						Key: "slisFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type1",
+							Filter:    make([]systemfetcher.SlisFilter, 0),
+						}},
 					},
 				},
 			},
@@ -362,21 +340,9 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Does not map to the last template mapping if haven't matched before", func(t *testing.T) {
 		mock.expectedFilterCriteria = "(key eq 'type1') or (key eq 'type2') or (key eq 'type3')"
-		templateMappingKey1 := systemfetcher.TemplateMappingKey{
-			Label:  "type1",
-			Region: "",
-		}
-		templateMappingKey2 := systemfetcher.TemplateMappingKey{
-			Label:  "type2",
-			Region: "",
-		}
-		templateMappingKey3 := systemfetcher.TemplateMappingKey{
-			Label:  "type3",
-			Region: "",
-		}
 
-		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{
-			templateMappingKey1: {
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{
+			{
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type1",
 				},
@@ -385,9 +351,16 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
+					"cldFilter": {
+						Key: "cldFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type1",
+							Filter:    make([]systemfetcher.SlisFilter, 0),
+						}},
+					},
 				},
 			},
-			templateMappingKey2: {
+			{
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type2",
 				},
@@ -396,9 +369,16 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type2"},
 					},
+					"cldFilter": {
+						Key: "cldFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type2",
+							Filter:    make([]systemfetcher.SlisFilter, 0),
+						}},
+					},
 				},
 			},
-			templateMappingKey3: {
+			{
 				AppTemplate: &model.ApplicationTemplate{
 					ID: "type3",
 				},
@@ -406,6 +386,13 @@ func TestFetchSystemsForTenant(t *testing.T) {
 					labelFilter: {
 						Key:   labelFilter,
 						Value: []interface{}{"type3"},
+					},
+					"cldFilter": {
+						Key: "cldFilter",
+						Value: []systemfetcher.ProductIDFilterMapping{{
+							ProductID: "type3",
+							Filter:    make([]systemfetcher.SlisFilter, 0),
+						}},
 					},
 				},
 			},
@@ -442,7 +429,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {
 		mock.expectedFilterCriteria = ""
-		systemfetcher.ApplicationTemplates = map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping{}
+		systemfetcher.ApplicationTemplates = []systemfetcher.TemplateMapping{}
 
 		mock.callNumber = 0
 		mock.pageCount = 1

@@ -2,6 +2,7 @@ package systemfetcher
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"strings"
@@ -23,12 +24,6 @@ var (
 	SystemSourceKey string
 )
 
-//// TemplateMappingKey is a mapping for regional Application Templates
-//type TemplateMappingKey struct {
-//	Label  string
-//	Region string
-//}
-
 // TemplateMapping holds data for Application Templates and their Labels
 type TemplateMapping struct {
 	AppTemplate *model.ApplicationTemplate
@@ -49,22 +44,22 @@ type SystemSynchronizationTimestamp struct {
 	LastSyncTimestamp time.Time
 }
 
-type CldFilterOperationType string
+type SlisFilterOperationType string
 
 const (
-	IncludeOperationType CldFilterOperationType = "include"
-	ExcludeOperationType CldFilterOperationType = "exclude"
+	IncludeOperationType SlisFilterOperationType = "include"
+	ExcludeOperationType SlisFilterOperationType = "exclude"
 )
 
-type CldFilter struct {
+type SlisFilter struct {
 	Key       string
 	Value     []string
-	Operation CldFilterOperationType
+	Operation SlisFilterOperationType
 }
 
 type ProductIDFilterMapping struct {
-	ProductID string      `json:"productID"`
-	Filter    []CldFilter `json:"filter,omitempty"`
+	ProductID string       `json:"productID"`
+	Filter    []SlisFilter `json:"filter,omitempty"`
 }
 
 // UnmarshalJSON missing godoc
@@ -79,27 +74,33 @@ func (s *System) UnmarshalJSON(data []byte) error {
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
 	for _, tm := range ApplicationTemplates {
-		//if !s.isMatchedBySystemRole(tmKey) {
-		//	continue
-		//}
-		cldFilter, cldFilterExists := tm.Labels["cldFilter"]
-		if !cldFilterExists {
-			return *s, errors.New("missing cld filter")
+		slisFilter, slisFilterExists := tm.Labels["slisFilter"]
+		if !slisFilterExists {
+			return *s, errors.New("missing slis filter")
 		}
 
-		cldFilterValue, ok := cldFilter.Value.([]ProductIDFilterMapping)
-		if !ok {
-			return *s, errors.New("cld filter value cannot be cast to ProductIDFilterMapping")
+		productIDFilterMappings := make([]ProductIDFilterMapping, 0)
+
+		jsonData, err := json.Marshal(slisFilter.Value)
+		if err != nil {
+			fmt.Println("Error marshalling JSON:", err)
+
+		}
+
+		err = json.Unmarshal(jsonData, &productIDFilterMappings)
+		if err != nil {
+			fmt.Println("Error unmarshalling JSON:", err)
 		}
 
 		systemSource, systemSourceValueExists := s.SystemPayload[SystemSourceKey]
-		if !systemSourceValueExists {
 
+		if !systemSourceValueExists {
+			//return *s, errors.New("system role does not exist")
 		}
 
-		for _, l := range cldFilterValue {
-			if l.ProductID == systemSource {
-				systemMatches, err := systemMatchesCldFilters(s.SystemPayload, l.Filter)
+		for _, mapping := range productIDFilterMappings {
+			if mapping.ProductID == systemSource {
+				systemMatches, err := systemMatchesSlisFilters(s.SystemPayload, mapping.Filter)
 				if err != nil {
 					return *s, err
 				}
@@ -110,45 +111,17 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 				}
 			}
 		}
-
-		//
-		//// Global Application Template
-		//if tmKey.Region == "" {
-		//	s.TemplateID = tm.AppTemplate.ID
-		//	break
-		//}
-		//
-		//// Regional Application Template
-		//// Use GenerateAppRegisterInput to resolve the application Input. This way we would know what is the actual
-		//// region from the system payload
-		//appInput, err := tm.Renderer.GenerateAppRegisterInput(context.Background(), *s, tm.AppTemplate, false)
-		//if err != nil {
-		//	return *s, err
-		//}
-		//
-		//regionLabel, err := getLabelFromInput(appInput)
-		//if err != nil {
-		//	return *s, err
-		//}
-		//
-		//foundTemplateMapping := getTemplateMappingBySystemRoleAndRegion(s.SystemPayload, regionLabel)
-		//if foundTemplateMapping.AppTemplate == nil {
-		//	return *s, errors.Errorf("cannot find an app template mapping for a system with payload: %+v", s.SystemPayload)
-		//}
-		//
-		//s.TemplateID = foundTemplateMapping.AppTemplate.ID
-		//break
 	}
 
 	return *s, nil
 }
 
-func systemMatchesCldFilters(systemPayload map[string]interface{}, cldFilters []CldFilter) (bool, error) {
+func systemMatchesSlisFilters(systemPayload map[string]interface{}, slisFilters []SlisFilter) (bool, error) {
 	prefix := "$."
 
 	payload, _ := json.Marshal(systemPayload)
 
-	for _, f := range cldFilters {
+	for _, f := range slisFilters {
 		path := strings.TrimPrefix(f.Key, prefix)
 		valueFromSystemPayload := gjson.Get(string(payload), path)
 
@@ -177,51 +150,3 @@ func valueMatchesFilter(value string, filterValues []string, expectedResultIfEqu
 	}
 	return !expectedResultIfEqualValue
 }
-
-//func (s *System) isMatchedBySystemRole(tmKey TemplateMappingKey) bool {
-//	systemSource, systemSourceKeyExists := s.SystemPayload[SystemSourceKey]
-//	if !systemSourceKeyExists {
-//		return false
-//	}
-//
-//	systemSourceValue, ok := systemSource.(string)
-//	if !ok {
-//		return false
-//	}
-//
-//	return tmKey.Label == systemSourceValue
-//}
-
-//func getTemplateMappingBySystemRoleAndRegion(systemPayload map[string]interface{}, region string) TemplateMapping {
-//	systemSource, systemSourceKeyExists := systemPayload[SystemSourceKey]
-//	if !systemSourceKeyExists {
-//		return TemplateMapping{}
-//	}
-//
-//	systemSourceValue, ok := systemSource.(string)
-//	if !ok {
-//		return TemplateMapping{}
-//	}
-//
-//	for key, mapping := range ApplicationTemplates {
-//		if key.Label == systemSourceValue && key.Region == region {
-//			return mapping
-//		}
-//	}
-//
-//	return TemplateMapping{}
-//}
-
-//func getLabelFromInput(appInput *model.ApplicationRegisterInput) (string, error) {
-//	regionLabel, ok := appInput.Labels[selfregmanager.RegionLabel]
-//	if !ok {
-//		return "", errors.Errorf("%q label should be present for regional app templates", selfregmanager.RegionLabel)
-//	}
-//
-//	regionLabelStr, ok := regionLabel.(string)
-//	if !ok {
-//		return "", errors.Errorf("%q label cannot be parsed to string", selfregmanager.RegionLabel)
-//	}
-//
-//	return regionLabelStr, nil
-//}

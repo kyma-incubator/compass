@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -325,6 +326,8 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 	if err != nil {
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
 	}
+
+	fmt.Println("PLACEHOLDER MAPPINGS ", placeholdersMapping)
 
 	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
 	if err != nil {
@@ -655,41 +658,33 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
-		//templateMappingKey := systemfetcher.TemplateMappingKey{}
-
 		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
 		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels})
+		slisFilterLabel, _ := labels["slisFilter"]
 
-		//regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
-		//if hasRegionLabel {
-		//	regionValue, ok := regionModel.Value.(string)
-		//	if !ok {
-		//		return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
-		//	}
-		//
-		//	templateMappingKey.Region = regionValue
-		//}
-		//
-		//systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
-		//appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
-		//if !ok {
-		//	continue
-		//}
-		//
-		//for _, systemRoleValue := range appTemplateLblFilterArr {
-		//	systemRoleStrValue, ok := systemRoleValue.(string)
-		//	if !ok {
-		//		continue
-		//	}
-		//
-		//	templateMappingKey.Label = systemRoleStrValue
-		//
-		//	applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
-		//}
+		productIDFilterMappings := make([]systemfetcher.ProductIDFilterMapping, 0)
+
+		jsonData, err := json.Marshal(slisFilterLabel.Value)
+		if err != nil {
+			fmt.Println("Error marshalling JSON:", err)
+
+		}
+
+		err = json.Unmarshal(jsonData, &productIDFilterMappings)
+		if err != nil {
+			fmt.Println("Error unmarshalling JSON:", err)
+		}
+
+		for _, p := range productIDFilterMappings {
+			for _, f := range p.Filter {
+				topParent := getTopParentFromJSONPath(f.Key)
+				selectFilterProperties[topParent] = true
+			}
+		}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
 	}

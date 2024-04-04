@@ -44,6 +44,7 @@ const (
 	globalSubaccountIDLabelKey = "global_subaccount_id"
 	sapProviderName            = "SAP"
 	displayNameLabelKey        = "displayName"
+	slisFilterLabelKey         = "slisFilter"
 )
 
 // ApplicationTemplateService missing godoc
@@ -338,23 +339,28 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	cldSystemRole, hasCldSystemRole := labels["cldSystemRole"]
-	_, exists := labels["cldFilter"]
+	cldSystemRole, hasCldSystemRole := labels[r.appTemplateProductLabel]
+	_, exists := labels[slisFilterLabelKey]
 
 	if hasCldSystemRole && !exists {
-		cldSystemRoleValues, _ := cldSystemRole.([]interface{})
-		filters := make([]systemfetcher.ProductIDFilterMapping, 0)
+		log.C(ctx).Infof("Application Template with name %s has cld system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
+
+		cldSystemRoleValues, ok := cldSystemRole.([]interface{})
+		if !ok {
+			return nil, errors.New("invalid format of cld system roles")
+		}
+
+		filtersFromCldSystemRoles := make([]systemfetcher.ProductIDFilterMapping, 0)
 
 		for _, v := range cldSystemRoleValues {
-			cldFilter := systemfetcher.ProductIDFilterMapping{
+			slisFilter := systemfetcher.ProductIDFilterMapping{
 				ProductID: v.(string),
 			}
 
-			filters = append(filters, cldFilter)
+			filtersFromCldSystemRoles = append(filtersFromCldSystemRoles, slisFilter)
 		}
 
-		labels["cldFilter"] = filters
-
+		labels[slisFilterLabelKey] = filtersFromCldSystemRoles
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)

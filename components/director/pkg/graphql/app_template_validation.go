@@ -92,38 +92,37 @@ func (i TemplateValueInput) Validate() error {
 	)
 }
 
-type CldFilterOperationType string
+type SlisFilterOperationType string
 
 const (
-	IncludeOperationType CldFilterOperationType = "include"
-	ExcludeOperationType CldFilterOperationType = "exclude"
+	IncludeOperationType SlisFilterOperationType = "include"
+	ExcludeOperationType SlisFilterOperationType = "exclude"
 )
 
-type CldFilter struct {
+type SlisFilter struct {
 	Key       string
 	Value     []string
-	Operation CldFilterOperationType
+	Operation SlisFilterOperationType
 }
 
 type ProductIDFilterMapping struct {
-	ProductID string      `json:"productID"`
-	Filter    []CldFilter `json:"filter"`
+	ProductID string       `json:"productID"`
+	Filter    []SlisFilter `json:"filter"`
 }
 
-// check for cldFilter and cldSystemRole presence and validate product ids
 func labelsRuleFunc(value interface{}) error {
 	labels, ok := value.(Labels)
 	if !ok {
 		return errors.New("value could not be cast to Labels object")
 	}
 
-	systemRolesLabel, hasCldSystemRoles := labels["cldSystemRole"]
-	cldFilterLabel, hasCldFilter := labels["cldFilter"]
-	if !hasCldSystemRoles && hasCldFilter {
+	systemRolesLabel, hasCldSystemRoles := labels["systemRole"]
+	slisFilterLabel, hasSlisFilter := labels["slisFilter"]
+	if !hasCldSystemRoles && hasSlisFilter {
 		return errors.New("cld system role is required when cld filter is defined")
 	}
 
-	if !hasCldFilter {
+	if !hasSlisFilter {
 		return nil
 	}
 
@@ -139,22 +138,22 @@ func labelsRuleFunc(value interface{}) error {
 		}
 	}
 
-	cldFilterLabelValue, ok := cldFilterLabel.([]interface{})
+	slisFilterLabelValue, ok := slisFilterLabel.([]interface{})
 	if !ok {
-		return errors.New("invalid format of cld filter label")
+		return errors.Errorf("invalid format of slis filter label")
 	}
 
 	productIds := make([]string, 0)
 
-	for _, cldFilterValue := range cldFilterLabelValue {
-		filter, ok := cldFilterValue.(map[string]interface{})
+	for _, slisFilterValue := range slisFilterLabelValue {
+		filter, ok := slisFilterValue.(map[string]interface{})
 		if !ok {
-			return errors.New("invalid format of cld filter value")
+			return errors.New("invalid format of slis filter value")
 		}
 
 		productId, ok := filter["productId"]
 		if !ok {
-			return errors.New("missing productId in cld filter")
+			return errors.New("missing productId in slis filter")
 		}
 
 		productIdStr, ok := productId.(string)
@@ -165,21 +164,19 @@ func labelsRuleFunc(value interface{}) error {
 		productIds = append(productIds, productIdStr)
 	}
 
-	systemRolesNumber := len(systemRoles)
-	cldFilterProductIdsNumber := len(productIds)
+	systemRolesCount := len(systemRoles)
+	slisFilterProductIdsCount := len(productIds)
 
-	if systemRolesNumber != cldFilterProductIdsNumber {
-		return errors.New("cld system roles number does not match the product ids number in cld filter")
+	if systemRolesCount != slisFilterProductIdsCount {
+		return errors.New("cld system roles count does not match the product ids count in slis filter")
 	}
 
 	sort.Strings(systemRoles)
 	sort.Strings(productIds)
 
-	fmt.Println(systemRoles, productIds)
-
 	for i, s := range systemRoles {
 		if s != productIds[i] {
-			return errors.New("cld system roles dont match product ids in cld filter")
+			return errors.New("cld system roles dont match product ids in slis filter")
 		}
 	}
 

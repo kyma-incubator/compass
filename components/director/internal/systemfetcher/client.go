@@ -111,15 +111,19 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url string, tenant *
 		return nil, errors.Wrap(err, "failed to unmarshal systems response")
 	}
 
-	for idx, system := range systems {
+	systemsWithTemplateIDs := make([]System, 0)
+	for _, system := range systems {
 		templatedSystem, err := system.EnhanceWithTemplateID()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to map systems with Application Template ID")
 		}
-		systems[idx] = templatedSystem
+		fmt.Println(templatedSystem)
+		if templatedSystem.TemplateID != "" {
+			systemsWithTemplateIDs = append(systemsWithTemplateIDs, templatedSystem)
+		}
 	}
 
-	return systems, nil
+	return systemsWithTemplateIDs, nil
 }
 
 func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, tenant *model.BusinessTenantMapping) func(string) (uint64, error) {
