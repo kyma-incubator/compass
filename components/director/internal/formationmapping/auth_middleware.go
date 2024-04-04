@@ -362,7 +362,7 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 
 		if consumerType == consumer.User { // call with external token
 			if tntFromToken != fa.TenantID {
-				return false, http.StatusInternalServerError, errors.Errorf("external tenant from token with ID %q is not allowed to update formation assignment in tenant %q", tntFromToken, fa.TenantID)
+				return false, http.StatusInternalServerError, errors.Errorf("internal tenant from token with ID %q is not allowed to update formation assignment in tenant %q", tntFromToken, fa.TenantID)
 			}
 			if err := tx.Commit(); err != nil {
 				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")

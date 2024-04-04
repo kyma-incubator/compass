@@ -13,7 +13,6 @@ import (
 	mock_data "github.com/kyma-incubator/compass/tests/pkg/notifications/expectations-builders"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
 	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 )
@@ -26,7 +25,7 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 
 	ctx := context.Background()
 
-	tnt := tenant.TestTenants.GetIDByName(t, tenant.ApplicationsForRuntimeTenantName)
+	tnt := conf.TestConsumerAccountID
 
 	appName := "testAsyncApp"
 	appType := "async-app-type-1"
