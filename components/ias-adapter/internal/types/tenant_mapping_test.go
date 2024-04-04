@@ -26,8 +26,8 @@ var _ = Describe("Tenant Mapping Type", func() {
 					ApplicationURL: "localhost",
 				},
 				AssignedTenant: types.AssignedTenant{
-					UCLApplicationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
-					LocalTenantID:    "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+					AppID:         "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+					LocalTenantID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
 					Parameters: types.AssignedTenantParameters{
 						ClientID: "clientID",
 					},

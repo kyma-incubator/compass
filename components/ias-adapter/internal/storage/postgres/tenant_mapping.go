@@ -51,7 +51,7 @@ func (c Connection) ListTenantMappings(ctx context.Context, formationID string) 
 		if err := tenantMapping.AssignedTenant.SetConfiguration(ctx); err != nil {
 			return tenantMappings, errors.Newf("failed to set tenant mapping assigned tenant configuration: %w", err)
 		}
-		tenantMappings[tenantMapping.AssignedTenant.UCLApplicationID] = tenantMapping
+		tenantMappings[tenantMapping.AssignedTenant.AppID] = tenantMapping
 	}
 
 	return tenantMappings, nil
@@ -71,7 +71,7 @@ func tenantMappingFields(tenantMapping types.TenantMapping) ([]any, error) {
 	}
 	return []any{
 		tenantMapping.FormationID,
-		tenantMapping.AssignedTenant.UCLApplicationID,
+		tenantMapping.AssignedTenant.AppID,
 		string(tenantMappingBytes),
 	}, nil
 }

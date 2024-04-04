@@ -39,9 +39,9 @@ var _ = Describe("Tenant mappings service", func() {
 				ApplicationURL: "localhost",
 			},
 			AssignedTenant: types.AssignedTenant{
-				UCLApplicationID:   "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
-				UCLApplicationType: "test-app-type",
-				LocalTenantID:      "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				AppID:         "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+				AppNamespace:  "sap.test.namespace",
+				LocalTenantID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
 				Parameters: types.AssignedTenantParameters{
 					ClientID: "clientID",
 				},
@@ -71,7 +71,7 @@ var _ = Describe("Tenant mappings service", func() {
 
 	When("tenant mapping with S/4 participant is received", func() {
 		BeforeEach(func() {
-			tenantMapping.AssignedTenant.UCLApplicationType = types.S4ApplicationType
+			tenantMapping.AssignedTenant.AppNamespace = types.S4ApplicationNamespace
 			tenantMapping.AssignedTenant.Parameters.ClientID = ""
 			tenantMappingsStorage.On("ListTenantMappings", ctx, mock.Anything).Return(map[string]types.TenantMapping{}, nil)
 		})

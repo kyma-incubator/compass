@@ -138,7 +138,7 @@ func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, 
 	operation := tenantMapping.Operation
 	if operation != types.OperationUnassign ||
 		errors.Is(err, types.ErrInvalidFormationID) ||
-		errors.Is(err, types.ErrInvalidAssignedTenantID) {
+		errors.Is(err, types.ErrInvalidAssignedTenantAppID) {
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
