@@ -24,6 +24,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/k8s"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -55,7 +56,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		},
 	}
 
-	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "subscription-notifications-cn", -1)
+	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1)
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
@@ -96,6 +97,53 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		app1BaseURL := "http://e2e-test-app1-base-url"
 		app2BaseURL := "http://e2e-test-app2-base-url"
 
+		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
+		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
+		appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subscriptionConsumerSubaccountID
+		appTemplateInput.ApplicationInput.BaseURL = &app1BaseURL
+		appTemplateInput.ApplicationInput.LocalTenantID = nil
+		for i := range appTemplateInput.Placeholders {
+			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
+		}
+
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		require.NoError(stdT, err)
+		require.NotEmpty(stdT, appTmpl.ID)
+		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
+
+		selfRegLabelValue, ok := appTmpl.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
+		require.True(stdT, ok)
+		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl.ID)
+
+		deps, err := json.Marshal([]string{selfRegLabelValue, conf.ProviderDestinationConfig.Dependency})
+		require.NoError(stdT, err)
+		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
+		require.NoError(stdT, err)
+		response, err := httpClient.Do(depConfigureReq)
+		defer func() {
+			if err := response.Body.Close(); err != nil {
+				stdT.Logf("Could not close response body %s", err)
+			}
+		}()
+		require.NoError(stdT, err)
+		require.Equal(stdT, http.StatusOK, response.StatusCode)
+
+		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
+
+		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
+		subscription.CreateSubscription(t, conf.SubscriptionConfig, httpClient, appTmpl, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
+
+		actualAppPage := graphql.ApplicationPage{}
+		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+		require.NoError(t, err)
+
+		require.Len(t, actualAppPage.Data, 1)
+		require.Equal(t, appTmpl.ID, *actualAppPage.Data[0].ApplicationTemplateID)
+		app1 := *actualAppPage.Data[0]
+		t.Logf("app1 ID: %q", app1.ID)
+
 		t.Log("Create integration system")
 		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-subscription-notifications")
 		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, intSys)
@@ -113,68 +161,37 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
-		appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType1, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-		appTemplateInput.ApplicationInput.BaseURL = &app1BaseURL
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, oauthGraphQLClient, appTmpl)
-		require.NoError(stdT, err)
-		require.NotEmpty(stdT, appTmpl.ID)
-
-		t.Logf("Create application 1 from template %q", applicationType1)
-		appFromTmplSrc1 := fixtures.FixApplicationFromTemplateInput(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name")
-		appFromTmplSrc1GQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc1)
-		require.NoError(t, err)
-		createAppFromTmpl1Request := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrc1GQL)
-		app1 := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, createAppFromTmpl1Request, &app1)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, &app1)
-		require.NoError(t, err)
-		require.NotEmpty(t, app1.ID)
-		t.Logf("app1 ID: %q", app1.ID)
-
 		t.Logf("Create application template for type %q", applicationType2)
 		appTemplateInput = fixtures.FixApplicationTemplateWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
 		appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subscriptionConsumerSubaccountID
-		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
-		appTemplateInput.ApplicationInput.LocalTenantID = nil
-		for i := range appTemplateInput.Placeholders {
-			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
-		}
 		appTemplateInput.ApplicationInput.BaseURL = &app2BaseURL
-		appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, "", appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, "", appTmpl2)
+		appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl2)
 		require.NoError(t, err)
 
-		selfRegLabelValue, ok := appTmpl2.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
-		require.True(stdT, ok)
-		require.Contains(stdT, selfRegLabelValue, conf.SubscriptionConfig.SelfRegisterLabelValuePrefix+appTmpl2.ID)
+		// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
+		internalConsumerID := appTmpl2.ID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
+		certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
+		csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
+		t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, tenantAccessLevels)
 
-		deps, err := json.Marshal([]string{selfRegLabelValue, conf.ProviderDestinationConfig.Dependency})
-		require.NoError(stdT, err)
-		depConfigureReq, err := http.NewRequest(http.MethodPost, conf.ExternalServicesMockBaseURL+"/v1/dependencies/configure", bytes.NewBuffer(deps))
-		require.NoError(stdT, err)
-		response, err := httpClient.Do(depConfigureReq)
-		defer func() {
-			if err := response.Body.Close(); err != nil {
-				stdT.Logf("Could not close response body %s", err)
-			}
-		}()
-		require.NoError(stdT, err)
-		require.Equal(stdT, http.StatusOK, response.StatusCode)
+		var csmCreate graphql.CertificateSubjectMapping // needed so the 'defer' can be above the cert subject mapping creation
+		defer fixtures.CleanupCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, &csmCreate)
+		csmCreate = fixtures.CreateCertificateSubjectMapping(t, ctx, certSecuredGraphQLClient, csmInput)
 
-		subscriptionToken := token.GetClientCredentialsToken(t, ctx, conf.SubscriptionConfig.TokenURL+conf.TokenPath, conf.SubscriptionConfig.ClientID, conf.SubscriptionConfig.ClientSecret, claims.TenantFetcherClaimKey)
+		t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())
+		time.Sleep(conf.CertSubjectMappingResyncInterval)
 
-		defer subscription.BuildAndExecuteUnsubscribeRequest(t, appTmpl2.ID, appTmpl2.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, subscriptionConsumerTenantID, subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
-		subscription.CreateSubscription(t, conf.SubscriptionConfig, httpClient, appTmpl2, apiPath, subscriptionToken, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, true, conf.SubscriptionConfig.StandardFlow)
-
-		actualAppPage := graphql.ApplicationPage{}
-		getSrcAppReq := fixtures.FixGetApplicationsRequestWithPagination()
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID, getSrcAppReq, &actualAppPage)
+		t.Logf("Create application 2 from template %q", applicationType2)
+		appFromTmplSrc2 := fixtures.FixApplicationFromTemplateInput(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name")
+		appFromTmplSrc2GQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(appFromTmplSrc2)
 		require.NoError(t, err)
-
-		require.Len(t, actualAppPage.Data, 1)
-		require.Equal(t, appTmpl2.ID, *actualAppPage.Data[0].ApplicationTemplateID)
-		app2 := *actualAppPage.Data[0]
+		createAppFromTmplSecondRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrc2GQL)
+		app2 := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, createAppFromTmplSecondRequest, &app2)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, &app2)
+		require.NoError(t, err)
+		require.NotEmpty(t, app2.ID)
 		t.Logf("app2 ID: %q", app2.ID)
 
 		t.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, providerFormationTmplName)
@@ -189,7 +206,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			webhookType := graphql.WebhookTypeApplicationTenantMapping
 			webhookMode := graphql.WebhookModeSync
 			urlTemplate := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"subdomain\\\": \\\"{{ if eq .TargetApplication.Tenant.Type \\\"subaccount\\\"}}{{ .TargetApplication.Tenant.Labels.subdomain }}{{end}}\\\"}]}"
+			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"subdomain\\\": \\\"{{ if eq .TargetApplication.Tenant.Type \\\"subaccount\\\"}}{{ .TargetApplication.Tenant.Labels.subdomain }}{{end}}\\\"}], \\\"app-template\\\": \\\"{{ .TargetApplicationTemplate.Tenant.Labels}}\\\"}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
 			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, emptyHeaderTemplate)
