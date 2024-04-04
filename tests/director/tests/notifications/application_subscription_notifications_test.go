@@ -180,7 +180,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 		t.Logf("Create application template for type %q", applicationType2)
 		appTemplateInput = fixtures.FixApplicationTemplateWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-		//appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subscriptionConsumerSubaccountID
 		appTemplateInput.ApplicationInput.BaseURL = &app2BaseURL
 		appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
 		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTmpl2)
