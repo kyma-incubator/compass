@@ -14,7 +14,6 @@ import (
 )
 
 type DirectorConfig struct {
-	ORDExternalCertSecuredServiceURL            string `envconfig:"APP_ORD_EXTERNAL_CERT_SECURED_SERVICE_URL"`
 	DirectorUrl                                       string
 	DirectorInternalGatewayUrl                        string
 	HealthUrl                                         string `envconfig:"default=https://director.kyma.local/healthz"`
@@ -29,6 +28,7 @@ type DirectorConfig struct {
 	DirectorExternalCertFAAsyncStatusExternalTokenURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL"`
 	DirectorExternalCertFAAsyncResetStatusURL         string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
 	DirectorExternalCertFormationAsyncStatusURL       string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
+	ORDExternalCertSecuredServiceURL                  string `envconfig:"APP_ORD_EXTERNAL_CERT_SECURED_SERVICE_URL"`
 	SkipSSLValidation                                 bool   `envconfig:"default=false"`
 	ConsumerID                                        string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
 	UsernameAuthCfg                                   authenticator.Config

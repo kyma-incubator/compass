@@ -58,6 +58,7 @@ func NewHandler(config *Config) *Handler {
 // Destination Creator Service handlers + helper functions
 
 // CreateDestinations mocks creation of all types of destinations in both Destination Creator Service and Destination Service
+// using the APIs in the Destination Creator component
 func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -92,25 +93,13 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 	subaccountIDParamValue := routeVars[h.Config.DestinationAPIConfig.SubaccountIDParam]
 	instanceIDParamValue := routeVars[h.Config.DestinationAPIConfig.InstanceIDParam]
 
-	var destinationRequestBody DestinationRequestBody
-	switch destinationcreatorpkg.AuthType(authTypeResult.String()) {
-	case destinationcreatorpkg.AuthTypeNoAuth:
-		destinationRequestBody = &DesignTimeDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeBasic:
-		destinationRequestBody = &BasicDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeSAMLAssertion:
-		destinationRequestBody = &SAMLAssertionDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeClientCertificate:
-		destinationRequestBody = &ClientCertificateAuthDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeOAuth2ClientCredentials:
-		destinationRequestBody = &OAuth2ClientCredsDestRequestBody{}
-	default:
-		err := errors.Errorf("The provided destination authentication type: %s is invalid", authTypeResult.String())
+	destinationRequestBody, err := requestBodyToDestination(authTypeResult.String(), bodyBytes)
+	if err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
 		return
 	}
 
-	statusCode, err := h.createDestination(ctx, r, bodyBytes, destinationRequestBody, subaccountIDParamValue, instanceIDParamValue)
+	statusCode, err := h.createDestination(ctx, destinationRequestBody, subaccountIDParamValue, instanceIDParamValue)
 	if err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, fmt.Sprintf("An unexpected error occurred while creating %s destination", destinationRequestBody.GetDestinationType()), correlationID, statusCode)
 		return
@@ -119,6 +108,7 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 }
 
 // DeleteDestinations mocks deletion of destinations from both Destination Creator Service and Destination Service
+// using the APIs in the Destination Creator component
 func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -153,6 +143,7 @@ func (h *Handler) DeleteDestinations(writer http.ResponseWriter, r *http.Request
 }
 
 // CreateCertificate mocks creation of certificate in both Destination Creator Service and Destination Service
+// using the APIs in the Destination Creator component
 func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -221,6 +212,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 }
 
 // DeleteCertificate mocks deletion of certificate from both Destination Creator Service and Destination Service
+// using the APIs in the Destination Creator component
 func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -253,11 +245,8 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 	httputils.Respond(writer, http.StatusNoContent)
 }
 
-func (h *Handler) createDestination(ctx context.Context, r *http.Request, bodyBytes []byte, reqBody DestinationRequestBody, subaccountID, instanceID string) (int, error) {
+func (h *Handler) createDestination(ctx context.Context, reqBody DestinationRequestBody, subaccountID, instanceID string) (int, error) {
 	destinationTypeName := reqBody.GetDestinationType()
-	if err := json.Unmarshal(bodyBytes, &reqBody); err != nil {
-		return http.StatusInternalServerError, errors.Wrapf(err, "An error occurred while unmarshalling %s destination request body", destinationTypeName)
-	}
 
 	log.C(ctx).Infof("Validating %s destination request body...", destinationTypeName)
 	if err := reqBody.Validate(); err != nil {
@@ -300,6 +289,7 @@ func (h *Handler) CleanupDestinations(writer http.ResponseWriter, r *http.Reques
 	httputils.Respond(writer, http.StatusOK)
 }
 
+// PostDestination is an "internal/technical" handler for creating Destinations from E2E tests
 func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request) {
 	isMultiStatusCodeEnabled := false
 	ctx := req.Context()
@@ -333,26 +323,10 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 	}
 	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
-	var destinationRequestBody DestinationRequestBody
-	switch destinationcreatorpkg.AuthType(authTypeResult.String()) {
-	case destinationcreatorpkg.AuthTypeNoAuth:
-		destinationRequestBody = &DesignTimeDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeBasic:
-		destinationRequestBody = &BasicDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeSAMLAssertion:
-		destinationRequestBody = &SAMLAssertionDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeClientCertificate:
-		destinationRequestBody = &ClientCertificateAuthDestRequestBody{}
-	case destinationcreatorpkg.AuthTypeOAuth2ClientCredentials:
-		destinationRequestBody = &OAuth2ClientCredsDestRequestBody{}
-	default:
-		err := errors.Errorf("The provided destination authentication type: %s is invalid", authTypeResult.String())
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
-		return
-	}
 	var responses []PostResponse
 
-	if err := json.Unmarshal(data, &destinationRequestBody); err != nil {
+	destinationRequestBody, err := requestBodyToDestination(authTypeResult.String(), data)
+	if err != nil {
 		responses = append(responses, PostResponse{destinationName, http.StatusInternalServerError, "Unable to unmarshall destination"})
 		isMultiStatusCodeEnabled = true
 	}
@@ -401,6 +375,7 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 	writer.WriteHeader(http.StatusMultiStatus)
 }
 
+// DeleteDestination is an "internal/technical" handler for deleting Destinations from E2E tests
 func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -465,6 +440,7 @@ func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Reques
 
 // Destination Service handlers
 
+// FindDestinationByNameFromDestinationSvc finds a destination by name
 func (h *Handler) FindDestinationByNameFromDestinationSvc(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -497,7 +473,7 @@ func (h *Handler) FindDestinationByNameFromDestinationSvc(writer http.ResponseWr
 	}
 	log.C(ctx).Infof("Destination with name: %q and identifier: %q was found in the destination service", destinationNameParamValue, destinationIdentifier)
 
-	findAPIResponse, err := h.BuildFindAPIResponse(dest, r, subaccountID, serviceInstanceID)
+	findAPIResponse, err := h.buildFindAPIResponse(dest, r, subaccountID, serviceInstanceID)
 	if err != nil {
 		httphelpers.RespondWithError(ctx, writer, err, respErrorMsg, correlationID, http.StatusInternalServerError)
 	}
@@ -510,6 +486,7 @@ func (h *Handler) FindDestinationByNameFromDestinationSvc(writer http.ResponseWr
 	}
 }
 
+// GetSubaccountDestinationsPage gets a page of destinations
 func (h *Handler) GetSubaccountDestinationsPage(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	pageRaw := req.URL.Query().Get(pageQueryParameter)
@@ -576,7 +553,7 @@ func (h *Handler) GetSubaccountDestinationsPage(writer http.ResponseWriter, req 
 	}
 }
 
-func (h *Handler) BuildFindAPIResponse(dest destinationcreator.Destination, r *http.Request, subaccountID, instanceID string) (string, error) {
+func (h *Handler) buildFindAPIResponse(dest destinationcreator.Destination, r *http.Request, subaccountID, instanceID string) (string, error) {
 	if dest.GetType() == destinationcreator.SAMLAssertionDestinationType {
 		if usrHeader := r.Header.Get(httphelpers.UserTokenHeaderKey); usrHeader == "" {
 			return "", errors.New("when calling destination svc find API for SAML Assertion destination, the `X-user-token` header should be provided")
@@ -778,6 +755,7 @@ func (h *Handler) destinationsMapToSlice() []destinationcreator.Destination {
 	return dest
 }
 
+// GetSensitiveData mocks getting a sensitive data by destination name from Destination Service
 func (h *Handler) GetSensitiveData(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	destinationName := mux.Vars(req)["name"]
@@ -868,4 +846,36 @@ func respondWithHeader(ctx context.Context, writer http.ResponseWriter, logErrMs
 	log.C(ctx).Error(logErrMsg)
 	writer.WriteHeader(statusCode)
 	return
+}
+
+func requestBodyToDestination(authType string, bodyBytes []byte) (DestinationRequestBody, error) {
+	var destinationRequestBody DestinationRequestBody
+	switch destinationcreatorpkg.AuthType(authType) {
+	case destinationcreatorpkg.AuthTypeNoAuth:
+		destinationRequestBody = &DesignTimeDestRequestBody{}
+	case destinationcreatorpkg.AuthTypeBasic:
+		destinationRequestBody = &BasicDestRequestBody{}
+	case destinationcreatorpkg.AuthTypeSAMLAssertion:
+		destinationRequestBody = &SAMLAssertionDestRequestBody{}
+	case destinationcreatorpkg.AuthTypeClientCertificate:
+		destinationRequestBody = &ClientCertificateAuthDestRequestBody{}
+	case destinationcreatorpkg.AuthTypeOAuth2ClientCredentials:
+		destinationRequestBody = &OAuth2ClientCredsDestRequestBody{}
+	default:
+		return nil, errors.Errorf("The provided destination authentication type: %s is invalid", authType)
+	}
+
+	destinationTypeName := destinationRequestBody.GetDestinationType()
+	if err := json.Unmarshal(bodyBytes, &destinationRequestBody); err != nil {
+		return nil, errors.Wrapf(err, "An error occurred while unmarshalling %s destination request body", destinationTypeName)
+	}
+
+	fmt.Println("ALEX requestBodyToDestination")
+	empJSON1, err := json.MarshalIndent(destinationRequestBody, "", "  ")
+	if err != nil {
+		fmt.Println("err", err)
+	}
+	fmt.Printf("requestBodyToDestination \n %s\n", string(empJSON1))
+
+	return destinationRequestBody, nil
 }
