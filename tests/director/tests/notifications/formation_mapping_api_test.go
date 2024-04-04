@@ -544,6 +544,25 @@ func executeFAStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTT
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
+func executeFAStatusUpdateReqWithExternalToken(t *testing.T, client *http.Client, token, testConfig, formationID, formationAssignmentID string, expectedStatusCode int) {
+	reqBody := FormationAssignmentRequestBody{}
+	if testConfig != "" {
+		reqBody.Configuration = json.RawMessage(testConfig)
+	}
+	marshalBody, err := json.Marshal(reqBody)
+	require.NoError(t, err)
+
+	formationAssignmentAsyncStatusAPIExternalTokenEndpoint := resolveFAAsyncStatusAPIURLWithExternalToken(formationID, formationAssignmentID)
+	request, err := http.NewRequest(http.MethodPatch, formationAssignmentAsyncStatusAPIExternalTokenEndpoint, bytes.NewBuffer(marshalBody))
+	require.NoError(t, err)
+	request.Header.Add("Content-Type", "application/json")
+	request.Header.Set("Authorization", "Bearer "+token)
+
+	response, err := client.Do(request)
+	require.NoError(t, err)
+	require.Equal(t, expectedStatusCode, response.StatusCode)
+}
+
 func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSecuredHTTPClient *http.Client, formationID string, expectedStatusCode int) {
 	reqBody := FormationRequestBody{
 		State: "READY",
@@ -572,7 +591,7 @@ func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formatio
 func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, targetType graphql.FormationAssignmentType, sourceID string) string {
 	var formationAssignmentID string
 	for _, a := range assignmentsPage.Data {
-		if a.TargetType == targetType && a.Source == sourceID {
+		if a.TargetType == targetType && a.Source == sourceID && a.Target != sourceID {
 			formationAssignmentID = a.ID
 		}
 	}
@@ -593,6 +612,10 @@ func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *gr
 
 func resolveFAAsyncStatusAPIURL(formationID, formationAssignmentID string) string {
 	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncStatusURL, formationID, formationAssignmentID)
+}
+
+func resolveFAAsyncStatusAPIURLWithExternalToken(formationID, formationAssignmentID string) string {
+	return resolveStatusAPIURL(conf.DirectorExternalCertFAAsyncStatusExternalTokenURL, formationID, formationAssignmentID)
 }
 
 func resolveFAAsyncStatusResetAPIURL(formationID, formationAssignmentID string) string {

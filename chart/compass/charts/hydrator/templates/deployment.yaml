@@ -94,6 +94,12 @@ spec:
               value: {{ $config.authenticator.checkSuffix | quote }}
             {{- end }}
             {{- end }}
+            - name: APP_{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.name }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.authentication.trusted_issuers | quote }}
+            - name: APP_{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.name }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.authentication.attributes | quote }}
+            - name: APP_{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.name }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.authentication.checkSuffix | quote }}
             - name: APP_CSR_SUBJECT_COUNTRY
               value: {{ .Values.deployment.args.csrSubject.country | quote }}
             - name: APP_CSR_SUBJECT_ORGANIZATION
