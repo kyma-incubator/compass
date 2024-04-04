@@ -646,6 +646,50 @@ func TestAuthenticator_FormationAssignmentHandler(t *testing.T) {
 			expectedErrOutput:  "An unexpected error occurred while processing the request",
 		},
 		{
+			name:       "Authorization success: when caller is external token and the formation and FAs are in the tenant from the token",
+			transactFn: txGen.ThatSucceeds,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasConsumer(consumerUUID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", contextThatHasConsumer(consumerUUID), internalTntID).Return(fixResourceGroupBusinessTenantMapping(), nil)
+				return tenantRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.User)
+
+				return fixContextWithTenantAndConsumer(c, internalTntID, "")
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+		},
+		{
+			name:       "Authorization fail: when caller is external token and the formation and FAs are NOT in the tenant from the token",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", contextThatHasConsumer(consumerUUID), testFormationAssignmentID, testFormationID).Return(faWithSourceRuntimeAndTargetApp, nil)
+				return faSvc
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("Get", contextThatHasConsumer(consumerUUID), internalTntID).Return(fixResourceGroupBusinessTenantMapping(), nil)
+				return tenantRepo
+			},
+			contextFn: func() context.Context {
+				c := fixGetConsumer(consumerUUID, consumer.User)
+
+				return fixContextWithTenantAndConsumer(c, "different-tenant-id", "")
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request",
+		},
+		{
 			name:       "Authorization success: when caller is instance creator",
 			transactFn: txGen.ThatSucceeds,
 			faServiceFn: func() *automock.FormationAssignmentService {

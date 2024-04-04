@@ -57,8 +57,13 @@ var (
 		ConsumerID: "consumerID",
 		Type:       consumer.InstanceCreator,
 	}
+	externalTokenCons = consumer.Consumer{
+		ConsumerID: "consumerID",
+		Type:       consumer.User,
+	}
 	ctxWithConsumer                = consumer.SaveToContext(context.TODO(), cons)
 	ctxWithInstanceCreatorConsumer = consumer.SaveToContext(context.TODO(), instanceCreatorCons)
+	ctxWithExternalTokenConsumer   = consumer.SaveToContext(context.TODO(), externalTokenCons)
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {
