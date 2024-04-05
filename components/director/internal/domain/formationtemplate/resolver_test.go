@@ -70,7 +70,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			ExpectedError:              testErr,
 		},
 		{
-			Name: "Returns nil when formation template not found",
+			Name: "Returns error when formation template not found",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
