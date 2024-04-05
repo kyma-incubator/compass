@@ -7,16 +7,6 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
-	"github.com/rs/zerolog/log"
-)
-
-type AsyncProcessor struct {
-	TenantMappingsService TenantMappingsService
-	UCLService            UCLService
-}
-
-const (
-	locationHeader = "Location"
 )
 
 //go:generate mockery --name=TenantMappingsService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -31,7 +21,25 @@ type UCLService interface {
 	ReportStatus(ctx context.Context, url string, statusReport ucl.StatusReport) error
 }
 
+type AsyncProcessor struct {
+	TenantMappingsService TenantMappingsService
+	UCLService            UCLService
+}
+
+const locationHeader = "Location"
+
+var s4Config = &types.TenantMappingConfiguration{
+	Credentials: types.Credentials{
+		OutboundCommunicationCredentials: types.CommunicationCredentials{
+			OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
+				CorrelationIds: []string{types.S4SAPManagedCommunicationScenario},
+			},
+		},
+	},
+}
+
 func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping types.TenantMapping) {
+	log := logger.FromContext(ctx)
 	reverseAssignmentState := tenantMapping.AssignedTenant.ReverseAssignmentState
 	if tenantMapping.Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
@@ -54,16 +62,7 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 			}
 
 			if errors.Is(err, errors.S4CertificateNotFound) {
-				logger.FromContext(ctx).Info().Msgf("S/4 certificate not provided. Responding with CONFIG_PENDING.")
-				s4Config := &types.TenantMappingConfiguration{
-					Credentials: types.Credentials{
-						OutboundCommunicationCredentials: types.CommunicationCredentials{
-							OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
-								CorrelationIds: []string{types.S4SAPManagedCommunicationScenario},
-							},
-						},
-					},
-				}
+				log.Info().Msgf("S/4 certificate not provided. Responding with CONFIG_PENDING.")
 				p.reportStatus(ctx, ucl.StatusReport{State: types.StateConfigPending, Configuration: s4Config})
 				return
 			}
@@ -77,11 +76,9 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 }
 
 func (p AsyncProcessor) reportStatus(ctx context.Context, statusReport ucl.StatusReport) {
-	log := logger.FromContext(ctx)
-
 	statusReportURL := ctx.Value(locationHeader).(string)
 	if err := p.UCLService.ReportStatus(ctx, statusReportURL, statusReport); err != nil {
-		log.Error().Msgf("failed to report status to '%s': %s", statusReportURL, err)
+		logger.FromContext(ctx).Error().Msgf("failed to report status to '%s': %s", statusReportURL, err)
 	}
 }
 
