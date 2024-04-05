@@ -3,6 +3,9 @@ package operation_test
 import (
 	"database/sql"
 	"testing"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -103,4 +106,74 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 		// THEN
 		assert.Equal(t, expectedModel, opModel)
 	})
+}
+
+func TestConverter_ToGraphQL(t *testing.T) {
+	now := time.Now()
+	testCases := []struct {
+		Name                 string
+		Input                *model.Operation
+		Expected             *graphql.Operation
+		ExpectedErrorMessage string
+	}{
+		{
+			Name:     "Success",
+			Input:    fixOperationModelWithIDAndTimestamp("operation-id", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, errorMsg, 1, &now),
+			Expected: fixOperationGraphqlWithIDAndTimestamp("operation-id", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, &now),
+		},
+		{
+			Name:                 "Error - invalid operation type",
+			Input:                fixOperationModelWithIDAndTimestamp("operation-id", "invalid-op-type", model.OperationStatusScheduled, errorMsg, 1, &now),
+			Expected:             &graphql.Operation{},
+			ExpectedErrorMessage: "unknown operation type invalid-op-type",
+		},
+		{
+			Name:                 "Error - invalid operation status",
+			Input:                fixOperationModelWithIDAndTimestamp("operation-id", model.OperationTypeOrdAggregation, "invalid-op-status", errorMsg, 1, &now),
+			Expected:             &graphql.Operation{},
+			ExpectedErrorMessage: "unknown operation status invalid-op-status",
+		},
+		{
+			Name:     "Nil",
+			Input:    nil,
+			Expected: nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := operation.NewConverter()
+			res, err := converter.ToGraphQL(testCase.Input)
+
+			if testCase.ExpectedErrorMessage != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMessage)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.Expected, res)
+			}
+		})
+	}
+}
+
+func TestConverter_MultipleToGraphQL(t *testing.T) {
+	now := time.Now()
+
+	// GIVEN
+	input := []*model.Operation{
+		fixOperationModelWithIDAndTimestamp("operation-id-1", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, errorMsg, 1, &now),
+		fixOperationModelWithIDAndTimestamp("operation-id-2", model.OperationTypeOrdAggregation, model.OperationStatusScheduled, errorMsg, 1, &now),
+		nil,
+	}
+	expected := []*graphql.Operation{
+		fixOperationGraphqlWithIDAndTimestamp("operation-id-1", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, &now),
+		fixOperationGraphqlWithIDAndTimestamp("operation-id-2", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, &now),
+	}
+
+	// WHEN
+	converter := operation.NewConverter()
+	res, _ := converter.MultipleToGraphQL(input)
+
+	// then
+	assert.Equal(t, expected, res)
 }

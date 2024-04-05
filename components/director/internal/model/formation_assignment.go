@@ -87,12 +87,14 @@ const (
 
 // SupportedFormationAssignmentStates contains the supported formation assignment states
 var SupportedFormationAssignmentStates = map[string]bool{
-	string(InitialAssignmentState):       true,
-	string(ReadyAssignmentState):         true,
-	string(ConfigPendingAssignmentState): true,
-	string(CreateErrorAssignmentState):   true,
-	string(DeletingAssignmentState):      true,
-	string(DeleteErrorAssignmentState):   true,
+	string(InitialAssignmentState):              true,
+	string(ReadyAssignmentState):                true,
+	string(CreateReadyFormationAssignmentState): true,
+	string(DeleteReadyFormationAssignmentState): true,
+	string(ConfigPendingAssignmentState):        true,
+	string(CreateErrorAssignmentState):          true,
+	string(DeletingAssignmentState):             true,
+	string(DeleteErrorAssignmentState):          true,
 }
 
 // ResynchronizableFormationAssignmentStates is an array of supported assignment states for resynchronization

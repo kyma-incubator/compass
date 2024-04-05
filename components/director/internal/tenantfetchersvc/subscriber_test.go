@@ -64,7 +64,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Succeeds",
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
 				provisioner := &automock.TenantProvisioner{}
-				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant).Return(nil).Once()
+				provisioner.On("ProvisionMissingTenants", context.TODO(), &regionalTenant).Return(nil).Once()
 				return provisioner
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
@@ -78,7 +78,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns error when tenant creation fails",
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
 				provisioner := &automock.TenantProvisioner{}
-				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant).Return(testError).Once()
+				provisioner.On("ProvisionMissingTenants", context.TODO(), &regionalTenant).Return(testError).Once()
 				return provisioner
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
@@ -91,7 +91,7 @@ func TestSubscribeRegionalTenant(t *testing.T) {
 			Name: "Returns error when cannot subscribe tenant",
 			TenantProvisionerFn: func() *automock.TenantProvisioner {
 				provisioner := &automock.TenantProvisioner{}
-				provisioner.On("ProvisionTenants", context.TODO(), &regionalTenant).Return(nil).Once()
+				provisioner.On("ProvisionMissingTenants", context.TODO(), &regionalTenant).Return(nil).Once()
 				return provisioner
 			},
 			DirectorClient: func() *automock.DirectorGraphQLClient {
@@ -181,6 +181,7 @@ func TestUnSubscribeRegionalTenant(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, provisioner, directorClient)
 
 			subscriber := tenantfetchersvc.NewSubscriber(directorClient, provisioner)
+
 			// WHEN
 			err := subscriber.Unsubscribe(context.TODO(), &testCase.TenantSubscriptionRequest)
 

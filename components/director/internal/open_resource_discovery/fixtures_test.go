@@ -69,6 +69,7 @@ const (
 	webhookID                = "webhookID"
 
 	cursor                    = "cursor"
+	custom                    = "custom"
 	apiImplementationStandard = "cff:open-service-broker:v2"
 	correlationIDs            = `["foo.bar.baz:foo:123456","foo.bar.baz:bar:654321"]`
 	partners                  = `["microsoft:vendor:Microsoft:"]`
@@ -81,7 +82,6 @@ const (
 	applicationTypeLabelValue = "customType"
 
 	entityTypeID     = "entity-type-id"
-	ordID            = "com.compass.v1"
 	level            = "aggregate"
 	title            = "BusinessPartner"
 	publicVisibility = "public"
@@ -89,11 +89,928 @@ const (
 	releaseStatus    = "active"
 )
 
+const ordDocument = `{
+   "$schema":"./spec/v1/generated/Document.schema.json",
+   "openResourceDiscovery":"1.2",
+   "policyLevel": "sap:core:v1",
+   "description":"Test Document",
+   "describedSystemInstance":{
+      "baseUrl":"%s",
+      "labels":{
+         "label-key-1":[
+            "label-value-1"
+         ]
+      }
+   },
+   "vendors": [
+     {
+       "ordId":"sap:vendor:SAP:",
+       "title": "Test vendor"
+     }
+   ],
+   "packages":[
+      {
+         "ordId":"ns:package:PACKAGE_ID:v1",
+         "vendor":"sap:vendor:SAP:",
+         "title":"PACKAGE 1 TITLE",
+         "shortDescription":"Short description",
+         "description":"lorem ipsum dolor set",
+         "version":"1.1.2",
+         "packageLinks":[
+            {
+               "type":"terms-of-service",
+               "url":"https://example.com/en/legal/terms-of-use.html"
+            },
+            {
+               "type":"client-registration",
+               "url":"https://ui/public/showRegisterForm"
+            }
+         ],
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://testing/relative"
+            }
+         ],
+         "licenseType":"AAL",
+         "tags":[
+            "testTag"
+         ],
+         "countries":[
+            "BG",
+            "US"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-val"
+            ],
+            "pkg-label":[
+               "label-val"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "policyLevel":"sap:core:v1",
+         "partOfProducts":[
+            "sap:product:id:"
+         ],
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ]
+      }
+   ],
+   "entityTypes":[
+      {
+         "ordId":"ns:entityType:ENTITYTYPE_ID:v1",
+         "localId":"BusinessPartner",
+         "level":"aggregate",
+         "title":"ENTITYTYPE 1 TITLE",
+         "shortDescription":"short desc",
+         "description":"lorem ipsum dolor set",
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "visibility":"public",
+         "version":"1.1.2",
+         "releaseStatus":"active",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://testing/relative"
+            }
+         ],
+         "tags":[
+            "testTag"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-val"
+            ],
+            "pkg-label":[
+               "label-val"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "policyLevel":"sap:core:v1",
+         "partOfProducts":[
+            "sap:product:id:"
+         ]
+		 	 
+      }
+   ],
+   "consumptionBundles":[
+      {
+         "title":"BUNDLE TITLE",
+         "description":"Description for bundle",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
+         "shortDescription":"Short description bundle 1",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "version": "1.0.0",
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://testing/relative"
+            }
+         ],
+         "correlationIds":[
+            "sap.s4:communicationScenario:SAP_COM_0001",
+            "sap.s4:communicationScenario:SAP_COM_0002"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-value-1",
+               "label-value-2"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "credentialExchangeStrategies":[
+            {
+               "callbackUrl":"https://credentials/relative",
+               "customType":"ns:credential-exchange:v1",
+               "customDescription":"custom description 1",
+               "type":"custom"
+            },
+            {
+               "callbackUrl":"https://example.com/credentials",
+               "customType":"ns:credential-exchange2:v3",
+               "customDescription":"custom description 2",
+               "type":"custom"
+            }
+         ]
+      },
+      {
+         "title":"BUNDLE TITLE 2",
+         "ordId":"ns:consumptionBundle:BUNDLE_ID:v2",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "version": "2.0.0",
+         "credentialExchangeStrategies":[
+            {
+               "callbackUrl":"https://credentials/relative",
+               "customType":"ns:credential-exchange:v1",
+               "customDescription":"custom description 1",
+               "type":"custom"
+            },
+            {
+               "callbackUrl":"http://example.com/credentials",
+               "customType":"ns:credential-exchange2:v3",
+               "customDescription":"custom description 2",
+               "type":"custom"
+            }
+         ],
+         "correlationIds":[
+            "sap.s4:communicationScenario:SAP_COM_0001",
+            "sap.s4:communicationScenario:SAP_COM_0002"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-value-1",
+               "label-value-2"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://testing/relative"
+            }
+         ]
+		 
+      }
+   ],
+   "products":[
+      {
+         "ordId":"sap:product:id:",
+         "title":"PRODUCT TITLE",
+         "description":"Description for product",
+         "shortDescription":"Short description for product",
+         "vendor":"sap:vendor:SAP:",
+         "parent":"ns:product:id2:",
+         "correlationIds":[
+            "foo.bar.baz:foo:123456",
+            "foo.bar.baz:bar:654321"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-value-1",
+               "label-value-2"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         }
+		 
+      }
+   ],
+   "apiResources":[
+      {
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "title":"API TITLE",
+         "description":"Description API 1",
+         "lastUpdate": "2024-02-19T15:47:04+00:00",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "ordId":"ns:apiResource:API_ID:v2",
+         "shortDescription":"Short description for API",
+         "systemInstanceAware":true,
+         "apiProtocol":"odata-v2",
+         "tags":[
+            "apiTestTag"
+         ],
+         "countries":[
+            "BG",
+            "US"
+         ],
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://testing/relative"
+            }
+         ],
+         "apiResourceLinks":[
+            {
+               "type":"console",
+               "url":"https://example.com/shell/discover"
+            },
+            {
+               "type":"console",
+               "url":"https://shell/discover/relative"
+            }
+         ],
+         "releaseStatus":"active",
+         "changelogEntries":[
+            {
+               "date":"2020-04-29",
+               "description":"loremipsumdolorsitamet",
+               "releaseStatus":"active",
+               "url":"https://example.com/changelog/v1",
+               "version":"1.0.0"
+            }
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-value-1",
+               "label-value-2"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "visibility":"public",
+         "disabled":true,
+         "partOfProducts":[
+            "sap:product:id:"
+         ],
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ],
+         "implementationStandard":"cff:open-service-broker:v2",
+         "extensible":{
+            "supported":"automatic",
+            "description":"Please find the extensibility documentation"
+         },
+         "resourceDefinitions":[
+            {
+               "type":"openapi-v3",
+               "mediaType":"application/json",
+               "url":"/external-api/spec/flapping?format=json",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}"
+                  }
+               ]
+            },
+            {
+               "type":"openapi-v3",
+               "mediaType":"text/yaml",
+               "url":"/external-api/spec?format=json",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}"
+                  }
+               ]
+            },
+            {
+               "type":"edmx",
+               "mediaType":"application/xml",
+               "url":"/external-api/spec?format=yaml",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}"
+                  }
+               ]
+            }
+         ],
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1",
+               "defaultEntryPoint":"https://exmaple.com/test/v1"
+            },
+            {
+               "defaultEntryPoint":"https://exmaple.com/test/v1",
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
+            }
+         ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "odata",
+                     "entitySetName": "A_OperationalAcctgDocItemCube"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:WorkforcePerson:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:WorkForcePersonView_v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:sap.odm.JobDetails_v1"
+                  }
+               ]
+            }
+         ],
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
+         "version":"2.1.2"
+		 
+      }
+   ],
+   "eventResources":[
+      {
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "title":"EVENT TITLE",
+         "description":"Description Event 1",
+         "ordId":"ns:eventResource:EVENT_ID:v2",
+         "shortDescription":"Short description for Event",
+         "systemInstanceAware":true,
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "changelogEntries":[
+            {
+               "date":"2020-04-29",
+               "description":"loremipsumdolorsitamet",
+               "releaseStatus":"active",
+               "url":"https://example.com/changelog/v1",
+               "version":"1.0.0"
+            }
+         ],
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://example.com/2018/04/11/testing/relative"
+            }
+         ],
+         "tags":[
+            "eventTestTag"
+         ],
+         "countries":[
+            "BG",
+            "US"
+         ],
+         "releaseStatus":"active",
+         "labels":{
+            "label-key-1":[
+               "label-value-1",
+               "label-value-2"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "visibility":"public",
+         "disabled":true,
+         "partOfProducts":[
+            "sap:product:id:"
+         ],
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ],
+         "extensible":{
+            "supported":"automatic",
+            "description":"Please find the extensibility documentation"
+         },
+         "resourceDefinitions":[
+            {
+               "type":"asyncapi-v2",
+               "mediaType":"application/json",
+               "url":"/external-api/spec?format=xml",
+               "accessStrategies":[
+                  {
+                     "type":"{{ .specsAccessStrategy }}"
+                  }
+               ]
+            }
+         ],
+         "entityTypeMappings":[
+            {
+               "apiModelSelectors": [
+                  {
+                     "type": "json-pointer",
+                     "jsonPointer": "#/components/messages/sap_odm_finance_costobject_CostCenter_Created_v1/payload"
+                  }
+               ],
+               "entityTypeTargets": [
+                  {
+                     "ordId": "sap.odm:entityType:CostCenter:v1"
+                  },
+                  {
+                     "correlationId": "sap.s4:csnEntity:CostCenter_v1"
+                  }
+               ]
+            }
+         ],         
+         "partOfConsumptionBundles":[
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v1"
+            },
+            {
+               "ordId":"ns:consumptionBundle:BUNDLE_ID:v2"
+            }
+         ],
+         "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID:v1",
+         "version":"2.1.2"
+		 
+      }
+   ],
+	"capabilities":[
+    {
+      "ordId": "sap.s4:capability:CAPABILITY_ID:v1",
+      "title": "CAPABILITY TITLE",
+      "type": "sap.mdo:mdi-capability:v1",
+      "shortDescription": "Short description of capability",
+      "description": "Optional, longer description",
+      "version": "1.0.0",
+      "lastUpdate": "2023-01-26T15:47:04+00:00",
+      "releaseStatus": "active",
+      "visibility": "public",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
+      "definitions": [
+        {
+          "type": "sap.mdo:mdi-capability-definition:v1",
+          "mediaType": "application/json",
+          "url": "/external-api/spec?format=json", 
+          "accessStrategies": [
+            {
+                "type":"{{ .specsAccessStrategy }}"
+			}
+          ]
+        }
+      ]
+    }
+  ],
+	"integrationDependencies": [
+    {
+      "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID:v2",
+      "version": "2.2.3",
+      "title": "INTEGRATION DEPENDENCY TITLE",
+      "shortDescription": "Short description of an integration dependency",
+      "description": "longer description of an integration dependency",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
+      "correlationIds": [
+		 "sap.s4:communicationScenario:SAP_COM_123"
+      ],
+      "lastUpdate": "2023-08-03T10:14:26.941Z",
+      "visibility": "public",
+      "releaseStatus": "active",
+	  "mandatory": true,
+      "aspects": [
+        {
+          "title": "ASPECT TITLE",
+		  "description": "Aspect desc",
+          "mandatory": true,
+          "eventResources": [
+            {
+              "ordId": "ns1:eventResource:ASPECT_EVENT_RESOURCE_ID:v1",
+              "subset": [
+                {
+                  "eventType": "sap.billing.sb.Subscription.Created.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Updated.v1"
+                },
+                {
+                  "eventType": "sap.billing.sb.Subscription.Deleted.v1"
+                }
+              ]
+            }
+          ],
+		  "apiResources": [
+            {
+              "ordId": "ns:apiResource:API_ID:v2",
+              "minVersion": "2.3.0"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+   "dataProducts": [
+      {
+      "ordId": "ns:dataProduct:DATA_PRODUCT_ID:v1",
+      "localId": "Customer",
+      "correlationIds": [
+        "sap.xref:foo:bar"
+      ],
+      "title": "DATA PRODUCT TITLE",
+      "shortDescription": "Short description of Data Product",
+      "description": "Long description for a public Data Product resource",
+      "partOfPackage": "ns:package:PACKAGE_ID:v1",
+      "version": "1.2.3",
+      "visibility": "public",
+      "releaseStatus": "deprecated",
+      "disabled": false,
+      "lastUpdate": "2020-12-08T15:47:04+00:00",
+      "deprecationDate": "2020-12-08T15:47:04+00:00",
+      "sunsetDate": "2022-01-08T15:47:04+00:00",
+      "successors": [
+        "sap.xref:dataProduct:Customer:v2"
+      ],
+      "type": "base",
+      "category": "business-object",
+      "entityTypes": ["ns:entityType:ENTITYTYPE_ID:v1"],
+      "inputPorts": [
+        {
+          "ordId": "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID:v2"
+        }
+      ],
+      "outputPorts": [
+        {
+          "ordId": "ns:apiResource:API_ID:v2"
+        }
+      ],
+      "responsible": "sap:ach:CIC-DP-CO",
+      "dataProductLinks": [
+		{
+  			"type": "support",
+  			"url": "https://support.sap.com/CIC_DP_RT/issue/"
+		}
+	  ],
+      "links": [
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle1",
+		   "url":"https://example.com/2018/04/11/testing/"
+		},
+		{
+		   "description":"loremipsumdolornem",
+		   "title":"LinkTitle2",
+		   "url":"https://example.com/2018/04/11/testing/relative"
+		}
+      ],
+      "industry": [
+		"Automotive",
+		"Banking",
+		"Chemicals"
+	  ],
+      "lineOfBusiness": [
+		"Finance",
+		"Sales"
+	  ],
+      "tags": [
+		"testTag"
+	  ],
+      "labels": {
+		"label-key-1": [
+		   "label-val"
+		],
+		"pkg-label": [
+		   "label-val"
+		]
+	 },
+	 "documentationLabels": {
+		"Documentation label key": [
+		   "Markdown Documentation with links",
+		   "With multiple values"
+		]
+	 },
+     "policyLevel": "sap:core:v1",
+     "systemInstanceAware": true
+    }
+   ],
+	"tombstones": [
+     { 
+       "ordId": "sap.xref:package:SomePackage:v1",
+       "removalDate": "2025-12-02T14:12:59Z"
+     }
+    ]
+}`
+
+const ordDocumentWithDuplicates = `{
+   "$schema":"./spec/v1/generated/Document.schema.json",
+   "openResourceDiscovery":"1.8",
+   "policyLevel": "sap:core:v1",
+   "description":"Test Document",
+   "describedSystemInstance":{
+      "baseUrl":"%s",
+      "labels":{
+         "label-key-1":[
+            "label-value-1"
+         ]
+      }
+   },
+   "packages":[
+      {
+         "ordId":"ns:package:PACKAGE_ID:v1",
+         "title":"PACKAGE 1 TITLE",
+         "shortDescription":"Short description",
+         "description":"lorem ipsum dolor set",
+         "version":"1.1.2",
+         "licenseType":"AAL",
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ]
+      }
+   ],
+   "apiResources":[
+      {
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "title":"API TITLE",
+         "description":"Description API 1",
+         "lastUpdate": "2024-02-19T15:47:04+00:00",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "ordId":"ns:apiResource:API_ID:v2",
+         "shortDescription":"Short description for API",
+         "systemInstanceAware":true,
+         "apiProtocol":"odata-v2",
+         "releaseStatus":"active",
+         "visibility":"public",
+         "version":"2.1.2"
+      },
+      {
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "title":"API TITLE",
+         "description":"Description API 1",
+         "lastUpdate": "2024-02-19T15:47:04+00:00",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "ordId":"ns:apiResource:API_ID:v2",
+         "shortDescription":"Short description for API 2",
+         "systemInstanceAware":true,
+         "apiProtocol":"odata-v2",
+         "releaseStatus":"active",
+         "visibility":"public",
+         "version":"2.1.2"
+      }
+   ]
+}`
+
+const ordDocumentAPIHasUnknownReference = `{
+   "$schema":"./spec/v1/generated/Document.schema.json",
+   "openResourceDiscovery":"1.8",
+   "policyLevel": "sap:core:v1",
+   "description":"Test Document",
+   "describedSystemInstance":{
+      "baseUrl":"%s",
+      "labels":{
+         "label-key-1":[
+            "label-value-1"
+         ]
+      }
+   },
+   "packages":[
+      {
+         "ordId":"ns:package:PACKAGE_ID:v1",
+         "title":"PACKAGE 1 TITLE",
+         "shortDescription":"Short description",
+         "description":"lorem ipsum dolor set",
+         "version":"1.1.2",
+         "licenseType":"AAL",
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ]
+      }
+   ],
+   "apiResources":[
+      {
+         "partOfPackage":"ns:package:PACKAGE_ID_UNKNOWN:v1",
+         "title":"API TITLE",
+         "description":"Description API 1",
+         "lastUpdate": "2024-02-19T15:47:04+00:00",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "ordId":"ns:apiResource:API_ID:v2",
+         "shortDescription":"Short description for API",
+         "systemInstanceAware":true,
+         "apiProtocol":"odata-v2",
+         "releaseStatus":"active",
+         "visibility":"public",
+         "version":"2.1.2"
+      }
+   ]
+}`
+
+const ordDocumentWithWrongBaseURL = `{
+   "$schema":"./spec/v1/generated/Document.schema.json",
+   "openResourceDiscovery":"1.8",
+   "policyLevel": "sap:core:v1",
+   "description":"Test Document",
+   "describedSystemInstance":{
+      "baseUrl": "%s",
+      "labels":{
+         "label-key-1":[
+            "label-value-1"
+         ]
+      }
+   },
+   "packages":[
+      {
+         "ordId":"ns:package:PACKAGE_ID:v1",
+         "title":"PACKAGE 1 TITLE",
+         "shortDescription":"Short description",
+         "description":"lorem ipsum dolor set",
+         "version":"1.1.2",
+         "licenseType":"AAL",
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ]
+      }
+   ],
+   "apiResources":[
+      {
+         "partOfPackage":"ns:package:PACKAGE_ID:v1",
+         "title":"API TITLE",
+         "description":"Description API 1",
+         "lastUpdate": "2024-02-19T15:47:04+00:00",
+         "entryPoints":[
+            "https://exmaple.com/test/v1",
+            "https://exmaple.com/test/v2"
+         ],
+         "ordId":"ns:apiResource:API_ID:v2",
+         "shortDescription":"Short description for API",
+         "systemInstanceAware":true,
+         "apiProtocol":"odata-v2",
+         "releaseStatus":"active",
+         "visibility":"public",
+         "version":"2.1.2"
+      }
+   ]
+}`
+
+var validationResultsErrorSeverity = []ord.ValidationResult{
+	{Code: "code", Path: []string{"apiResources", "0", "title"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"eventResources", "0", "shortDescription"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"entityTypes", "0", "description"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"capabilities", "0", "ordId"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"dataProducts", "0", "title"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"integrationDependencies", "0", "visibility"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"vendors", "0", "title"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"products", "0", "description"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"packages", "0", "licenseType"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"consumptionBundles", "0", "title"}, Severity: ord.ErrorSeverity, Message: ""},
+	{Code: "code", Path: []string{"tombstones", "0", "ordId"}, Severity: ord.ErrorSeverity, Message: ""},
+}
+
+var validationErrorsErrorSeverity = []*ord.ValidationError{
+	{OrdID: "ns:apiResource:API_ID:v2", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "ns:eventResource:EVENT_ID:v2", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "ns:entityType:ENTITYTYPE_ID:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "sap.s4:capability:CAPABILITY_ID:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "ns:dataProduct:DATA_PRODUCT_ID:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "ns1:integrationDependency:INTEGRATION_DEPENDENCY_ID:v2", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "sap:vendor:SAP:", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "sap:product:id:", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "ns:package:PACKAGE_ID:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "ns:consumptionBundle:BUNDLE_ID:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+	{OrdID: "sap.xref:package:SomePackage:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
+}
+
+var validationResultsWarningSeverity = []ord.ValidationResult{
+	{Code: "code", Path: []string{"apiResources", "0", "lastUpdate"}, Severity: ord.WarningSeverity},
+}
+
+var validationErrorsWarningSeverity = []*ord.ValidationError{
+	{OrdID: "ns:apiResource:API_ID:v2", Severity: ord.WarningSeverity, Type: "code", Description: ""},
+}
+
+var validationErrorDuplicateResources = []*ord.ValidationError{
+	{OrdID: "ns:apiResource:API_ID:v2", Severity: ord.ErrorSeverity, Type: "sap-ord-duplicate-resource", Description: "duplicate api"},
+}
+
+var validationErrorUnknownReference = []*ord.ValidationError{
+	{OrdID: "ns:apiResource:API_ID:v2", Severity: ord.ErrorSeverity, Type: "sap-ord-unknown-reference", Description: "The api has a reference to unknown package \"ns:package:PACKAGE_ID_UNKNOWN:v1\""},
+}
+
+var validationErrorMissingBaseURL = []*ord.ValidationError{
+	{OrdID: "", Severity: ord.ErrorSeverity, Type: "sap-ord-no-base-url", Description: "no baseURL was provided neither from /well-known URL, nor from config, nor from describedSystemInstance"},
+}
+
+var validationErrorMismatchedBaseURL = []*ord.ValidationError{
+	{OrdID: "", Severity: ord.ErrorSeverity, Type: "sap-ord-baseUrl-mismatch", Description: "describedSystemInstance should be the same as the one providing the documents - https://differentbase.com : http://test.com:8080"},
+}
+
 var (
 	appID                = "testApp"
 	appTemplateVersionID = "testAppTemplateVersionID"
 	appTemplateID        = "testAppTemplate"
-	policyLevel          = "sap:core:v1"
+	policyLevelSapCore   = "sap:core:v1"
 	customPolicyLevel    = "sap:core:v1"
 	uidSvc               = uid.NewService()
 	packageLinksFormat   = removeWhitespace(`[
@@ -453,41 +1370,41 @@ func fixSanitizedStaticORDDocument() *ord.Document {
 }
 
 func sanitizeResources(doc *ord.Document) {
-	doc.Packages[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.Packages[0].PolicyLevel = str.Ptr(policyLevelSapCore)
 
-	doc.APIResources[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.APIResources[0].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.APIResources[0].Tags = json.RawMessage(`["testTag","apiTestTag"]`)
 	doc.APIResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
 	doc.APIResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.APIResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.APIResources[0].Labels = json.RawMessage(mergedLabels)
 
-	doc.APIResources[1].PolicyLevel = str.Ptr(policyLevel)
+	doc.APIResources[1].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.APIResources[1].Tags = json.RawMessage(`["testTag","ZGWSAMPLE"]`)
 	doc.APIResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
 	doc.APIResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.APIResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.APIResources[1].Labels = json.RawMessage(mergedLabels)
 
-	doc.EventResources[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.EventResources[0].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.EventResources[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	doc.EventResources[0].Countries = json.RawMessage(`["BG","EN","US"]`)
 	doc.EventResources[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.EventResources[0].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.EventResources[0].Labels = json.RawMessage(mergedLabels)
 
-	doc.EventResources[1].PolicyLevel = str.Ptr(policyLevel)
+	doc.EventResources[1].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.EventResources[1].Tags = json.RawMessage(`["testTag","eventTestTag2"]`)
 	doc.EventResources[1].Countries = json.RawMessage(`["BG","EN","BR"]`)
 	doc.EventResources[1].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
 	doc.EventResources[1].Industry = json.RawMessage(`["Automotive","Banking","Chemicals"]`)
 	doc.EventResources[1].Labels = json.RawMessage(mergedLabels)
 
-	doc.EntityTypes[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.EntityTypes[0].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.EntityTypes[0].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	doc.EntityTypes[0].Labels = json.RawMessage(mergedLabels)
 
-	doc.EntityTypes[1].PolicyLevel = str.Ptr(policyLevel)
+	doc.EntityTypes[1].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.EntityTypes[1].Tags = json.RawMessage(`["testTag","eventTestTag"]`)
 	doc.EntityTypes[1].Labels = json.RawMessage(mergedLabels)
 
@@ -501,7 +1418,7 @@ func sanitizeResources(doc *ord.Document) {
 	doc.IntegrationDependencies[1].Tags = json.RawMessage(`["testTag","integrationDependencyTestTag"]`)
 	doc.IntegrationDependencies[1].Labels = json.RawMessage(mergedLabels)
 
-	doc.DataProducts[0].PolicyLevel = str.Ptr(policyLevel)
+	doc.DataProducts[0].PolicyLevel = str.Ptr(policyLevelSapCore)
 	doc.DataProducts[0].Tags = json.RawMessage(`["testTag","dataProductTestTag"]`)
 	doc.DataProducts[0].Labels = json.RawMessage(mergedLabels)
 	doc.DataProducts[0].LineOfBusiness = json.RawMessage(`["Finance","Sales"]`)
@@ -520,7 +1437,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 			Tags:                json.RawMessage(tags),
 			DocumentationLabels: json.RawMessage(documentLabels),
 		},
-		PolicyLevel: str.Ptr(policyLevel),
+		PolicyLevel: str.Ptr(policyLevelSapCore),
 		Packages: []*model.PackageInput{
 			{
 				OrdID:               packageORDID,
@@ -836,7 +1753,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Visibility:          "public",
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				PolicyLevel:         str.Ptr(policyLevel),
+				PolicyLevel:         str.Ptr(policyLevelSapCore),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
 				DeprecationDate:     nil,
@@ -862,7 +1779,7 @@ func fixORDDocumentWithBaseURL(providedBaseURL string) *ord.Document {
 				Visibility:          "public",
 				Links:               json.RawMessage(fmt.Sprintf(linksFormat, providedBaseURL)),
 				PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
-				PolicyLevel:         str.Ptr(policyLevel),
+				PolicyLevel:         str.Ptr(policyLevelSapCore),
 				ReleaseStatus:       "active",
 				SunsetDate:          nil,
 				DeprecationDate:     nil,
@@ -1314,7 +2231,7 @@ func fixPackages() []*model.Package {
 			Countries:           json.RawMessage(`["BG","EN"]`),
 			Labels:              json.RawMessage(packageLabels),
 			DocumentationLabels: json.RawMessage(documentLabels),
-			PolicyLevel:         str.Ptr(policyLevel),
+			PolicyLevel:         str.Ptr(policyLevelSapCore),
 			PartOfProducts:      json.RawMessage(fmt.Sprintf(`["%s"]`, productORDID)),
 			LineOfBusiness:      json.RawMessage(`["Finance","Sales"]`),
 			Industry:            json.RawMessage(`["Automotive","Banking","Chemicals"]`),
@@ -1349,33 +2266,6 @@ func fixBundlesWithCredentialExchangeStrategies() []*model.Bundle {
 	bundles := fixBundles()
 	bundles[0].CredentialExchangeStrategies = json.RawMessage(credentialExchangeStrategiesBasic)
 	return bundles
-}
-
-func fixBundleCreateInput() []*model.BundleCreateInput {
-	return []*model.BundleCreateInput{
-		{
-			Name:                "BUNDLE TITLE",
-			Description:         str.Ptr("lorem ipsum dolor nsq sme"),
-			Version:             str.Ptr("1.1.2"),
-			OrdID:               str.Ptr(bundleORDID),
-			LocalTenantID:       str.Ptr(localTenantID),
-			ShortDescription:    str.Ptr("lorem ipsum"),
-			Labels:              json.RawMessage(labels),
-			DocumentationLabels: json.RawMessage(documentLabels),
-			CorrelationIDs:      json.RawMessage(correlationIDs),
-		},
-		{
-			Name:                "BUNDLE TITLE 2 ",
-			Description:         str.Ptr("foo bar"),
-			Version:             str.Ptr("1.1.2"),
-			OrdID:               str.Ptr(secondBundleORDID),
-			LocalTenantID:       str.Ptr(localTenantID),
-			ShortDescription:    str.Ptr("bar foo"),
-			Labels:              json.RawMessage(labels),
-			DocumentationLabels: json.RawMessage(documentLabels),
-			CorrelationIDs:      json.RawMessage(correlationIDs),
-		},
-	}
 }
 
 func fixAPIsWithHash() []*model.APIDefinition {
@@ -1548,30 +2438,6 @@ func fixAPIsNoNewerLastUpdate() []*model.APIDefinition {
 	return apis
 }
 
-func fixAPIPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
-	return []*model.ConsumptionBundleReference{
-		{
-			BundleOrdID:      bundleORDID,
-			DefaultTargetURL: "https://exmaple.com/test/v1",
-		},
-		{
-			BundleOrdID:      secondBundleORDID,
-			DefaultTargetURL: "https://exmaple.com/test/v2",
-		},
-	}
-}
-
-func fixEventPartOfConsumptionBundles() []*model.ConsumptionBundleReference {
-	return []*model.ConsumptionBundleReference{
-		{
-			BundleOrdID: bundleORDID,
-		},
-		{
-			BundleOrdID: secondBundleORDID,
-		},
-	}
-}
-
 func fixEvents() []*model.EventDefinition {
 	return []*model.EventDefinition{
 		{
@@ -1700,15 +2566,6 @@ func fixCapabilities() []*model.Capability {
 			},
 		},
 	}
-}
-
-func fixCapabilitiesNoNewerLastUpdate() []*model.Capability {
-	capabilities := fixCapabilities()
-	doc := fixORDDocument()
-	for i, capability := range capabilities {
-		capability.LastUpdate = doc.Capabilities[i].LastUpdate
-	}
-	return capabilities
 }
 
 func fixAPI1SpecInputs(url string) []*model.SpecInput {
@@ -1906,7 +2763,7 @@ func fixEntityTypes() []*model.EntityType {
 			Visibility:                   publicVisibility,
 			Links:                        json.RawMessage(fmt.Sprintf(linksFormat, baseURL)),
 			PartOfProducts:               json.RawMessage(products),
-			PolicyLevel:                  &policyLevel,
+			PolicyLevel:                  &policyLevelSapCore,
 			CustomPolicyLevel:            &customPolicyLevel,
 			ReleaseStatus:                releaseStatus,
 			SunsetDate:                   &sunsetDate,
@@ -1967,14 +2824,6 @@ func fixVersionModel(value string, deprecated bool, deprecatedSince string, forR
 		Deprecated:      &deprecated,
 		DeprecatedSince: &deprecatedSince,
 		ForRemoval:      &forRemoval,
-	}
-}
-
-func fixSuccessfulFetchRequest() *model.FetchRequest {
-	return &model.FetchRequest{
-		Status: &model.FetchRequestStatus{
-			Condition: model.FetchRequestStatusConditionSucceeded,
-		},
 	}
 }
 

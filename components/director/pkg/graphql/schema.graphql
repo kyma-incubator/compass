@@ -154,6 +154,7 @@ enum FormationStatusCondition {
 	IN_PROGRESS
 	ERROR
 	READY
+	DRAFT
 }
 
 enum HealthCheckStatusCondition {
@@ -175,6 +176,13 @@ enum OperationMode {
 	ASYNC
 }
 
+enum OperationStatus {
+	SCHEDULED
+	IN_PROGRESS
+	COMPLETED
+	FAILED
+}
+
 enum OperationType {
 	CREATE
 	UPDATE
@@ -194,6 +202,11 @@ enum RuntimeStatusCondition {
 	PROVISIONING
 	CONNECTED
 	FAILED
+}
+
+enum ScheduledOperationType {
+	ORD_AGGREGATION
+	SYSTEM_FETCHING
 }
 
 enum SpecFormat {
@@ -785,6 +798,7 @@ input IntegrationDependencyInput {
 	mandatory: Boolean
 	aspects: [AspectInput!]
 	version: VersionInput
+	labels: Labels
 }
 
 input IntegrationSystemInput {
@@ -1018,6 +1032,7 @@ type Application {
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
+	operations: [Operation]
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
@@ -1436,6 +1451,7 @@ type IntegrationDependency {
 	mandatory: Boolean
 	aspects: [Aspect!]
 	version: Version
+	labels: Labels
 	created_at: Timestamp
 	updated_at: Timestamp
 	deleted_at: Timestamp
@@ -1504,6 +1520,15 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	raw: String
 	rawEncoded: String
 	type: OneTimeTokenType
+}
+
+type Operation {
+	id: ID!
+	operationType: ScheduledOperationType!
+	status: OperationStatus!
+	error: String
+	createdAt: Timestamp
+	updatedAt: Timestamp
 }
 
 type PageInfo {
@@ -1662,6 +1687,7 @@ type Query {
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
+	applicationsByLocalTenantID(localTenantID: String!, filter: [LabelFilter], first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsByLocalTenantID")
 	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: ID!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
 	"""
 	Maximum `first` parameter value is 100
@@ -1992,6 +2018,7 @@ type Mutation {
 	- [resynchronize formation notifications](examples/resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 	"""
 	resynchronizeFormationNotifications(formationID: ID!, reset: Boolean): Formation! @hasScopes(path: "graphql.mutation.resynchronizeFormationNotifications")
+	finalizeDraftFormation(formationID: ID!): Formation! @hasScopes(path: "graphql.mutation.finalizeDraftFormation")
 	"""
 	**Examples**
 	- [delete formation](examples/delete-formation/delete-formation.graphql)

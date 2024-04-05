@@ -493,6 +493,9 @@ func (g *Graphqlizer) IntegrationDependencyInputToGQL(in graphql.IntegrationDepe
 		{{- if .Version }}
 		version: {{- VersionInputToGQL .Version }},
 		{{- end}}
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
 	}`)
 }
 
@@ -704,6 +707,15 @@ func (g *Graphqlizer) FormationInputToGQL(in graphql.FormationInput) (string, er
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}",
 		templateName: "{{.TemplateName}}"
+	}`)
+}
+
+// FormationInputWithStateToGQL converts go formation input structure into graphql format
+func (g *Graphqlizer) FormationInputWithStateToGQL(in graphql.FormationInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}",
+		templateName: "{{.TemplateName}}"
+		state: "{{.State}}"
 	}`)
 }
 

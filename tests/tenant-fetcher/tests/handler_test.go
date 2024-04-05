@@ -1318,10 +1318,13 @@ func TestGetSubaccountOnDemandIfMissing(t *testing.T) {
 
 	t.Logf("Retrieving tenant %q by external id", subaccountExternalTenant)
 	subaccount, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenant)
+	region, regionExists := subaccount.Labels[tenantfetcher.RegionKey]
 
 	require.NoError(t, err)
 	require.NotNil(t, subaccount)
 	require.Equal(t, subaccount.ID, subaccountExternalTenant)
+	require.True(t, regionExists)
+	require.Equal(t, region, config.TenantRegionPrefix+config.TenantRegion)
 
 	t.Log("TestGetSubaccountOnDemandIfMissing checks are successful")
 }

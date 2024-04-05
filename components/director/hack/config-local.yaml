@@ -5,6 +5,7 @@ graphql:
     applications: ["application:read"]
     application: ["application:read"]
     applicationBySystemNumber: ["application:read"]
+    applicationsByLocalTenantID: ["application:read"]
     applicationByLocalTenantIDAndAppTemplateID: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
@@ -83,6 +84,7 @@ graphql:
     unassignFormation: ["formation:write"]
     unassignFormationGlobal: ["formation:global_write"]
     resynchronizeFormationNotifications: ["formation:write"]
+    finalizeDraftFormation: [ "formation:write" ]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]
@@ -196,7 +198,7 @@ clientCredentialsRegistrationScopes:
     - "integration_system:read"
     - "label_definition:read"
     - "label_definition:write"
-    - "automatic_scenario_assignment:read" 
+    - "automatic_scenario_assignment:read"
     - "integration_system.auths:read"
     - "application.webhooks:read"
     - "application_template.webhooks:read"

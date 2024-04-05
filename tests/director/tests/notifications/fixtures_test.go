@@ -51,6 +51,7 @@ const (
 	initialAssignmentState           = "INITIAL"
 	configPendingAssignmentState     = "CONFIG_PENDING"
 	deletingAssignmentState          = "DELETING"
+	draftFormationState              = "DRAFT"
 	basicAuthType                    = "Basic"
 	samlAuthType                     = "SAML2.0"
 	oauth2AuthType                   = "bearer"
@@ -98,7 +99,8 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
-			t.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			tOnce.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 			return
 		}
 		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
@@ -108,23 +110,28 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
 				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
 				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if assignmentExpectation.State != assignment.State {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 		}

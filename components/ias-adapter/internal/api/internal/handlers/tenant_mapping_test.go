@@ -28,9 +28,10 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			Expect(responseBody).To(ContainSubstring(url.QueryEscape(expectedMessage)))
 			Expect(w.Code).To(Equal(expectedCode))
 		}
-		expectSuccess = func(w *httptest.ResponseRecorder) {
-			_, err := io.ReadAll(w.Body)
+		expectSuccess = func(w *httptest.ResponseRecorder, expectedMessage string) {
+			responseBody, err := io.ReadAll(w.Body)
 			Expect(err).Error().ToNot(HaveOccurred())
+			Expect(responseBody).To(ContainSubstring(url.QueryEscape(expectedMessage)))
 			Expect(w.Code).To(Equal(http.StatusOK))
 		}
 	)
@@ -44,9 +45,10 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			},
 			AssignedTenants: []types.AssignedTenant{
 				{
-					UCLApplicationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
-					LocalTenantID:    "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
-					Operation:        types.OperationAssign,
+					UCLApplicationID:   "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+					UCLApplicationType: "test-app-type",
+					LocalTenantID:      "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
+					Operation:          types.OperationAssign,
 					Parameters: types.AssignedTenantParameters{
 						ClientID: "clientID",
 					},
@@ -107,7 +109,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 				mockService.On("RemoveTenantMapping", mock.Anything, mock.Anything).Return(nil)
 				w, ctx := createTestRequest(tenantMapping)
 				handler.Patch(ctx)
-				expectSuccess(w)
+				expectSuccess(w, "")
 			})
 		})
 	})
@@ -148,6 +150,19 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			})
 		})
 	})
+	When("One of the participants is S/4 and there is no certificate provided", func() {
+		BeforeEach(func() {
+			tenantMapping.AssignedTenants[0].ReverseAssignmentState = types.StateInitial
+			tenantMapping.AssignedTenants[0].UCLApplicationType = types.S4ApplicationType
+			tenantMapping.AssignedTenants[0].Parameters.ClientID = ""
+		})
+		It("Should return 200 and CONFIG_PENDING with S/4 configuration", func() {
+			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.S4CertificateNotFound)
+			w, ctx := createTestRequest(tenantMapping)
+			handler.Patch(ctx)
+			expectSuccess(w, S4SAPManagedCommunicationScenario)
+		})
+	})
 	When("Consumed APIs are successfully updated", func() {
 		BeforeEach(func() {
 			tenantMapping.AssignedTenants[0].ReverseAssignmentState = types.StateReady
@@ -156,7 +171,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(nil)
 			w, ctx := createTestRequest(tenantMapping)
 			handler.Patch(ctx)
-			expectSuccess(w)
+			expectSuccess(w, "")
 		})
 	})
 })

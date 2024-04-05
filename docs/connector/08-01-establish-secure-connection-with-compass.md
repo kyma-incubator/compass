@@ -1,10 +1,10 @@
-# Establish a secure connection with Compass
+# Establish a Secure Connection with Compass
 
 To establish a secure connection with Compass and generate the client certificate, follow this tutorial. 
 
 ## Prerequisites
 
-- [OpenSSL toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
+- [OpenSSL Toolkit](https://www.openssl.org/docs/man1.0.2/apps/openssl.html) to create a Certificate Signing Request (CSR), keys, and certificates which meet high security standards
 - Compass (version 1.8 or higher)
 - Registered Application
 - Runtime connected to Compass

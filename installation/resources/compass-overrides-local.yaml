@@ -28,6 +28,10 @@ global:
       manage: true
   domainName: "local.kyma.dev"
   director:
+    formationMappingAsyncStatusApi:
+      authentication:
+        hydratorAuthenticator:
+          enabled: true
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
     ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }, { "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090", "ProxyHeaderTemplate": "{\"target_host\": [\"{{.Application.BaseURL}}\"] }", "OrdUrlPath": "/proxy", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
@@ -190,6 +194,7 @@ global:
       enabled: true
       api:
         regionName: "central"
+        regionPrefix: "cf-"
         authConfigSecretKey: "central"
         endpoints:
           subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
@@ -210,6 +215,7 @@ global:
           labelsField: "labels"
           subaccountCostObjectIDField: "costObjectId"
           subaccountCostObjectTypeField: "costObjectType"
+          regionField: "region"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"

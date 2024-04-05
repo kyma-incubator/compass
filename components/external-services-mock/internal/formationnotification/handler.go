@@ -189,7 +189,7 @@ type Handler struct {
 	// The External Services Mock is used as token provider for oauth2mTLS as the certificates generated
 	// from the test are not trusted by the token providers on real env.
 	oauth2mTLSTokenServiceURL string
-	oauth2mTLSClientID string
+	oauth2mTLSClientID        string
 }
 
 // Response is used to model the response for a given formation or formation assignment notification request.
@@ -204,12 +204,12 @@ type Response struct {
 // NewHandler creates a new Handler
 func NewHandler(notificationConfiguration Configuration, providerDestinationConfig ProviderDestinationConfig, tokenServiceURL, oauth2mTLSClientID string) *Handler {
 	return &Handler{
-		Mappings:                   make(map[string][]Response),
-		ShouldReturnError:          true,
-		config:                     notificationConfiguration,
-		providerDestinationConfig:  providerDestinationConfig,
+		Mappings:                  make(map[string][]Response),
+		ShouldReturnError:         true,
+		config:                    notificationConfiguration,
+		providerDestinationConfig: providerDestinationConfig,
 		oauth2mTLSTokenServiceURL: tokenServiceURL,
-		oauth2mTLSClientID: oauth2mTLSClientID,
+		oauth2mTLSClientID:        oauth2mTLSClientID,
 	}
 }
 
@@ -249,6 +249,40 @@ func (h *Handler) PatchWithState(writer http.ResponseWriter, r *http.Request) {
 					Key string `json:"key"`
 				}{Key: "value2"},
 			},
+		}
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// PatchWithCreateReadyState handles synchronous formation assignment notification requests for Assign operation and returns CREATE_READY state in the response body
+func (h *Handler) PatchWithCreateReadyState(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBodyWithState{
+			State: CreateReadyAssignmentState,
+			Config: &FormationAssignmentResponseConfig{
+				Key: "value",
+				Key2: struct {
+					Key string `json:"key"`
+				}{Key: "value2"},
+			},
+		}
+
+		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
+	}
+
+	h.syncFAResponse(ctx, writer, r, responseFunc)
+}
+
+// DeleteWithDeleteReadyState handles synchronous formation assignment notification requests for Unassign operation and returns DELETE_READY state in the response body
+func (h *Handler) DeleteWithDeleteReadyState(writer http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	responseFunc := func([]byte) {
+		response := FormationAssignmentResponseBodyWithState{
+			State: DeleteReadyAssignmentState,
 		}
 
 		httputils.RespondWithBody(ctx, writer, http.StatusOK, response)
@@ -637,7 +671,7 @@ func (h *Handler) AsyncDestinationPatch(writer http.ResponseWriter, r *http.Requ
 	}
 
 	r.Body = io.NopCloser(bytes.NewReader(bodyBytes))
-	config := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"},\"oauth2mtls\":{\"url\":\"http://e2e-oauth2mTLS-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\"}}}}", h.providerDestinationConfig.TokenURL+h.providerDestinationConfig.TokenPath, h.providerDestinationConfig.ClientID, h.providerDestinationConfig.ClientSecret,	h.oauth2mTLSTokenServiceURL, h.oauth2mTLSClientID)
+	config := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"https://e2e-basic-destination-url.com\",\"username\":\"e2e-basic-destination-username\",\"password\":\"e2e-basic-destination-password\"},\"samlAssertion\":{\"url\":\"http://e2e-saml-url-example.com\"},\"clientCertificateAuthentication\":{\"url\":\"http://e2e-client-cert-auth-url-example.com\"},\"oauth2ClientCredentials\":{\"url\":\"http://e2e-oauth2-client-creds-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"},\"oauth2mtls\":{\"url\":\"http://e2e-oauth2mTLS-url-example.com\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\"}}}}", h.providerDestinationConfig.TokenURL+h.providerDestinationConfig.TokenPath, h.providerDestinationConfig.ClientID, h.providerDestinationConfig.ClientSecret, h.oauth2mTLSTokenServiceURL, h.oauth2mTLSClientID)
 	h.asyncFAResponse(ctx, writer, r, Assign, config, responseFunc)
 }
 

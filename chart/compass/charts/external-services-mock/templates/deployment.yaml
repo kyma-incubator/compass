@@ -87,6 +87,8 @@ spec:
                 value: "{{ (index .Values.global.tenants 40).id }}"
               - name: APP_ON_DEMAND_TENANT
                 value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
+              - name: APP_TENANT_REGION
+                value: {{ .Values.global.tests.tenantFetcher.tenantRegion }}
               - name: APP_CA_CERT
                 valueFrom:
                   secretKeyRef:
@@ -217,6 +219,8 @@ spec:
                 value: "{{ .Values.global.externalCertConfiguration.secrets.publicPrivateKeysSecret.dataKey }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+              - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL
+                value: "https://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
               - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
                 value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationPath }}"
               - name: APP_TENANT_MAPPING_ASYNC_RESPONSE_DELAY

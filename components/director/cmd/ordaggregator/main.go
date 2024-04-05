@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
@@ -138,6 +138,9 @@ type config struct {
 	TenantMappingConfigPath                  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
+	APIMetadataValidatorHost                 string `envconfig:"APP_API_METADATA_VALIDATOR_HOST,optional"`
+	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
+	APIMetadataValidatorEnabled              bool   `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
 
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig
@@ -367,10 +370,16 @@ func main() {
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
+	apiValidatorURL := fmt.Sprintf("%s:%s", cfg.APIMetadataValidatorHost, cfg.APIMetadataValidatorPort)
+
+	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient, cfg.APIMetadataValidatorEnabled)
+	documentValidator := ord.NewDocumentValidator(validationClient)
+	documentSanitizer := ord.NewDocumentSanitizer()
+
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings, documentValidator)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiProcessor, eventProcessor, entityTypeProcessor, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchRequestSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc, documentValidator, documentSanitizer)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -483,24 +492,50 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-		if strings.Contains(errProcess.Error(), ord.ValidationErrorMsg) && !strings.Contains(errProcess.Error(), ord.ProcessingErrorMsg) { // if is only validation error
-			if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, errProcess.Error()); errMarkAsCompleted != nil {
-				log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
-				return op.ID, errMarkAsCompleted
+
+		var processingError *ord.ProcessingError
+		if ok := errors.As(errProcess, &processingError); !ok {
+			newProcessingError := &ord.ProcessingError{
+				ValidationErrors: nil,
+				RuntimeError:     &ord.RuntimeError{Message: errProcess.Error()},
 			}
-			return op.ID, nil
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, newProcessingError); errMarkAsFailed != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+				return op.ID, errMarkAsFailed
+			}
+			return op.ID, processingError
 		}
-		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
-			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
-			return op.ID, errMarkAsFailed
+
+		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && validationErrorsWithErrorSeverityExist(processingError.ValidationErrors)) {
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+				return op.ID, errMarkAsFailed
+			}
+			return op.ID, processingError
 		}
-		return op.ID, errProcess
+
+		if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError); errMarkAsCompleted != nil {
+			log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+			return op.ID, errMarkAsCompleted
+		}
+		return op.ID, nil
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, nil); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}
+
 	return op.ID, nil
+}
+
+func validationErrorsWithErrorSeverityExist(errors []*ord.ValidationError) bool {
+	for _, e := range errors {
+		if e.Severity == ord.ErrorSeverity {
+			return true
+		}
+	}
+
+	return false
 }
 
 func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer ord.OperationMaintainer, cfg config) error {

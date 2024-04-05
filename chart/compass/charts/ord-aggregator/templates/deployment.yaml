@@ -38,10 +38,13 @@ spec:
       serviceAccountName: {{ template "fullname" . }}
       nodeSelector:
       {{- toYaml .Values.deployment.nodeSelector | nindent 8 }}
-      {{ if eq .Values.global.portieris.isEnabled true }}
       imagePullSecrets:
+        {{ if eq .Values.global.portieris.isEnabled true }}
         - name: {{ .Values.global.portieris.imagePullSecretName }}
-      {{ end }}
+        {{ end }}
+        {{ if eq $.Values.global.ordAggregator.metadataValidator.setImagePullSecrets true }}
+        - name: {{ $.Values.global.ordAggregator.metadataValidator.imagePullSecretName }}
+        {{ end }}
       volumes:
         - name: director-config
           configMap:
@@ -158,6 +161,12 @@ spec:
               value: "{{ .Values.global.director.tenantMappingsPath}}/{{ .Values.global.director.tenantMappingsKey }}"
             - name: APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS
               value: {{ .Values.global.ordAggregator.tenantMappingConfiguration | quote }}
+            - name: APP_API_METADATA_VALIDATOR_HOST
+              value: "{{ $.Values.global.ordAggregator.metadataValidator.host }}"
+            - name: APP_API_METADATA_VALIDATOR_PORT
+              value: "{{ $.Values.global.ordAggregator.metadataValidator.port }}"
+            - name: APP_API_METADATA_VALIDATOR_ENABLED
+              value: "{{ $.Values.global.ordAggregator.metadataValidator.enabled }}"
           command:
             - "/bin/sh"
           args:
@@ -189,4 +198,11 @@ spec:
           args:
             - -c
             - "trap 'exit 0' SIGINT; /cloud_sql_proxy -instances={{ $.Values.global.database.managedGCP.instanceConnectionName }}=tcp:5432"
+        {{end}}
+        {{ if eq $.Values.global.ordAggregator.metadataValidator.enabled "true" }}
+        - name: api-metadata-validator
+          image: {{ $.Values.global.ordAggregator.metadataValidator.image }}:{{ $.Values.global.ordAggregator.metadataValidator.version }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: {{ $.Values.global.ordAggregator.metadataValidator.port }}
         {{end}}

@@ -60,7 +60,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 		ObjectID              string
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -87,9 +87,14 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxRtmIDAndTemplate,
-				appNotificationWithRtmCtxAndTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{{
+				FormationAssignmentNotificationRequest: appNotificationWithRtmCtxRtmIDAndTemplate,
+				Target:                                 ApplicationID,
+			},
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxAndTemplate,
+					Target:                                 ApplicationID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -122,9 +127,13 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxRtmIDAndTemplate,
-				appNotificationWithRtmCtxAndTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{{
+				FormationAssignmentNotificationRequest: appNotificationWithRtmCtxRtmIDAndTemplate,
+				Target:                                 ApplicationID,
+			}, {
+				FormationAssignmentNotificationRequest: appNotificationWithRtmCtxAndTemplate,
+				Target:                                 ApplicationID,
+			},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -145,7 +154,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -164,7 +173,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabelsWithoutTemplate, nil, nil).Once()
 				return dataInputBuilder
 			},
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -195,9 +204,10 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxAndTemplate,
-			},
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{{
+				FormationAssignmentNotificationRequest: appNotificationWithRtmCtxAndTemplate,
+				Target:                                 ApplicationID,
+			}},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -265,7 +275,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -284,7 +294,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(appWithLabels, appTemplateWithLabels, nil).Once()
 				return dataInputBuilder
 			},
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -298,7 +308,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 				dataInputBuilder.On("PrepareApplicationAndAppTemplateWithLabels", ctx, TntInternalID, ApplicationID).Return(nil, nil, testErr).Once()
 				return dataInputBuilder
 			},
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -379,7 +389,7 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 		ObjectID              string
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -406,9 +416,14 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeNotificationWithAppTemplate,
-				runtimeNotificationWithRtmCtxAndAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{{
+				FormationAssignmentNotificationRequest: runtimeNotificationWithAppTemplate,
+				Target:                                 RuntimeID,
+			},
+				{
+					FormationAssignmentNotificationRequest: runtimeNotificationWithRtmCtxAndAppTemplate,
+					Target:                                 RuntimeContextID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -458,8 +473,11 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeNotificationWithRtmCtxAndAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: runtimeNotificationWithRtmCtxAndAppTemplate,
+					Target:                                 RuntimeContextID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -488,8 +506,10 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeNotificationWithRtmCtxAndAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: runtimeNotificationWithRtmCtxAndAppTemplate,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -655,7 +675,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 		ObjectID              string
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -687,9 +707,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
-				appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -726,9 +752,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appToAppNotificationWithSourceAndTargetTemplates,
-				appToAppNotificationWithSourceAndTargetTemplatesSwaped,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithSourceAndTargetTemplates,
+					Target:                                 Application2ID,
+				},
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithSourceAndTargetTemplatesSwaped,
+					Target:                                 ApplicationID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -765,9 +797,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
-				appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -804,9 +842,10 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
-			},
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{{
+				FormationAssignmentNotificationRequest: appToAppNotificationWithSourceTemplateWithoutTargetTemplate,
+				Target:                                 Application2ID,
+			}},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              ApplicationID,
@@ -842,8 +881,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 
 				return notificationsBuilder
 			},
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appToAppNotificationWithoutSourceTemplateWithTargetTemplate,
+					Target:                                 ApplicationID,
+				},
 			},
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
@@ -1092,7 +1134,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 		ObjectType            graphql.FormationObjectType
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -1130,9 +1172,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxAndTemplate,
-				appNotificationWithRtmCtxWithoutTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxAndTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxWithoutTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1171,9 +1219,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxAndTemplate,
-				appNotificationWithRtmCtxWithoutTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxAndTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxWithoutTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1212,9 +1266,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxAndTemplate,
-				appNotificationWithRtmCtxWithoutTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxAndTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxWithoutTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1253,8 +1313,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				appNotificationWithRtmCtxWithoutTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: appNotificationWithRtmCtxWithoutTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1342,7 +1405,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 			OperationType:      model.AssignFormation,
 			ObjectID:           RuntimeContextID,
 			InputFormation:     expectedFormation,
-			ExpectedRequests:   []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:   []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			ExpectedErrMessage: "",
 		},
 		{
@@ -1496,7 +1559,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 		ObjectType            graphql.FormationObjectType
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -1533,9 +1596,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				applicationNotificationWithAppTemplate,
-				applicationNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithAppTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithoutAppTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1573,9 +1642,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				applicationNotificationWithAppTemplate,
-				applicationNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithAppTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithoutAppTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1613,9 +1688,15 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				applicationNotificationWithAppTemplate,
-				applicationNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithAppTemplate,
+					Target:                                 ApplicationID,
+				},
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithoutAppTemplate,
+					Target:                                 Application2ID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1653,8 +1734,11 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				applicationNotificationWithAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: applicationNotificationWithAppTemplate,
+					Target:                                 ApplicationID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -1739,7 +1823,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 			OperationType:      model.AssignFormation,
 			ObjectID:           RuntimeID,
 			InputFormation:     expectedFormation,
-			ExpectedRequests:   []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:   []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			ExpectedErrMessage: "",
 		},
 		{
@@ -1874,7 +1958,7 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 		ObjectID              string
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -1905,9 +1989,15 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeCtxNotificationWithAppTemplate,
-				runtimeCtxNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: runtimeCtxNotificationWithAppTemplate,
+					Target:                                 RuntimeContextID,
+				},
+				{
+					FormationAssignmentNotificationRequest: runtimeCtxNotificationWithoutAppTemplate,
+					Target:                                 RuntimeContextID,
+				},
 			},
 			InputFormation:     expectedFormation,
 			ExpectedErrMessage: "",
@@ -1927,7 +2017,7 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			InputFormation:        expectedFormation,
 			ExpectedErrMessage:    "",
 		},
@@ -1989,8 +2079,11 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 			OperationType:         model.AssignFormation,
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeContextID,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeCtxNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: runtimeCtxNotificationWithoutAppTemplate,
+					Target:                                 RuntimeContextID,
+				},
 			},
 			InputFormation:     expectedFormation,
 			ExpectedErrMessage: "",
@@ -2140,7 +2233,7 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 		ObjectType            graphql.FormationObjectType
 		OperationType         model.FormationOperation
 		InputFormation        model.Formation
-		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequest
+		ExpectedRequests      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 		ExpectedErrMessage    string
 	}{
 		{
@@ -2172,9 +2265,15 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeNotificationWithAppTemplate,
-				runtimeNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: runtimeNotificationWithAppTemplate,
+					Target:                                 RuntimeID,
+				},
+				{
+					FormationAssignmentNotificationRequest: runtimeNotificationWithoutAppTemplate,
+					Target:                                 RuntimeID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -2207,8 +2306,11 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequest{
-				runtimeNotificationWithoutAppTemplate,
+			ExpectedRequests: []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+				{
+					FormationAssignmentNotificationRequest: runtimeNotificationWithoutAppTemplate,
+					Target:                                 RuntimeID,
+				},
 			},
 			ExpectedErrMessage: "",
 		},
@@ -2298,7 +2400,7 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 			CustomerTenantContext: customerTenantContext,
 			ObjectID:              RuntimeID,
 			InputFormation:        expectedFormation,
-			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequest{},
+			ExpectedRequests:      []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{},
 			ExpectedErrMessage:    "",
 		},
 		{

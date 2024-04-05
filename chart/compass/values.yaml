@@ -102,6 +102,7 @@ global:
     - name: TestConsumerSubaccount
       id: 1f538f34-30bf-4d3d-aeaa-02e69eef84ae
       type: subaccount
+      subdomain: compass-external-services-mock-sap-mtls
       parents: [5984a414-1eed-4972-af2c-b2b6a415c7d7]
     - name: TestTenantsOnDemandAPI
       id: 8d42d818-d4c4-4036-b82f-b199db7ffeb5
@@ -162,59 +163,59 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3741"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3751"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3699"
+      version: "PR-3742"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3694"
+      version: "PR-3790"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3717"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3661"
+      version: "PR-3768"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3719"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3699"
+      version: "PR-3760"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3680"
+      version: "PR-3713"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3745"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3680"
+      version: "PR-3744"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-125"
+      version: "PR-128"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3763"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3718"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -223,7 +224,7 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3665"
+      version: "PR-3771"
       name: compass-external-services-mock
     console:
       dir: prod/incubator/
@@ -231,7 +232,7 @@ global:
       name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3690"
+      version: "PR-3789"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -284,6 +285,19 @@ global:
       formationAssignmentPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status"
       formationAssignmentResetPath: "/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset"
       formationPath: "/{ucl-formation-id}/status"
+      authentication:
+        name: "external-token-status"
+        hydratorAuthenticator:
+          name: "external-token"
+          enabled: false
+        gatewayHost: "compass-gateway-external-token"
+        trusted_issuers: '[{"domain_url": "compass-system.svc.cluster.local:8080", "scope_prefixes": ["prefix.", "prefix2."], "protocol": "http", "region": "eu-1"}]'
+        attributes: '{"uniqueAttribute": { "key": "unique-attr-authenticator-key", "value": "unique-attr-authenticator-value" }, "tenants": [{ "key": "ext_attr.subaccountid", "priority": 1 },{ "key": "ext_attr.globalaccountid", "priority": 2 }], "identity": { "key": "user_name" }, "clientid": { "key": "client_id" } }'
+        upstreamComponent: "compass-director"
+        checkSuffix: false
+        retry:
+          give_up_after: 6s
+          max_delay: 2000ms
     prefix: /director
     graphql:
       external:
@@ -913,7 +927,7 @@ global:
     port: 3000
     systemFieldDiscoveryWebhookPartialProcessing: true
     systemFieldDiscoveryWebhookPartialProcessMaxDays: 7
-    webhookProcessorJobInterval: 3m
+    webhookProcessorJobInterval: 10s
     lease:
       lockname: tenantfetcherlease
     xsappNamePath: "xsappname"
@@ -1063,6 +1077,14 @@ global:
     maxParallelDocumentsPerApplication: 10
     maxParallelSpecificationProcessors: 100
     containerName: "ord-aggregator"
+    metadataValidator:
+      enabled: "false"
+      setImagePullSecrets: false
+      imagePullSecretName: api-validator-secret
+      image: ""
+      version: 3.5.5
+      host: ""
+      port: 8080
     tenantMappingConfiguration: '{}'
     parallelOperationProcessors: 10
     priorityQueueLimit: 10
@@ -1311,6 +1333,8 @@ global:
     tenantFetcher:
       tenantOnDemandID: "8d42d818-d4c4-4036-b82f-b199db7ffeb5"
       missingTenantOnDemandID: "subaccount-external-tnt"
+      tenantRegion: "us-1"
+      tenantRegionPrefix: "cf-"
       region: "eu-1"
       region2: "eu-2"
     ordAggregator:
@@ -1326,6 +1350,8 @@ global:
     selfRegistration:
       region: "eu-1"
       region2: "eu-2"
+    instanceCreator:
+      region: "eu-1"
     destination:
       consumerSubdomain: "compass-external-services-mock"
       consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
@@ -1475,6 +1501,8 @@ global:
         - "certificate_subject_mapping:write"
         - "certificate_subject_mapping:read"
       managed_application_consumer: []
+      formation_viewer:
+        - "formation:read"
       landscape_resource_operator:
         - "application:read"
         - "application:write"
@@ -1544,6 +1572,7 @@ global:
         - "automatic_scenario_assignment:read"
         - "integration_system.auths:read"
         - "application_template.webhooks:read"
+        - "formation.state:write"
         - "formation:write"
         - "formation:read"
         - "internal_visibility:read"

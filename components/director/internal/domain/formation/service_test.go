@@ -447,6 +447,7 @@ func TestServiceCreateFormation(t *testing.T) {
 
 	expectedFormation := fixFormationModelWithState(model.ReadyFormationState)
 	expectedFormationInInitialState := fixFormationModelWithState(model.InitialFormationState)
+	expectedFormationInDraftState := fixFormationModelWithState(model.DraftFormationState)
 
 	formationWithReadyState := fixFormationModelWithState(model.ReadyFormationState)
 	formationWithCreateErrorStateAndTechnicalAssignmentError := fixFormationModelWithStateAndAssignmentError(t, model.CreateErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
@@ -573,7 +574,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			ExpectedFormation: expectedFormation,
 		},
 		{
-			Name: "success when state is provided externally",
+			Name: "success when state is provided externally - initial state",
 			UUIDServiceFn: func() *automock.UuidService {
 				uuidService := &automock.UuidService{}
 				uuidService.On("Generate").Return(fixUUID())
@@ -623,6 +624,119 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			TemplateName:      testFormationTemplateName,
 			ExpectedFormation: expectedFormationInInitialState,
+		},
+		{
+			Name: "success when state is provided externally - draft state",
+			UUIDServiceFn: func() *automock.UuidService {
+				uuidService := &automock.UuidService{}
+				uuidService.On("Generate").Return(fixUUID())
+				return uuidService
+			},
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, testFormationTemplateName, TntInternalID).Return(fixFormationTemplateModel(), nil).Once()
+				return formationTemplateRepoMock
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("Create", ctx, formationWithDraftState).Return(nil).Once()
+				return formationRepoMock
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
+				return webhookRepo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			FormationInput: &model.Formation{
+				Name:  testFormationName,
+				State: model.DraftFormationState,
+			},
+			TemplateName:      testFormationTemplateName,
+			ExpectedFormation: expectedFormationInDraftState,
+		},
+		{
+			Name: "error when state is provided externally - draft state, while enforcing constraints post operation",
+			UUIDServiceFn: func() *automock.UuidService {
+				uuidService := &automock.UuidService{}
+				uuidService.On("Generate").Return(fixUUID())
+				return uuidService
+			},
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, testFormationTemplateName, TntInternalID).Return(fixFormationTemplateModel(), nil).Once()
+				return formationTemplateRepoMock
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("Create", ctx, formationWithDraftState).Return(nil).Once()
+				return formationRepoMock
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
+				return webhookRepo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postCreateLocation, createFormationDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			FormationInput: &model.Formation{
+				Name:  testFormationName,
+				State: model.DraftFormationState,
+			},
+			TemplateName:       testFormationTemplateName,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "error when state is provided externally - draft state, while enforcing constraints pre operation",
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				formationTemplateRepoMock := &automock.FormationTemplateRepository{}
+				formationTemplateRepoMock.On("GetByNameAndTenant", ctx, testFormationTemplateName, TntInternalID).Return(fixFormationTemplateModel(), nil).Once()
+				return formationTemplateRepoMock
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			FormationInput: &model.Formation{
+				Name:  testFormationName,
+				State: model.DraftFormationState,
+			},
+			TemplateName:       testFormationTemplateName,
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "error when labeldef is missing and can not create it",
@@ -1448,10 +1562,13 @@ func TestServiceDeleteFormation(t *testing.T) {
 	formationWithCreateErrorStateAndTechnicalAssignmentError := fixFormationModelWithStateAndAssignmentError(t, model.DeleteErrorFormationState, testErr.Error(), formationassignment.TechnicalError)
 
 	expectedFormation := fixFormationModelWithState(model.ReadyFormationState)
+	expectedFormationInitialState := fixFormationModelWithState(model.InitialFormationState)
+	expectedFormationDraftState := fixFormationModelWithState(model.DraftFormationState)
 	expectedFormation2 := fixFormationModelWithState(model.ReadyFormationState)
 	formationWithDeletingState := fixFormationModelWithState(model.DeletingFormationState)
 
 	formationWithReadyState := fixFormationModelWithState(model.ReadyFormationState)
+	formationWithDraftState := fixFormationModelWithState(model.DraftFormationState)
 
 	testSchema, err := labeldef.NewSchemaForFormations([]string{testScenario, testFormationName})
 	assert.NoError(t, err)
@@ -1465,17 +1582,18 @@ func TestServiceDeleteFormation(t *testing.T) {
 	nilSchemaLblDef.Schema = nil
 
 	testCases := []struct {
-		Name                    string
-		LabelDefRepositoryFn    func() *automock.LabelDefRepository
-		LabelDefServiceFn       func() *automock.LabelDefService
-		NotificationsSvcFn      func() *automock.NotificationsService
-		FormationRepoFn         func() *automock.FormationRepository
-		FormationTemplateRepoFn func() *automock.FormationTemplateRepository
-		ConstraintEngineFn      func() *automock.ConstraintEngine
-		webhookRepoFn           func() *automock.WebhookRepository
-		InputFormation          model.Formation
-		ExpectedFormation       *model.Formation
-		ExpectedErrMessage      string
+		Name                     string
+		LabelDefRepositoryFn     func() *automock.LabelDefRepository
+		LabelDefServiceFn        func() *automock.LabelDefService
+		NotificationsSvcFn       func() *automock.NotificationsService
+		FormationRepoFn          func() *automock.FormationRepository
+		FormationAssignmentSvcFn func() *automock.FormationAssignmentService
+		FormationTemplateRepoFn  func() *automock.FormationTemplateRepository
+		ConstraintEngineFn       func() *automock.ConstraintEngine
+		webhookRepoFn            func() *automock.WebhookRepository
+		InputFormation           model.Formation
+		ExpectedFormation        *model.Formation
+		ExpectedErrMessage       string
 	}{
 		{
 			Name: "success",
@@ -1502,6 +1620,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
@@ -1522,6 +1645,104 @@ func TestServiceDeleteFormation(t *testing.T) {
 			ExpectedFormation: expectedFormation,
 		},
 		{
+			Name: "success for draft formation should not execute notifications",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			NotificationsSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, formationWithDraftState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				return notificationSvc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormationDraftState, nil).Once()
+				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
+				return webhookRepo
+			},
+			InputFormation:    in,
+			ExpectedFormation: expectedFormationDraftState,
+		},
+		{
+			Name: "success for initial formation should not execute notifications when there are no webhooks",
+			LabelDefRepositoryFn: func() *automock.LabelDefRepository {
+				labelDefRepo := &automock.LabelDefRepository{}
+				labelDefRepo.On("GetByKey", ctx, TntInternalID, model.ScenariosKey).Return(&testSchemaLblDef, nil)
+				labelDefRepo.On("UpdateWithVersion", ctx, newSchemaLblDef).Return(nil)
+				return labelDefRepo
+			},
+			LabelDefServiceFn: func() *automock.LabelDefService {
+				labelDefService := &automock.LabelDefService{}
+				labelDefService.On("ValidateExistingLabelsAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				labelDefService.On("ValidateAutomaticScenarioAssignmentAgainstSchema", ctx, newSchema, TntInternalID, model.ScenariosKey).Return(nil)
+				return labelDefService
+			},
+			NotificationsSvcFn: func() *automock.NotificationsService {
+				notificationSvc := &automock.NotificationsService{}
+				notificationSvc.On("GenerateFormationNotifications", ctx, emptyFormationLifecycleWebhooks, TntInternalID, expectedFormationInitialState, testFormationTemplateName, FormationTemplateID, model.DeleteFormation).Return(emptyFormationNotificationRequests, nil).Once()
+				return notificationSvc
+			},
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormationInitialState, nil).Once()
+				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+				return repo
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, postDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			webhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(emptyFormationLifecycleWebhooks, nil).Once()
+				return webhookRepo
+			},
+			InputFormation:    in,
+			ExpectedFormation: expectedFormationInitialState,
+		},
+		{
 			Name: "success when formation has async webhook",
 			NotificationsSvcFn: func() *automock.NotificationsService {
 				notificationSvc := &automock.NotificationsService{}
@@ -1534,6 +1755,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
 				formationRepoMock.On("Update", ctx, fixFormationModelWithState(model.DeletingFormationState)).Return(nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1566,6 +1792,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
 				formationRepoMock.On("Update", ctx, fixFormationModelWithState(model.DeletingFormationState)).Return(testErr).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1604,6 +1835,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
 				return repo
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
@@ -1633,6 +1869,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1668,6 +1909,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1708,6 +1954,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1750,6 +2001,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
@@ -1791,6 +2047,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1846,6 +2107,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("DeleteByName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
 				return formationRepoMock
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
@@ -1876,6 +2142,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
 				return repo
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(testErr).Once()
@@ -1883,6 +2154,50 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			InputFormation:     in,
 			ExpectedErrMessage: "while enforcing constraints for target operation \"DELETE_FORMATION\" and constraint type \"PRE\": Test error",
+		},
+		{
+			Name: "error because formation is not empty",
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
+				return formationRepoMock
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+				return repo
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return([]*model.FormationAssignment{{
+					ID:     FormationAssignmentID,
+					Source: FormationAssignmentSource,
+					Target: FormationAssignmentTarget,
+				}}, nil)
+				return formationAssignmentSvc
+			},
+			InputFormation:     in,
+			ExpectedErrMessage: "because it is not empty",
+		},
+		{
+			Name: "error while getting formation assignments",
+			FormationRepoFn: func() *automock.FormationRepository {
+				formationRepoMock := &automock.FormationRepository{}
+				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
+				return formationRepoMock
+			},
+			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
+				return repo
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(nil, testErr)
+				return formationAssignmentSvc
+			},
+			InputFormation:     in,
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "error while enforcing constraint post operation",
@@ -1909,6 +2224,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
@@ -1934,6 +2254,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1965,6 +2290,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock := &automock.FormationRepository{}
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -1999,6 +2329,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation, nil).Once()
 				return formationRepoMock
 			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
+			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
 				repo.On("Get", ctx, FormationTemplateID).Return(fixFormationTemplateModel(), nil).Once()
@@ -2031,6 +2366,11 @@ func TestServiceDeleteFormation(t *testing.T) {
 				formationRepoMock.On("Update", ctx, formationWithCreateErrorStateAndTechnicalAssignmentError).Return(unauthorizedError).Once()
 				formationRepoMock.On("GetByName", ctx, testFormationName, TntInternalID).Return(expectedFormation2, nil).Once()
 				return formationRepoMock
+			},
+			FormationAssignmentSvcFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GetAssignmentsForFormation", ctx, TntInternalID, FormationID).Return(emptyFormationAssignments, nil)
+				return formationAssignmentSvc
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
@@ -2088,8 +2428,12 @@ func TestServiceDeleteFormation(t *testing.T) {
 			if testCase.webhookRepoFn != nil {
 				webhookRepo = testCase.webhookRepoFn()
 			}
+			formationAssignmentService := unusedFormationAssignmentService()
+			if testCase.FormationAssignmentSvcFn != nil {
+				formationAssignmentService = testCase.FormationAssignmentSvcFn()
+			}
 
-			svc := formation.NewService(nil, nil, labelDefRepo, nil, formationRepo, formationTemplateRepo, nil, nil, labelDefService, nil, nil, nil, nil, nil, nil, nil, notificationsService, constraintEngine, webhookRepo, nil, runtimeType, applicationType)
+			svc := formation.NewService(nil, nil, labelDefRepo, nil, formationRepo, formationTemplateRepo, nil, nil, labelDefService, nil, nil, nil, nil, nil, formationAssignmentService, nil, notificationsService, constraintEngine, webhookRepo, nil, runtimeType, applicationType)
 
 			// WHEN
 			actual, err := svc.DeleteFormation(ctx, TntInternalID, testCase.InputFormation)

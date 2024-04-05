@@ -14,6 +14,7 @@ type AddWebhookToApplicationOperation struct {
 	webhookType    graphql.WebhookType
 	webhookMode    graphql.WebhookMode
 	urlTemplate    string
+	headerTemplate *string
 	inputTemplate  string
 	outputTemplate string
 	applicationID  string
@@ -41,6 +42,11 @@ func (o *AddWebhookToApplicationOperation) WithURLTemplate(urlTemplate string) *
 	return o
 }
 
+func (o *AddWebhookToApplicationOperation) WithHeaderTemplate(headerTemplate *string) *AddWebhookToApplicationOperation {
+	o.headerTemplate = headerTemplate
+	return o
+}
+
 func (o *AddWebhookToApplicationOperation) WithInputTemplate(inputTemplate string) *AddWebhookToApplicationOperation {
 	o.inputTemplate = inputTemplate
 	return o
@@ -59,7 +65,7 @@ func (o *AddWebhookToApplicationOperation) WithAsserters(asserters ...asserters.
 }
 
 func (o *AddWebhookToApplicationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate)
+	applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.headerTemplate)
 	wh := fixtures.AddWebhookToApplication(t, ctx, gqlClient, applicationWebhookInput, o.tenantID, o.applicationID)
 	o.webhookID = wh.ID
 

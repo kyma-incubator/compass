@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -73,18 +74,34 @@ func NewTenantProvisioner(directorClient DirectorGraphQLClient, tenantConverter 
 	}
 }
 
-// ProvisionTenants provisions tenants according to their type
-func (p *provisioner) ProvisionTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
-	tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(p.tenantsFromRequest(*request))
-	return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
+// ProvisionMissingTenants provisions tenants according to their type
+func (p *provisioner) ProvisionMissingTenants(ctx context.Context, request *TenantSubscriptionRequest) error {
+	var newBusinessTenantMappings = []model.BusinessTenantMappingInput{}
+	requestedBusinessTenantMappingInputs := p.tenantsFromRequest(ctx, *request)
+	for _, currentBusinessTenantMappingInput := range requestedBusinessTenantMappingInputs {
+		exists, err := p.gqlClient.ExistsTenantByExternalID(ctx, currentBusinessTenantMappingInput.ExternalTenant)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			newBusinessTenantMappings = append(newBusinessTenantMappings, currentBusinessTenantMappingInput)
+		}
+	}
+
+	if len(newBusinessTenantMappings) > 0 {
+		tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(newBusinessTenantMappings)
+		return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
+	}
+	return nil
 }
 
-func (p *provisioner) tenantsFromRequest(request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
+func (p *provisioner) tenantsFromRequest(ctx context.Context, request TenantSubscriptionRequest) []model.BusinessTenantMappingInput {
 	tenants := make([]model.BusinessTenantMappingInput, 0, 3)
 	customerID := request.CustomerTenantID
 	accountID := request.AccountTenantID
 	costObjectID := request.CostObjectTenantID
 
+	log.C(ctx).Debugf("Tenants retrieved from the subscription request. Customer id %q,account id %q, cost-object id %q", customerID, accountID, costObjectID)
 	var licenseType *string
 
 	if len(request.SubscriptionLcenseType) > 0 {
