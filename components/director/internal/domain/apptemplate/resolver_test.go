@@ -1063,7 +1063,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				srm := &automock.SelfRegisterManager{}
 				srm.On("IsSelfRegistrationFlow", mock.Anything, modelAppTemplateInputWithProductAndSelfRegLabels.Labels).Return(false, testError).Once()
 				return srm
-
 			},
 			LabelSvcFn:    UnusedLabelService,
 			Ctx:           ctxWithCertConsumer,
