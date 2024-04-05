@@ -43,7 +43,7 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 	reverseAssignmentState := tenantMapping.AssignedTenant.ReverseAssignmentState
 	if tenantMapping.Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
-			log.Warn().Msgf("skipping processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'",
+			log.Warn().Msgf("skipping processing tenant mapping notification with $.assignedTenant.state '%s'",
 				reverseAssignmentState)
 			p.reportStatus(ctx, ucl.StatusReport{State: types.StateConfigPending})
 			return
