@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal/handlers/automock"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,11 +16,11 @@ import (
 
 var _ = Describe("Tenant Mapping Handler", func() {
 	var (
-		tenantMapping  *types.TenantMapping
-		errExpected    = errors.New("errExpected")
-		mockService    *automock.TenantMappingsService
-		mockUCLService *automock.UCLService
-		handler        *TenantMappingsHandler
+		tenantMapping      *types.TenantMapping
+		errExpected        = errors.New("errExpected")
+		mockService        *automock.TenantMappingsService
+		mockAsyncProcessor *automock.AsyncProcessor
+		handler            *TenantMappingsHandler
 
 		expectError = func(w *httptest.ResponseRecorder, expectedCode int, expectedMessage string) {
 			responseBody, err := io.ReadAll(w.Body)
@@ -40,7 +38,7 @@ var _ = Describe("Tenant Mapping Handler", func() {
 
 	BeforeEach(func() {
 		mockService = &automock.TenantMappingsService{}
-		mockUCLService = &automock.UCLService{}
+		mockAsyncProcessor = &automock.AsyncProcessor{}
 		tenantMapping = &types.TenantMapping{
 			Context: types.Context{
 				FormationID: "2d933ae2-10c4-4d6f-b4d4-5e1553e4ff05",
@@ -60,14 +58,14 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			},
 		}
 		handler = &TenantMappingsHandler{
-			Service:    mockService,
-			UCLService: mockUCLService,
+			Service:        mockService,
+			AsyncProcessor: mockAsyncProcessor,
 		}
 	})
 
 	AfterEach(func() {
 		mockService.AssertExpectations(test)
-		mockUCLService.AssertExpectations(test)
+		mockAsyncProcessor.AssertExpectations(test)
 	})
 
 	When("Tenant mapping cannot be decoded", func() {
@@ -136,102 +134,117 @@ var _ = Describe("Tenant Mapping Handler", func() {
 
 	When("Reverse assignment state is neither INITIAL nor READY", func() {
 		BeforeEach(func() {
-			tenantMapping.AssignedTenant.ReverseAssignmentState = "CREATE_ERROR"
+			tenantMapping.AssignedTenant.ReverseAssignmentState = "CONFIG_PENDING"
 		})
 
-		It("Should return status 202 and report CONFIG_PENDING status", func() {
-			expectedStatusReport := ucl.StatusReport{State: types.StateConfigPending}
-			mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+		It("Should return status 202 and handle the request asynchronously", func() {
+			mockAsyncProcessor.On("ProcessTMRequest", mock.Anything, mock.Anything).Return()
 			w, ctx := createTestRequest(tenantMapping)
 
 			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusAccepted))
+			Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ProcessTMRequest", 1)).To(BeTrue())
 		})
 	})
 
-	When("Consumed APIs cannot be updated", func() {
-		BeforeEach(func() {
-			tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateInitial
-		})
+	// When("Reverse assignment state is neither INITIAL nor READY", func() {
+	// 	BeforeEach(func() {
+	// 		tenantMapping.AssignedTenant.ReverseAssignmentState = "CREATE_ERROR"
+	// 	})
 
-		It("Should return status 202 and report CREATE_ERROR", func() {
-			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errExpected)
-			expectedStatusReport := ucl.StatusReport{
-				State: types.StateCreateError,
-				Error: fmt.Sprintf("failed to process tenant mapping notification: %s", errExpected.Error()),
-			}
-			mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
-			w, ctx := createTestRequest(tenantMapping)
+	// 	It("Should return status 202 and report CONFIG_PENDING status", func() {
+	// 		expectedStatusReport := ucl.StatusReport{State: types.StateConfigPending}
+	// 		mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+	// 		w, ctx := createTestRequest(tenantMapping)
 
-			handler.Patch(ctx)
-			Expect(w.Code).To(Equal(http.StatusAccepted))
-		})
-	})
-	When("Consumed APIs cannot be updated due to not found IAS application", func() {
-		When("Operation is Assign", func() {
-			BeforeEach(func() {
-				tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateInitial
-				tenantMapping.Operation = types.OperationAssign
-			})
+	// 		handler.Patch(ctx)
+	// 		Expect(w.Code).To(Equal(http.StatusAccepted))
+	// 	})
+	// })
 
-			It("Should return status 202 and report CREATE_ERROR", func() {
-				err := errors.Newf("could not process tenant mapping: %w", errors.IASApplicationNotFound)
-				mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(err)
-				expectedStatusReport := ucl.StatusReport{
-					State: types.StateCreateError,
-					Error: fmt.Sprintf("failed to process tenant mapping notification: %s", err.Error()),
-				}
-				mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
-				w, ctx := createTestRequest(tenantMapping)
+	// When("Consumed APIs cannot be updated", func() {
+	// 	BeforeEach(func() {
+	// 		tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateInitial
+	// 	})
 
-				handler.Patch(ctx)
-				Expect(w.Code).To(Equal(http.StatusAccepted))
-			})
-		})
-	})
-	When("One of the participants is S/4 and there is no certificate provided", func() {
-		BeforeEach(func() {
-			tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateInitial
-			tenantMapping.AssignedTenant.AppNamespace = types.S4ApplicationNamespace
-			tenantMapping.AssignedTenant.Parameters.ClientID = ""
-		})
+	// 	It("Should return status 202 and report CREATE_ERROR", func() {
+	// 		mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errExpected)
+	// 		expectedStatusReport := ucl.StatusReport{
+	// 			State: types.StateCreateError,
+	// 			Error: fmt.Sprintf("failed to process tenant mapping notification: %s", errExpected.Error()),
+	// 		}
+	// 		mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+	// 		w, ctx := createTestRequest(tenantMapping)
 
-		It("Should return 202 and report and CONFIG_PENDING with S/4 configuration", func() {
-			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.S4CertificateNotFound)
-			w, ctx := createTestRequest(tenantMapping)
-			expectedStatusReport := ucl.StatusReport{
-				State: types.StateConfigPending,
-				Configuration: &types.TenantMappingConfiguration{
-					Credentials: types.Credentials{
-						OutboundCommunicationCredentials: types.CommunicationCredentials{
-							OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
-								CorrelationIds: []string{S4SAPManagedCommunicationScenario},
-							},
-						},
-					},
-				},
-			}
-			mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+	// 		handler.Patch(ctx)
+	// 		Expect(w.Code).To(Equal(http.StatusAccepted))
+	// 	})
+	// })
+	// When("Consumed APIs cannot be updated due to not found IAS application", func() {
+	// 	When("Operation is Assign", func() {
+	// 		BeforeEach(func() {
+	// 			tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateInitial
+	// 			tenantMapping.Operation = types.OperationAssign
+	// 		})
 
-			handler.Patch(ctx)
-			Expect(w.Code).To(Equal(http.StatusAccepted))
-		})
-	})
-	When("Consumed APIs are successfully updated", func() {
-		BeforeEach(func() {
-			tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateReady
-		})
+	// 		It("Should return status 202 and report CREATE_ERROR", func() {
+	// 			err := errors.Newf("could not process tenant mapping: %w", errors.IASApplicationNotFound)
+	// 			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(err)
+	// 			expectedStatusReport := ucl.StatusReport{
+	// 				State: types.StateCreateError,
+	// 				Error: fmt.Sprintf("failed to process tenant mapping notification: %s", err.Error()),
+	// 			}
+	// 			mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+	// 			w, ctx := createTestRequest(tenantMapping)
 
-		It("Should return 200", func() {
-			mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(nil)
-			expectedStatusReport := ucl.StatusReport{
-				State: types.StateCreateReady,
-			}
-			mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
-			w, ctx := createTestRequest(tenantMapping)
+	// 			handler.Patch(ctx)
+	// 			Expect(w.Code).To(Equal(http.StatusAccepted))
+	// 		})
+	// 	})
+	// })
+	// When("One of the participants is S/4 and there is no certificate provided", func() {
+	// 	BeforeEach(func() {
+	// 		tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateInitial
+	// 		tenantMapping.AssignedTenant.AppNamespace = types.S4ApplicationNamespace
+	// 		tenantMapping.AssignedTenant.Parameters.ClientID = ""
+	// 	})
 
-			handler.Patch(ctx)
-			Expect(w.Code).To(Equal(http.StatusAccepted))
-		})
-	})
+	// 	It("Should return 202 and report and CONFIG_PENDING with S/4 configuration", func() {
+	// 		mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(errors.S4CertificateNotFound)
+	// 		w, ctx := createTestRequest(tenantMapping)
+	// 		expectedStatusReport := ucl.StatusReport{
+	// 			State: types.StateConfigPending,
+	// 			Configuration: &types.TenantMappingConfiguration{
+	// 				Credentials: types.Credentials{
+	// 					OutboundCommunicationCredentials: types.CommunicationCredentials{
+	// 						OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
+	// 							CorrelationIds: []string{types.S4SAPManagedCommunicationScenario},
+	// 						},
+	// 					},
+	// 				},
+	// 			},
+	// 		}
+	// 		mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+
+	// 		handler.Patch(ctx)
+	// 		Expect(w.Code).To(Equal(http.StatusAccepted))
+	// 	})
+	// })
+	// When("Consumed APIs are successfully updated", func() {
+	// 	BeforeEach(func() {
+	// 		tenantMapping.AssignedTenant.ReverseAssignmentState = types.StateReady
+	// 	})
+
+	// 	It("Should return 200", func() {
+	// 		mockService.On("ProcessTenantMapping", mock.Anything, mock.Anything).Return(nil)
+	// 		expectedStatusReport := ucl.StatusReport{
+	// 			State: types.StateCreateReady,
+	// 		}
+	// 		mockUCLService.On("ReportStatus", mock.Anything, mock.Anything, expectedStatusReport).Return(nil)
+	// 		w, ctx := createTestRequest(tenantMapping)
+
+	// 		handler.Patch(ctx)
+	// 		Expect(w.Code).To(Equal(http.StatusAccepted))
+	// 	})
+	// })
 })

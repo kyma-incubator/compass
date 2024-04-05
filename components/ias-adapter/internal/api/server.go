@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/jwk"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/processor"
 )
 
 func init() {
@@ -22,7 +23,7 @@ func init() {
 type Services struct {
 	HealthService         handlers.HealthService
 	TenantMappingsService handlers.TenantMappingsService
-	UCLService            handlers.UCLService
+	UCLService            processor.UCLService
 }
 
 func NewServer(ctx context.Context, cfg config.Config, services Services) (*http.Server, error) {
@@ -50,8 +51,11 @@ func NewServer(ctx context.Context, cfg config.Config, services Services) (*http
 	routerGroup.Use(authMiddleware.Auth)
 	tenantMappingRouter.Use(authMiddleware.Auth)
 	tenantMappingsHandler := handlers.TenantMappingsHandler{
-		Service:    services.TenantMappingsService,
-		UCLService: services.UCLService,
+		Service: services.TenantMappingsService,
+		AsyncProcessor: processor.AsyncProcessor{
+			TenantMappingsService: services.TenantMappingsService,
+			UCLService:            services.UCLService,
+		},
 	}
 	tenantMappingRouter.PATCH(paths.TenantMappingsPath, tenantMappingsHandler.Patch)
 

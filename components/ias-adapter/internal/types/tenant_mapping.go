@@ -10,6 +10,10 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 )
 
+const (
+	S4SAPManagedCommunicationScenario = "SAP_COM_1002"
+)
+
 var (
 	ErrInvalidFormationID         = errors.New("$.context.uclFormationId is invalid or missing")
 	ErrInvalidAssignedTenantAppID = errors.New("$.assignedTenant.uclSystemTenantId is invalid or missing")
