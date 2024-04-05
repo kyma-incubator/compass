@@ -13,6 +13,7 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ias"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/outbound"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/processor"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/storage/postgres"
 )
@@ -52,10 +53,15 @@ func Start(cfg config.Config) {
 		IASService: ias.NewService(outboundClient),
 	}
 
+	asyncProcessor := processor.AsyncProcessor{
+		TenantMappingsService: tenantMappingsService,
+		UCLService:            ucl.NewService(outboundClient),
+	}
+
 	server, err := api.NewServer(globalCtx, cfg, api.Services{
 		HealthService:         healthService,
 		TenantMappingsService: tenantMappingsService,
-		UCLService:            ucl.NewService(outboundClient),
+		AsyncProcessor:        asyncProcessor,
 	})
 	if err != nil {
 		log.Fatal().Msgf("Failed to create server: %s", err)
