@@ -88,7 +88,7 @@ const (
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type2",
-"%s": "val2",
+        "%s": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
@@ -113,10 +113,11 @@ const (
 		"businessTypeDescription": "tbt description name"
 	}]`
 
-	nameLabelKey           = "displayName"
-	namePlaceholder        = "name"
-	displayNamePlaceholder = "display-name"
-	regionLabelKey         = "region"
+	nameLabelKey            = "displayName"
+	namePlaceholder         = "name"
+	displayNamePlaceholder  = "display-name"
+	regionLabelKey          = "region"
+	applicationTypeLabelKey = "applicationType"
 )
 
 var (
@@ -693,86 +694,80 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
-// multiple app templates?
-//func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
-//	ctx := context.TODO()
-//	tenants := []string{tenant.TestTenants.GetDefaultTenantID(), tenant.TestTenants.GetDefaultCustomerTenantID()}
-//	tenantNames := []string{"def", "cus"}
-//	for index, tenantID := range tenants {
-//		setMultipleMockSystemsResponses(t, tenantID)
-//		defer cleanupMockSystems(t)
-//
-//		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, fmt.Sprintf("int-sys-%s", tenantNames[index]))
-//		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
-//		require.NoError(t, err)
-//		require.NotEmpty(t, intSys.ID)
-//
-//		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
-//		require.NotEmpty(t, intSysAuth)
-//		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
-//
-//		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
-//		require.True(t, ok)
-//
-//		t.Log("Issue a Hydra token with Client Credentials")
-//		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
-//		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
-//
-//		appTemplateName2 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp2%s", tenantNames[index]))
-//		appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
-//		appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-//		template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantID, appTemplateInput2)
-//		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantID, template2)
-//		require.NoError(t, err)
-//		require.NotEmpty(t, template2.ID)
-//
-//		//appTemplateName1 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp1%s", tenantNames[index]))
-//		//template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantID, fixApplicationTemplate(appTemplateName1, intSys.ID))
-//		//defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantID, template)
-//		//require.NoError(t, err)
-//		//require.NotEmpty(t, template.ID)
-//	}
-//	for _, tenantID := range tenants {
-//		triggerSync(t, tenantID)
-//	}
-//	for _, tenantID := range tenants {
-//		waitForApplicationsToBeProcessed(ctx, t, tenantID, cfg.SystemFetcherPageSize)
-//	}
-//	for _, tenantID := range tenants {
-//		req := fixtures.FixGetApplicationsRequestWithPagination()
-//		var resp directorSchema.ApplicationPageExt
-//		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &resp)
-//		require.NoError(t, err)
-//
-//		req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
-//		var resp2 directorSchema.ApplicationPageExt
-//		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req2, &resp2)
-//		require.NoError(t, err)
-//
-//		resp.Data = append(resp.Data, resp2.Data...)
-//		description := "description"
-//		expectedCount := cfg.SystemFetcherPageSize
-//		if expectedCount > 1 {
-//			expectedCount++
-//		}
-//		expectedApps := getFixExpectedMockSystems(expectedCount, "", "", "", description)
-//		actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
-//		for _, app := range resp.Data {
-//			actualApps = append(actualApps, directorSchema.ApplicationExt{
-//				Application: directorSchema.Application{
-//					Name:                  app.Application.Name,
-//					Description:           app.Application.Description,
-//					ApplicationTemplateID: app.ApplicationTemplateID,
-//					SystemNumber:          app.SystemNumber,
-//					IntegrationSystemID:   app.IntegrationSystemID,
-//				},
-//				Labels: app.Labels,
-//			})
-//			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, app)
-//		}
-//		require.ElementsMatch(t, expectedApps, actualApps)
-//	}
-//}
+func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
+	ctx := context.TODO()
+	tenants := []string{tenant.TestTenants.GetDefaultTenantID(), tenant.TestTenants.GetDefaultCustomerTenantID()}
+	tenantName1 := "default"
+	tenant1 := tenant.TestTenants.GetDefaultTenantID()
+	//for index, tenantID := range tenants {
+	setMultipleMockSystemsResponses(t, tenant1)
+	defer cleanupMockSystems(t)
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, fmt.Sprintf("int-sys-%s", tenantName1))
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
+
+	appTemplateName1 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp1%s", tenantName1))
+	appTemplateInput1 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID)
+	appTemplateInput1.Webhooks = append(appTemplateInput1.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
+	template1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant1, appTemplateInput1)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant1, template1)
+	require.NoError(t, err)
+	require.NotEmpty(t, template1.ID)
+
+	for _, tenantID := range tenants {
+		triggerSync(t, tenantID)
+	}
+	for _, tenantID := range tenants {
+		waitForApplicationsToBeProcessed(ctx, t, tenantID, cfg.SystemFetcherPageSize)
+	}
+	for _, tenantID := range tenants {
+		req := fixtures.FixGetApplicationsRequestWithPagination()
+		var resp directorSchema.ApplicationPageExt
+		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &resp)
+		require.NoError(t, err)
+
+		req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
+		var resp2 directorSchema.ApplicationPageExt
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req2, &resp2)
+		require.NoError(t, err)
+
+		resp.Data = append(resp.Data, resp2.Data...)
+		description := "description"
+		expectedCount := cfg.SystemFetcherPageSize
+		if expectedCount > 1 {
+			expectedCount++
+		}
+		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID, description)
+		actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+		for _, app := range resp.Data {
+			actualApps = append(actualApps, directorSchema.ApplicationExt{
+				Application: directorSchema.Application{
+					Name:                  app.Application.Name,
+					Description:           app.Application.Description,
+					ApplicationTemplateID: app.ApplicationTemplateID,
+					SystemNumber:          app.SystemNumber,
+					IntegrationSystemID:   app.IntegrationSystemID,
+				},
+				Labels: app.Labels,
+			})
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, app)
+		}
+		require.ElementsMatch(t, expectedApps, actualApps)
+	}
+}
 
 func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	ctx := context.TODO()
@@ -1659,7 +1654,7 @@ func applicationLabels(name, appTemplateName, integrationSystemID string, fromTe
 
 	if fromTemplate {
 		labels[nameLabelKey] = name
-		labels["applicationType"] = appTemplateName
+		labels[applicationTypeLabelKey] = appTemplateName
 	}
 
 	if len(regionLabel) > 0 {
@@ -1761,7 +1756,8 @@ func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, sys
 	appTemplateInput := fixRegionalApplicationTemplate(name, intSystemID, region)
 	appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRoles
 	appTemplateInput.Labels["slisFilter"] = []map[string]interface{}{
-		{"productId": systemRoles[0],
+		{
+			"productId": systemRoles[0],
 			"filter": []map[string]interface{}{
 				{
 					"key":       "$.additionalAttributes.systemSCPLandscapeID",

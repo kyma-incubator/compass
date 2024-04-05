@@ -2,7 +2,6 @@ package systemfetcher
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"strings"
@@ -81,15 +80,14 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 
 		productIDFilterMappings := make([]ProductIDFilterMapping, 0)
 
-		jsonData, err := json.Marshal(slisFilter.Value)
+		slisFilterLabelJson, err := json.Marshal(slisFilter.Value)
 		if err != nil {
-			fmt.Println("Error marshalling JSON:", err)
-
+			return *s, err
 		}
 
-		err = json.Unmarshal(jsonData, &productIDFilterMappings)
+		err = json.Unmarshal(slisFilterLabelJson, &productIDFilterMappings)
 		if err != nil {
-			fmt.Println("Error unmarshalling JSON:", err)
+			return *s, err
 		}
 
 		systemSource, systemSourceValueExists := s.SystemPayload[SystemSourceKey]

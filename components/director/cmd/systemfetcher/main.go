@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"os"
 	"strings"
@@ -93,7 +92,10 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const discoverSystemsOpMode = "DISCOVER_SYSTEMS"
+const (
+	discoverSystemsOpMode = "DISCOVER_SYSTEMS"
+	slisFilterLabelKey    = "slisFilter"
+)
 
 type config struct {
 	Address           string `envconfig:"default=127.0.0.1:8080"`
@@ -327,14 +329,12 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 		return nil, errors.Wrapf(err, "while unmarshaling placeholders mapping")
 	}
 
-	fmt.Println("PLACEHOLDER MAPPINGS ", placeholdersMapping)
-
 	templateRenderer, err := systemfetcher.NewTemplateRenderer(appTemplateSvc, appConverter, cfg.TemplateConfig.OverrideApplicationInput, placeholdersMapping)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating template renderer")
 	}
 
-	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping, templateRenderer)
+	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while calculating application templates mappings")
 	}
@@ -641,7 +641,7 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping, renderer systemfetcher.TemplateRenderer) error {
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
 	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
 
 	tx, err := transact.Begin()
@@ -663,25 +663,28 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
+		slisFilterLabel, slisFilterLabelExists := labels[slisFilterLabelKey]
+		if !slisFilterLabelExists {
+			return errors.Errorf("missing slis filter label for application template with ID %q", appTemplate.ID)
+		}
+
 		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels})
-		slisFilterLabel, _ := labels["slisFilter"]
 
 		productIDFilterMappings := make([]systemfetcher.ProductIDFilterMapping, 0)
 
-		jsonData, err := json.Marshal(slisFilterLabel.Value)
+		slisFilterLabelJson, err := json.Marshal(slisFilterLabel.Value)
 		if err != nil {
-			fmt.Println("Error marshalling JSON:", err)
-
+			return err
 		}
 
-		err = json.Unmarshal(jsonData, &productIDFilterMappings)
+		err = json.Unmarshal(slisFilterLabelJson, &productIDFilterMappings)
 		if err != nil {
-			fmt.Println("Error unmarshalling JSON:", err)
+			return err
 		}
 
-		for _, p := range productIDFilterMappings {
-			for _, f := range p.Filter {
-				topParent := getTopParentFromJSONPath(f.Key)
+		for _, mapping := range productIDFilterMappings {
+			for _, filter := range mapping.Filter {
+				topParent := getTopParentFromJSONPath(filter.Key)
 				selectFilterProperties[topParent] = true
 			}
 		}

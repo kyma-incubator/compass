@@ -353,15 +353,9 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 			log.C(ctx).Infof("Started processing tenant business type for system with system number %s", systemNumber)
 			appInput = s.enrichAppInputLabelsWithTenantBusinessType(systemPayload, appInput)
 
-			//if appInput.TemplateID == "" {
-			//if err = s.systemsService.TrustedUpsert(ctx, appInput.ApplicationRegisterInput); err != nil {
-			//	return errors.Wrap(err, "while upserting application")
-			//}
-			//} else {
 			if err = s.systemsService.TrustedUpsertFromTemplate(ctx, appInput.ApplicationRegisterInput, &appInput.TemplateID); err != nil {
 				return errors.Wrap(err, "while upserting application")
 			}
-			//}
 
 			if err = tx.Commit(); err != nil {
 				return errors.Wrapf(err, "failed to commit applications for tenant %s", tenantMapping.ExternalTenant)
@@ -386,31 +380,6 @@ func (s *SystemFetcher) convertSystemToAppRegisterInput(ctx context.Context, sc 
 		TemplateID:               sc.TemplateID,
 	}, nil
 }
-
-//func (s *SystemFetcher) appRegisterInput(ctx context.Context, sc System) (*model.ApplicationRegisterInput, error) {
-//	if len(sc.TemplateID) > 0 {
-//	return s.templateRenderer.ApplicationRegisterInputFromTemplate(ctx, sc)
-//	}
-//
-//	payload, err := json.Marshal(sc.SystemPayload)
-//	if err != nil {
-//		return nil, err
-//	}
-//
-//	return &model.ApplicationRegisterInput{
-//		Name:            gjson.GetBytes(payload, displayNameKey).String(),
-//		Description:     str.Ptr(gjson.GetBytes(payload, productDescriptionKey).String()),
-//		StatusCondition: &sc.StatusCondition,
-//		ProviderName:    str.Ptr(gjson.GetBytes(payload, infrastructureProviderKey).String()),
-//		BaseURL:         str.Ptr(gjson.GetBytes(payload, additionalUrlsKey+"."+mainURLKey).String()),
-//		SystemNumber:    str.Ptr(gjson.GetBytes(payload, systemNumberKey).String()),
-//		Labels: map[string]interface{}{
-//			"managed":              "true",
-//			"productId":            str.Ptr(gjson.GetBytes(payload, productIDKey).String()),
-//			"ppmsProductVersionId": str.Ptr(gjson.GetBytes(payload, ppmsProductVersionIDKey).String()),
-//		},
-//	}, nil
-//}
 
 func (s *SystemFetcher) enrichAppInputLabelsWithTenantBusinessType(systemPayload []byte, appInput *model.ApplicationRegisterInputWithTemplate) *model.ApplicationRegisterInputWithTemplate {
 	businessTypeID := gjson.GetBytes(systemPayload, businessTypeIDKey).String()
