@@ -176,6 +176,13 @@ enum OperationMode {
 	ASYNC
 }
 
+enum OperationStatus {
+	SCHEDULED
+	IN_PROGRESS
+	COMPLETED
+	FAILED
+}
+
 enum OperationType {
 	CREATE
 	UPDATE
@@ -195,6 +202,11 @@ enum RuntimeStatusCondition {
 	PROVISIONING
 	CONNECTED
 	FAILED
+}
+
+enum ScheduledOperationType {
+	ORD_AGGREGATION
+	SYSTEM_FETCHING
 }
 
 enum SpecFormat {
@@ -1020,6 +1032,7 @@ type Application {
 	labels(key: String): Labels
 	status: ApplicationStatus!
 	webhooks: [Webhook!] @sanitize(path: "graphql.field.application.webhooks")
+	operations: [Operation]
 	healthCheckURL: String
 	bundles(first: Int = 200, after: PageCursor): BundlePage
 	bundle(id: ID!): Bundle
@@ -1509,6 +1522,15 @@ type OneTimeTokenForRuntime implements OneTimeToken {
 	type: OneTimeTokenType
 }
 
+type Operation {
+	id: ID!
+	operationType: ScheduledOperationType!
+	status: OperationStatus!
+	error: String
+	createdAt: Timestamp
+	updatedAt: Timestamp
+}
+
 type PageInfo {
 	startCursor: PageCursor!
 	endCursor: PageCursor!
@@ -1665,6 +1687,7 @@ type Query {
 	"""
 	application(id: ID!): Application @hasScenario(applicationProvider: "GetApplicationID", idField: "id") @hasScopes(path: "graphql.query.application")
 	applicationBySystemNumber(systemNumber: String!): Application @hasScopes(path: "graphql.query.applicationBySystemNumber")
+	applicationsByLocalTenantID(localTenantID: String!, filter: [LabelFilter], first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applicationsByLocalTenantID")
 	applicationByLocalTenantIDAndAppTemplateID(localTenantID: String!, applicationTemplateID: ID!): Application @hasScopes(path: "graphql.query.applicationByLocalTenantIDAndAppTemplateID")
 	"""
 	Maximum `first` parameter value is 100

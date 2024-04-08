@@ -152,12 +152,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	ctx = context.WithValue(ctx, context_keys.FormationTemplateNameKey, ftplID)
 	t.Logf("Created Formation Template with ID: %q and name: %q", ftplID, formationTemplateName)
 
-	appProvider1 := resource_providers.NewApplicationProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
+	appProvider1 := resource_providers.NewApplicationFromTemplateProvider(applicationType1, namePlaceholder, "app1-formation-notifications-tests", displayNamePlaceholder, "App 1 Display Name", tnt)
 	defer appProvider1.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app1ID := appProvider1.Provide(t, ctx, certSecuredGraphQLClient)
 	t.Logf("Created application 1 with ID: %q from template: %q", app1ID, applicationType1)
 
-	appProvider2 := resource_providers.NewApplicationProvider(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
+	appProvider2 := resource_providers.NewApplicationFromTemplateProvider(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
 	defer appProvider2.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app2ID := appProvider2.Provide(t, ctx, certSecuredGraphQLClient)
 	t.Logf("Created application 2 with ID: %q from template: %q", app2ID, applicationType2)
@@ -499,7 +499,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		statusAsserter := asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
 			WithFormationName(formationName).
 			WithCondition(graphql.FormationStatusConditionInProgress).
-			WithState("INITIAL")
+			WithState(initialAssignmentState)
 		createFormation := operations.NewCreateFormationOperation(tnt).
 			WithName(formationName).
 			WithFormationTemplateName(formationTemplateName).
@@ -519,7 +519,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		lifecycleAsserter := asserters.NewLifecycleNotificationsAsserter(conf.ExternalServicesMockMtlsSecuredURL, certSecuredGraphQLClient, certSecuredHTTPClient).
 			WithOperation(createFormationOperation).
 			WithFormationName(formationName).
-			WithState("INITIAL").
+			WithState(initialAssignmentState).
 			WithTenantID(tnt).
 			WithParentTenantID(tntParentCustomer)
 		op = operations.NewMultiOperation().
@@ -710,10 +710,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		statusAsserter := asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
 			WithFormationName(formationName).
 			WithCondition(graphql.FormationStatusConditionDraft).
-			WithState("DRAFT")
+			WithState(draftFormationState)
 		createFormation := operations.NewCreateFormationOperation(tnt).
 			WithName(formationName).
-			WithState("DRAFT").
+			WithState(draftFormationState).
 			WithFormationTemplateName(formationTemplateName).
 			WithAsserters(statusAsserter)
 
@@ -729,8 +729,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			Operation()
 
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
-			WithParticipantAndStates(app1ID, "INITIAL", "INITIAL", "INITIAL").
-			WithParticipantAndStates(app2ID, "INITIAL", "INITIAL", "INITIAL")
+			WithParticipantAndStates(app1ID, initialAssignmentState, initialAssignmentState, initialAssignmentState).
+			WithParticipantAndStates(app2ID, initialAssignmentState, initialAssignmentState, initialAssignmentState)
 		faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
 			WithFormationName(formationName)
 		lifecycleAsserter := asserters.NewLifecycleNotificationsAsserter(conf.ExternalServicesMockMtlsSecuredURL, certSecuredGraphQLClient, certSecuredHTTPClient).

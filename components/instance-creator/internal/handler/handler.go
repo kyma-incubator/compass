@@ -570,13 +570,13 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, errors.Wrapf(err, "while retrieving service plan with catalog name %q and offering ID %q", serviceOfferingCatalogName, serviceOfferingID)
 		}
 
-		log.C(ctx).Debugf("Creating service instance with name %q, plan id %q, parameters %q and labels %v for subaccount %q and region %q...", serviceInstanceName, servicePlanID, serviceInstanceParameters, smLabels, region, subaccount)
+		log.C(ctx).Debugf("Creating service instance with name %q, plan id %q, parameters %q and labels %v for region %q and subaccount %q...", serviceInstanceName, servicePlanID, serviceInstanceParameters, smLabels, region, subaccount)
 		serviceInstanceID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceInstanceReqBody{Name: serviceInstanceName, ServicePlanID: servicePlanID, Parameters: serviceInstanceParameters, Labels: smLabels}, &types.ServiceInstance{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating service instance with name %q", serviceInstanceName)
 		}
 
-		log.C(ctx).Debugf("Getting raw service instance with id %q for subaccount %q and region %q...", serviceInstanceID, region, subaccount)
+		log.C(ctx).Debugf("Getting raw service instance with id %q for %q region and subaccount %q...", serviceInstanceID, region, subaccount)
 		serviceInstanceRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceInstance{ID: serviceInstanceID})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while retrieving service instance with ID %q", serviceInstanceID)
@@ -598,13 +598,13 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, errors.Wrapf(err, "while extracting the parameters of service binding for a service instance with id: %d", idx)
 		}
 
-		log.C(ctx).Debugf("Creating service binding with name %q, service instance id %q and parameters %q for subaccount %q and region %q...", serviceBindingName, serviceInstanceID, serviceBindingParameters, region, subaccount)
+		log.C(ctx).Debugf("Creating service binding with name %q, service instance id %q and parameters %q for region %q and subaccount %q...", serviceBindingName, serviceInstanceID, serviceBindingParameters, region, subaccount)
 		serviceBindingID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceBindingReqBody{Name: serviceBindingName, ServiceBindingID: serviceInstanceID, Parameters: serviceBindingParameters}, &types.ServiceBinding{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating service instance binding for service instance with ID %q", serviceInstanceID)
 		}
 
-		log.C(ctx).Debugf("Getting raw service binding with id %q for subaccount %q and region %q...", serviceBindingID, region, subaccount)
+		log.C(ctx).Debugf("Getting raw service binding with id %q for region %q and subaccount %q...", serviceBindingID, region, subaccount)
 		serviceBindingRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceBinding{ID: serviceBindingID})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while retrieving service instance binding with ID %q", serviceBindingID)

@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 
@@ -93,6 +94,29 @@ func TestRegisterApplicationWithExternalCertificate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, app)
 	require.NotEmpty(t, app.ID)
+}
+
+func TestRegisterApplicationWithOrdWebhook(t *testing.T) {
+	ctx := context.Background()
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, conf.ExternalCertProviderConfig, true)
+	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+
+	in := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("test", "register-app-with-external-cert", "http://test.test", nil)
+	in.LocalTenantID = nil
+	appInputGQL, err := testctx.Tc.Graphqlizer.ApplicationRegisterInputToGQL(in)
+	require.NoError(t, err)
+
+	createRequest := fixtures.FixRegisterApplicationRequest(appInputGQL)
+	app := graphql.ApplicationExt{}
+
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, directorCertSecuredClient, createRequest, &app)
+	defer fixtures.CleanupApplication(t, ctx, directorCertSecuredClient, "", &app)
+	require.NoError(t, err)
+	require.NotNil(t, app)
+	require.NotEmpty(t, app.ID)
+	require.Equal(t, 1, len(app.Operations))
+	require.Equal(t, graphql.ScheduledOperationTypeOrdAggregation, app.Operations[0].OperationType)
 }
 
 // TODO: Uncomment the bellow test once the authentication for last operation is in place
@@ -2025,6 +2049,155 @@ func TestGetApplicationsAPIEventDefinitions(t *testing.T) {
 	require.NotEmpty(t, app.EventDefinition)
 	assert.Equal(t, app.APIDefinition.ID, api.ID)
 	assert.Equal(t, app.EventDefinition.ID, event.ID)
+}
+
+func TestListApplicationsByLocalTenantID(t *testing.T) {
+	//GIVEN
+	ctx := context.TODO()
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+	localTenantID := "local-tenant-id-1234"
+
+	nameField := "name"
+	displayNameField := "displayName"
+	localTenantIDField := "localTenantId"
+
+	createIntegrationSystem := func() *graphql.IntegrationSystemExt {
+		integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "integration-system-name")
+		require.NoError(t, err)
+		require.NotEmpty(t, integrationSystem.ID)
+		return integrationSystem
+	}
+
+	createIntegrationSystemCredentials := func(integrationSystem *graphql.IntegrationSystemExt) *graphql.IntSysSystemAuth {
+		integrationSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem.ID)
+		require.NotEmpty(t, integrationSystemAuth)
+		return integrationSystemAuth
+	}
+
+	createIntegrationSystemOauthClient := func(integrationSystemAuth *graphql.IntSysSystemAuth) *gcli.Client {
+		integrationSystemOauthCredentialData, ok := integrationSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+		return gql.NewAuthorizedGraphQLClientWithCustomURL(token.GetAccessToken(t, integrationSystemOauthCredentialData, token.IntegrationSystemScopes), conf.GatewayOauth)
+	}
+
+	createAppTemplate := func(client *gcli.Client, appTemplateName string) graphql.ApplicationTemplate {
+		input := fixtures.FixApplicationTemplate(appTemplateName)
+		input.Placeholders = []*graphql.PlaceholderDefinitionInput{
+			{
+				Name:     "name",
+				JSONPath: ptr.String(fmt.Sprintf("$.%s", nameField)),
+			},
+			{
+				Name:     "display-name",
+				JSONPath: ptr.String(fmt.Sprintf("$.%s", displayNameField)),
+			},
+			{
+				Name:     "tenant-id",
+				JSONPath: ptr.String(fmt.Sprintf("$.%s", localTenantIDField)),
+			},
+		}
+		input.ApplicationInput.LocalTenantID = ptr.String("{{tenant-id}}")
+
+		appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, client, tenantId, input)
+		require.NoError(t, err)
+		return appTemplate
+	}
+
+	createApp := func(client *gcli.Client, appTemplate graphql.ApplicationTemplate, name, localTenantID string) graphql.ApplicationExt {
+		input := graphql.ApplicationFromTemplateInput{
+			ID:           &appTemplate.ID,
+			TemplateName: appTemplate.Name,
+			PlaceholdersPayload: str.Ptr(fmt.Sprintf(`{\"%s\": \"%s\", \"%s\": \"%s\", \"%s\": \"%s\"}`,
+				nameField, name,
+				displayNameField, name,
+				localTenantIDField, localTenantID)),
+		}
+		inputGQL, err := testctx.Tc.Graphqlizer.ApplicationFromTemplateInputToGQL(input)
+		require.NoError(t, err)
+
+		request := fixtures.FixRegisterApplicationFromTemplateWithLocalTenantID(inputGQL)
+		app := graphql.ApplicationExt{}
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, client, tenantId, request, &app)
+		require.NoError(t, err)
+		return app
+	}
+
+	listApplications := func(localTenantID, appTemplateName string) (graphql.ApplicationPageExt, error) {
+		var filter string
+		var err error
+		if appTemplateName != "" {
+			filter, err = testctx.Tc.Graphqlizer.LabelFilterToGQL(graphql.LabelFilter{Key: conf.ApplicationTypeLabelKey, Query: str.Ptr(fmt.Sprintf("\"%s\"", appTemplateName))})
+			require.NoError(t, err)
+		}
+
+		request := fixtures.FixListApplicationsByLocalTenantID(localTenantID, filter, 200, "")
+		page := graphql.ApplicationPageExt{}
+		err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, request, &page)
+		if appTemplateName != "" {
+			example.SaveExampleInCustomDir(t, request.Query(), example.QueryApplicationsCategory, "query applications by local tenant id and an optional filter")
+		}
+
+		return page, err
+	}
+
+	integrationSystem := createIntegrationSystem()
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem)
+
+	integrationSystemAuth := createIntegrationSystemCredentials(integrationSystem)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, integrationSystemAuth.ID)
+
+	integrationSystemOAuthClient := createIntegrationSystemOauthClient(integrationSystemAuth)
+
+	appTemplateOneName := fixtures.CreateAppTemplateName("template one")
+	appTemplateOne := createAppTemplate(integrationSystemOAuthClient, appTemplateOneName)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, integrationSystemOAuthClient, tenantId, appTemplateOne)
+
+	appTemplateTwoName := fixtures.CreateAppTemplateName("template two")
+	appTemplateTwo := createAppTemplate(integrationSystemOAuthClient, appTemplateTwoName)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, integrationSystemOAuthClient, tenantId, appTemplateTwo)
+
+	appOne := createApp(integrationSystemOAuthClient, appTemplateOne, "app-one-name", localTenantID)
+	defer fixtures.UnregisterApplication(t, ctx, integrationSystemOAuthClient, tenantId, appOne.ID)
+
+	appTwo := createApp(integrationSystemOAuthClient, appTemplateTwo, "app-two-name", localTenantID)
+	defer fixtures.UnregisterApplication(t, ctx, integrationSystemOAuthClient, tenantId, appTwo.ID)
+
+	//WHEN
+	page, err := listApplications(localTenantID, "")
+
+	//THEN
+	require.NoError(t, err)
+	require.Equal(t, 2, page.TotalCount)
+	require.Equal(t, 2, len(page.Data))
+
+	localTenantID1 := page.Data[0].LocalTenantID
+	require.NotNil(t, localTenantID1)
+	require.Equal(t, localTenantID, *localTenantID1)
+
+	localTenantID2 := page.Data[1].LocalTenantID
+	require.NotNil(t, localTenantID2)
+	require.Equal(t, localTenantID, *localTenantID2)
+
+	actualName1 := page.Data[0].Name
+	actualName2 := page.Data[1].Name
+	require.NotEqual(t, actualName1, actualName2)
+
+	appNames := []string{actualName1, actualName2}
+	require.Subset(t, appNames, []string{appOne.Name})
+	require.Subset(t, appNames, []string{appTwo.Name})
+
+	//WHEN
+	page, err = listApplications(localTenantID, appTemplateOne.Name)
+
+	//THEN
+	require.NoError(t, err)
+	require.Equal(t, 1, page.TotalCount)
+	require.Equal(t, 1, len(page.Data))
+
+	localTenantID3 := page.Data[0].LocalTenantID
+	require.NotNil(t, localTenantID3)
+	require.Equal(t, localTenantID, *localTenantID3)
+	require.Equal(t, appOne.Name, page.Data[0].Name)
 }
 
 func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {

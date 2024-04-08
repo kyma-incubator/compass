@@ -44,6 +44,7 @@ type ApplicationExt struct {
 	Auths                   []*AppSystemAuth                 `json:"auths"`
 	Bundle                  BundleExt                        `json:"bundle"`
 	Bundles                 BundlePageExt                    `json:"bundles"`
+	Operations              []*Operation                     `json:"operations"`
 	EventingConfiguration   ApplicationEventingConfiguration `json:"eventingConfiguration"`
 	APIDefinition           APIDefinitionExt                 `json:"apiDefinition"`
 	EventDefinition         EventAPIDefinitionExt            `json:"eventDefinition"`
