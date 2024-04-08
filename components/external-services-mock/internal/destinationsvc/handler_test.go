@@ -14,24 +14,24 @@ import (
 
 	"github.com/form3tech-oss/jwt-go"
 	"github.com/gorilla/mux"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationsvc"
 	destcreatorpkg "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 	"github.com/stretchr/testify/require"
 )
 
 var (
 	testSecretKey                                              = []byte("testSecretKey")
-	noAuthDestIdentifierWithSubaccountID                       = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, noAuthDestName, testSubaccountID, "")
-	samlAssertionDestIdentifierWithSubaccountIDAndInstanceID   = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, testServiceInstanceID)
-	destinationCertIdentifierWithSubaccountID                  = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, "")
-	destinationCertIdentifierWithSubaccountIDAndInstanceID     = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, testServiceInstanceID)
-	samlDestinationCertIdentifierWithSubaccountIDAndInstanceID = fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, testDestKeyStoreLocation, testSubaccountID, testServiceInstanceID)
+	noAuthDestIdentifierWithSubaccountID                       = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, noAuthDestName, testSubaccountID, "")
+	samlAssertionDestIdentifierWithSubaccountIDAndInstanceID   = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, testServiceInstanceID)
+	destinationCertIdentifierWithSubaccountID                  = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, "")
+	destinationCertIdentifierWithSubaccountIDAndInstanceID     = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, testServiceInstanceID)
+	samlDestinationCertIdentifierWithSubaccountIDAndInstanceID = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestKeyStoreLocation, testSubaccountID, testServiceInstanceID)
 )
 
 func TestHandler_CreateDestinations(t *testing.T) {
 	destinationCreatorPath := fmt.Sprintf("/regions/%s/subaccounts/%s/destinations", testRegion, testSubaccountID)
-	basicDestIdentifierWithSubaccountID := fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, basicAuthDestName, testSubaccountID, "")
-	samlAssertionDestIdentifierWithSubaccountID := fmt.Sprintf(destinationcreator.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, "")
+	basicDestIdentifierWithSubaccountID := fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, basicAuthDestName, testSubaccountID, "")
+	samlAssertionDestIdentifierWithSubaccountID := fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, "")
 
 	testCases := []struct {
 		Name                               string
@@ -200,15 +200,15 @@ func TestHandler_CreateDestinations(t *testing.T) {
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			config := &destinationcreator.Config{
+			config := &destinationsvc.Config{
 				CorrelationIDsKey: correlationIDsKey,
-				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
+				DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
 					RegionParam:       regionParamValue,
 					SubaccountIDParam: subaccountIDParamValue,
 				},
 			}
 
-			h := destinationcreator.NewHandler(config)
+			h := destinationsvc.NewHandler(config)
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingDestination != nil {
@@ -310,16 +310,16 @@ func TestHandler_DeleteDestinations(t *testing.T) {
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			config := &destinationcreator.Config{
+			config := &destinationsvc.Config{
 				CorrelationIDsKey: correlationIDsKey,
-				DestinationAPIConfig: &destinationcreator.DestinationAPIConfig{
+				DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
 					RegionParam:          regionParamValue,
 					SubaccountIDParam:    subaccountIDParamValue,
 					DestinationNameParam: destNameParamKey,
 				},
 			}
 
-			h := destinationcreator.NewHandler(config)
+			h := destinationsvc.NewHandler(config)
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingDestination != nil {
@@ -428,15 +428,15 @@ func TestHandler_CreateCertificate(t *testing.T) {
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			config := &destinationcreator.Config{
+			config := &destinationsvc.Config{
 				CorrelationIDsKey: correlationIDsKey,
-				CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
+				CertificateAPIConfig: &destinationsvc.CertificateAPIConfig{
 					RegionParam:       regionParamValue,
 					SubaccountIDParam: subaccountIDParamValue,
 				},
 			}
 
-			h := destinationcreator.NewHandler(config)
+			h := destinationsvc.NewHandler(config)
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingCertificate != nil {
@@ -541,16 +541,16 @@ func TestHandler_DeleteCertificate(t *testing.T) {
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			config := &destinationcreator.Config{
+			config := &destinationsvc.Config{
 				CorrelationIDsKey: correlationIDsKey,
-				CertificateAPIConfig: &destinationcreator.CertificateAPIConfig{
+				CertificateAPIConfig: &destinationsvc.CertificateAPIConfig{
 					RegionParam:          regionParamValue,
 					SubaccountIDParam:    subaccountIDParamValue,
 					CertificateNameParam: certNameParamKey,
 				},
 			}
 
-			h := destinationcreator.NewHandler(config)
+			h := destinationsvc.NewHandler(config)
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingCertificateDestinationSvc != nil {
@@ -668,7 +668,7 @@ func TestHandler_FindDestinationByNameFromDestinationSvc(t *testing.T) {
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			h := destinationcreator.NewHandler(&destinationcreator.Config{})
+			h := destinationsvc.NewHandler(&destinationsvc.Config{})
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingDestination != nil {
@@ -774,7 +774,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 				req = mux.SetURLVars(req, urlVars)
 			}
 
-			h := destinationcreator.NewHandler(&destinationcreator.Config{})
+			h := destinationsvc.NewHandler(&destinationsvc.Config{})
 			r := httptest.NewRecorder()
 
 			if testCase.ExistingCertificate != nil {

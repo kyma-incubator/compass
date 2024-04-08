@@ -264,7 +264,7 @@ func (h *Handler) createDestination(ctx context.Context, reqBody DestinationRequ
 	log.C(ctx).Infof("Destination with identifier: %q added to the destination service", destinationIdentifier)
 	h.DestinationSvcDestinations[destinationIdentifier] = destination
 
-	findAPIResponse, err := h.getSensitiveDataString(destination, subaccountID, instanceID)
+	findAPIResponse, err := h.getSensitiveDataString(destination, subaccountID, instanceID, true)
 	if err != nil {
 		return http.StatusBadRequest, errors.Wrapf(err, "An error occurred while building sensitive data for destination %s", destinationTypeName)
 	}
@@ -340,7 +340,7 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 
 	destination := destinationRequestBody.ToDestination()
 
-	findAPIResponse, err := h.getSensitiveDataString(destination, subaccountID, serviceInstanceID)
+	findAPIResponse, err := h.getSensitiveDataString(destination, subaccountID, serviceInstanceID, true)
 	if err != nil {
 		log.C(ctx).WithError(err).Error("Failed to marshal response body")
 		http.Error(writer, "An error occurred while building sensitive data for destination", http.StatusInternalServerError)
@@ -560,10 +560,10 @@ func (h *Handler) buildFindAPIResponse(dest destinationcreator.Destination, r *h
 		}
 	}
 
-	return h.getSensitiveDataString(dest, subaccountID, instanceID)
+	return h.getSensitiveDataString(dest, subaccountID, instanceID, false)
 }
 
-func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, subaccountID, instanceID string) (string, error) {
+func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, subaccountID, instanceID string, skipCert bool) (string, error) {
 	var findAPIResponse string
 	switch dest.GetType() {
 	case destinationcreator.DesignTimeDestinationType:
@@ -583,22 +583,34 @@ func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, su
 		if !ok {
 			return "", errors.New("error while type asserting destination to SAMLAssertion one")
 		}
-		certName := samlAssertionDest.KeyStoreLocation
-		certResponseName, err := h.getCertificateName(certName, subaccountID, instanceID)
-		if err != nil {
-			return "", err
+
+		var err error
+		certResponseName := ""
+		if !skipCert {
+			certName := samlAssertionDest.KeyStoreLocation
+			certResponseName, err = h.getCertificateName(certName, subaccountID, instanceID)
+			if err != nil {
+				return "", err
+			}
 		}
+
 		findAPIResponse = fmt.Sprintf(FindAPISAMLAssertionDestResponseTemplate, subaccountID, instanceID, samlAssertionDest.Name, samlAssertionDest.Type, samlAssertionDest.URL, samlAssertionDest.Authentication, samlAssertionDest.ProxyType, samlAssertionDest.Audience, samlAssertionDest.KeyStoreLocation, certResponseName)
 	case destinationcreator.ClientCertDestinationType:
 		clientCertDest, ok := dest.(*destinationcreator.ClientCertificateAuthenticationDestination)
 		if !ok {
 			return "", errors.New("error while type asserting destination to ClientCertificate one")
 		}
-		certName := clientCertDest.KeyStoreLocation
-		certResponseName, err := h.getCertificateName(certName, subaccountID, instanceID)
-		if err != nil {
-			return "", err
+
+		var err error
+		certResponseName := ""
+		if !skipCert {
+			certName := clientCertDest.KeyStoreLocation
+			certResponseName, err = h.getCertificateName(certName, subaccountID, instanceID)
+			if err != nil {
+				return "", err
+			}
 		}
+
 		findAPIResponse = fmt.Sprintf(FindAPIClientCertDestResponseTemplate, subaccountID, instanceID, clientCertDest.Name, clientCertDest.Type, clientCertDest.URL, clientCertDest.Authentication, clientCertDest.ProxyType, clientCertDest.KeyStoreLocation, certResponseName)
 	case destinationcreator.OAuth2ClientCredentialsType:
 		oauth2ClientCredsDest, ok := dest.(*destinationcreator.OAuth2ClientCredentialsDestination)

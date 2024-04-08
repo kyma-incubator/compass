@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
-	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
+	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationsvc"
 	esmdestcreatorpkg "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 )
 
@@ -68,6 +68,7 @@ func fixBasicDestination(name string) esmdestcreatorpkg.Destination {
 			Type:           destinationcreatorpkg.Type(testDestType),
 			ProxyType:      destinationcreatorpkg.ProxyType(testDestProxyType),
 			Authentication: "BasicAuthentication",
+			XCorrelationID: "value",
 		},
 		User:     "my-first-user",
 		Password: "secretPassword",
@@ -82,6 +83,7 @@ func fixSAMLAssertionDestination(name string) esmdestcreatorpkg.Destination {
 			Type:           destinationcreatorpkg.Type(testDestType),
 			ProxyType:      destinationcreatorpkg.ProxyType(testDestProxyType),
 			Authentication: "SAMLAssertion",
+			XCorrelationID: "value",
 		},
 		Audience:         testSecureDestURL,
 		KeyStoreLocation: testDestKeyStoreLocation,
