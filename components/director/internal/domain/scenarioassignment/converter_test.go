@@ -13,7 +13,7 @@ func TestToGraphQL(t *testing.T) {
 	// GIVEN
 	sut := scenarioassignment.NewConverter()
 	// WHEN
-	actual := sut.ToGraphQL(model.AutomaticScenarioAssignment{
+	actual := sut.ToGraphQL(&model.AutomaticScenarioAssignment{
 		ScenarioName:   scenarioName,
 		Tenant:         tenantID,
 		TargetTenantID: targetTenantID,
@@ -32,7 +32,7 @@ func TestToEntity(t *testing.T) {
 	// GIVEN
 	sut := scenarioassignment.NewConverter()
 	// WHEN
-	actual := sut.ToEntity(model.AutomaticScenarioAssignment{
+	actual := sut.ToEntity(&model.AutomaticScenarioAssignment{
 		ScenarioName:   scenarioName,
 		Tenant:         tenantID,
 		TargetTenantID: targetTenantID,
@@ -57,7 +57,7 @@ func TestFromEntity(t *testing.T) {
 	})
 
 	// THEN
-	assert.Equal(t, model.AutomaticScenarioAssignment{
+	assert.Equal(t, &model.AutomaticScenarioAssignment{
 		ScenarioName:   scenarioName,
 		Tenant:         tenantID,
 		TargetTenantID: targetTenantID,

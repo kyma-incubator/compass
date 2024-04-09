@@ -18,6 +18,10 @@ type WebhookService struct {
 func (_m *WebhookService) Create(ctx context.Context, owningResourceID string, in model.WebhookInput, objectType model.WebhookReferenceObjectType) (string, error) {
 	ret := _m.Called(ctx, owningResourceID, in, objectType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookInput, model.WebhookReferenceObjectType) (string, error)); ok {
@@ -41,6 +45,10 @@ func (_m *WebhookService) Create(ctx context.Context, owningResourceID string, i
 // ListForRuntime provides a mock function with given fields: ctx, runtimeID
 func (_m *WebhookService) ListForRuntime(ctx context.Context, runtimeID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, runtimeID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForRuntime")
+	}
 
 	var r0 []*model.Webhook
 	var r1 error

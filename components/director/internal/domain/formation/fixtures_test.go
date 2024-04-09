@@ -1047,12 +1047,12 @@ func fixCtxWithTenant() context.Context {
 	return ctx
 }
 
-func fixModel(scenarioName string) model.AutomaticScenarioAssignment {
+func fixModel(scenarioName string) *model.AutomaticScenarioAssignment {
 	return fixModelWithScenarioName(scenarioName)
 }
 
-func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+func fixModelWithScenarioName(scenario string) *model.AutomaticScenarioAssignment {
+	return &model.AutomaticScenarioAssignment{
 		ScenarioName:   scenario,
 		Tenant:         tenantID.String(),
 		TargetTenantID: TargetTenantID,

@@ -122,7 +122,7 @@ func TestRepository_ListAll(t *testing.T) {
 		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
 			fixEntityWithScenarioName("scenario-B")}
-		scenarioModels := []model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
+		scenarioModels := []*model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
 			fixModelWithScenarioName("scenario-B")}
 
 		mockConverter := &automock.EntityConverter{}
@@ -148,8 +148,8 @@ func TestRepository_ListAll(t *testing.T) {
 
 		// THEN
 		assert.NoError(t, err)
-		assert.Equal(t, scenarioModels[0], *result[0])
-		assert.Equal(t, scenarioModels[1], *result[1])
+		assert.Equal(t, scenarioModels[0], result[0])
+		assert.Equal(t, scenarioModels[1], result[1])
 	})
 
 	t.Run("DB error", func(t *testing.T) {
@@ -177,7 +177,7 @@ func TestRepository_ListForTargetTenant(t *testing.T) {
 		// GIVEN
 		scenarioEntities := []scenarioassignment.Entity{fixEntityWithScenarioName(scenarioName),
 			fixEntityWithScenarioName("scenario-B")}
-		scenarioModels := []model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
+		scenarioModels := []*model.AutomaticScenarioAssignment{fixModelWithScenarioName(scenarioName),
 			fixModelWithScenarioName("scenario-B")}
 
 		mockConverter := &automock.EntityConverter{}
@@ -203,8 +203,8 @@ func TestRepository_ListForTargetTenant(t *testing.T) {
 
 		// THEN
 		assert.NoError(t, err)
-		assert.Equal(t, scenarioModels[0], *result[0])
-		assert.Equal(t, scenarioModels[1], *result[1])
+		assert.Equal(t, scenarioModels[0], result[0])
+		assert.Equal(t, scenarioModels[1], result[1])
 	})
 
 	t.Run("DB error", func(t *testing.T) {
