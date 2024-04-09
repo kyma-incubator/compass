@@ -70,8 +70,8 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			ExpectedError:              testErr,
 		},
 		{
-			Name: "Returns nil when formation template not found",
-			TxFn: txGen.ThatSucceeds,
+			Name: "Returns error when formation template not found",
+			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
 				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.FormationTemplate, testID))
@@ -80,7 +80,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			},
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
 			ExpectedOutput:             nil,
-			ExpectedError:              nil,
+			ExpectedError:              apperrors.NewNotFoundError(resource.FormationTemplate, testID),
 		},
 		{
 			Name: "Returns error when failing on the committing of a transaction",
