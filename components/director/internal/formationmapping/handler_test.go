@@ -1620,6 +1620,25 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:       "Fail when trying to reset assignment without configuration",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime(model.InitialAssignmentState), nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State: model.ReadyAssignmentState,
+			},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+
+		{
 			name:       "Fail when failing to get reverse assignment",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
