@@ -22,7 +22,7 @@ var (
 type TenantMapping struct {
 	Context        `json:"context"`
 	ReceiverTenant ReceiverTenant `json:"receiverTenant"`
-	AssignedTenant AssignedTenant `json:"assignedTenants"`
+	AssignedTenant AssignedTenant `json:"assignedTenant"`
 }
 
 type Context struct {
