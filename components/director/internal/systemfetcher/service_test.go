@@ -93,9 +93,7 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Success with one tenant and one system which has tbt and tbt does not exist in the db",
@@ -130,9 +128,7 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Success with one tenant and one system which has tbt and tbt exists in the db",
@@ -167,9 +163,7 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Success when in verification mode",
@@ -199,10 +193,8 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			verificationTenant: "t1",
+			setupDirectorClient: emptySetupDirectorClient,
+			verificationTenant:  "t1",
 		},
 		{
 			name: "Success with one tenant and one system that has already been in the database and will not have it's status condition changed",
@@ -254,9 +246,7 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Success with one tenant and one system with null base url",
@@ -300,43 +290,28 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
-			name: "Success with one tenant and one system without template",
+			name: "Success with one tenant and no fetched systems, because no system matches any application template",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
-				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(4)
+				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
 				return mockedTx, transactioner
 			},
 			fixTestSystems: fixSystems,
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return fixAppsInputsWithTemplatesBySystems(t, systems)
 			},
-			setupTenantSvc: okTenantSvc,
-			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				systemSvc := &automock.SystemsService{}
-				systemSvc.On("TrustedUpsert", txtest.CtxWithDBMatcher(), appsInputs[0].ApplicationRegisterInput, mock.Anything).Return(nil).Once()
-				systemSvc.On("GetBySystemNumber", txtest.CtxWithDBMatcher(), *appsInputs[0].SystemNumber).Return(&model.Application{
-					BaseEntity: &model.BaseEntity{
-						ID: "id",
-					},
-				}, nil)
-				return systemSvc
-			},
-			setupSystemsSyncSvc: okTenantSystemsSyncSvc,
+			setupTenantSvc:           okTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      okTenantSystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
-				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
+				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return([]systemfetcher.System{}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Success with one tenant and multiple systems",
@@ -386,9 +361,7 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Fail when transaction cannot be started",
@@ -401,23 +374,13 @@ func TestSyncSystems(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return fixAppsInputsWithTemplatesBySystems(t, systems)
 			},
-			setupTenantSvc: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: okTenantSystemsSyncSvc,
-			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
-				return &automock.SystemsAPIClient{}
-			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupTenantSvc:           emptySetupTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      okTenantSystemsSyncSvc,
+			setupSysAPIClient:        emptySetupSysAPIClient,
+			setupDirectorClient:      emptySetupDirectorClient,
+			expectedErr:              testErr,
 		},
 		{
 			name: "Fail when Timestamps for tenant cannot be fetched",
@@ -438,23 +401,13 @@ func TestSyncSystems(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return fixAppsInputsWithTemplatesBySystems(t, systems)
 			},
-			setupTenantSvc: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: errListByTenantSystemsSyncSvc,
-			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
-				return &automock.SystemsAPIClient{}
-			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupTenantSvc:           emptySetupTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      errListByTenantSystemsSyncSvc,
+			setupSysAPIClient:        emptySetupSysAPIClient,
+			setupDirectorClient:      emptySetupDirectorClient,
+			expectedErr:              testErr,
 		},
 		{
 			name: "Fail when Tenant cannot be fetched",
@@ -477,21 +430,13 @@ func TestSyncSystems(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return fixAppsInputsWithTemplatesBySystems(t, systems)
 			},
-			setupTenantSvc: errTenantSvc,
-			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: okTenantSystemsSyncSvc,
-			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
-				return &automock.SystemsAPIClient{}
-			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupTenantSvc:           errTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      okTenantSystemsSyncSvc,
+			setupSysAPIClient:        emptySetupSysAPIClient,
+			setupDirectorClient:      emptySetupDirectorClient,
+			expectedErr:              testErr,
 		},
 		{
 			name: "Succeed when Tenant cannot be found",
@@ -514,20 +459,12 @@ func TestSyncSystems(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return fixAppsInputsWithTemplatesBySystems(t, systems)
 			},
-			setupTenantSvc: okNilTenantSvc,
-			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: okTenantSystemsSyncSvc,
-			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
-				return &automock.SystemsAPIClient{}
-			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupTenantSvc:           okNilTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      okTenantSystemsSyncSvc,
+			setupSysAPIClient:        emptySetupSysAPIClient,
+			setupDirectorClient:      emptySetupDirectorClient,
 		},
 		{
 			name: "Fail when client fails to fetch systems",
@@ -542,23 +479,17 @@ func TestSyncSystems(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return fixAppsInputsWithTemplatesBySystems(t, systems)
 			},
-			setupTenantSvc: okTenantSvc,
-			setupTemplateRendererSvc: func(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: okTenantSystemsSyncSvc,
+			setupTenantSvc:           okTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      okTenantSystemsSyncSvc,
 			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
 				sysAPIClient := &automock.SystemsAPIClient{}
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(nil, testErr).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupDirectorClient: emptySetupDirectorClient,
+			expectedErr:         testErr,
 		},
 		{
 			name: "Succeed when Upsert Timestamps fails",
@@ -596,9 +527,7 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return(testSystems, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
 			name: "Fail when service fails to save systems",
@@ -638,10 +567,8 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return([]systemfetcher.System{testSystems[0]}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupDirectorClient: emptySetupDirectorClient,
+			expectedErr:         testErr,
 		},
 		{
 			name: "Fail when application from template cannot be rendered",
@@ -688,10 +615,8 @@ func TestSyncSystems(t *testing.T) {
 				sysAPIClient.On("FetchSystemsForTenant", mock.Anything, testTenant, sfSystemSynchronizationTimestamps).Return([]systemfetcher.System{testSystems[0]}, nil).Once()
 				return sysAPIClient
 			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupDirectorClient: emptySetupDirectorClient,
+			expectedErr:         testErr,
 		},
 		{
 			name: "Do nothing if system is already being deleted",
@@ -890,22 +815,12 @@ func TestUpsertSystemsSyncTimestamps(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return []model.ApplicationRegisterInputWithTemplate{}
 			},
-			setupTenantSvc: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: okSystemsSyncSvc,
-			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
-				return &automock.SystemsAPIClient{}
-			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
+			setupTenantSvc:           emptySetupTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      okSystemsSyncSvc,
+			setupSysAPIClient:        emptySetupSysAPIClient,
+			setupDirectorClient:      emptySetupDirectorClient,
 		},
 		{
 			name: "Error while upserting",
@@ -919,23 +834,13 @@ func TestUpsertSystemsSyncTimestamps(t *testing.T) {
 			fixAppInputs: func(systems []systemfetcher.System) []model.ApplicationRegisterInputWithTemplate {
 				return []model.ApplicationRegisterInputWithTemplate{}
 			},
-			setupTenantSvc: func() *automock.TenantService {
-				return &automock.TenantService{}
-			},
-			setupTemplateRendererSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInput) *automock.TemplateRenderer {
-				return &automock.TemplateRenderer{}
-			},
-			setupSystemSvc: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
-				return &automock.SystemsService{}
-			},
-			setupSystemsSyncSvc: errSystemsSyncSvc,
-			setupSysAPIClient: func(testSystems []systemfetcher.System) *automock.SystemsAPIClient {
-				return &automock.SystemsAPIClient{}
-			},
-			setupDirectorClient: func(systems []systemfetcher.System, appsInputs []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
-				return &automock.DirectorClient{}
-			},
-			expectedErr: testErr,
+			setupTenantSvc:           emptySetupTenantSvc,
+			setupTemplateRendererSvc: emptySetupTemplateRendererSvc,
+			setupSystemSvc:           emptySetupSystemSvc,
+			setupSystemsSyncSvc:      errSystemsSyncSvc,
+			setupSysAPIClient:        emptySetupSysAPIClient,
+			setupDirectorClient:      emptySetupDirectorClient,
+			expectedErr:              testErr,
 		},
 	}
 
@@ -1063,4 +968,24 @@ func errSystemsSyncSvc() *automock.SystemsSyncService {
 	syncMock := &automock.SystemsSyncService{}
 	syncMock.On("Upsert", mock.Anything, mock.Anything).Return(testErr)
 	return syncMock
+}
+
+func emptySetupTenantSvc() *automock.TenantService {
+	return &automock.TenantService{}
+}
+
+func emptySetupTemplateRendererSvc(_ []systemfetcher.System, _ []model.ApplicationRegisterInput) *automock.TemplateRenderer {
+	return &automock.TemplateRenderer{}
+}
+
+func emptySetupSystemSvc(_ []systemfetcher.System, _ []model.ApplicationRegisterInputWithTemplate) *automock.SystemsService {
+	return &automock.SystemsService{}
+}
+
+func emptySetupSysAPIClient(_ []systemfetcher.System) *automock.SystemsAPIClient {
+	return &automock.SystemsAPIClient{}
+}
+
+func emptySetupDirectorClient(_ []systemfetcher.System, _ []model.ApplicationRegisterInputWithTemplate) *automock.DirectorClient {
+	return &automock.DirectorClient{}
 }

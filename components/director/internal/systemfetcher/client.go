@@ -113,11 +113,12 @@ func (c *Client) fetchSystemsForTenant(ctx context.Context, url string, tenant *
 
 	systemsWithTemplateIDs := make([]System, 0)
 	for _, system := range systems {
+		fmt.Println(system)
 		templatedSystem, err := system.EnhanceWithTemplateID()
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to map systems with Application Template ID")
 		}
-		fmt.Println(templatedSystem)
+		fmt.Println(templatedSystem.TemplateID, "TTT")
 		if templatedSystem.TemplateID != "" {
 			systemsWithTemplateIDs = append(systemsWithTemplateIDs, templatedSystem)
 		}

@@ -30,7 +30,7 @@ var fourSystemsResp = `[{
 			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		}, 
 		{
 			"displayName": "name2",
@@ -39,7 +39,7 @@ var fourSystemsResp = `[{
 			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		},
 		{
 			"displayName": "name3",
@@ -48,7 +48,7 @@ var fourSystemsResp = `[{
 			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		}, {
 			"displayName": "name4",
 			"productDescription": "description",
@@ -56,7 +56,7 @@ var fourSystemsResp = `[{
 			"ppmsProductVersionId": "123456",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"templateProp": "type1"
+			"key": "type1"
 		}]`
 
 var emptySystemSynchronizationTimestamps = map[string]systemfetcher.SystemSynchronizationTimestamp{}
@@ -91,23 +91,21 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		SystemRPSLimit:  15,
 	}, mock.httpClient, mock.jwtClient)
 
-	t.Run("Success", func(t *testing.T) {
+	t.Run("No fetched systems when system payload does not match any application template", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		fmt.Println(systemfetcher.ApplicationTemplates)
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
-		require.Len(t, systems, 1)
-		require.Equal(t, systems[0].TemplateID, "")
+		require.Len(t, systems, 0)
 	})
 
-	t.Run("Success for customer", func(t *testing.T) {
+	t.Run("No fetched systems when system payload does not match any application template for customer", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantCustomerModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
-		require.Len(t, systems, 1)
-		require.Equal(t, systems[0].TemplateID, "")
+		require.Len(t, systems, 0)
 	})
 
 	t.Run("Success with template mappings", func(t *testing.T) {
@@ -351,8 +349,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"cldFilter": {
-						Key: "cldFilter",
+					"slisFilter": {
+						Key: "slisFilter",
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -369,8 +367,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type2"},
 					},
-					"cldFilter": {
-						Key: "cldFilter",
+					"slisFilter": {
+						Key: "slisFilter",
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type2",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -387,8 +385,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type3"},
 					},
-					"cldFilter": {
-						Key: "cldFilter",
+					"slisFilter": {
+						Key: "slisFilter",
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type3",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -415,7 +413,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 			"productDescription": "description",
 			"baseUrl": "url",
 			"infrastructureProvider": "provider1",
-			"key": "type4"
+			"key": "type3"
 		}]`)}
 		mock.callNumber = 0
 		mock.pageCount = 1
@@ -424,7 +422,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.Len(t, systems, 3)
 		require.Equal(t, systems[0].TemplateID, "type1")
 		require.Equal(t, systems[1].TemplateID, "type2")
-		require.Equal(t, systems[2].TemplateID, "")
+		require.Equal(t, systems[2].TemplateID, "type3")
 	})
 
 	t.Run("Fail with unexpected status code", func(t *testing.T) {
