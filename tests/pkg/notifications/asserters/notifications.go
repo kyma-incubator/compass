@@ -3,12 +3,13 @@ package asserters
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
-	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
-	"github.com/machinebox/graphql"
 	"io"
 	"net/http"
 	"testing"
+
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/machinebox/graphql"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
