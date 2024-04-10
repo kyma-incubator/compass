@@ -3,7 +3,6 @@ package systemfetcher_test
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -94,7 +93,6 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	t.Run("No fetched systems when system payload does not match any application template", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
-		fmt.Println(systemfetcher.ApplicationTemplates)
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
 		require.NoError(t, err)
 		require.Len(t, systems, 0)

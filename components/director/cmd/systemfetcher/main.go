@@ -672,12 +672,12 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 		productIDFilterMappings := make([]systemfetcher.ProductIDFilterMapping, 0)
 
-		slisFilterLabelJson, err := json.Marshal(slisFilterLabel.Value)
+		slisFilterLabelJSON, err := json.Marshal(slisFilterLabel.Value)
 		if err != nil {
 			return err
 		}
 
-		err = json.Unmarshal(slisFilterLabelJson, &productIDFilterMappings)
+		err = json.Unmarshal(slisFilterLabelJSON, &productIDFilterMappings)
 		if err != nil {
 			return err
 		}

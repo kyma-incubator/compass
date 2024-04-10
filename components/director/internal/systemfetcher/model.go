@@ -43,19 +43,24 @@ type SystemSynchronizationTimestamp struct {
 	LastSyncTimestamp time.Time
 }
 
+// SlisFilterOperationType represents the type of operation which considers whether to match the values in the slis filter with values for systems from system payload
 type SlisFilterOperationType string
 
 const (
+	// IncludeOperationType is the type of slis filter operation which requires the values from slis filter to be present in the values from system payload
 	IncludeOperationType SlisFilterOperationType = "include"
+	// ExcludeOperationType is the type of slis filter operation which requires the values from slis filter to not be present in the values from system payload
 	ExcludeOperationType SlisFilterOperationType = "exclude"
 )
 
+// SlisFilter represents the additional properties by which fetched systems are matched to an application template
 type SlisFilter struct {
 	Key       string                  `json:"key"`
 	Value     []string                `json:"value"`
 	Operation SlisFilterOperationType `json:"operation"`
 }
 
+// ProductIDFilterMapping represents the structure of the slis filter per product id
 type ProductIDFilterMapping struct {
 	ProductID string       `json:"productID"`
 	Filter    []SlisFilter `json:"filter,omitempty"`
@@ -75,17 +80,17 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 	for _, tm := range ApplicationTemplates {
 		slisFilter, slisFilterExists := tm.Labels["slisFilter"]
 		if !slisFilterExists {
-			return *s, errors.New("missing slis filter")
+			return *s, errors.Errorf("missing slis filter for application template with ID %q", tm.AppTemplate.ID)
 		}
 
 		productIDFilterMappings := make([]ProductIDFilterMapping, 0)
 
-		slisFilterLabelJson, err := json.Marshal(slisFilter.Value)
+		slisFilterLabelJSON, err := json.Marshal(slisFilter.Value)
 		if err != nil {
 			return *s, err
 		}
 
-		err = json.Unmarshal(slisFilterLabelJson, &productIDFilterMappings)
+		err = json.Unmarshal(slisFilterLabelJSON, &productIDFilterMappings)
 		if err != nil {
 			return *s, err
 		}
@@ -93,7 +98,7 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 		systemSource, systemSourceValueExists := s.SystemPayload[SystemSourceKey]
 
 		if !systemSourceValueExists {
-			//return *s, errors.New("system role does not exist")
+			return *s, nil
 		}
 
 		for _, mapping := range productIDFilterMappings {

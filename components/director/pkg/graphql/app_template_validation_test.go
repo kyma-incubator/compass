@@ -411,7 +411,7 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 	}
 	invalidSlisFilterLabelWrongFormat := ""
 	invalidSlisFilterValueWrongFormat := []interface{}{1}
-	invalidSlisFilterMissingProductId := []interface{}{
+	invalidSlisFilterMissingProductID := []interface{}{
 		map[string]interface{}{
 			"filter": []map[string]interface{}{},
 		},
@@ -476,7 +476,7 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 		},
 		{
 			Name:  "Not valid - missing productId in slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterMissingProductId),
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterMissingProductID),
 			Valid: false,
 		},
 		{
@@ -503,7 +503,6 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 			sut.Labels = testCase.Value
 			// WHEN
 			err := sut.Validate()
-			fmt.Println(err)
 			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)

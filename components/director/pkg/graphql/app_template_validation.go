@@ -17,7 +17,7 @@ import (
 const (
 	systemRoleLabelKey = "systemRole"
 	slisFilterLabelKey = "slisFilter"
-	productIdKey       = "productId"
+	productIDKey       = "productId"
 )
 
 // Validate missing godoc
@@ -99,7 +99,6 @@ func (i TemplateValueInput) Validate() error {
 }
 
 func labelsRuleFunc(value interface{}) error {
-	fmt.Println("VALIDATE LBL")
 	labels, ok := value.(Labels)
 	if !ok {
 		return errors.New("value could not be cast to Labels object")
@@ -148,17 +147,17 @@ func labelsRuleFunc(value interface{}) error {
 			return errors.New("invalid format of slis filter value")
 		}
 
-		productId, ok := filter[productIdKey]
+		productID, ok := filter[productIDKey]
 		if !ok {
 			return errors.New("missing productId in slis filter")
 		}
 
-		productIdStr, ok := productId.(string)
+		productIDStr, ok := productID.(string)
 		if !ok {
 			return errors.New("invalid format of productId value")
 		}
 
-		productIds = append(productIds, productIdStr)
+		productIds = append(productIds, productIDStr)
 	}
 
 	systemRolesCount := len(systemRoles)
