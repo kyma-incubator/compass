@@ -808,13 +808,20 @@ func (s *service) UnassignFromScenarioLabel(ctx context.Context, tnt, objectID s
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formationTemplate *model.FormationTemplate) error {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
+		app, err := s.applicationRepository.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting application with ID: %q", objectID)
+		}
 		if err := s.isValidApplicationType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating application type for application %q", objectID)
 		}
-		if err := s.isValidApplication(ctx, tnt, objectID); err != nil {
+		if err := s.isValidApplication(app); err != nil {
 			return errors.Wrapf(err, "while validating application with ID: %q", objectID)
 		}
 	case graphql.FormationObjectTypeRuntime:
+		if _, err := s.runtimeRepo.GetByID(ctx, tnt, objectID); err != nil {
+			return errors.Wrapf(err, "while getting runtime with ID: %q", objectID)
+		}
 		if err := s.isValidRuntimeType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating runtime type")
 		}
@@ -1818,17 +1825,12 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 	return nil
 }
 
-func (s *service) isValidApplication(ctx context.Context, tnt string, applicationID string) error {
-	application, err := s.applicationRepository.GetByID(ctx, tnt, applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting application with ID %q", applicationID)
-	}
-
+func (s *service) isValidApplication(application *model.Application) error {
 	if application.DeletedAt != nil {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is currently being deleted", applicationID))
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is currently being deleted", application.ID))
 	}
 	if !application.Ready {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", applicationID))
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", application.ID))
 	}
 	return nil
 }
