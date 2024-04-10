@@ -2304,6 +2304,26 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 		},
 		{
+			Name:    "Success: ready state assignment with error and no request",
+			Context: ctxWithTenant,
+			FormationAssignmentPairWithOperation: &formationassignment.AssignmentMappingPairWithOperation{
+				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+						Request:             nil,
+						FormationAssignment: createErrorStateAssignment,
+					},
+					ReverseAssignmentReqMapping: nil,
+				},
+				Operation: model.AssignFormation,
+			},
+			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
+				repo := &automock.FormationAssignmentRepository{}
+				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenant, readyStateAssignment).Return(nil).Once()
+				return repo
+			},
+		},
+		{
 			Name:    "Error when there is no request and update fails",
 			Context: ctxWithTenant,
 			FormationAssignmentPairWithOperation: &formationassignment.AssignmentMappingPairWithOperation{

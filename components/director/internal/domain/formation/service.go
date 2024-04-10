@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -1247,11 +1248,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 
 			faClone := fa.Clone()
-			if notificationForFA != nil {
-				if operation == model.UnassignFormation {
-					faClone.SetStateToDeleting()
-					formationassignment.ResetAssignmentConfigAndError(faClone)
-				}
+			if notificationForFA != nil && operation == model.UnassignFormation {
+				faClone.SetStateToDeleting()
+				formationassignment.ResetAssignmentConfigAndError(faClone)
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
