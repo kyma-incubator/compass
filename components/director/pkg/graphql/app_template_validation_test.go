@@ -417,7 +417,7 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 		},
 	}
 
-	invalidSlisFilterInvalidFormatOfProductId := []interface{}{
+	invalidSlisFilterInvalidFormatOfProductID := []interface{}{
 		map[string]interface{}{
 			"productId": []interface{}{},
 			"filter":    []map[string]interface{}{},
@@ -481,7 +481,7 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 		},
 		{
 			Name:  "Not valid - invalid format of productId value in slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterInvalidFormatOfProductId),
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterInvalidFormatOfProductID),
 			Valid: false,
 		},
 		{
