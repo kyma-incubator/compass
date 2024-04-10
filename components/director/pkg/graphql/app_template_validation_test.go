@@ -397,6 +397,123 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
+func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
+	validSystemRolesOneValue1 := []interface{}{"role1"}
+	validSystemRolesOneValue2 := []interface{}{"role2"}
+	validSystemRolesTwoValues := []interface{}{"role1", "role2"}
+	invalidSystemRoleValueIsNotString := []interface{}{1}
+
+	validSlisFilterOneValue := []interface{}{
+		map[string]interface{}{
+			"productId": "role1",
+			"filter":    []map[string]interface{}{},
+		},
+	}
+	invalidSlisFilterLabelWrongFormat := ""
+	invalidSlisFilterValueWrongFormat := []interface{}{1}
+	invalidSlisFilterMissingProductId := []interface{}{
+		map[string]interface{}{
+			"filter": []map[string]interface{}{},
+		},
+	}
+
+	invalidSlisFilterInvalidFormatOfProductId := []interface{}{
+		map[string]interface{}{
+			"productId": []interface{}{},
+			"filter":    []map[string]interface{}{},
+		},
+	}
+
+	labelsInputWithSystemRole := fixLabelsInputWithSystemRole(validSystemRolesOneValue1)
+	labelsInputWithSystemRoleAndSlisFilter := fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, validSlisFilterOneValue)
+
+	labelsInputWithMissingSystemRole := fixLabelsInputWithSystemRoleAndSlisFilter([]interface{}{}, validSlisFilterOneValue)
+
+	testCases := []struct {
+		Name  string
+		Value graphql.Labels
+		Valid bool
+	}{
+		{
+			Name:  "Valid with system roles",
+			Value: labelsInputWithSystemRole,
+			Valid: true,
+		},
+		{
+			Name:  "Valid with system roles and slis filter",
+			Value: labelsInputWithSystemRoleAndSlisFilter,
+			Valid: true,
+		},
+		{
+			Name:  "Valid - Empty",
+			Value: graphql.Labels{},
+			Valid: true,
+		},
+		{
+			Name:  "Valid - nil",
+			Value: nil,
+			Valid: true,
+		},
+		{
+			Name:  "Not valid - missing system role when slis filter is defined",
+			Value: labelsInputWithMissingSystemRole,
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - value of cld system role is not a string",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(invalidSystemRoleValueIsNotString, validSlisFilterOneValue),
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - invalid format of slis filter label",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterLabelWrongFormat),
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - invalid format of slis filter value",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterValueWrongFormat),
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - missing productId in slis filter",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterMissingProductId),
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - invalid format of productId value in slis filter",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterInvalidFormatOfProductId),
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - cld system roles count does not match the product ids count in slis filter",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesTwoValues, validSlisFilterOneValue),
+			Valid: false,
+		},
+		{
+			Name:  "Not valid - cld system roles don't match with product ids in slis filter",
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue2, validSlisFilterOneValue),
+			Valid: false,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			//GIVEN
+			sut := fixValidApplicationTemplateInput()
+			sut.Labels = testCase.Value
+			// WHEN
+			err := sut.Validate()
+			fmt.Println(err)
+			// THEN
+			if testCase.Valid {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+			}
+		})
+	}
+}
+
 // ApplicationTemplateUpdateInput
 
 func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testing.T) {

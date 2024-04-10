@@ -14,6 +14,12 @@ import (
 	"github.com/pkg/errors"
 )
 
+const (
+	systemRoleLabelKey = "systemRole"
+	slisFilterLabelKey = "slisFilter"
+	productIdKey       = "productId"
+)
+
 // Validate missing godoc
 func (i ApplicationTemplateInput) Validate() error {
 	return validation.Errors{
@@ -92,34 +98,27 @@ func (i TemplateValueInput) Validate() error {
 	)
 }
 
-type SlisFilterOperationType string
-
-const (
-	IncludeOperationType SlisFilterOperationType = "include"
-	ExcludeOperationType SlisFilterOperationType = "exclude"
-)
-
-type SlisFilter struct {
-	Key       string
-	Value     []string
-	Operation SlisFilterOperationType
-}
-
-type ProductIDFilterMapping struct {
-	ProductID string       `json:"productID"`
-	Filter    []SlisFilter `json:"filter"`
-}
-
 func labelsRuleFunc(value interface{}) error {
+	fmt.Println("VALIDATE LBL")
 	labels, ok := value.(Labels)
 	if !ok {
 		return errors.New("value could not be cast to Labels object")
 	}
 
-	systemRolesLabel, hasCldSystemRoles := labels["systemRole"]
-	slisFilterLabel, hasSlisFilter := labels["slisFilter"]
-	if !hasCldSystemRoles && hasSlisFilter {
-		return errors.New("cld system role is required when cld filter is defined")
+	systemRolesLabel, hasSystemRoles := labels[systemRoleLabelKey]
+	slisFilterLabel, hasSlisFilter := labels[slisFilterLabelKey]
+
+	if !hasSystemRoles {
+		return nil
+	}
+
+	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
+	if !ok {
+		return errors.New("invalid format of cld system roles label")
+	}
+
+	if (!hasSystemRoles || len(systemRolesLabelValue) == 0) && hasSlisFilter {
+		return errors.New("cld system role is required when slis filter is defined")
 	}
 
 	if !hasSlisFilter {
@@ -127,15 +126,13 @@ func labelsRuleFunc(value interface{}) error {
 	}
 
 	systemRoles := make([]string, 0)
-	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
-	if !ok {
-		return errors.New("invalid format of cld system roles label")
-	}
 
 	for _, systemRoleValue := range systemRolesLabelValue {
-		if systemRoleValueStr, ok := systemRoleValue.(string); ok {
-			systemRoles = append(systemRoles, systemRoleValueStr)
+		systemRoleValueStr, ok := systemRoleValue.(string)
+		if !ok {
+			return errors.New("value of cld system role is not a string")
 		}
+		systemRoles = append(systemRoles, systemRoleValueStr)
 	}
 
 	slisFilterLabelValue, ok := slisFilterLabel.([]interface{})
@@ -151,7 +148,7 @@ func labelsRuleFunc(value interface{}) error {
 			return errors.New("invalid format of slis filter value")
 		}
 
-		productId, ok := filter["productId"]
+		productId, ok := filter[productIdKey]
 		if !ok {
 			return errors.New("missing productId in slis filter")
 		}
@@ -176,7 +173,7 @@ func labelsRuleFunc(value interface{}) error {
 
 	for i, s := range systemRoles {
 		if s != productIds[i] {
-			return errors.New("cld system roles dont match product ids in slis filter")
+			return errors.New("cld system roles don't match with product ids in slis filter")
 		}
 	}
 

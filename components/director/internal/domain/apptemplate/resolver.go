@@ -5,7 +5,6 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 	"regexp"
 	"strings"
 
@@ -350,11 +349,18 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			return nil, errors.New("invalid format of cld system roles")
 		}
 
-		filtersFromCldSystemRoles := make([]systemfetcher.ProductIDFilterMapping, 0)
+		filtersFromCldSystemRoles := make([]map[string]interface{}, 0)
 
 		for _, v := range cldSystemRoleValues {
-			slisFilter := systemfetcher.ProductIDFilterMapping{
-				ProductID: v.(string),
+			slisFilter := map[string]interface{}{
+				"productId": v.(string),
+				"filter": []map[string]interface{}{
+					{
+						"key":       "$.additionalAttributes.managedBy",
+						"value":     []string{"SAP Cloud"},
+						"operation": "exclude",
+					},
+				},
 			}
 
 			filtersFromCldSystemRoles = append(filtersFromCldSystemRoles, slisFilter)

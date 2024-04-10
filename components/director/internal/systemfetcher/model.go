@@ -51,9 +51,9 @@ const (
 )
 
 type SlisFilter struct {
-	Key       string
-	Value     []string
-	Operation SlisFilterOperationType
+	Key       string                  `json:"key"`
+	Value     []string                `json:"value"`
+	Operation SlisFilterOperationType `json:"operation"`
 }
 
 type ProductIDFilterMapping struct {

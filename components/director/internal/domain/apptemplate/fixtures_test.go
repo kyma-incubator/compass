@@ -51,17 +51,32 @@ const (
 )
 
 var (
-	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
-	testDescription                = "Lorem ipsum"
-	testJSONPath                   = "$.test"
-	testDifferentJSONPath          = "$.invalid.differentPath"
-	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
-	testProviderName               = "provider-display-name"
-	testURL                        = "http://valid.url"
-	testError                      = errors.New("test error")
-	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
-	newTestLabels                  = map[string]interface{}{"label1": "test"}
-	timestamp                      = time.Now()
+	testUUID                                  = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
+	testDescription                           = "Lorem ipsum"
+	testJSONPath                              = "$.test"
+	testDifferentJSONPath                     = "$.invalid.differentPath"
+	testDescriptionWithPlaceholder            = "Lorem ipsum {{test}}"
+	testProviderName                          = "provider-display-name"
+	testURL                                   = "http://valid.url"
+	testError                                 = errors.New("test error")
+	testTableColumns                          = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
+	newTestLabels                             = map[string]interface{}{"label1": "test"}
+	timestamp                                 = time.Now()
+	defaultValueForProductLabelWithSlisFilter = map[string]interface{}{
+		AppTemplateProductLabel: []interface{}{"role"},
+		SlisFilterLabelKey: []map[string]interface{}{
+			{
+				"productId": "role",
+				"filter": []map[string]interface{}{
+					{
+						"key":       "$.additionalAttributes.managedBy",
+						"value":     []string{"SAP Cloud"},
+						"operation": "exclude",
+					},
+				},
+			},
+		},
+	}
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -306,23 +321,6 @@ func fixGQLAppTemplateInput(name string) *graphql.ApplicationTemplateInput {
 		},
 		Placeholders: fixGQLPlaceholderDefinitionInput(),
 		Labels:       map[string]interface{}{"test": "test"},
-		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
-	}
-}
-
-func fixGQLAppTemplateInputWithRegionPlaceholder(name string) *graphql.ApplicationTemplateInput {
-	desc := testDescriptionWithPlaceholder
-
-	return &graphql.ApplicationTemplateInput{
-		Name:                 name,
-		Description:          &desc,
-		ApplicationNamespace: str.Ptr("ns"),
-		ApplicationInput: &graphql.ApplicationJSONInput{
-			Name:        "foo",
-			Description: &desc,
-			Labels:      map[string]interface{}{RegionKey: "{{region}}"},
-		},
-		Placeholders: fixGQLPlaceholderDefinitionWithRegionInput(),
 		AccessLevel:  graphql.ApplicationTemplateAccessLevelGlobal,
 	}
 }
