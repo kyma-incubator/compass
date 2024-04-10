@@ -10,7 +10,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/config"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
@@ -19,13 +18,11 @@ import (
 const applicationsPath = "/Applications/v1"
 
 type Service struct {
-	cfg    config.IAS
 	client *http.Client
 }
 
-func NewService(cfg config.IAS, client *http.Client) Service {
+func NewService(client *http.Client) Service {
 	return Service{
-		cfg:    cfg,
 		client: client,
 	}
 }
@@ -38,7 +35,7 @@ type UpdateData struct {
 }
 
 func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateData) error {
-	consumerTenant := data.TenantMapping.AssignedTenants[0]
+	consumerTenant := data.TenantMapping.AssignedTenant
 	consumedAPIs := data.ConsumerApplication.Authentication.ConsumedAPIs
 	consumedAPIsLen := len(consumedAPIs)
 
@@ -64,7 +61,7 @@ func (s Service) UpdateApplicationConsumedAPIs(ctx context.Context, data UpdateD
 	if consumedAPIsLen != len(consumedAPIs) {
 		iasHost := data.TenantMapping.ReceiverTenant.ApplicationURL
 		if err := s.updateApplication(ctx, iasHost, data.ConsumerApplication.ID, consumedAPIs); err != nil {
-			return errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, consumerTenant.UCLApplicationID, err)
+			return errors.Newf("failed to update IAS application '%s' with UCL ID '%s': %w", data.ConsumerApplication.ID, consumerTenant.AppID, err)
 		}
 	}
 
