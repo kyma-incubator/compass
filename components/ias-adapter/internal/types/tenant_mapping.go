@@ -60,6 +60,20 @@ const (
 	S4ApplicationNamespace ApplicationNamespace = "sap.s4"
 )
 
+func ReadyState(operation Operation) State {
+	if operation == OperationAssign {
+		return StateCreateReady
+	}
+	return StateDeleteReady
+}
+
+func ErrorState(operation Operation) State {
+	if operation == OperationAssign {
+		return StateCreateError
+	}
+	return StateDeleteError
+}
+
 type AssignedTenant struct {
 	AppID                  string                      `json:"uclSystemTenantId"`
 	AppNamespace           ApplicationNamespace        `json:"applicationNamespace"`
