@@ -3,7 +3,6 @@ package formationassignment
 import (
 	"context"
 	"encoding/json"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/hashicorp/go-multierror"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
@@ -633,6 +632,10 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	if assignmentReqMappingClone.Request == nil {
 		assignment.State = string(model.ReadyAssignmentState)
+		if mappingPair.Operation == model.AssignFormation {
+			// In case of error in the assignment we want to clear it
+			assignment.Error = nil
+		}
 		log.C(ctx).Infof("In the formation assignment mapping pair, assignment with ID: %q hasn't attached webhook request. Updating the formation assignment to %q state without sending notification", assignment.ID, assignment.State)
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
