@@ -22,7 +22,7 @@ var (
 type TenantMapping struct {
 	Context        `json:"context"`
 	ReceiverTenant ReceiverTenant `json:"receiverTenant"`
-	AssignedTenant AssignedTenant `json:"assignedTenants"`
+	AssignedTenant AssignedTenant `json:"assignedTenant"`
 }
 
 type Context struct {
@@ -59,6 +59,20 @@ const (
 
 	S4ApplicationNamespace ApplicationNamespace = "sap.s4"
 )
+
+func ReadyState(operation Operation) State {
+	if operation == OperationAssign {
+		return StateCreateReady
+	}
+	return StateDeleteReady
+}
+
+func ErrorState(operation Operation) State {
+	if operation == OperationAssign {
+		return StateCreateError
+	}
+	return StateDeleteError
+}
 
 type AssignedTenant struct {
 	AppID                  string                      `json:"uclSystemTenantId"`
