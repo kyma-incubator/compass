@@ -217,7 +217,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			// Create formation constraints for destination creator operator and attach them to a given formation template.
 			// So we can verify the destination creator will not fail if in the configuration there is no destination information
-			attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+			constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+			defer func() {
+				for i := len(constraintCleanupFunctions) - 1; i >= 0; i-- {
+					constraintCleanupFunctions[i]()
+				}
+			}()
 
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)
 			defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)
@@ -357,6 +362,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NotEmpty(t, firstConstraint.ID)
 
 			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
+			defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, ft.ID)
 
 			// second constraint
 			secondConstraintInput := graphql.FormationConstraintInput{
@@ -375,6 +381,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NotEmpty(t, secondConstraint.ID)
 
 			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
+			defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, ft.ID)
 
 			// create formation
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)
