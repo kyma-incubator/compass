@@ -1141,7 +1141,6 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, shouldReset bool) (*model.Formation, error) {
-	log.C(ctx).Infof("Resynchronizing formation with ID: %q", formationID)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -1151,6 +1150,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
+	log.C(ctx).Infof("Resynchronizing formation with ID: %s and name: %s", formationID, formation.Name)
 
 	return s.resynchronizeFormation(ctx, formation, tenantID, shouldReset)
 }
