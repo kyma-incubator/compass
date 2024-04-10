@@ -113,6 +113,37 @@ const (
 		"businessTypeDescription": "tbt description name"
 	}]`
 
+	mockSystemsWithAdditionalProperties = `[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"%s": "val1",
+		"baseUrl": "",
+        "systemId": "system-id-1",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name"
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type2",
+        "%s": "val2",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name"
+	}]`
+
 	nameLabelKey            = "displayName"
 	namePlaceholder         = "name"
 	displayNamePlaceholder  = "display-name"
@@ -166,7 +197,6 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	description1 := "name1"
-	//description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -236,7 +266,6 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultCustomerTenantID(), 1)
 
 	description1 := "name1"
-	//description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -641,19 +670,13 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
-	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName2, intSys.ID)
-	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	appTemplateName1 := fixtures.CreateAppTemplateName("temp2")
+	appTemplateInput1 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID)
+	appTemplateInput1.Webhooks = append(appTemplateInput1.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
-
-	//appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	//template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
-	//defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
-	//require.NoError(t, err)
-	//require.NotEmpty(t, template.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), cfg.SystemFetcherPageSize)
@@ -840,7 +863,6 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	triggerSync(t, tenant.TestTenants.GetSystemFetcherTenantID())
 
 	description1 := "name1"
-	//description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -1041,6 +1063,67 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
+	ctx := context.TODO()
+	mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+	defer cleanupMockSystems(t)
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
+
+	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, []interface{}{"val1"}))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
+
+	description1 := "name1"
+	baseUrl := "http://mainurl.com"
+	expectedApps := []directorSchema.ApplicationExt{
+		{
+			Application: directorSchema.Application{
+				Name:                  "name1",
+				Description:           &description1,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template.ID,
+				SystemNumber:          str.Ptr("1"),
+				IntegrationSystemID:   &intSys.ID,
+			},
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
+		},
+	}
+
+	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+	for _, app := range resp.Data {
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+	}
+
+	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
+	var appResp directorSchema.ApplicationExt
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+	require.NoError(t, err)
+	require.Equal(t, "name1", appResp.Name)
+
+	require.ElementsMatch(t, expectedApps, actualApps)
+}
+
 // fail
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
@@ -1124,7 +1207,6 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	description1 := "name1"
-	//description2 := "description"
 
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -1248,7 +1330,6 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	description1 := "name1"
-	//description2 := "description"
 	description3 := "name3"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -1411,15 +1492,6 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	//appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	//t.Logf("Create Application Template with name %s", appTemplateName2)
-	//appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
-	//appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-	//template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	//defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
-	//require.NoError(t, err)
-	//require.NotEmpty(t, template2.ID)
-
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
@@ -1434,12 +1506,6 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp1)
 	require.NoError(t, err)
 
-	//t.Log("Get Application with system number 2")
-	//req = fixtures.FixGetApplicationBySystemNumberRequest("2")
-	//var appResp2 directorSchema.ApplicationExt
-	//err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp2)
-	//require.NoError(t, err)
-
 	// Update the Applications with a CONNECTED status condition
 	connectedStatus := directorSchema.ApplicationStatusConditionConnected
 	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
@@ -1449,19 +1515,12 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	requestUpdateApp1 := fixtures.FixUpdateApplicationRequest(appResp1.ID, updateInputGQL)
-	//requestUpdateApp2 := fixtures.FixUpdateApplicationRequest(appResp2.ID, updateInputGQL)
 
 	t.Log("Update Application with system number 1")
 	updatedApp1 := directorSchema.ApplicationExt{}
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, requestUpdateApp1, &updatedApp1)
 	require.NoError(t, err)
 	require.Equal(t, updatedApp1.Status.Condition.String(), connectedStatus.String())
-	//
-	//t.Log("Update Application with system number 2")
-	//updatedApp2 := directorSchema.ApplicationExt{}
-	//err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, requestUpdateApp2, &updatedApp2)
-	//require.NoError(t, err)
-	//require.Equal(t, updatedApp2.Status.Condition.String(), connectedStatus.String())
 
 	// setup mock systems for second job run
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1475,13 +1534,7 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp1)
 	require.NoError(t, err)
 
-	//t.Log("Get Application with system number 2")
-	//req = fixtures.FixGetApplicationBySystemNumberRequest("2")
-	//err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp2)
-	//require.NoError(t, err)
-
 	require.Equal(t, connectedStatus.String(), appResp1.Status.Condition.String())
-	//require.Equal(t, connectedStatus.String(), appResp2.Status.Condition.String())
 }
 
 func triggerSync(t *testing.T, tenantID string) {
@@ -1763,6 +1816,27 @@ func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, sys
 					"key":       "$.additionalAttributes.systemSCPLandscapeID",
 					"value":     []string{region},
 					"operation": "include",
+				},
+			},
+		},
+	}
+
+	return appTemplateInput
+}
+
+func fixApplicationTemplateWithSystemRoleAndSlisFilter(name, intSystemID string, systemRoles []interface{}) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := fixApplicationTemplate(name, intSystemID)
+	appTemplateInput.Labels = map[string]interface{}{
+		cfg.TemplateLabelFilter: systemRoles,
+		"slisFilter": []map[string]interface{}{
+			{
+				"productId": systemRoles[0],
+				"filter": []map[string]interface{}{
+					{
+						"key":       "$.systemId",
+						"value":     []string{"system-id-1"},
+						"operation": "include",
+					},
 				},
 			},
 		},
