@@ -195,6 +195,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
 			ExpectedStatusReportState:        string(model.ReadyAssignmentState),
 			ExpectedResult:                   false,
+			ExpectedErrorMsg:                 "while fetching consumer info from context",
 		},
 		{
 			Name:                             "Error when cleanup formation assignment fails",
