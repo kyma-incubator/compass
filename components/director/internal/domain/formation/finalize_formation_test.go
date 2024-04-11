@@ -34,10 +34,10 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 
 	allStates := model.ResynchronizableFormationAssignmentStates
 
-	fa1 := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialFormationState)
-	fa2 := fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorFormationState)
-	fa3 := fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingFormationState)
-	fa4 := fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorFormationState)
+	fa1 := fixFormationAssignmentModelWithParameters("id1", FormationID, RuntimeID, ApplicationID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, model.InitialAssignmentState)
+	fa2 := fixFormationAssignmentModelWithParameters("id2", FormationID, RuntimeContextID, ApplicationID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeApplication, model.CreateErrorAssignmentState)
+	fa3 := fixFormationAssignmentModelWithParameters("id3", FormationID, RuntimeID, RuntimeContextID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeRuntimeContext, model.DeletingAssignmentState)
+	fa4 := fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorAssignmentState)
 	formationAssignments := []*model.FormationAssignment{fa1, fa2, fa3, fa4}
 
 	formationAssignmentsInDeletingState := cloneFormationAssignments(formationAssignments)
