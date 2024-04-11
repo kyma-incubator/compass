@@ -55,6 +55,7 @@ type ApplicationService interface {
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 	Unpair(ctx context.Context, id string) error
 	Merge(ctx context.Context, destID, sourceID string) (*model.Application, error)
+	ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
 }
 
 // ApplicationConverter missing godoc
@@ -66,6 +67,7 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
+	MultipleToGraphQLTest(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants
 }
 
 // EventingService missing godoc
@@ -405,6 +407,47 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
 			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
+func (r *Resolver) ApplicationsGlobal(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationWithTenantsPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	applicationWithTenansPage, err := r.appSvc.ListAllGlobalByFilter(ctx, labelFilter, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlAppWithTnt := r.appConverter.MultipleToGraphQLTest(applicationWithTenansPage.Data)
+	return &graphql.ApplicationWithTenantsPage{
+		Data:       gqlAppWithTnt,
+		TotalCount: applicationWithTenansPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(applicationWithTenansPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(applicationWithTenansPage.PageInfo.EndCursor),
+			HasNextPage: applicationWithTenansPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }
