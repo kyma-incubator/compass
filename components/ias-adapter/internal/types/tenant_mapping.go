@@ -135,9 +135,6 @@ func (tm TenantMapping) Validate() error {
 	if tm.AssignedTenant.LocalTenantID == "" {
 		return errors.New("$.assignedTenant.applicationTenantId is required")
 	}
-	if tm.AssignedTenant.AppNamespace == "" {
-		return errors.New("$.assignedTenant.applicationNamespace is required")
-	}
 	// S/4 applications are created by the IAS adapter and therefore the tenant mapping does not contain its clientID
 	if tm.AssignedTenant.AppNamespace != S4ApplicationNamespace && tm.AssignedTenant.Parameters.ClientID == "" {
 		return errors.New("$.assignedTenant.parameters.technicalIntegrationId is required")
