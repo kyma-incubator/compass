@@ -89,6 +89,7 @@ type ApplicationRepository interface {
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
+	ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
 }
 
 // LabelRepository missing godoc
@@ -229,6 +230,14 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 	}
 
 	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
+}
+
+func (s *service) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+	if pageSize < 1 || pageSize > 200 {
+		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
+	}
+
+	return s.appRepo.ListAllGlobalByFilter(ctx, filter, pageSize, cursor)
 }
 
 // ListAllByApplicationTemplateID lists all applications which have the given app template id

@@ -132,6 +132,17 @@ type ApplicationPage struct {
 	TotalCount int
 }
 
+type ApplicationWithTenants struct {
+	Application Application
+	Tenants     []*BusinessTenantMapping
+}
+
+type ApplicationWithTenantsPage struct {
+	Data       []*ApplicationWithTenants
+	PageInfo   *pagination.Page
+	TotalCount int
+}
+
 // ApplicationRegisterInput missing godoc
 type ApplicationRegisterInput struct {
 	Name                 string

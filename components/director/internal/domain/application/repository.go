@@ -3,6 +3,10 @@ package application
 import (
 	"context"
 	"fmt"
+	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
+	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
+	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -304,6 +308,156 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 
 	return r.multipleFromEntities(entities)
 }
+
+type EntityWithAppID struct {
+	*tenant.Entity
+	AppID string `db:"app_id"`
+}
+
+type EntityWithAppIDCollection []EntityWithAppID
+
+// Len returns the current number of entities in the collection.
+func (a EntityWithAppIDCollection) Len() int {
+	return len(a)
+}
+
+func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+	var entities EntityCollection
+
+	filterSubquery, args, err := label.FilterQueryGlobal(model.ApplicationLabelableObject, label.IntersectSet, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	log.C(ctx).Infof("Kalo filter subquery: %s", filterSubquery)
+
+	var conditionTree *repo.ConditionTree
+	if filterSubquery != "" {
+		conditionTree = &repo.ConditionTree{Operand: repo.NewInConditionForSubQuery("id", filterSubquery, args)}
+	}
+
+	log.C(ctx).Infof("Kalo ListGlobalWithAdditionalConditions")
+	page, totalCount, err := r.globalPageableQuerier.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entities, conditionTree)
+	if err != nil {
+		return nil, err
+	}
+
+	// These are all filtered applications
+	applications, err := r.multipleFromEntities(entities)
+	if err != nil {
+		return nil, err
+	}
+
+	filteredApplicationIDs := make([]string, 0, len(applications))
+	for _, app := range applications {
+		filteredApplicationIDs = append(filteredApplicationIDs, app.ID)
+	}
+
+	//--------------
+	// Retrieve all customer/co tenants for the filtered apps
+
+	if len(filteredApplicationIDs) == 0 {
+		appWithTenantsData := make([]*model.ApplicationWithTenants, 0)
+		return &model.ApplicationWithTenantsPage{
+			Data:       appWithTenantsData,
+			TotalCount: totalCount,
+			PageInfo:   page}, nil
+	}
+
+	tntQuery := `SELECT DISTINCT ta.id as app_id,btm.id,btm.external_name,btm.external_tenant,btm.type,btm.provider_name,btm.status
+FROM business_tenant_mappings btm
+    JOIN tenant_applications ta ON btm.id = ta.tenant_id
+WHERE ta.id in (%s) AND (btm.type = 'customer' or btm.type='cost-object')`
+
+	//btm.type IN ('customer', 'cost-object')
+	//SELECT DISTINCT ta_filtered.id AS app_id,
+	//	btm.id,
+	//	btm.external_name,
+	//	btm.external_tenant,
+	//	btm.type,
+	//btm.provider_name,
+	//	btm.status
+	//FROM (
+	//	SELECT id, tenant_id
+	//FROM tenant_applications
+	//WHERE id IN ('0bcaa9b6-797d-46f4-a444-4bd8abef4d51') -- Replace with actual IDs
+	//) ta_filtered
+	//JOIN business_tenant_mappings btm ON ta_filtered.tenant_id = btm.id
+	//WHERE btm.type IN ('customer', 'cost-object');
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", tntQuery)
+
+	var entityCollection EntityWithAppIDCollection
+
+	if err := persist.SelectContext(ctx, &entityCollection, fmt.Sprintf(tntQuery, arrayToString(filteredApplicationIDs))); err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.Tenant, resource.List, "while listing tenants")
+	}
+
+	for _, tntE := range entityCollection {
+		log.C(ctx).Infof("Kalo found tenant: %s", tntE.ID)
+	}
+
+	tenantConverter := tnt.NewConverter()
+	appWithTenantsData := make([]*model.ApplicationWithTenants, 0)
+	for _, app := range applications {
+
+		tntForApp := make([]*model.BusinessTenantMapping, 0)
+		for _, e := range entityCollection {
+			if e.AppID == app.ID {
+				tntForApp = append(tntForApp, tenantConverter.FromEntity(e.Entity))
+			}
+		}
+
+		appWithTnt := &model.ApplicationWithTenants{
+			Application: *app,
+			Tenants:     tntForApp,
+		}
+
+		appWithTenantsData = append(appWithTenantsData, appWithTnt)
+	}
+
+	return &model.ApplicationWithTenantsPage{
+		Data:       appWithTenantsData,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
+}
+
+func arrayToString(arr []string) string {
+	// Join array elements with single quotes and commas
+	return "'" + strings.Join(arr, "','") + "'"
+}
+
+//// Without pages
+//func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
+//	var entities EntityCollection
+//
+//	filterSubquery, args, err := label.FilterQueryGlobal(model.ApplicationLabelableObject, label.IntersectSet, filter)
+//	if err != nil {
+//		return nil, errors.Wrap(err, "while building filter query")
+//	}
+//
+//	log.C(ctx).Infof("Kalo filter subquery: %s", filterSubquery)
+//
+//	var conditions repo.Conditions
+//	//var conditionTree *repo.ConditionTree
+//	if filterSubquery != "" {
+//		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+//		//conditionTree = &repo.ConditionTree{Operand: repo.NewInConditionForSubQuery("id", filterSubquery, args)}
+//	}
+//
+//	log.C(ctx).Infof("Kalo listing global")
+//	if err = r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+//		return nil, err
+//	}
+//
+//	r.globalPageableQuerier.ListGlobalWithAdditionalConditions(ctx, 200, "", "id", &entities, conditionTree)
+//
+//	return r.multipleFromEntities(entities)
+//}
 
 // ListAllByApplicationTemplateID retrieves all applications which have the given app template id
 func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
