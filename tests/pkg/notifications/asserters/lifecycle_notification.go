@@ -2,6 +2,10 @@ package asserters
 
 import (
 	"context"
+	"net/http"
+	"testing"
+	"time"
+
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
@@ -9,9 +13,6 @@ import (
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
-	"net/http"
-	"testing"
-	"time"
 )
 
 type LifecycleNotificationsAsserter struct {
