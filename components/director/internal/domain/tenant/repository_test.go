@@ -73,14 +73,28 @@ func TestPgRepository_Upsert(t *testing.T) {
 					WithArgs(testExternal, tenantEntity.Inactive).
 					WillReturnRows(rowsToReturn)
 
-				parentRowsToReturn := fixSQLTenantParentsRows(parentRows)
+				parentRow := []sqlTenantParentsRow{
+					{tenantID: testID, parentID: testParentID2},
+				}
+				parentRowsToReturn := fixSQLTenantParentsRows(parentRow)
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
-				for _, row := range parentRows {
-					dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
-						WithArgs(fixTenantParentCreateArgs(row.tenantID, row.parentID)...).WillReturnResult(driver.ResultNoRows)
+
+				tenantAccesses := fixTenantAccesses()
+				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
+					WithArgs(testID, testParentID).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+				for topLvlEntity := range resource.TopLevelEntities {
+					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+						continue
+					}
+					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
+						WithArgs(testID).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+					dbMock.ExpectExec(fixInsertTenantAccessesQuery()).
+						WithArgs(testID, testParentID, tenantAccesses[0].ResourceID, tenantAccesses[0].Owner).WillReturnResult(sqlmock.NewResult(-1, 1))
 				}
+
 				return db, dbMock
 			},
 			Input:                *tenantMappingModel,
@@ -134,16 +148,19 @@ func TestPgRepository_Upsert(t *testing.T) {
 					WithArgs(testExternal, tenantEntity.Inactive).
 					WillReturnRows(rowsToReturn)
 
-				parentRowsToReturn := fixSQLTenantParentsRows(parentRows)
+				parentRow := []sqlTenantParentsRow{
+					{tenantID: testID, parentID: testParentID2},
+				}
+				parentRowsToReturn := fixSQLTenantParentsRows(parentRow)
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 				dbMock.ExpectExec(regexp.QuoteMeta(`INSERT INTO tenant_parents ( tenant_id, parent_id ) VALUES ( ?, ? ) ON CONFLICT ( tenant_id, parent_id ) DO NOTHING`)).
-					WithArgs(fixTenantParentCreateArgs(parentRows[0].tenantID, parentRows[0].parentID)...).WillReturnError(testError)
+					WithArgs(testID, testParentID).WillReturnError(testError)
 				return db, dbMock
 			},
 			Input:                *tenantMappingModel,
-			ExpectedErrorMessage: fmt.Sprintf("while creating tenant parent mapping for tenant with id %s", testID),
+			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", testID, testParentID),
 		},
 		{
 			Name: "Error while getting tenant by external ID",
@@ -1876,7 +1893,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 					{tenantID: testID, parentID: testParentID},
 				})
 
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status FROM public.business_tenant_mappings b WHERE b.type = $1 AND ( EXISTS (SELECT 1 FROM tenant_runtime_contexts trc WHERE b.id = trc.tenant_id) OR EXISTS ( SELECT 1 FROM tenant_applications ta JOIN applications app ON ta.id = app.id JOIN labels l ON app.app_template_id = l.app_template_id WHERE b.id = ta.tenant_id AND l.key = $2 AND l.app_template_id IS NOT NULL ) )`)).
 					WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 					WillReturnRows(rowsToReturn)
 
@@ -1922,7 +1939,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 					{sqlRow: sqlRow{id: testID2, name: "name2", externalTenant: testExternal, typeRow: string(tenantEntity.Account), provider: "Compass", status: tenantEntity.Active}, initialized: boolToPtr(true)},
 				})
 
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status FROM public.business_tenant_mappings b WHERE b.type = $1 AND ( EXISTS (SELECT 1 FROM tenant_runtime_contexts trc WHERE b.id = trc.tenant_id) OR EXISTS ( SELECT 1 FROM tenant_applications ta JOIN applications app ON ta.id = app.id JOIN labels l ON app.app_template_id = l.app_template_id WHERE b.id = ta.tenant_id AND l.key = $2 AND l.app_template_id IS NOT NULL ) )`)).
 					WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 					WillReturnRows(rowsToReturn)
 
@@ -1938,7 +1955,7 @@ func TestPgRepository_ListBySubscribedRuntimesAndApplicationTemplates(t *testing
 			Name: "Error while listing tenants by type",
 			DBFN: func(t *testing.T) (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, external_name, external_tenant, type, provider_name, status FROM public.business_tenant_mappings WHERE (type = $1 AND (id IN (SELECT tenant_id FROM tenant_runtime_contexts ) OR id IN (SELECT tenant_id FROM tenant_applications WHERE id IN (SELECT id FROM applications WHERE app_template_id IN (SELECT app_template_id FROM labels WHERE key = $2 AND app_template_id IS NOT NULL)))`)).
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status FROM public.business_tenant_mappings b WHERE b.type = $1 AND ( EXISTS (SELECT 1 FROM tenant_runtime_contexts trc WHERE b.id = trc.tenant_id) OR EXISTS ( SELECT 1 FROM tenant_applications ta JOIN applications app ON ta.id = app.id JOIN labels l ON app.app_template_id = l.app_template_id WHERE b.id = ta.tenant_id AND l.key = $2 AND l.app_template_id IS NOT NULL ) )`)).
 					WithArgs(tenantEntity.Subaccount, selfRegDistinguishLabel).
 					WillReturnError(testError)
 
@@ -2560,7 +2577,7 @@ func TestPgRepository_Update(t *testing.T) {
 				return db, dbMock
 			},
 			Input:                newModelBusinessTenantMappingWithType(testID, testName, []string{testParent2External, testParent3External}, nil, tenantEntity.Account),
-			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", testID, testParentID2),
+			ExpectedErrorMessage: fmt.Sprintf("while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", testID, testParentID2),
 		},
 		{
 			Name: "Fail while listing parent tenants by external ID",
@@ -2738,19 +2755,6 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 
-				for topLvlEntity := range resource.TopLevelEntities {
-					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
-						continue
-					}
-					tenantAccesses := fixTenantAccesses()
-
-					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-						WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-
-					dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
-						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-				}
-
 				parentRowsToReturn = fixSQLTenantParentsRows([]sqlTenantParentsRow{
 					{tenantID: testID2, parentID: testID},
 				})
@@ -2764,6 +2768,24 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.business_tenant_mappings WHERE id = $1`)).
 					WithArgs(testID2).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+				for topLvlEntity := range resource.TopLevelEntities {
+					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+						continue
+					}
+					tenantAccesses := fixTenantAccesses()
+
+					dbMock.ExpectQuery(`SELECT DISTINCT ta1.id
+													FROM (.+) ta1
+         												LEFT JOIN (.+) ta2 ON ta1.id = ta2.id
+															AND ta2.tenant_id = ta2.source
+															AND ta2.tenant_id <> ta1.tenant_id
+													WHERE ta1.tenant_id = \$1 AND ta2.id IS NULL`).
+						WithArgs(testID).WillReturnRows(sqlmock.NewRows([]string{repo.M2MResourceIDColumn}).AddRow([]driver.Value{"resourceID"}...))
+
+					dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
+						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+				}
 
 				dbMock.ExpectExec(deleteStatement).
 					WithArgs(testExternal).
@@ -2811,22 +2833,10 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 
-				for topLvlEntity := range resource.TopLevelEntities {
-					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
-						continue
-					}
-					tenantAccesses := fixTenantAccesses()
-
-					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-						WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-
-					dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
-						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-				}
-
 				parentRowsToReturn = fixSQLTenantParentsRows([]sqlTenantParentsRow{
 					{tenantID: testID2, parentID: testID},
 				})
+
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
@@ -2837,6 +2847,24 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 
 				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.business_tenant_mappings WHERE id = $1`)).
 					WithArgs(testID2).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+				for topLvlEntity := range resource.TopLevelEntities {
+					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
+						continue
+					}
+					tenantAccesses := fixTenantAccesses()
+
+					dbMock.ExpectQuery(`SELECT DISTINCT ta1.id
+													FROM (.+) ta1
+         												LEFT JOIN (.+) ta2 ON ta1.id = ta2.id
+															AND ta2.tenant_id = ta2.source
+															AND ta2.tenant_id <> ta1.tenant_id
+													WHERE ta1.tenant_id = \$1 AND ta2.id IS NULL`).
+						WithArgs(testID).WillReturnRows(sqlmock.NewRows([]string{repo.M2MResourceIDColumn}).AddRow([]driver.Value{"resourceID"}...))
+
+					dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
+						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
+				}
 
 				dbMock.ExpectExec(deleteStatement).
 					WithArgs(testExternal).
@@ -2873,19 +2901,6 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE tenant_id = $1`)).
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
-
-				for topLvlEntity := range resource.TopLevelEntities {
-					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
-						continue
-					}
-					tenantAccesses := fixTenantAccesses()
-
-					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-						WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-
-					dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
-						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-				}
 
 				parentRowsToReturn = fixSQLTenantParentsRows([]sqlTenantParentsRow{
 					{tenantID: testID2, parentID: testID},
@@ -2933,19 +2948,6 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 
-				for topLvlEntity := range resource.TopLevelEntities {
-					if _, ok := topLvlEntity.IgnoredTenantAccessTable(); ok {
-						continue
-					}
-					tenantAccesses := fixTenantAccesses()
-
-					dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-						WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
-
-					dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
-						WithArgs(tenantAccesses[0].ResourceID).WillReturnResult(sqlmock.NewResult(-1, 1))
-				}
-
 				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
 					WithArgs(testID).WillReturnError(testError)
 
@@ -2981,10 +2983,28 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 
-				tenantAccesses := fixTenantAccesses()
+				parentRowsToReturn = fixSQLTenantParentsRows([]sqlTenantParentsRow{
+					{tenantID: testID2, parentID: testID},
+				})
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
+					WithArgs(testID).
+					WillReturnRows(parentRowsToReturn)
 
-				dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-					WithArgs(testID, true).WillReturnRows(sqlmock.NewRows(repo.M2MColumns).AddRow(fixTenantAccessesRow()...))
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
+					WithArgs(testID2).
+					WillReturnRows(sqlmock.NewRows(testTenantParentsTableColumns))
+
+				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.business_tenant_mappings WHERE id = $1`)).
+					WithArgs(testID2).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+				tenantAccesses := fixTenantAccesses()
+				dbMock.ExpectQuery(`SELECT DISTINCT ta1.id
+													FROM (.+) ta1
+         												LEFT JOIN (.+) ta2 ON ta1.id = ta2.id
+															AND ta2.tenant_id = ta2.source
+															AND ta2.tenant_id <> ta1.tenant_id
+													WHERE ta1.tenant_id = \$1 AND ta2.id IS NULL`).
+					WithArgs(testID).WillReturnRows(sqlmock.NewRows([]string{repo.M2MResourceIDColumn}).AddRow([]driver.Value{"resourceID"}...))
 
 				dbMock.ExpectExec(`DELETE FROM (.+) WHERE id IN \(\$1\)`).
 					WithArgs(tenantAccesses[0].ResourceID).WillReturnError(testError)
@@ -3021,13 +3041,32 @@ func TestPgRepository_DeleteByExternalTenant(t *testing.T) {
 					WithArgs(testID).
 					WillReturnRows(parentRowsToReturn)
 
-				dbMock.ExpectQuery(`SELECT tenant_id, id, owner, source FROM (.+) WHERE tenant_id = \$1`).
-					WithArgs(testID, true).WillReturnError(testError)
+				parentRowsToReturn = fixSQLTenantParentsRows([]sqlTenantParentsRow{
+					{tenantID: testID2, parentID: testID},
+				})
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
+					WithArgs(testID).
+					WillReturnRows(parentRowsToReturn)
+
+				dbMock.ExpectQuery(regexp.QuoteMeta(`SELECT tenant_id, parent_id FROM tenant_parents WHERE parent_id = $1`)).
+					WithArgs(testID2).
+					WillReturnRows(sqlmock.NewRows(testTenantParentsTableColumns))
+
+				dbMock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.business_tenant_mappings WHERE id = $1`)).
+					WithArgs(testID2).WillReturnResult(sqlmock.NewResult(-1, 1))
+
+				dbMock.ExpectQuery(`SELECT DISTINCT ta1.id
+													FROM (.+) ta1
+         												LEFT JOIN (.+) ta2 ON ta1.id = ta2.id
+															AND ta2.tenant_id = ta2.source
+															AND ta2.tenant_id <> ta1.tenant_id
+													WHERE ta1.tenant_id = \$1 AND ta2.id IS NULL`).
+					WithArgs(testID).WillReturnError(testError)
 
 				return db, dbMock
 			},
 			Input:                testExternal,
-			ExpectedErrorMessage: fmt.Sprintf("while listing tenant access records for tenant with id %s", testID),
+			ExpectedErrorMessage: fmt.Sprintf("while retrieving owning resources for tenant with id %s", testID),
 		},
 		{
 			Name: "Error while listing owned resources",

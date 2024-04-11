@@ -153,7 +153,8 @@ var (
 	)
 	TestConfigValueStr = "{\"configKey\":\"configValue\"}"
 
-	emptyFormationAssignment = &webhook.FormationAssignment{}
+	emptyFormationAssignment  = &webhook.FormationAssignment{}
+	emptyFormationAssignments = make([]*model.FormationAssignment, 0)
 
 	// Formation assignment notification variables
 	runtimeCtxNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
@@ -599,7 +600,9 @@ var (
 		FormationType: testFormationTemplateName,
 	}
 
-	formationWithInitialState              = fixFormationModelWithState(model.InitialFormationState)
+	formationWithInitialState = fixFormationModelWithState(model.InitialFormationState)
+	formationWithDraftState   = fixFormationModelWithState(model.DraftFormationState)
+
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
@@ -945,18 +948,6 @@ func unusedDataInputBuilder() *databuilderautomock.DataInputBuilder {
 	return &databuilderautomock.DataInputBuilder{}
 }
 
-func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
-	rtmCtxRepo := &automock.RuntimeContextRepository{}
-	rtmCtxRepo.On("ListByIDs", mock.Anything, TntInternalID, []string{}).Return(nil, nil).Once()
-	return rtmCtxRepo
-}
-
-func expectEmptySliceApplicationRepo() *automock.ApplicationRepository {
-	appRepo := &automock.ApplicationRepository{}
-	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-	return appRepo
-}
-
 func expectEmptySliceApplicationAndReadyApplicationRepo() *automock.ApplicationRepository {
 	appRepo := &automock.ApplicationRepository{}
 	app := &model.Application{
@@ -966,7 +957,6 @@ func expectEmptySliceApplicationAndReadyApplicationRepo() *automock.ApplicationR
 		},
 	}
 	appRepo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(app, nil).Once()
-	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
 	return appRepo
 }
 
@@ -1460,7 +1450,7 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 	}
 }
 
-func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationAssignmentState) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:                            id,
 		FormationID:                   formationID,

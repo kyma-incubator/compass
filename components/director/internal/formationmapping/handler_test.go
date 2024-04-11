@@ -80,6 +80,7 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 	emptyFormationAssignmentsForObject := []*model.FormationAssignment{}
 
 	testFormationWithReadyState := fixFormationWithState(model.ReadyFormationState)
+	testFormationWithDraftState := fixFormationWithState(model.DraftFormationState)
 	testFormationWithInitialState := fixFormationWithState(model.InitialFormationState)
 
 	initialNotificationReportWithConfig := fixNotificationStatusReportWithStateAndConfig(json.RawMessage(testValidConfig), string(model.InitialAssignmentState))
@@ -140,22 +141,22 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			expectedErrOutput:  "Request Body contains invalid input:",
 		},
 		{
-			name: "Validate Error: fail when consumer is different from BI and state is not provided",
+			name: "Validate Error: fail when consumer is different from BI and external token(static user), and state is not provided",
 			reqBody: fm.FormationAssignmentRequestBody{
 				Configuration: json.RawMessage(testValidConfig),
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{ConsumerType: consumer.Application}),
+			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{Type: consumer.Application}),
 			expectedErrOutput:  "state: cannot be blank",
 		},
 		{
-			name: "Validate Error: fail when consumer is different from BI and state is INITIAL",
+			name: "Validate Error: fail when consumer is different from BI and external token(static user), and state is INITIAL",
 			reqBody: fm.FormationAssignmentRequestBody{
 				Configuration: json.RawMessage(testValidConfig),
 				State:         model.InitialAssignmentState,
 			},
 			expectedStatusCode: http.StatusBadRequest,
-			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{ConsumerType: consumer.Application}),
+			context:            consumer.SaveToContext(context.TODO(), consumer.Consumer{Type: consumer.Application}),
 			expectedErrOutput:  "state: must be a valid value",
 		},
 		{
@@ -248,6 +249,33 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
+				updater := &automock.FormationAssignmentStatusService{}
+				updater.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), initialNotificationReportWithConfig, faWithInitialState, model.AssignFormation).Return(nil).Once()
+				return updater
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusOK,
+			expectedErrOutput:  "",
+			shouldSleep:        true,
+		},
+		{
+			name:       "Success when consumer is external token(static user), formation is in DRAFT state and state is not provided",
+			transactFn: txGen.ThatSucceeds,
+			context:    ctxWithExternalTokenConsumer,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithInitialState, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithDraftState, nil).Once()
 				return formationSvc
 			},
 			faStatusSvcFn: func() *automock.FormationAssignmentStatusService {
@@ -468,6 +496,28 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 			hasURLVars:         true,
 			expectedStatusCode: http.StatusBadRequest,
 			expectedErrOutput:  fmt.Sprintf("An invalid state: %s is provided for %s operation", model.CreateReadyFormationAssignmentState, model.UnassignFormation),
+		},
+		{
+			name:       "Error when consumer is external token(static user),but formation is NOT in DRAFT state",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			context:    ctxWithExternalTokenConsumer,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithInitialState, nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithInitialState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				Configuration: json.RawMessage(testValidConfig),
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusBadRequest,
+			expectedErrOutput:  fmt.Sprintf("An invalid state: %s is provided for %s operation", model.InitialFormationState, model.AssignFormation),
+			shouldSleep:        true,
 		},
 		{
 			name:       "Error when fail to set the formation assignment to error state",
@@ -1570,6 +1620,25 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 			expectedStatusCode: http.StatusBadRequest,
 		},
 		{
+			name:       "Fail when trying to reset assignment without configuration",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			faServiceFn: func() *automock.FormationAssignmentService {
+				faSvc := &automock.FormationAssignmentService{}
+				faSvc.On("GetGlobalByIDAndFormationID", txtest.CtxWithDBMatcher(), testFormationAssignmentID, testFormationID).Return(faWithSourceAppAndTargetRuntime(model.InitialAssignmentState), nil).Once()
+				return faSvc
+			},
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("Get", txtest.CtxWithDBMatcher(), testFormationID).Return(testFormationWithReadyState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationAssignmentRequestBody{
+				State: model.ReadyAssignmentState,
+			},
+			expectedStatusCode: http.StatusBadRequest,
+		},
+
+		{
 			name:       "Fail when failing to get reverse assignment",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			faServiceFn: func() *automock.FormationAssignmentService {
@@ -1720,6 +1789,7 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 	}
 
 	formationWithInitialState := fixFormationWithState(model.InitialFormationState)
+	formationWithDraftState := fixFormationWithState(model.DraftFormationState)
 	formationWithReadyState := fixFormationWithState(model.ReadyFormationState)
 	formationWithDeletingState := fixFormationWithState(model.DeletingFormationState)
 
@@ -1975,11 +2045,26 @@ func TestHandler_UpdateFormationStatus(t *testing.T) {
 			shouldSleep:        true,
 		},
 		{
-			name:       "Error when request body state is not correct for create formation operation",
+			name:       "Error when request body state is not correct for create formation operation - initial state",
 			transactFn: txGen.ThatDoesntExpectCommit,
 			formationSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithInitialState, nil).Once()
+				return formationSvc
+			},
+			reqBody: fm.FormationRequestBody{
+				State: model.DeleteErrorFormationState,
+			},
+			hasURLVars:         true,
+			expectedStatusCode: http.StatusInternalServerError,
+			expectedErrOutput:  "An unexpected error occurred while processing the request. X-Request-Id:",
+		},
+		{
+			name:       "Error when request body state is not correct for create formation operation - draft state",
+			transactFn: txGen.ThatDoesntExpectCommit,
+			formationSvcFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("GetGlobalByID", txtest.CtxWithDBMatcher(), testFormationID).Return(formationWithDraftState, nil).Once()
 				return formationSvc
 			},
 			reqBody: fm.FormationRequestBody{

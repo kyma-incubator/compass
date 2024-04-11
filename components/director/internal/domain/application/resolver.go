@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
@@ -45,6 +45,7 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 	List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error)
+	ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*model.Application, error)
 	ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
@@ -131,6 +132,13 @@ type BundleService interface {
 	CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error
 }
 
+// OperationService is responsible for the service-layer Operation operations
+//
+//go:generate mockery --name=OperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type OperationService interface {
+	GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error)
+}
+
 // APIDefinitionService missing godoc
 //
 //go:generate mockery --name=APIDefinitionService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -203,6 +211,13 @@ type BundleConverter interface {
 	MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)
 }
 
+// OperationConverter is responsible for converting between graphql and model objects
+//
+//go:generate mockery --name=OperationConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type OperationConverter interface {
+	MultipleToGraphQL(in []*model.Operation) ([]*graphql.Operation, error)
+}
+
 // OneTimeTokenService missing godoc
 //
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -225,20 +240,6 @@ type ApplicationTemplateConverter interface {
 	ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)
 }
 
-// TenantBusinessTypeService is responsible for the service-layer Tenant Business Type operations.
-//
-//go:generate mockery --name=TenantBusinessTypeService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
-type TenantBusinessTypeService interface {
-	GetByID(ctx context.Context, id string) (*model.TenantBusinessType, error)
-}
-
-// TenantBusinessTypeConverter converts between the graphql and model
-//
-//go:generate mockery --name=TenantBusinessTypeConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
-type TenantBusinessTypeConverter interface {
-	ToGraphQL(in *model.TenantBusinessType) *graphql.TenantBusinessType
-}
-
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
@@ -249,13 +250,11 @@ type Resolver struct {
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
 
-	tenantBusinessTypeSvc       TenantBusinessTypeService
-	tenantBusinessTypeConverter TenantBusinessTypeConverter
-
 	webhookSvc WebhookService
 	oAuth20Svc OAuth20Service
 	sysAuthSvc SystemAuthService
 	bndlSvc    BundleService
+	opSvc      OperationService
 
 	integrationDependencySvc  IntegrationDependencyService
 	integrationDependencyConv IntegrationDependencyConverter
@@ -274,6 +273,7 @@ type Resolver struct {
 	sysAuthConv      SystemAuthConverter
 	eventingSvc      EventingService
 	bndlConv         BundleConverter
+	opConv           OperationConverter
 
 	selfRegisterDistinguishLabelKey string
 	tokenPrefix                     string
@@ -302,8 +302,8 @@ func NewResolver(transact persistence.Transactioner,
 	eventDefinitionConverter EventDefinitionConverter,
 	appTemplateSvc ApplicationTemplateService,
 	appTemplateConverter ApplicationTemplateConverter,
-	tenantBusinessTypeSvc TenantBusinessTypeService,
-	tenantBusinessTypeConverter TenantBusinessTypeConverter,
+	operationService OperationService,
+	operationConverter OperationConverter,
 	selfRegisterDistinguishLabelKey, tokenPrefix string) *Resolver {
 	return &Resolver{
 		transact:                        transact,
@@ -328,8 +328,8 @@ func NewResolver(transact persistence.Transactioner,
 		bndlConv:                        bndlConverter,
 		appTemplateSvc:                  appTemplateSvc,
 		appTemplateConverter:            appTemplateConverter,
-		tenantBusinessTypeSvc:           tenantBusinessTypeSvc,
-		tenantBusinessTypeConverter:     tenantBusinessTypeConverter,
+		opSvc:                           operationService,
+		opConv:                          operationConverter,
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		tokenPrefix:                     tokenPrefix,
 	}
@@ -414,6 +414,49 @@ func (r *Resolver) ApplicationBySystemNumber(ctx context.Context, systemNumber s
 	return r.getApplication(ctx, func(ctx context.Context) (*model.Application, error) {
 		return r.appSvc.GetBySystemNumber(ctx, systemNumber)
 	})
+}
+
+// ApplicationsByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
+func (r *Resolver) ApplicationsByLocalTenantID(ctx context.Context, localTenantID string, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationPage, error) {
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	appPage, err := r.appSvc.ListByLocalTenantID(ctx, localTenantID, labelFilter, *first, cursor)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing applications by local tenant id '%s'", localTenantID)
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	gqlApps := r.appConverter.MultipleToGraphQL(appPage.Data)
+
+	return &graphql.ApplicationPage{
+		Data:       gqlApps,
+		TotalCount: appPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
+			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
 }
 
 // ApplicationByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
@@ -836,6 +879,37 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Appli
 	return eventing.ApplicationEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
+// Operations retrieves all ORD operations associated with given application
+func (r *Resolver) Operations(ctx context.Context, obj *graphql.Application) ([]*graphql.Operation, error) {
+	if obj == nil {
+		return nil, apperrors.NewInternalError("Application cannot be empty")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, errors.Wrap(err, "while opening the transaction")
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	appTemplateID := ""
+	if obj.ApplicationTemplateID != nil {
+		appTemplateID = *obj.ApplicationTemplateID
+	}
+
+	op, err := r.opSvc.GetByDataAndType(ctx, data.NewOrdOperationData(obj.ID, appTemplateID), model.OperationTypeOrdAggregation)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrap(err, "while getting operation")
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, errors.Wrap(err, "while committing the transaction")
+	}
+
+	return r.opConv.MultipleToGraphQL([]*model.Operation{op})
+}
+
 // Bundles missing godoc
 func (r *Resolver) Bundles(ctx context.Context, obj *graphql.Application, first *int, after *graphql.PageCursor) (*graphql.BundlePage, error) {
 	param := dataloader.ParamBundle{ID: obj.ID, Ctx: ctx, First: first, After: after}
@@ -1129,36 +1203,6 @@ func (r *Resolver) ApplicationTemplate(ctx context.Context, obj *graphql.Applica
 	}
 
 	return r.appTemplateConverter.ToGraphQL(appTemplate)
-}
-
-// TenantBusinessType retrieves tenant business type by given application
-func (r *Resolver) TenantBusinessType(ctx context.Context, obj *graphql.Application) (*graphql.TenantBusinessType, error) {
-	if obj == nil {
-		return nil, apperrors.NewInternalError("Application cannot be empty")
-	}
-	if obj.TenantBusinessTypeID == nil {
-		return nil, nil
-	}
-
-	tx, err := r.transact.Begin()
-	if err != nil {
-		return nil, err
-	}
-	defer r.transact.RollbackUnlessCommitted(ctx, tx)
-
-	ctx = persistence.SaveToContext(ctx, tx)
-
-	tenantBusinessType, err := r.tenantBusinessTypeSvc.GetByID(ctx, *obj.TenantBusinessTypeID)
-	if err != nil {
-		log.C(ctx).Infof("No tenant business type found with id %s", *obj.TenantBusinessTypeID)
-		return nil, errors.Wrapf(err, "no tenant business type found with id %s", *obj.TenantBusinessTypeID)
-	}
-
-	if err = tx.Commit(); err != nil {
-		return nil, err
-	}
-
-	return r.tenantBusinessTypeConverter.ToGraphQL(tenantBusinessType), nil
 }
 
 // getApplicationProviderTenant should be used when making requests with double authentication, i.e. consumerInfo.OnBehalfOf != nil;

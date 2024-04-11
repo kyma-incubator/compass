@@ -19,10 +19,6 @@ type AutomaticFormationAssignmentService struct {
 func (_m *AutomaticFormationAssignmentService) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, scenarioName)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetForScenarioName")
-	}
-
 	var r0 model.AutomaticScenarioAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (model.AutomaticScenarioAssignment, error)); ok {

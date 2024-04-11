@@ -18,10 +18,6 @@ type FormationAssignmentConverter struct {
 func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationAssignment) ([]*graphql.FormationAssignment, error) {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for MultipleToGraphQL")
-	}
-
 	var r0 []*graphql.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func([]*model.FormationAssignment) ([]*graphql.FormationAssignment, error)); ok {
@@ -47,10 +43,6 @@ func (_m *FormationAssignmentConverter) MultipleToGraphQL(in []*model.FormationA
 // ToGraphQL provides a mock function with given fields: in
 func (_m *FormationAssignmentConverter) ToGraphQL(in *model.FormationAssignment) (*graphql.FormationAssignment, error) {
 	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
 
 	var r0 *graphql.FormationAssignment
 	var r1 error

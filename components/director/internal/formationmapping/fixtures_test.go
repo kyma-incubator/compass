@@ -50,15 +50,20 @@ var (
 	nonMatchingUCLSubaccountID  = "anotherTestSubaccID"
 
 	cons = consumer.Consumer{
-		ConsumerID:   "consumerID",
-		ConsumerType: consumer.BusinessIntegration,
+		ConsumerID: "consumerID",
+		Type:       consumer.BusinessIntegration,
 	}
 	instanceCreatorCons = consumer.Consumer{
-		ConsumerID:   "consumerID",
-		ConsumerType: consumer.InstanceCreator,
+		ConsumerID: "consumerID",
+		Type:       consumer.InstanceCreator,
+	}
+	externalTokenCons = consumer.Consumer{
+		ConsumerID: "consumerID",
+		Type:       consumer.User,
 	}
 	ctxWithConsumer                = consumer.SaveToContext(context.TODO(), cons)
 	ctxWithInstanceCreatorConsumer = consumer.SaveToContext(context.TODO(), instanceCreatorCons)
+	ctxWithExternalTokenConsumer   = consumer.SaveToContext(context.TODO(), externalTokenCons)
 )
 
 func fixTestHandler(t *testing.T) http.HandlerFunc {
@@ -77,10 +82,10 @@ func fixRequestWithContext(t *testing.T, ctx context.Context, httpMethod string)
 	return reqWithContext
 }
 
-func fixGetConsumer(consumerID string, consumerType consumer.ConsumerType) consumer.Consumer {
+func fixGetConsumer(consumerID string, consumerType consumer.Type) consumer.Consumer {
 	return consumer.Consumer{
-		ConsumerID:   consumerID,
-		ConsumerType: consumerType,
+		ConsumerID: consumerID,
+		Type:       consumerType,
 	}
 }
 

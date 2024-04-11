@@ -55,7 +55,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 	stateFromReport := notificationStatusReport.State
 	fa.State = stateFromReport
 
-	if isErrorState(model.FormationAssignmentState(stateFromReport)) {
+	if fa.IsInErrorState() {
 		if notificationStatusReport.Error != "" {
 			assignmentErrorWrapper := AssignmentErrorWrapper{AssignmentError{
 				Message:   notificationStatusReport.Error,
@@ -69,7 +69,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		}
 	}
 
-	if !isErrorState(model.FormationAssignmentState(stateFromReport)) {
+	if !fa.IsInErrorState() {
 		ResetAssignmentConfigAndError(fa)
 		configFromReport := notificationStatusReport.Configuration
 		if configFromReport != nil && !formationconstraintpkg.IsConfigEmpty(string(configFromReport)) {

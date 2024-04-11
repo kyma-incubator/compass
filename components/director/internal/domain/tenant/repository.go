@@ -30,40 +30,38 @@ import (
 )
 
 const (
-	tableName                      string = `public.business_tenant_mappings`
-	labelDefinitionsTableName      string = `public.label_definitions`
-	labelDefinitionsTenantIDColumn string = `tenant_id`
+	tableName                 string = `public.business_tenant_mappings`
+	labelDefinitionsTableName string = `public.label_definitions`
+	tenantIDColumn            string = `tenant_id`
+	idColumn                  string = "id"
+	idColumnCasted            string = "id::text"
+	externalNameColumn        string = "external_name"
+	externalTenantColumn      string = "external_tenant"
+	typeColumn                string = "type"
+	providerNameColumn        string = "provider_name"
+	statusColumn              string = "status"
+	initializedComputedColumn string = "initialized"
+	tenantRuntimeContextTable string = "tenant_runtime_contexts"
+	labelsTable               string = "labels"
+	applicationTable          string = "applications"
+	tenantApplicationsTable   string = "tenant_applications"
+	appTemplateIDColumn       string = "app_template_id"
+	keyColumn                 string = "key"
 
 	maxParameterChunkSize     int = 50000 // max parameters size in PostgreSQL is 65535
 	getTenantsByParentAndType     = `SELECT %s from %s join %s on %s = %s where %s = ? and %s = ?`
 )
 
 var (
-	idColumn                  = "id"
-	idColumnCasted            = "id::text"
-	externalNameColumn        = "external_name"
-	externalTenantColumn      = "external_tenant"
-	typeColumn                = "type"
-	providerNameColumn        = "provider_name"
-	statusColumn              = "status"
-	initializedComputedColumn = "initialized"
-
 	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, typeColumn, providerNameColumn, statusColumn}
 	conflictingColumns = []string{externalTenantColumn}
 	updateColumns      = []string{externalNameColumn}
 	searchColumns      = []string{idColumnCasted, externalNameColumn, externalTenantColumn}
 
-	tenantRuntimeContextTable           = "tenant_runtime_contexts"
-	tenantRuntimeContextSelectedColumns = []string{"tenant_id"}
-	labelsTable                         = "labels"
+	tenantRuntimeContextSelectedColumns = []string{tenantIDColumn}
 	labelsSelectedColumns               = []string{"app_template_id"}
-	applicationTable                    = "applications"
 	applicationsSelectedColumns         = []string{"id"}
-	tenantApplicationsTable             = "tenant_applications"
-	tenantApplicationsSelectedColumns   = []string{"tenant_id"}
-
-	appTemplateIDColumn = "app_template_id"
-	keyColumn           = "key"
+	tenantApplicationsSelectedColumns   = []string{tenantIDColumn}
 )
 
 // Converter converts tenants between the model.BusinessTenantMapping service-layer representation of a tenant and the repo-layer representation tenant.Entity.
@@ -139,7 +137,7 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapp
 	if err != nil {
 		return "", errors.Wrapf(err, "while getting business tenant mapping by external id %s", item.ExternalTenant)
 	}
-	return btm.ID, r.tenantParentRepo.UpsertMultiple(ctx, btm.ID, item.Parents)
+	return btm.ID, r.processParents(ctx, btm.ID, item.Parents, btm.Parents)
 }
 
 // Get retrieves the active tenant with matching internal ID from the Compass storage.
@@ -233,7 +231,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.%s IS NOT NULL AS %s
 			FROM %s t LEFT JOIN %s ld ON t.%s=ld.%s
 			WHERE t.%s = $1
-			ORDER BY %s DESC, t.%s ASC`, prefixedFields, labelDefinitionsTenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, labelDefinitionsTenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
+			ORDER BY %s DESC, t.%s ASC`, prefixedFields, tenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, tenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
 
 	err = persist.SelectContext(ctx, &entityCollection, query, tenant.Active)
 	if err != nil {
@@ -336,22 +334,26 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 		parentsInternalIDs = append(parentsInternalIDs, btm.ID)
 	}
 
-	parentsToAdd := slices.Filter(nil, parentsInternalIDs, func(s string) bool {
-		return !slices.Contains(tenantFromDB.Parents, s)
+	return r.processParents(ctx, model.ID, parentsInternalIDs, tenantFromDB.Parents)
+}
+
+func (r *pgRepository) processParents(ctx context.Context, tenantID string, parents, parentsFromDB []string) error {
+	parentsToAdd := slices.Filter(nil, parents, func(s string) bool {
+		return !slices.Contains(parentsFromDB, s)
 	})
 
-	parentsToRemove := slices.Filter(nil, tenantFromDB.Parents, func(s string) bool {
-		return !slices.Contains(parentsInternalIDs, s)
+	parentsToRemove := slices.Filter(nil, parentsFromDB, func(s string) bool {
+		return !slices.Contains(parents, s)
 	})
 
 	for _, p := range parentsToRemove {
-		if err := r.removeParent(ctx, p, model.ID); err != nil {
+		if err := r.removeParent(ctx, p, tenantID); err != nil {
 			return err
 		}
 	}
 
 	for _, p := range parentsToAdd {
-		if err := r.addParent(ctx, p, model.ID); err != nil {
+		if err := r.addParent(ctx, p, tenantID); err != nil {
 			return err
 		}
 	}
@@ -361,7 +363,7 @@ func (r *pgRepository) Update(ctx context.Context, model *model.BusinessTenantMa
 
 func (r *pgRepository) addParent(ctx context.Context, internalParentID, internalChildID string) error {
 	if err := r.tenantParentRepo.Upsert(ctx, internalChildID, internalParentID); err != nil {
-		return errors.Wrapf(err, "while adding tenant parent record for tenant with ID %s and parent teannt with ID %s", internalChildID, internalParentID)
+		return errors.Wrapf(err, "while adding tenant parent record for tenant with ID %s and parent tenant with ID %s", internalChildID, internalParentID)
 	}
 
 	for topLevelEntity := range resource.TopLevelEntities {
@@ -451,6 +453,10 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	}
 
 	if tnt.Type != tenant.CostObject {
+		if err = r.deleteChildTenantsRecursively(ctx, tnt.ID); err != nil {
+			return err
+		}
+
 		for topLevelEntity, topLevelEntityTable := range resource.TopLevelEntities {
 			if _, ok := topLevelEntity.IgnoredTenantAccessTable(); ok {
 				log.C(ctx).Debugf("top level entity %s does not need a tenant access table", topLevelEntity)
@@ -462,28 +468,17 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 				return errors.Errorf("top level entity %s does not have tenant access table", topLevelEntity)
 			}
 
-			tenantAccesses := repo.TenantAccessCollection{}
-
-			tenantAccessLister := repo.NewListerGlobal(resource.TenantAccess, m2mTable, repo.M2MColumns)
-			if err := tenantAccessLister.ListGlobal(ctx, &tenantAccesses, repo.NewEqualCondition(repo.M2MTenantIDColumn, tnt.ID), repo.NewEqualCondition(repo.M2MOwnerColumn, true)); err != nil {
-				return errors.Wrapf(err, "while listing tenant access records for tenant with id %s", tnt.ID)
+			resourceIDs, err := r.retrieveOwningResources(ctx, m2mTable, tnt.ID)
+			if err != nil {
+				return errors.Wrapf(err, "while retrieving owning resources for tenant with id %s", tnt.ID)
 			}
 
-			if len(tenantAccesses) > 0 {
-				resourceIDs := make([]string, 0, len(tenantAccesses))
-				for _, ta := range tenantAccesses {
-					resourceIDs = append(resourceIDs, ta.ResourceID)
-				}
-
+			if len(resourceIDs) > 0 {
 				deleter := repo.NewDeleterGlobal(topLevelEntity, topLevelEntityTable)
 				if err := deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues("id", resourceIDs)}); err != nil {
 					return errors.Wrapf(err, "while deleting resources owned by tenant %s", tnt.ID)
 				}
 			}
-		}
-
-		if err = r.deleteChildTenantsRecursively(ctx, tnt.ID); err != nil {
-			return err
 		}
 	}
 
@@ -599,44 +594,60 @@ func (r *pgRepository) GetParentsRecursivelyByExternalTenant(ctx context.Context
 	return r.enrichManyWithParents(ctx, entityCollection)
 }
 
+// ListBySubscribedRuntimesAndApplicationTemplates lists subscribed runtimes and application templates for a given self register label with a custom SQL
 func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error) {
 	var entityCollection tenant.EntityCollection
 
-	subaccountConditions := repo.Conditions{repo.NewEqualCondition(typeColumn, tenant.Subaccount)}
+	rawStmt := `
+		SELECT b.id, b.external_name, b.external_tenant, b.type, b.provider_name, b.status
+		FROM {{ .tenantsTable }} b
+		WHERE b.{{ .tenantTypeColumn }} = ?
+		  AND (
+				EXISTS (SELECT 1 FROM {{ .tenantRuntimeContextTable }} trc WHERE b.{{ .id }} = trc.{{ .tenantIDColumn }})
+				OR EXISTS (
+					SELECT 1
+					FROM {{ .tenantApplicationsTable }} ta
+							 JOIN {{ .applicationsTable }} app ON ta.{{ .id }} = app.{{ .id }}
+							 JOIN {{ .labelsTable }} l ON app.{{ .appTemplateIDColumn}} = l.{{ .appTemplateIDColumn}}
+					WHERE b.{{ .id }} = ta.{{ .tenantIDColumn }} AND l.{{ .labelKeyColumn }} = ? AND l.{{ .appTemplateIDColumn }} IS NOT NULL
+				)
+		)`
 
-	tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs, err := r.tenantRuntimeContextQueryBuilder.BuildQueryGlobal(false, repo.Conditions{}...)
+	t, err := template.New("").Parse(rawStmt)
 	if err != nil {
-		return nil, errors.Wrap(err, "while building query that fetches tenant from tenant_runtime_context")
+		return nil, err
 	}
 
-	applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs, err := r.labelsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewEqualCondition(keyColumn, selfRegDistinguishLabel), repo.NewNotNullCondition(appTemplateIDColumn)}...)
+	data := map[string]string{
+		"tenantsTable":              tableName,
+		"tenantTypeColumn":          typeColumn,
+		"tenantRuntimeContextTable": tenantRuntimeContextTable,
+		"tenantIDColumn":            tenantIDColumn,
+		"tenantApplicationsTable":   tenantApplicationsTable,
+		"applicationsTable":         applicationTable,
+		"labelsTable":               labelsTable,
+		"appTemplateIDColumn":       appTemplateIDColumn,
+		"labelKeyColumn":            keyColumn,
+		"id":                        idColumn,
+	}
+
+	res := new(bytes.Buffer)
+	if err = t.Execute(res, data); err != nil {
+		return nil, errors.Wrap(err, "while executing template")
+	}
+
+	stmt := res.String()
+	stmt = sqlx.Rebind(sqlx.DOLLAR, stmt)
+
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+
+	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "while building query that fetches app_template_id from labels which have subscription")
+		return nil, errors.Wrap(err, "while fetching persistence from context")
 	}
 
-	applicationSubquery, applicationArgs, err := r.applicationQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(appTemplateIDColumn, applicationTemplateWithSubscriptionLabelSubquery, applicationTemplateWithSubscriptionLabelArgs)}...)
+	err = persist.SelectContext(ctx, &entityCollection, stmt, tenant.Subaccount, selfRegDistinguishLabel)
 	if err != nil {
-		return nil, errors.Wrap(err, "while building query that fetches application id from application table")
-	}
-
-	tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs, err := r.tenantApplicationsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(idColumn, applicationSubquery, applicationArgs)}...)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building query that fetches tenant id from tenant_applications table")
-	}
-
-	subscriptionConditions := repo.Conditions{
-		repo.NewInConditionForSubQuery(idColumn, tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs),
-		repo.NewInConditionForSubQuery(idColumn, tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs),
-	}
-
-	conditions := repo.And(
-		append(
-			repo.ConditionTreesFromConditions(subaccountConditions),
-			repo.Or(repo.ConditionTreesFromConditions(subscriptionConditions)...),
-		)...,
-	)
-
-	if err := r.conditionTreeLister.ListConditionTreeGlobal(ctx, resource.Tenant, &entityCollection, conditions); err != nil {
 		return nil, errors.Wrap(err, "while listing tenants by label")
 	}
 
@@ -707,6 +718,50 @@ func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenan
 	}
 
 	return r.enrichManyWithParents(ctx, entityCollection)
+}
+
+func (r *pgRepository) retrieveOwningResources(ctx context.Context, m2mTable, tenantID string) ([]string, error) {
+	rawStmt := `SELECT DISTINCT ta1.{{ .m2mID }}
+				FROM {{ .m2mTable }} ta1
+         			LEFT JOIN {{ .m2mTable }} ta2
+                	   ON ta1.{{ .m2mID }} = ta2.{{ .m2mID }}
+                    	   AND ta2.{{ .m2mTenantID }} = ta2.{{ .m2mSource }}
+                    	   AND ta2.{{ .m2mTenantID }} <> ta1.{{ .m2mTenantID }}
+				WHERE ta1.{{ .m2mTenantID }} = ? AND ta2.{{ .m2mID }} IS NULL`
+
+	t, err := template.New("").Parse(rawStmt)
+	if err != nil {
+		return nil, err
+	}
+
+	data := map[string]string{
+		"m2mTable":    m2mTable,
+		"m2mTenantID": repo.M2MTenantIDColumn,
+		"m2mID":       repo.M2MResourceIDColumn,
+		"m2mSource":   repo.M2MSourceColumn,
+	}
+
+	res := new(bytes.Buffer)
+	if err = t.Execute(res, data); err != nil {
+		return nil, errors.Wrapf(err, "while executing template")
+	}
+
+	stmt := res.String()
+	stmt = sqlx.Rebind(sqlx.DOLLAR, stmt)
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	log.C(ctx).Debugf("Executing DB query: %s", stmt)
+
+	var dest []string
+	if err := persist.SelectContext(ctx, &dest, stmt, tenantID); err != nil {
+		return nil, persistence.MapSQLError(ctx, err, resource.TenantAccess, resource.List, "while listing owning resources from %s table for tenant %s", m2mTable, tenantID)
+	}
+
+	return dest, nil
 }
 
 func (r *pgRepository) multipleFromEntities(entities tenant.EntityCollection) []*model.BusinessTenantMapping {

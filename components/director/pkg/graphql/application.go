@@ -8,7 +8,6 @@ type Application struct {
 	ProviderName          *string            `json:"providerName"`
 	IntegrationSystemID   *string            `json:"integrationSystemID"`
 	ApplicationTemplateID *string            `json:"applicationTemplateID"`
-	TenantBusinessTypeID  *string            `json:"tenantBusinessTypeID"`
 	Description           *string            `json:"description"`
 	Status                *ApplicationStatus `json:"status"`
 	HealthCheckURL        *string            `json:"healthCheckURL"`
@@ -45,6 +44,7 @@ type ApplicationExt struct {
 	Auths                   []*AppSystemAuth                 `json:"auths"`
 	Bundle                  BundleExt                        `json:"bundle"`
 	Bundles                 BundlePageExt                    `json:"bundles"`
+	Operations              []*Operation                     `json:"operations"`
 	EventingConfiguration   ApplicationEventingConfiguration `json:"eventingConfiguration"`
 	APIDefinition           APIDefinitionExt                 `json:"apiDefinition"`
 	EventDefinition         EventAPIDefinitionExt            `json:"eventDefinition"`

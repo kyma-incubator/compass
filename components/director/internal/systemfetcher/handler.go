@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -26,7 +28,8 @@ type OperationsManager interface {
 
 // AggregationResource holds id of tenant for systems fetching
 type AggregationResource struct {
-	TenantID string `json:"tenantID"`
+	TenantIDs      []string `json:"tenantIDs"`
+	SkipReschedule bool     `json:"skipReschedule"`
 }
 
 type handler struct {
@@ -34,15 +37,17 @@ type handler struct {
 	businessTenantMappingSvc BusinessTenantMappingService
 	transact                 persistence.Transactioner
 	onDemandChannel          chan string
+	workerPool               chan struct{}
 }
 
 // NewSystemFetcherAggregatorHTTPHandler returns a new HTTP handler, responsible for handling HTTP requests
-func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTenantMappingSvc BusinessTenantMappingService, transact persistence.Transactioner, onDemandChannel chan string) *handler {
+func NewSystemFetcherAggregatorHTTPHandler(opMgr OperationsManager, businessTenantMappingSvc BusinessTenantMappingService, transact persistence.Transactioner, onDemandChannel chan string, workers chan struct{}) *handler {
 	return &handler{
 		opMgr:                    opMgr,
 		businessTenantMappingSvc: businessTenantMappingSvc,
 		transact:                 transact,
 		onDemandChannel:          onDemandChannel,
+		workerPool:               workers,
 	}
 }
 
@@ -58,153 +63,122 @@ func (h *handler) ScheduleAggregationForSystemFetcherData(writer http.ResponseWr
 		return
 	}
 
-	if payload.TenantID == "" {
+	if len(payload.TenantIDs) == 0 {
 		log.C(ctx).Error("Invalid data provided for System Fetcher aggregation")
-		http.Error(writer, "Invalid payload, Tenant ID is not provided.", http.StatusBadRequest)
+		http.Error(writer, "Invalid payload, TenantIDs is not provided or it is empty.", http.StatusBadRequest)
 		return
 	}
 
-	log.C(ctx).Infof("Rescheduling system fetcher data aggregation for tenant with id %q", payload.TenantID)
-	operation, err := h.opMgr.FindOperationByData(ctx, NewSystemFetcherOperationData(payload.TenantID))
+	log.C(ctx).Infof("Rescheduling system fetcher data aggregation for tenants %v", payload.TenantIDs)
+	writer.WriteHeader(http.StatusAccepted)
+
+	h.workerPool <- struct{}{}
+
+	entry := log.LoggerFromContext(ctx)
+	opCtx := log.ContextWithLogger(context.Background(), entry)
+
+	go func(ctx context.Context) {
+		defer func() {
+			<-h.workerPool
+		}()
+
+		h.scheduleOperations(opCtx, payload)
+	}(opCtx)
+}
+
+func (h *handler) scheduleOperations(ctx context.Context, payload AggregationResource) {
+	for _, tenantID := range payload.TenantIDs {
+		h.scheduleOperation(ctx, tenantID, payload.SkipReschedule)
+	}
+}
+
+func (h *handler) scheduleOperation(ctx context.Context, tenantID string, skipReschedule bool) {
+	operation, err := h.opMgr.FindOperationByData(ctx, NewSystemFetcherOperationData(tenantID))
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			log.C(ctx).WithError(err).Error("Loading Operation for System Fetcher data aggregation failed")
-			http.Error(writer, "Loading Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
 			return
 		}
 
-		log.C(ctx).Infof("Operation with TenantID %q does not exist. Trying to create...", payload.TenantID)
+		log.C(ctx).Infof("Operation with TenantID %q does not exist. Trying to create...", tenantID)
 
-		// Check if the provided tenant exists.
-		businessTenantMappingID := payload.TenantID
-		err := h.existsBusinessTenantMappingByID(ctx, payload.TenantID)
+		businessTenantMapping, err := h.getBusinessTenantMappingByID(ctx, tenantID)
 		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				err = h.existsBusinessTenantMappingByExternalTenant(ctx, payload.TenantID)
-				if err != nil {
-					if apperrors.IsNotFoundError(err) {
-						log.C(ctx).WithError(err).Errorf("External tenant with id %q not found", payload.TenantID)
-						http.Error(writer, "External Tenant not found", http.StatusNotFound)
-						return
-					} else {
-						log.C(ctx).WithError(err).Errorf("Check for external tenant with id %q failed", payload.TenantID)
-						http.Error(writer, "Check for External Tenant failed", http.StatusInternalServerError)
-						return
-					}
-				}
-				businessTenantMappingID, err = h.getBusinessTenantMappingByExternalTenant(ctx, payload.TenantID)
-				if err != nil {
-					log.C(ctx).WithError(err).Errorf("Getting external tenant with id %q failed", payload.TenantID)
-					http.Error(writer, "Getting External Tenant failed", http.StatusInternalServerError)
+			if !apperrors.IsNotFoundError(err) {
+				log.C(ctx).WithError(err).Errorf("Getting tenant by internal id %q failed", tenantID)
+				return
+			}
+
+			businessTenantMapping, err = h.getBusinessTenantMappingByExternalID(ctx, tenantID)
+			if err != nil {
+				if apperrors.IsNotFoundError(err) {
+					log.C(ctx).WithError(err).Errorf("External tenant with id %q not found", tenantID)
 					return
 				}
-			} else {
-				log.C(ctx).WithError(err).Errorf("Getting tenant with id %q failed", payload.TenantID)
-				http.Error(writer, "Getting Tenant failed", http.StatusInternalServerError)
+				log.C(ctx).WithError(err).Errorf("Getting external tenant with id %q failed", tenantID)
 				return
 			}
 		}
 
-		businessTenantMapping, err := h.getBusinessTenantMappingByID(ctx, businessTenantMappingID)
-		if err != nil || businessTenantMapping == nil {
-			if err != nil {
-				log.C(ctx).WithError(err).Error("Loading Business Tenant Mapping for System Fetcher data aggregation failed")
-			} else {
-				log.C(ctx).Error("Loading Business Tenant Mapping for System Fetcher data aggregation failed")
-			}
-			http.Error(writer, "Loading Business Tenant Mapping for System Fetcher data aggregation failed", http.StatusInternalServerError)
+		if businessTenantMapping == nil {
+			log.C(ctx).Error("Loading Business Tenant Mapping for System Fetcher data aggregation failed")
 			return
 		}
 
 		if businessTenantMapping.Type != tenant.Account && businessTenantMapping.Type != tenant.Customer {
 			log.C(ctx).Infof("Tenant with ID %q is of type %q - operations are created only for tenants of type Account and Customer.", businessTenantMapping.ID, businessTenantMapping.Type)
-			writer.WriteHeader(http.StatusOK)
 			return
 		}
 
-		now := time.Now()
-		data := NewSystemFetcherOperationData(businessTenantMappingID)
-		rawData, err := data.GetData()
-		if err != nil {
-			log.C(ctx).WithError(err).Error("Preparing Operation for System Fetcher data aggregation failed")
-			http.Error(writer, "Preparing Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
-			return
-		}
-
-		newOperationInput := &model.OperationInput{
-			OpType:    model.OperationTypeSystemFetching,
-			Status:    model.OperationStatusScheduled,
-			Data:      json.RawMessage(rawData),
-			Priority:  int(operationsmanager.HighOperationPriority),
-			CreatedAt: &now,
-		}
-
-		opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)
+		opID, err := h.createSystemFetchingOperation(ctx, businessTenantMapping.ID)
 		if err != nil {
 			log.C(ctx).WithError(err).Error("Creating Operation for System Fetcher data aggregation failed")
-			http.Error(writer, "Creating Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
 			return
 		}
-		log.C(ctx).Infof("Successfully created operation with TenantID %q", businessTenantMappingID)
+
+		log.C(ctx).Infof("Successfully created operation with id %q for TenantID %q", opID, businessTenantMapping.ID)
 
 		// Notify OperationProcessors for new operation
 		h.onDemandChannel <- opID
+		return
+	}
 
-		writer.WriteHeader(http.StatusOK)
+	if skipReschedule {
+		log.C(ctx).Debugf("SkipReschedule is true. Skipping reschedule for tenant with ID %q.", tenantID)
 		return
 	}
 
 	if err = h.opMgr.RescheduleOperation(ctx, operation.ID); err != nil {
 		log.C(ctx).WithError(err).Errorf("Failed to reschedule operation with ID %s", operation.ID)
-		http.Error(writer, "Scheduling Operation for System Fetcher data aggregation failed", http.StatusInternalServerError)
 		return
 	}
+
 	// Notify OperationProcessors for new operation
 	h.onDemandChannel <- operation.ID
-
-	writer.WriteHeader(http.StatusOK)
 }
 
-func (h *handler) existsBusinessTenantMappingByID(ctx context.Context, businessTenantMappingID string) error {
-	tx, err := h.transact.Begin()
+func (h *handler) createSystemFetchingOperation(ctx context.Context, tenantID string) (string, error) {
+	now := time.Now()
+	data := NewSystemFetcherOperationData(tenantID)
+	rawData, err := data.GetData()
 	if err != nil {
-		return err
+		return "", errors.Wrap(err, "while preparing system fetcher operation data")
 	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-	err = h.businessTenantMappingSvc.Exists(ctx, businessTenantMappingID)
-	if err != nil {
-		return err
-	}
-	return tx.Commit()
-}
 
-func (h *handler) existsBusinessTenantMappingByExternalTenant(ctx context.Context, externalTenant string) error {
-	tx, err := h.transact.Begin()
-	if err != nil {
-		return err
+	newOperationInput := &model.OperationInput{
+		OpType:    model.OperationTypeSystemFetching,
+		Status:    model.OperationStatusScheduled,
+		Data:      json.RawMessage(rawData),
+		Priority:  int(operationsmanager.HighOperationPriority),
+		CreatedAt: &now,
 	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-	err = h.businessTenantMappingSvc.ExistsByExternalTenant(ctx, externalTenant)
-	if err != nil {
-		return err
-	}
-	return tx.Commit()
-}
 
-func (h *handler) getBusinessTenantMappingByExternalTenant(ctx context.Context, externalTenant string) (string, error) {
-	tx, err := h.transact.Begin()
+	opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "while creating system fetcher operation")
 	}
-	defer h.transact.RollbackUnlessCommitted(ctx, tx)
-	ctx = persistence.SaveToContext(ctx, tx)
-	businessTenantMappingID, err := h.businessTenantMappingSvc.GetInternalTenant(ctx, externalTenant)
-	if err != nil {
-		return "", err
-	}
-	return businessTenantMappingID, tx.Commit()
+
+	return opID, nil
 }
 
 func (h *handler) getBusinessTenantMappingByID(ctx context.Context, tenantID string) (*model.BusinessTenantMapping, error) {
@@ -215,6 +189,20 @@ func (h *handler) getBusinessTenantMappingByID(ctx context.Context, tenantID str
 	defer h.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
 	businessTenantMapping, err := h.businessTenantMappingSvc.GetTenantByID(ctx, tenantID)
+	if err != nil {
+		return nil, err
+	}
+	return businessTenantMapping, tx.Commit()
+}
+
+func (h *handler) getBusinessTenantMappingByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error) {
+	tx, err := h.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+	businessTenantMapping, err := h.businessTenantMappingSvc.GetTenantByExternalID(ctx, externalID)
 	if err != nil {
 		return nil, err
 	}

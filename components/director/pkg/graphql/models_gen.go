@@ -36,13 +36,13 @@ type APIDefinitionInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:** valid URL, max=256
 	TargetURL string `json:"targetURL"`
 	// **Validation:** max=100
-	Group   *string       `json:"group"`
-	Spec    *APISpecInput `json:"spec"`
-	Version *VersionInput `json:"version"`
+	Group   *string       `json:"group,omitempty"`
+	Spec    *APISpecInput `json:"spec,omitempty"`
+	Version *VersionInput `json:"version,omitempty"`
 }
 
 type APIDefinitionPage struct {
@@ -57,18 +57,18 @@ func (APIDefinitionPage) IsPageable() {}
 // - for ODATA type, accepted formats are XML and JSON, for OPEN_API accepted formats are YAML and JSON
 // - data or fetchRequest required
 type APISpecInput struct {
-	Data         *CLOB              `json:"data"`
+	Data         *CLOB              `json:"data,omitempty"`
 	Type         APISpecType        `json:"type"`
 	Format       SpecFormat         `json:"format"`
-	FetchRequest *FetchRequestInput `json:"fetchRequest"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest,omitempty"`
 }
 
 type AppSystemAuth struct {
 	ID                string                   `json:"id"`
-	Auth              *Auth                    `json:"auth"`
-	Type              *SystemAuthReferenceType `json:"type"`
-	TenantID          *string                  `json:"tenantId"`
-	ReferenceObjectID *string                  `json:"referenceObjectId"`
+	Auth              *Auth                    `json:"auth,omitempty"`
+	Type              *SystemAuthReferenceType `json:"type,omitempty"`
+	TenantID          *string                  `json:"tenantId,omitempty"`
+	ReferenceObjectID *string                  `json:"referenceObjectId,omitempty"`
 }
 
 func (AppSystemAuth) IsSystemAuth() {}
@@ -79,35 +79,35 @@ type ApplicationEventingConfiguration struct {
 
 // **Validation:** provided placeholders' names are unique
 type ApplicationFromTemplateInput struct {
-	ID *string `json:"id"`
+	ID *string `json:"id,omitempty"`
 	// **Validation:** ASCII printable characters, max=100
 	TemplateName string `json:"templateName"`
 	// **Validation:** if provided, placeholdersPayload not required
-	Values []*TemplateValueInput `json:"values"`
+	Values []*TemplateValueInput `json:"values,omitempty"`
 	// **Validation:** if provided, values not required
-	PlaceholdersPayload *string `json:"placeholdersPayload"`
-	Labels              Labels  `json:"labels"`
+	PlaceholdersPayload *string `json:"placeholdersPayload,omitempty"`
+	Labels              Labels  `json:"labels,omitempty"`
 }
 
 type ApplicationJSONInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:** max=256
-	ProviderName *string `json:"providerName"`
+	ProviderName *string `json:"providerName,omitempty"`
 	// **Validation:** max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels   Labels          `json:"labels"`
-	Webhooks []*WebhookInput `json:"webhooks"`
+	Labels   Labels          `json:"labels,omitempty"`
+	Webhooks []*WebhookInput `json:"webhooks,omitempty"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL *string `json:"healthCheckURL"`
+	HealthCheckURL *string `json:"healthCheckURL,omitempty"`
 	// **Validation:** valid URL, max=256
-	BaseURL              *string                     `json:"baseUrl"`
-	ApplicationNamespace *string                     `json:"applicationNamespace"`
-	IntegrationSystemID  *string                     `json:"integrationSystemID"`
-	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID        *string                     `json:"localTenantID"`
-	Bundles              []*BundleCreateInput        `json:"bundles"`
+	BaseURL              *string                     `json:"baseUrl,omitempty"`
+	ApplicationNamespace *string                     `json:"applicationNamespace,omitempty"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID,omitempty"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition,omitempty"`
+	LocalTenantID        *string                     `json:"localTenantID,omitempty"`
+	Bundles              []*BundleCreateInput        `json:"bundles,omitempty"`
 }
 
 type ApplicationPage struct {
@@ -122,21 +122,21 @@ type ApplicationRegisterInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:** max=256
-	ProviderName *string `json:"providerName"`
+	ProviderName *string `json:"providerName,omitempty"`
 	// **Validation:** max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels   Labels          `json:"labels"`
-	Webhooks []*WebhookInput `json:"webhooks"`
+	Labels   Labels          `json:"labels,omitempty"`
+	Webhooks []*WebhookInput `json:"webhooks,omitempty"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL *string `json:"healthCheckURL"`
+	HealthCheckURL *string `json:"healthCheckURL,omitempty"`
 	// **Validation:** valid URL, max=256
-	BaseURL              *string                     `json:"baseUrl"`
-	ApplicationNamespace *string                     `json:"applicationNamespace"`
-	IntegrationSystemID  *string                     `json:"integrationSystemID"`
-	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID        *string                     `json:"localTenantID"`
-	Bundles              []*BundleCreateInput        `json:"bundles"`
+	BaseURL              *string                     `json:"baseUrl,omitempty"`
+	ApplicationNamespace *string                     `json:"applicationNamespace,omitempty"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID,omitempty"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition,omitempty"`
+	LocalTenantID        *string                     `json:"localTenantID,omitempty"`
+	Bundles              []*BundleCreateInput        `json:"bundles,omitempty"`
 }
 
 type ApplicationStatus struct {
@@ -149,14 +149,14 @@ type ApplicationTemplateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Webhooks    []*WebhookInput `json:"webhooks"`
-	Description *string         `json:"description"`
+	Webhooks    []*WebhookInput `json:"webhooks,omitempty"`
+	Description *string         `json:"description,omitempty"`
 	// **Validation:** label key is alphanumeric with underscore
-	Labels               Labels                         `json:"labels"`
+	Labels               Labels                         `json:"labels,omitempty"`
 	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
-	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
+	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders,omitempty"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
-	ApplicationNamespace *string                        `json:"applicationNamespace"`
+	ApplicationNamespace *string                        `json:"applicationNamespace,omitempty"`
 }
 
 type ApplicationTemplatePage struct {
@@ -171,27 +171,27 @@ type ApplicationTemplateUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Webhooks             []*WebhookInput                `json:"webhooks"`
-	Description          *string                        `json:"description"`
+	Webhooks             []*WebhookInput                `json:"webhooks,omitempty"`
+	Description          *string                        `json:"description,omitempty"`
 	ApplicationInput     *ApplicationJSONInput          `json:"applicationInput"`
-	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders"`
-	Labels               Labels                         `json:"labels"`
+	Placeholders         []*PlaceholderDefinitionInput  `json:"placeholders,omitempty"`
+	Labels               Labels                         `json:"labels,omitempty"`
 	AccessLevel          ApplicationTemplateAccessLevel `json:"accessLevel"`
-	ApplicationNamespace *string                        `json:"applicationNamespace"`
+	ApplicationNamespace *string                        `json:"applicationNamespace,omitempty"`
 }
 
 type ApplicationUpdateInput struct {
 	// **Validation:** max=256
-	ProviderName *string `json:"providerName"`
+	ProviderName *string `json:"providerName,omitempty"`
 	// **Validation:** max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:** valid URL, max=256
-	HealthCheckURL       *string                     `json:"healthCheckURL"`
-	BaseURL              *string                     `json:"baseUrl"`
-	ApplicationNamespace *string                     `json:"applicationNamespace"`
-	IntegrationSystemID  *string                     `json:"integrationSystemID"`
-	StatusCondition      *ApplicationStatusCondition `json:"statusCondition"`
-	LocalTenantID        *string                     `json:"localTenantID"`
+	HealthCheckURL       *string                     `json:"healthCheckURL,omitempty"`
+	BaseURL              *string                     `json:"baseUrl,omitempty"`
+	ApplicationNamespace *string                     `json:"applicationNamespace,omitempty"`
+	IntegrationSystemID  *string                     `json:"integrationSystemID,omitempty"`
+	StatusCondition      *ApplicationStatusCondition `json:"statusCondition,omitempty"`
+	LocalTenantID        *string                     `json:"localTenantID,omitempty"`
 }
 
 type AspectAPIDefinitionInput struct {
@@ -200,45 +200,45 @@ type AspectAPIDefinitionInput struct {
 
 type AspectEventDefinitionInput struct {
 	OrdID  string                              `json:"ordId"`
-	Subset []*AspectEventDefinitionSubsetInput `json:"subset"`
+	Subset []*AspectEventDefinitionSubsetInput `json:"subset,omitempty"`
 }
 
 type AspectEventDefinitionSubsetInput struct {
-	EventType *string `json:"eventType"`
+	EventType *string `json:"eventType,omitempty"`
 }
 
 type AspectInput struct {
 	Name           string                        `json:"name"`
-	Description    *string                       `json:"description"`
-	Mandatory      *bool                         `json:"mandatory"`
-	APIResources   []*AspectAPIDefinitionInput   `json:"apiResources"`
-	EventResources []*AspectEventDefinitionInput `json:"eventResources"`
+	Description    *string                       `json:"description,omitempty"`
+	Mandatory      *bool                         `json:"mandatory,omitempty"`
+	APIResources   []*AspectAPIDefinitionInput   `json:"apiResources,omitempty"`
+	EventResources []*AspectEventDefinitionInput `json:"eventResources,omitempty"`
 }
 
 type Auth struct {
-	Credential                      CredentialData         `json:"credential"`
-	AccessStrategy                  *string                `json:"accessStrategy"`
-	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders"`
-	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
-	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
-	RequestAuth                     *CredentialRequestAuth `json:"requestAuth"`
-	OneTimeToken                    OneTimeToken           `json:"oneTimeToken"`
-	CertCommonName                  *string                `json:"certCommonName"`
+	Credential                      CredentialData         `json:"credential,omitempty"`
+	AccessStrategy                  *string                `json:"accessStrategy,omitempty"`
+	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders,omitempty"`
+	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized,omitempty"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams,omitempty"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized,omitempty"`
+	RequestAuth                     *CredentialRequestAuth `json:"requestAuth,omitempty"`
+	OneTimeToken                    OneTimeToken           `json:"oneTimeToken,omitempty"`
+	CertCommonName                  *string                `json:"certCommonName,omitempty"`
 }
 
 type AuthInput struct {
-	Credential     *CredentialDataInput `json:"credential"`
-	AccessStrategy *string              `json:"accessStrategy"`
+	Credential     *CredentialDataInput `json:"credential,omitempty"`
+	AccessStrategy *string              `json:"accessStrategy,omitempty"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders"`
-	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
+	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders,omitempty"`
+	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized,omitempty"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams           QueryParams                 `json:"additionalQueryParams"`
-	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized"`
-	RequestAuth                     *CredentialRequestAuthInput `json:"requestAuth"`
-	CertCommonName                  *string                     `json:"certCommonName"`
-	OneTimeToken                    *OneTimeTokenInput          `json:"oneTimeToken"`
+	AdditionalQueryParams           QueryParams                 `json:"additionalQueryParams,omitempty"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized      `json:"additionalQueryParamsSerialized,omitempty"`
+	RequestAuth                     *CredentialRequestAuthInput `json:"requestAuth,omitempty"`
+	CertCommonName                  *string                     `json:"certCommonName,omitempty"`
+	OneTimeToken                    *OneTimeTokenInput          `json:"oneTimeToken,omitempty"`
 }
 
 type AutomaticScenarioAssignment struct {
@@ -270,51 +270,51 @@ type BundleCreateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description                    *string                 `json:"description"`
-	InstanceAuthRequestInputSchema *JSONSchema             `json:"instanceAuthRequestInputSchema"`
-	DefaultInstanceAuth            *AuthInput              `json:"defaultInstanceAuth"`
-	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions"`
-	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions"`
-	Documents                      []*DocumentInput        `json:"documents"`
-	CorrelationIDs                 []string                `json:"correlationIDs"`
+	Description                    *string                 `json:"description,omitempty"`
+	InstanceAuthRequestInputSchema *JSONSchema             `json:"instanceAuthRequestInputSchema,omitempty"`
+	DefaultInstanceAuth            *AuthInput              `json:"defaultInstanceAuth,omitempty"`
+	APIDefinitions                 []*APIDefinitionInput   `json:"apiDefinitions,omitempty"`
+	EventDefinitions               []*EventDefinitionInput `json:"eventDefinitions,omitempty"`
+	Documents                      []*DocumentInput        `json:"documents,omitempty"`
+	CorrelationIDs                 []string                `json:"correlationIDs,omitempty"`
 }
 
 type BundleInstanceAuth struct {
 	ID string `json:"id"`
 	// Context of BundleInstanceAuth - such as Runtime ID, namespace
-	Context *JSON `json:"context"`
+	Context *JSON `json:"context,omitempty"`
 	// User input while requesting Bundle Instance Auth
-	InputParams *JSON `json:"inputParams"`
+	InputParams *JSON `json:"inputParams,omitempty"`
 	// It may be empty if status is PENDING.
 	// Populated with `bundle.defaultAuth` value if `bundle.defaultAuth` is defined. If not, Compass notifies Application/Integration System about the Auth request.
-	Auth             *Auth                     `json:"auth"`
+	Auth             *Auth                     `json:"auth,omitempty"`
 	Status           *BundleInstanceAuthStatus `json:"status"`
-	RuntimeID        *string                   `json:"runtimeID"`
-	RuntimeContextID *string                   `json:"runtimeContextID"`
+	RuntimeID        *string                   `json:"runtimeID,omitempty"`
+	RuntimeContextID *string                   `json:"runtimeContextID,omitempty"`
 }
 
 type BundleInstanceAuthCreateInput struct {
-	Context          *JSON      `json:"context"`
-	InputParams      *JSON      `json:"inputParams"`
+	Context          *JSON      `json:"context,omitempty"`
+	InputParams      *JSON      `json:"inputParams,omitempty"`
 	Auth             *AuthInput `json:"auth"`
-	RuntimeID        *string    `json:"runtimeID"`
-	RuntimeContextID *string    `json:"runtimeContextID"`
+	RuntimeID        *string    `json:"runtimeID,omitempty"`
+	RuntimeContextID *string    `json:"runtimeContextID,omitempty"`
 }
 
 type BundleInstanceAuthRequestInput struct {
-	ID *string `json:"id"`
+	ID *string `json:"id,omitempty"`
 	// Context of BundleInstanceAuth - such as Runtime ID, namespace, etc.
-	Context *JSON `json:"context"`
+	Context *JSON `json:"context,omitempty"`
 	// **Validation:** JSON validated against bundle.instanceAuthRequestInputSchema
-	InputParams *JSON `json:"inputParams"`
+	InputParams *JSON `json:"inputParams,omitempty"`
 }
 
 type BundleInstanceAuthSetInput struct {
 	// **Validation:** If not provided, the status has to be set. If provided, the status condition  must be "SUCCEEDED".
-	Auth *AuthInput `json:"auth"`
+	Auth *AuthInput `json:"auth,omitempty"`
 	// **Validation:** Optional if the auth is provided.
 	// If the status condition is "FAILED", auth must be empty.
-	Status *BundleInstanceAuthStatusInput `json:"status"`
+	Status *BundleInstanceAuthStatusInput `json:"status,omitempty"`
 }
 
 type BundleInstanceAuthStatus struct {
@@ -346,9 +346,9 @@ type BundleInstanceAuthStatusInput struct {
 }
 
 type BundleInstanceAuthUpdateInput struct {
-	Context     *JSON      `json:"context"`
-	InputParams *JSON      `json:"inputParams"`
-	Auth        *AuthInput `json:"auth"`
+	Context     *JSON      `json:"context,omitempty"`
+	InputParams *JSON      `json:"inputParams,omitempty"`
+	Auth        *AuthInput `json:"auth,omitempty"`
 }
 
 type BundlePage struct {
@@ -363,45 +363,45 @@ type BundleUpdateInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description                    *string     `json:"description"`
-	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema"`
+	Description                    *string     `json:"description,omitempty"`
+	InstanceAuthRequestInputSchema *JSONSchema `json:"instanceAuthRequestInputSchema,omitempty"`
 	// While updating defaultInstanceAuth, existing BundleInstanceAuths are NOT updated.
-	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth"`
+	DefaultInstanceAuth *AuthInput `json:"defaultInstanceAuth,omitempty"`
 }
 
 type BusinessTenantMappingInput struct {
 	Name           string    `json:"name"`
 	ExternalTenant string    `json:"externalTenant"`
-	Parents        []*string `json:"parents"`
-	Subdomain      *string   `json:"subdomain"`
-	Region         *string   `json:"region"`
+	Parents        []*string `json:"parents,omitempty"`
+	Subdomain      *string   `json:"subdomain,omitempty"`
+	Region         *string   `json:"region,omitempty"`
 	Type           string    `json:"type"`
 	Provider       string    `json:"provider"`
-	LicenseType    *string   `json:"licenseType"`
-	CustomerID     *string   `json:"customerId"`
-	CostObjectID   *string   `json:"costObjectId"`
-	CostObjectType *string   `json:"costObjectType"`
+	LicenseType    *string   `json:"licenseType,omitempty"`
+	CustomerID     *string   `json:"customerId,omitempty"`
+	CostObjectID   *string   `json:"costObjectId,omitempty"`
+	CostObjectType *string   `json:"costObjectType,omitempty"`
 }
 
 type CSRFTokenCredentialRequestAuth struct {
 	TokenEndpointURL                string                 `json:"tokenEndpointURL"`
-	Credential                      CredentialData         `json:"credential"`
-	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders"`
-	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
-	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
-	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
+	Credential                      CredentialData         `json:"credential,omitempty"`
+	AdditionalHeaders               HTTPHeaders            `json:"additionalHeaders,omitempty"`
+	AdditionalHeadersSerialized     *HTTPHeadersSerialized `json:"additionalHeadersSerialized,omitempty"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams,omitempty"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized,omitempty"`
 }
 
 type CSRFTokenCredentialRequestAuthInput struct {
 	// **Validation:** valid URL
 	TokenEndpointURL string               `json:"tokenEndpointURL"`
-	Credential       *CredentialDataInput `json:"credential"`
+	Credential       *CredentialDataInput `json:"credential,omitempty"`
 	// **Validation:** if provided, headers name and value required
-	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders"`
-	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized"`
+	AdditionalHeaders           HTTPHeaders            `json:"additionalHeaders,omitempty"`
+	AdditionalHeadersSerialized *HTTPHeadersSerialized `json:"additionalHeadersSerialized,omitempty"`
 	// **Validation:** if provided, query parameters name and value required
-	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams"`
-	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized"`
+	AdditionalQueryParams           QueryParams            `json:"additionalQueryParams,omitempty"`
+	AdditionalQueryParamsSerialized *QueryParamsSerialized `json:"additionalQueryParamsSerialized,omitempty"`
 }
 
 type CertificateOAuthCredentialData struct {
@@ -423,14 +423,14 @@ type CertificateSubjectMapping struct {
 	ID                 string   `json:"id"`
 	Subject            string   `json:"subject"`
 	ConsumerType       string   `json:"consumerType"`
-	InternalConsumerID *string  `json:"internalConsumerID"`
+	InternalConsumerID *string  `json:"internalConsumerID,omitempty"`
 	TenantAccessLevels []string `json:"tenantAccessLevels"`
 }
 
 type CertificateSubjectMappingInput struct {
 	Subject            string   `json:"subject"`
 	ConsumerType       string   `json:"consumerType"`
-	InternalConsumerID *string  `json:"internalConsumerID"`
+	InternalConsumerID *string  `json:"internalConsumerID,omitempty"`
 	TenantAccessLevels []string `json:"tenantAccessLevels"`
 }
 
@@ -449,18 +449,18 @@ type ConstraintReference struct {
 
 // **Validation:** basic or oauth or certificateOAuth field required
 type CredentialDataInput struct {
-	Basic            *BasicCredentialDataInput            `json:"basic"`
-	Oauth            *OAuthCredentialDataInput            `json:"oauth"`
-	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth"`
+	Basic            *BasicCredentialDataInput            `json:"basic,omitempty"`
+	Oauth            *OAuthCredentialDataInput            `json:"oauth,omitempty"`
+	CertificateOAuth *CertificateOAuthCredentialDataInput `json:"certificateOAuth,omitempty"`
 }
 
 type CredentialRequestAuth struct {
-	Csrf *CSRFTokenCredentialRequestAuth `json:"csrf"`
+	Csrf *CSRFTokenCredentialRequestAuth `json:"csrf,omitempty"`
 }
 
 type CredentialRequestAuthInput struct {
 	// **Validation:** required
-	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf"`
+	Csrf *CSRFTokenCredentialRequestAuthInput `json:"csrf,omitempty"`
 }
 
 type DocumentInput struct {
@@ -472,9 +472,9 @@ type DocumentInput struct {
 	Description string         `json:"description"`
 	Format      DocumentFormat `json:"format"`
 	// **Validation:** max=256
-	Kind         *string            `json:"kind"`
-	Data         *CLOB              `json:"data"`
-	FetchRequest *FetchRequestInput `json:"fetchRequest"`
+	Kind         *string            `json:"kind,omitempty"`
+	Data         *CLOB              `json:"data,omitempty"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest,omitempty"`
 }
 
 type DocumentPage struct {
@@ -489,11 +489,11 @@ type EventDefinitionInput struct {
 	// **Validation:** ASCII printable characters, max=100
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description *string         `json:"description"`
-	Spec        *EventSpecInput `json:"spec"`
+	Description *string         `json:"description,omitempty"`
+	Spec        *EventSpecInput `json:"spec,omitempty"`
 	// **Validation:** max=36
-	Group   *string       `json:"group"`
-	Version *VersionInput `json:"version"`
+	Group   *string       `json:"group,omitempty"`
+	Version *VersionInput `json:"version,omitempty"`
 }
 
 type EventDefinitionPage struct {
@@ -508,18 +508,18 @@ func (EventDefinitionPage) IsPageable() {}
 // - data or fetchRequest required
 // - for ASYNC_API type, accepted formats are YAML and JSON
 type EventSpecInput struct {
-	Data         *CLOB              `json:"data"`
+	Data         *CLOB              `json:"data,omitempty"`
 	Type         EventSpecType      `json:"type"`
 	Format       SpecFormat         `json:"format"`
-	FetchRequest *FetchRequestInput `json:"fetchRequest"`
+	FetchRequest *FetchRequestInput `json:"fetchRequest,omitempty"`
 }
 
 // Compass performs fetch to validate if request is correct and stores a copy
 type FetchRequest struct {
 	URL    string              `json:"url"`
-	Auth   *Auth               `json:"auth"`
+	Auth   *Auth               `json:"auth,omitempty"`
 	Mode   FetchMode           `json:"mode"`
-	Filter *string             `json:"filter"`
+	Filter *string             `json:"filter,omitempty"`
 	Status *FetchRequestStatus `json:"status"`
 }
 
@@ -527,17 +527,17 @@ type FetchRequestInput struct {
 	// **Validation:** valid URL, max=256
 	URL string `json:"url"`
 	// Currently unsupported, providing it will result in a failure
-	Auth *AuthInput `json:"auth"`
+	Auth *AuthInput `json:"auth,omitempty"`
 	// Currently unsupported, providing it will result in a failure
-	Mode *FetchMode `json:"mode"`
+	Mode *FetchMode `json:"mode,omitempty"`
 	// **Validation:** max=256
 	// Currently unsupported, providing it will result in a failure
-	Filter *string `json:"filter"`
+	Filter *string `json:"filter,omitempty"`
 }
 
 type FetchRequestStatus struct {
 	Condition FetchRequestStatusCondition `json:"condition"`
-	Message   *string                     `json:"message"`
+	Message   *string                     `json:"message,omitempty"`
 	Timestamp Timestamp                   `json:"timestamp"`
 }
 
@@ -566,7 +566,7 @@ type FormationConstraint struct {
 
 type FormationConstraintInput struct {
 	Name            string          `json:"name"`
-	Description     *string         `json:"description"`
+	Description     *string         `json:"description,omitempty"`
 	ConstraintType  ConstraintType  `json:"constraintType"`
 	TargetOperation TargetOperation `json:"targetOperation"`
 	Operator        string          `json:"operator"`
@@ -574,13 +574,13 @@ type FormationConstraintInput struct {
 	ResourceSubtype string          `json:"resourceSubtype"`
 	InputTemplate   string          `json:"inputTemplate"`
 	ConstraintScope ConstraintScope `json:"constraintScope"`
-	Priority        *int            `json:"priority"`
+	Priority        *int            `json:"priority,omitempty"`
 }
 
 type FormationConstraintUpdateInput struct {
 	InputTemplate string  `json:"inputTemplate"`
-	Priority      *int    `json:"priority"`
-	Description   *string `json:"description"`
+	Priority      *int    `json:"priority,omitempty"`
+	Description   *string `json:"description,omitempty"`
 }
 
 type FormationError struct {
@@ -590,10 +590,10 @@ type FormationError struct {
 
 type FormationInput struct {
 	Name         string  `json:"name"`
-	TemplateName *string `json:"templateName"`
+	TemplateName *string `json:"templateName,omitempty"`
 	// The initial state of the newly created formation.
 	// It is used in specific use-cases by internal components that need to manipulate the formation notification engine's logic and hold the tenant mapping notifications until a certain external event happens.
-	State *string `json:"state"`
+	State *string `json:"state,omitempty"`
 }
 
 type FormationPage struct {
@@ -606,11 +606,11 @@ func (FormationPage) IsPageable() {}
 
 type FormationStatus struct {
 	Condition FormationStatusCondition `json:"condition"`
-	Errors    []*FormationStatusError  `json:"errors"`
+	Errors    []*FormationStatusError  `json:"errors,omitempty"`
 }
 
 type FormationStatusError struct {
-	AssignmentID *string `json:"assignmentID"`
+	AssignmentID *string `json:"assignmentID,omitempty"`
 	Message      string  `json:"message"`
 	ErrorCode    int     `json:"errorCode"`
 }
@@ -618,13 +618,13 @@ type FormationStatusError struct {
 type FormationTemplateInput struct {
 	Name                   string          `json:"name"`
 	ApplicationTypes       []string        `json:"applicationTypes"`
-	RuntimeTypes           []string        `json:"runtimeTypes"`
-	RuntimeTypeDisplayName *string         `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind"`
-	Webhooks               []*WebhookInput `json:"webhooks"`
-	LeadingProductIDs      []string        `json:"leadingProductIDs"`
-	SupportsReset          *bool           `json:"supportsReset"`
-	DiscoveryConsumers     []string        `json:"discoveryConsumers"`
+	RuntimeTypes           []string        `json:"runtimeTypes,omitempty"`
+	RuntimeTypeDisplayName *string         `json:"runtimeTypeDisplayName,omitempty"`
+	RuntimeArtifactKind    *ArtifactType   `json:"runtimeArtifactKind,omitempty"`
+	Webhooks               []*WebhookInput `json:"webhooks,omitempty"`
+	LeadingProductIDs      []string        `json:"leadingProductIDs,omitempty"`
+	SupportsReset          *bool           `json:"supportsReset,omitempty"`
+	DiscoveryConsumers     []string        `json:"discoveryConsumers,omitempty"`
 }
 
 type FormationTemplatePage struct {
@@ -638,8 +638,8 @@ func (FormationTemplatePage) IsPageable() {}
 type HealthCheck struct {
 	Type      HealthCheckType            `json:"type"`
 	Condition HealthCheckStatusCondition `json:"condition"`
-	Origin    *string                    `json:"origin"`
-	Message   *string                    `json:"message"`
+	Origin    *string                    `json:"origin,omitempty"`
+	Message   *string                    `json:"message,omitempty"`
 	Timestamp Timestamp                  `json:"timestamp"`
 }
 
@@ -653,24 +653,25 @@ func (HealthCheckPage) IsPageable() {}
 
 type IntSysSystemAuth struct {
 	ID                string                   `json:"id"`
-	Auth              *Auth                    `json:"auth"`
-	Type              *SystemAuthReferenceType `json:"type"`
-	TenantID          *string                  `json:"tenantId"`
-	ReferenceObjectID *string                  `json:"referenceObjectId"`
+	Auth              *Auth                    `json:"auth,omitempty"`
+	Type              *SystemAuthReferenceType `json:"type,omitempty"`
+	TenantID          *string                  `json:"tenantId,omitempty"`
+	ReferenceObjectID *string                  `json:"referenceObjectId,omitempty"`
 }
 
 func (IntSysSystemAuth) IsSystemAuth() {}
 
 type IntegrationDependencyInput struct {
 	Name          string         `json:"name"`
-	Description   *string        `json:"description"`
+	Description   *string        `json:"description,omitempty"`
 	OrdID         string         `json:"ordID"`
-	PartOfPackage *string        `json:"partOfPackage"`
-	Visibility    *string        `json:"visibility"`
-	ReleaseStatus *string        `json:"releaseStatus"`
-	Mandatory     *bool          `json:"mandatory"`
-	Aspects       []*AspectInput `json:"aspects"`
-	Version       *VersionInput  `json:"version"`
+	PartOfPackage *string        `json:"partOfPackage,omitempty"`
+	Visibility    *string        `json:"visibility,omitempty"`
+	ReleaseStatus *string        `json:"releaseStatus,omitempty"`
+	Mandatory     *bool          `json:"mandatory,omitempty"`
+	Aspects       []*AspectInput `json:"aspects,omitempty"`
+	Version       *VersionInput  `json:"version,omitempty"`
+	Labels        Labels         `json:"labels,omitempty"`
 }
 
 type IntegrationDependencyPage struct {
@@ -685,7 +686,7 @@ type IntegrationSystemInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:** max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 }
 
 type IntegrationSystemPage struct {
@@ -703,13 +704,13 @@ type Label struct {
 
 type LabelDefinition struct {
 	Key    string      `json:"key"`
-	Schema *JSONSchema `json:"schema"`
+	Schema *JSONSchema `json:"schema,omitempty"`
 }
 
 type LabelDefinitionInput struct {
 	// **Validation:** max=256, alphanumeric chartacters and underscore
 	Key    string      `json:"key"`
-	Schema *JSONSchema `json:"schema"`
+	Schema *JSONSchema `json:"schema,omitempty"`
 }
 
 type LabelFilter struct {
@@ -717,7 +718,7 @@ type LabelFilter struct {
 	Key string `json:"key"`
 	// Optional SQL/JSON Path expression. If query is not provided, returns every object with given label key regardless of its value.
 	// Currently only a limited subset of expressions is supported.
-	Query *string `json:"query"`
+	Query *string `json:"query,omitempty"`
 }
 
 type LabelInput struct {
@@ -729,6 +730,9 @@ type LabelInput struct {
 type LabelSelectorInput struct {
 	Key   string `json:"key"`
 	Value string `json:"value"`
+}
+
+type Mutation struct {
 }
 
 type OAuthCredentialData struct {
@@ -749,14 +753,23 @@ type OAuthCredentialDataInput struct {
 
 type OneTimeTokenInput struct {
 	Token        string            `json:"token"`
-	ConnectorURL *string           `json:"connectorURL"`
+	ConnectorURL *string           `json:"connectorURL,omitempty"`
 	Used         bool              `json:"used"`
 	ExpiresAt    Timestamp         `json:"expiresAt"`
 	CreatedAt    Timestamp         `json:"createdAt"`
 	UsedAt       Timestamp         `json:"usedAt"`
-	Raw          *string           `json:"raw"`
-	RawEncoded   *string           `json:"rawEncoded"`
-	Type         *OneTimeTokenType `json:"type"`
+	Raw          *string           `json:"raw,omitempty"`
+	RawEncoded   *string           `json:"rawEncoded,omitempty"`
+	Type         *OneTimeTokenType `json:"type,omitempty"`
+}
+
+type Operation struct {
+	ID            string                 `json:"id"`
+	OperationType ScheduledOperationType `json:"operationType"`
+	Status        OperationStatus        `json:"status"`
+	Error         *string                `json:"error,omitempty"`
+	CreatedAt     *Timestamp             `json:"createdAt,omitempty"`
+	UpdatedAt     *Timestamp             `json:"updatedAt,omitempty"`
 }
 
 type PageInfo struct {
@@ -767,19 +780,22 @@ type PageInfo struct {
 
 type PlaceholderDefinition struct {
 	Name        string  `json:"name"`
-	Description *string `json:"description"`
-	JSONPath    *string `json:"jsonPath"`
-	Optional    *bool   `json:"optional"`
+	Description *string `json:"description,omitempty"`
+	JSONPath    *string `json:"jsonPath,omitempty"`
+	Optional    *bool   `json:"optional,omitempty"`
 }
 
 type PlaceholderDefinitionInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:**  max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:**  max=2000
-	JSONPath *string `json:"jsonPath"`
-	Optional *bool   `json:"optional"`
+	JSONPath *string `json:"jsonPath,omitempty"`
+	Optional *bool   `json:"optional,omitempty"`
+}
+
+type Query struct {
 }
 
 type RuntimeContextInput struct {
@@ -816,12 +832,12 @@ type RuntimeRegisterInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:**  max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels               Labels                  `json:"labels"`
-	Webhooks             []*WebhookInput         `json:"webhooks"`
-	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
-	ApplicationNamespace *string                 `json:"applicationNamespace"`
+	Labels               Labels                  `json:"labels,omitempty"`
+	Webhooks             []*WebhookInput         `json:"webhooks,omitempty"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition,omitempty"`
+	ApplicationNamespace *string                 `json:"applicationNamespace,omitempty"`
 }
 
 type RuntimeStatus struct {
@@ -831,10 +847,10 @@ type RuntimeStatus struct {
 
 type RuntimeSystemAuth struct {
 	ID                string                   `json:"id"`
-	Auth              *Auth                    `json:"auth"`
-	Type              *SystemAuthReferenceType `json:"type"`
-	TenantID          *string                  `json:"tenantId"`
-	ReferenceObjectID *string                  `json:"referenceObjectId"`
+	Auth              *Auth                    `json:"auth,omitempty"`
+	Type              *SystemAuthReferenceType `json:"type,omitempty"`
+	TenantID          *string                  `json:"tenantId,omitempty"`
+	ReferenceObjectID *string                  `json:"referenceObjectId,omitempty"`
 }
 
 func (RuntimeSystemAuth) IsSystemAuth() {}
@@ -843,15 +859,15 @@ type RuntimeUpdateInput struct {
 	// **Validation:**  Up to 36 characters long. Cannot start with a digit. The characters allowed in names are: digits (0-9), lower case letters (a-z),-, and .
 	Name string `json:"name"`
 	// **Validation:**  max=2000
-	Description *string `json:"description"`
+	Description *string `json:"description,omitempty"`
 	// **Validation:** key: required, alphanumeric with underscore
-	Labels               Labels                  `json:"labels"`
-	StatusCondition      *RuntimeStatusCondition `json:"statusCondition"`
-	ApplicationNamespace *string                 `json:"applicationNamespace"`
+	Labels               Labels                  `json:"labels,omitempty"`
+	StatusCondition      *RuntimeStatusCondition `json:"statusCondition,omitempty"`
+	ApplicationNamespace *string                 `json:"applicationNamespace,omitempty"`
 }
 
 type SystemAuthUpdateInput struct {
-	Auth *AuthInput `json:"auth"`
+	Auth *AuthInput `json:"auth,omitempty"`
 }
 
 type TemplateValueInput struct {
@@ -874,12 +890,6 @@ type TenantAccessInput struct {
 	Owner        bool                   `json:"owner"`
 }
 
-type TenantBusinessType struct {
-	ID   string `json:"id"`
-	Code string `json:"code"`
-	Name string `json:"name"`
-}
-
 type TenantPage struct {
 	Data       []*Tenant `json:"data"`
 	PageInfo   *PageInfo `json:"pageInfo"`
@@ -891,20 +901,20 @@ func (TenantPage) IsPageable() {}
 type Version struct {
 	// for example 4.6
 	Value      string `json:"value"`
-	Deprecated *bool  `json:"deprecated"`
+	Deprecated *bool  `json:"deprecated,omitempty"`
 	// for example 4.5
-	DeprecatedSince *string `json:"deprecatedSince"`
+	DeprecatedSince *string `json:"deprecatedSince,omitempty"`
 	// if true, will be removed in the next version
-	ForRemoval *bool `json:"forRemoval"`
+	ForRemoval *bool `json:"forRemoval,omitempty"`
 }
 
 type VersionInput struct {
 	// **Validation:** max=256
 	Value      string `json:"value"`
-	Deprecated *bool  `json:"deprecated"`
+	Deprecated *bool  `json:"deprecated,omitempty"`
 	// **Validation:** max=256
-	DeprecatedSince *string `json:"deprecatedSince"`
-	ForRemoval      *bool   `json:"forRemoval"`
+	DeprecatedSince *string `json:"deprecatedSince,omitempty"`
+	ForRemoval      *bool   `json:"forRemoval,omitempty"`
 }
 
 type Viewer struct {
@@ -914,41 +924,41 @@ type Viewer struct {
 
 type Webhook struct {
 	ID                    string       `json:"id"`
-	ApplicationID         *string      `json:"applicationID"`
-	ApplicationTemplateID *string      `json:"applicationTemplateID"`
-	RuntimeID             *string      `json:"runtimeID"`
-	IntegrationSystemID   *string      `json:"integrationSystemID"`
-	FormationTemplateID   *string      `json:"formationTemplateID"`
+	ApplicationID         *string      `json:"applicationID,omitempty"`
+	ApplicationTemplateID *string      `json:"applicationTemplateID,omitempty"`
+	RuntimeID             *string      `json:"runtimeID,omitempty"`
+	IntegrationSystemID   *string      `json:"integrationSystemID,omitempty"`
+	FormationTemplateID   *string      `json:"formationTemplateID,omitempty"`
 	Type                  WebhookType  `json:"type"`
-	Mode                  *WebhookMode `json:"mode"`
-	CorrelationIDKey      *string      `json:"correlationIdKey"`
-	RetryInterval         *int         `json:"retryInterval"`
-	Timeout               *int         `json:"timeout"`
-	URL                   *string      `json:"url"`
-	Auth                  *Auth        `json:"auth"`
-	URLTemplate           *string      `json:"urlTemplate"`
-	InputTemplate         *string      `json:"inputTemplate"`
-	HeaderTemplate        *string      `json:"headerTemplate"`
-	OutputTemplate        *string      `json:"outputTemplate"`
-	StatusTemplate        *string      `json:"statusTemplate"`
-	CreatedAt             *Timestamp   `json:"createdAt"`
+	Mode                  *WebhookMode `json:"mode,omitempty"`
+	CorrelationIDKey      *string      `json:"correlationIdKey,omitempty"`
+	RetryInterval         *int         `json:"retryInterval,omitempty"`
+	Timeout               *int         `json:"timeout,omitempty"`
+	URL                   *string      `json:"url,omitempty"`
+	Auth                  *Auth        `json:"auth,omitempty"`
+	URLTemplate           *string      `json:"urlTemplate,omitempty"`
+	InputTemplate         *string      `json:"inputTemplate,omitempty"`
+	HeaderTemplate        *string      `json:"headerTemplate,omitempty"`
+	OutputTemplate        *string      `json:"outputTemplate,omitempty"`
+	StatusTemplate        *string      `json:"statusTemplate,omitempty"`
+	CreatedAt             *Timestamp   `json:"createdAt,omitempty"`
 }
 
 type WebhookInput struct {
 	Type WebhookType `json:"type"`
 	// **Validation:** valid URL, max=256
-	URL              *string      `json:"url"`
-	Auth             *AuthInput   `json:"auth"`
-	Mode             *WebhookMode `json:"mode"`
-	Version          *string      `json:"version"`
-	CorrelationIDKey *string      `json:"correlationIdKey"`
-	RetryInterval    *int         `json:"retryInterval"`
-	Timeout          *int         `json:"timeout"`
-	URLTemplate      *string      `json:"urlTemplate"`
-	InputTemplate    *string      `json:"inputTemplate"`
-	HeaderTemplate   *string      `json:"headerTemplate"`
-	OutputTemplate   *string      `json:"outputTemplate"`
-	StatusTemplate   *string      `json:"statusTemplate"`
+	URL              *string      `json:"url,omitempty"`
+	Auth             *AuthInput   `json:"auth,omitempty"`
+	Mode             *WebhookMode `json:"mode,omitempty"`
+	Version          *string      `json:"version,omitempty"`
+	CorrelationIDKey *string      `json:"correlationIdKey,omitempty"`
+	RetryInterval    *int         `json:"retryInterval,omitempty"`
+	Timeout          *int         `json:"timeout,omitempty"`
+	URLTemplate      *string      `json:"urlTemplate,omitempty"`
+	InputTemplate    *string      `json:"inputTemplate,omitempty"`
+	HeaderTemplate   *string      `json:"headerTemplate,omitempty"`
+	OutputTemplate   *string      `json:"outputTemplate,omitempty"`
+	StatusTemplate   *string      `json:"statusTemplate,omitempty"`
 }
 
 type APISpecType string
@@ -1612,17 +1622,19 @@ const (
 	FormationStatusConditionInProgress FormationStatusCondition = "IN_PROGRESS"
 	FormationStatusConditionError      FormationStatusCondition = "ERROR"
 	FormationStatusConditionReady      FormationStatusCondition = "READY"
+	FormationStatusConditionDraft      FormationStatusCondition = "DRAFT"
 )
 
 var AllFormationStatusCondition = []FormationStatusCondition{
 	FormationStatusConditionInProgress,
 	FormationStatusConditionError,
 	FormationStatusConditionReady,
+	FormationStatusConditionDraft,
 }
 
 func (e FormationStatusCondition) IsValid() bool {
 	switch e {
-	case FormationStatusConditionInProgress, FormationStatusConditionError, FormationStatusConditionReady:
+	case FormationStatusConditionInProgress, FormationStatusConditionError, FormationStatusConditionReady, FormationStatusConditionDraft:
 		return true
 	}
 	return false
@@ -1811,6 +1823,51 @@ func (e OperationMode) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type OperationStatus string
+
+const (
+	OperationStatusScheduled  OperationStatus = "SCHEDULED"
+	OperationStatusInProgress OperationStatus = "IN_PROGRESS"
+	OperationStatusCompleted  OperationStatus = "COMPLETED"
+	OperationStatusFailed     OperationStatus = "FAILED"
+)
+
+var AllOperationStatus = []OperationStatus{
+	OperationStatusScheduled,
+	OperationStatusInProgress,
+	OperationStatusCompleted,
+	OperationStatusFailed,
+}
+
+func (e OperationStatus) IsValid() bool {
+	switch e {
+	case OperationStatusScheduled, OperationStatusInProgress, OperationStatusCompleted, OperationStatusFailed:
+		return true
+	}
+	return false
+}
+
+func (e OperationStatus) String() string {
+	return string(e)
+}
+
+func (e *OperationStatus) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationStatus(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationStatus", str)
+	}
+	return nil
+}
+
+func (e OperationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type OperationType string
 
 const (
@@ -1943,6 +2000,47 @@ func (e *RuntimeStatusCondition) UnmarshalGQL(v interface{}) error {
 }
 
 func (e RuntimeStatusCondition) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type ScheduledOperationType string
+
+const (
+	ScheduledOperationTypeOrdAggregation ScheduledOperationType = "ORD_AGGREGATION"
+	ScheduledOperationTypeSystemFetching ScheduledOperationType = "SYSTEM_FETCHING"
+)
+
+var AllScheduledOperationType = []ScheduledOperationType{
+	ScheduledOperationTypeOrdAggregation,
+	ScheduledOperationTypeSystemFetching,
+}
+
+func (e ScheduledOperationType) IsValid() bool {
+	switch e {
+	case ScheduledOperationTypeOrdAggregation, ScheduledOperationTypeSystemFetching:
+		return true
+	}
+	return false
+}
+
+func (e ScheduledOperationType) String() string {
+	return string(e)
+}
+
+func (e *ScheduledOperationType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ScheduledOperationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ScheduledOperationType", str)
+	}
+	return nil
+}
+
+func (e ScheduledOperationType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
@@ -2230,6 +2328,7 @@ const (
 	WebhookTypeOpenResourceDiscovery       WebhookType = "OPEN_RESOURCE_DISCOVERY"
 	WebhookTypeOpenResourceDiscoveryStatic WebhookType = "OPEN_RESOURCE_DISCOVERY_STATIC"
 	WebhookTypeFormationLifecycle          WebhookType = "FORMATION_LIFECYCLE"
+	WebhookTypeSystemFieldDiscovery        WebhookType = "SYSTEM_FIELD_DISCOVERY"
 )
 
 var AllWebhookType = []WebhookType{
@@ -2240,11 +2339,12 @@ var AllWebhookType = []WebhookType{
 	WebhookTypeOpenResourceDiscovery,
 	WebhookTypeOpenResourceDiscoveryStatic,
 	WebhookTypeFormationLifecycle,
+	WebhookTypeSystemFieldDiscovery,
 }
 
 func (e WebhookType) IsValid() bool {
 	switch e {
-	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle:
+	case WebhookTypeConfigurationChanged, WebhookTypeApplicationTenantMapping, WebhookTypeRegisterApplication, WebhookTypeUnregisterApplication, WebhookTypeOpenResourceDiscovery, WebhookTypeOpenResourceDiscoveryStatic, WebhookTypeFormationLifecycle, WebhookTypeSystemFieldDiscovery:
 		return true
 	}
 	return false

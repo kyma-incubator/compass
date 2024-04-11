@@ -58,7 +58,6 @@ type config struct {
 	TestProviderSubaccountID                              string
 	TokenPath                                             string
 	ExternalClientCertSecretName                          string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName                            string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 	SubscriptionProviderAppNameProperty                   string `envconfig:"APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY"`
 	CertLoaderConfig                                      credloader.CertConfig
 	ClientTimeout                                         time.Duration `envconfig:"default=60s"`

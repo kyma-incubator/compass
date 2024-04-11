@@ -7,8 +7,8 @@ const (
 	BasicAuthDestinationType     = "basic"
 	SAMLAssertionDestinationType = "SAML assertion"
 	ClientCertDestinationType    = "client certificate authentication"
-	OAuth2ClientCredentialsType = "oauth2 client credentials"
-	OAuth2mTLSType              = "oauth2 mTLS"
+	OAuth2ClientCredentialsType  = "oauth2 client credentials"
+	OAuth2mTLSType               = "oauth2 mTLS"
 )
 
 type Destination interface {
@@ -78,7 +78,7 @@ type OAuth2mTLSDestination struct {
 	TokenServiceURL     string `json:"tokenServiceURL"`
 	TokenServiceURLType string `json:"tokenServiceURLType"`
 	ClientID            string `json:"clientId"`
-	KeyStoreLocation    string `json:"keyStoreLocation"`
+	KeyStoreLocation    string `json:"tokenService.KeyStoreLocation"`
 }
 
 func (c *OAuth2mTLSDestination) GetType() string {

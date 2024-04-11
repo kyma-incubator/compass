@@ -329,8 +329,8 @@ func TestRepository_ListByFormationIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT formation_id AS id, COUNT(*) AS total_count FROM public.formation_assignments WHERE tenant_id = $1 GROUP BY formation_id ORDER BY formation_id ASC`),
-				Args:     []driver.Value{TestTenantID},
+				Query:    regexp.QuoteMeta(`SELECT formation_id AS id, COUNT(*) AS total_count FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2, $3, $4) GROUP BY formation_id ORDER BY formation_id ASC`),
+				Args:     []driver.Value{TestTenantID, emptyPageFormationID, onePageFormationID, multiplePageFormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageFormationID, 0).AddRow(onePageFormationID, 1).AddRow(multiplePageFormationID, 2)}

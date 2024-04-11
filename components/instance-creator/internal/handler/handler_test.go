@@ -454,7 +454,8 @@ func Test_HandlerFunc(t *testing.T) {
               }
             }
           }
-        ]
+        ],
+		"destinations": [{"url":"url.com","name":"destination-name"}]
       },
       "without_instances": {
         "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
@@ -472,7 +473,8 @@ func Test_HandlerFunc(t *testing.T) {
             "first-global-instance-plan": "$.credentials.inboundCommunication.serviceInstances[0].plan",
             "second-global-instance-plan": "$.credentials.inboundCommunication.serviceInstances[1].plan"
           }
-        ]
+        ],
+		"destinations": [{"url":"url.com","name":"destination-name"}]
       },
       "local_and_reffering_global_instances": {
         "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
@@ -516,7 +518,8 @@ func Test_HandlerFunc(t *testing.T) {
             "first-global-instance-service": "$.credentials.inboundCommunication.serviceInstances[0].service",
             "second-global-instance-service": "$.credentials.inboundCommunication.serviceInstances[1].service"
           }
-        ]
+        ],
+		"destinations": [{"url":"url.com","name":"destination-name"}]
       }
     }
   }
@@ -600,7 +603,8 @@ func Test_HandlerFunc(t *testing.T) {
               }
             }
           }
-        ]
+        ],
+		"destinations": [{"url":"url.com","name":"destination-name"}]
       },
       "without_instances": {
         "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
@@ -618,7 +622,8 @@ func Test_HandlerFunc(t *testing.T) {
             "first-global-instance-plan": "global-service-plan-test-1",
             "second-global-instance-plan": "global-service-plan-test-2"
           }
-        ]
+        ],
+		"destinations": [{"url":"url.com","name":"destination-name"}]
       },
       "local_and_reffering_global_instances": {
         "certificate": "-----BEGIN CERTIFICATE----- cert -----END CERTIFICATE-----",
@@ -662,7 +667,8 @@ func Test_HandlerFunc(t *testing.T) {
             "first-global-instance-service": "global-service-service-test-1",
             "second-global-instance-service": "global-service-service-test-2"
           }
-        ]
+        ],
+		"destinations": [{"url":"url.com","name":"destination-name"}]
       }
     }
   }

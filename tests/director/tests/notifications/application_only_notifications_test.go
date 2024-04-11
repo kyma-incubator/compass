@@ -17,6 +17,8 @@ import (
 	"time"
 )
 
+var emptyHeaderTemplate *string = nil
+
 func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testing.T) {
 	ctx := context.Background()
 	tnt := tenant.TestTenants.GetDefaultTenantID()

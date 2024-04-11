@@ -95,7 +95,7 @@ ARTIFACTS="/var/log/prow_artifacts"
 mkdir -p "${ARTIFACTS}"
 
 log::info "Triggering the compass installation"
-${COMPASS_SOURCE_DIR}/installation/cmd/run.sh --k3d-memory 12288MB ${DUMP_DB}
+${COMPASS_SOURCE_DIR}/installation/cmd/run.sh --k3d-memory 12288MB ${DUMP_DB} --pr-job
 log::info "Compass provisioning done"
 
 log::info "Triggering the tests"

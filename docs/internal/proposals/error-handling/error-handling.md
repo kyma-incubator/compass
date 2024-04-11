@@ -1,12 +1,12 @@
-# Error handling in Director GraphQL
+# Error Handling in Director GraphQL
 
 Errors can originate from different sources. This document describes our approach to handling them internally and presenting them in a readable form to the users.
 
-## Errors displayed to the user
+## Errors Displayed to the User
 
 Errors that are returned to the user can be split into two groups, based on the error handling approach. Errors that originate from external systems, libraries, panics, and directly not dependent on the user input are handled as the internal ones. Such errors are returned to the user as the `InternalError` type. Errors that directly depend on the user input are classified as separate types.
 
-## Custom errors and error codes
+## Custom Errors and Error Codes
 
 To differentiate the errors, we introduced our own class of custom errors that include error codes.
 This is the list of custom errors that are displayed to the user:
@@ -22,7 +22,7 @@ This is the list of custom errors that are displayed to the user:
 | `TenantIsRequired`     | `25`          | Indicates that a tenant is not found in the request, which is required to successfully handle the request. |
 | `TenantNotFound`       | `26`          | Indicates that the internal tenant is not found in the Director.                                            |
 
-## Error processing flow
+## Error Processing Flow
 
 ![](error-handling.svg)
 1. Internal errors, external lib errors, PostgreSQL errors, and directives are sources of errors in the Director.

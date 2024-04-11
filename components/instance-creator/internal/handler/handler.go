@@ -45,6 +45,7 @@ const (
 	assignmentIDKey               = "assignment_id"
 	currentWaveHashKey            = "current_wave_hash"
 	reverseKey                    = "reverse"
+	destinationsKey               = "destinations"
 
 	locationHeader             = "Location"
 	contentTypeHeaderKey       = "Content-Type"
@@ -340,6 +341,17 @@ func (i *InstanceCreatorHandler) handleInstanceCreation(ctx context.Context, req
 		return
 	}
 
+	log.C(ctx).Debugf("Removing assigned tenant destinations from inbound communication...")
+	assignedTenantInboundCommunication = gjson.GetBytes(assignedTenantConfiguration, assignedTenantInboundCommunicationPath)
+	gjson.Parse(assignedTenantInboundCommunication.Raw).ForEach(func(auth, assignedTenantAuth gjson.Result) bool {
+		assignedTenantConfiguration, err = sjson.DeleteBytes(assignedTenantConfiguration, fmt.Sprintf("%s.%s.%s", assignedTenantInboundCommunicationPath, auth.Str, destinationsKey))
+		return err == nil
+	})
+	if err != nil {
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrapf(err, "while deleting destinations for auth methods"))
+		return
+	}
+
 	receiverTenantOutboundCommunicationPath := tenantmapping.FindKeyPath(gjson.ParseBytes(receiverTenantConfiguration).Value(), "outboundCommunication") // Receiver outbound Path == Assigned inbound Path
 
 	receiverTenantOutboundCommunication := gjson.GetBytes(receiverTenantConfiguration, receiverTenantOutboundCommunicationPath)
@@ -366,7 +378,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 		return
 	}
 	defer func() {
-		log.C(ctx).Debug("Closing a DB connection for instance creation...")
+		log.C(ctx).Debug("Closing a DB connection for instance deletion...")
 		if err := connection.Close(); err != nil {
 			log.C(ctx).WithError(err).Error("Error while closing the database connection")
 		}
@@ -380,7 +392,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	// This lock prevents multiple unassign operations to execute simultaneously
 	locked, err := advisoryLocker.TryLock(ctx, assignmentID+reqBody.Context.Operation)
 	if err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance deletion"))
 		return
 	}
 	if !locked {
@@ -397,7 +409,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 	log.C(ctx).Debugf("Locking an advisory lock with assignmentID %q...", assignmentID)
 	// This lock prevents unassign and assign operations to execute simultaneously
 	if err := advisoryLocker.Lock(ctx, assignmentID); err != nil {
-		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance creation"))
+		i.reportToUCLWithError(ctx, statusAPIURL, createErrorState, errors.Wrap(err, "while trying to acquire postgres advisory lock in the beginning of instance deletion"))
 		return
 	}
 	defer func() {
@@ -558,13 +570,13 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, errors.Wrapf(err, "while retrieving service plan with catalog name %q and offering ID %q", serviceOfferingCatalogName, serviceOfferingID)
 		}
 
-		log.C(ctx).Debugf("Creating service instance with name %q, plan id %q, parameters %q and labels %v for subaccount %q and region %q...", serviceInstanceName, servicePlanID, serviceInstanceParameters, smLabels, region, subaccount)
+		log.C(ctx).Debugf("Creating service instance with name %q, plan id %q, parameters %q and labels %v for region %q and subaccount %q...", serviceInstanceName, servicePlanID, serviceInstanceParameters, smLabels, region, subaccount)
 		serviceInstanceID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceInstanceReqBody{Name: serviceInstanceName, ServicePlanID: servicePlanID, Parameters: serviceInstanceParameters, Labels: smLabels}, &types.ServiceInstance{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating service instance with name %q", serviceInstanceName)
 		}
 
-		log.C(ctx).Debugf("Getting raw service instance with id %q for subaccount %q and region %q...", serviceInstanceID, region, subaccount)
+		log.C(ctx).Debugf("Getting raw service instance with id %q for %q region and subaccount %q...", serviceInstanceID, region, subaccount)
 		serviceInstanceRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceInstance{ID: serviceInstanceID})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while retrieving service instance with ID %q", serviceInstanceID)
@@ -586,13 +598,13 @@ func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, req
 			return nil, errors.Wrapf(err, "while extracting the parameters of service binding for a service instance with id: %d", idx)
 		}
 
-		log.C(ctx).Debugf("Creating service binding with name %q, service instance id %q and parameters %q for subaccount %q and region %q...", serviceBindingName, serviceInstanceID, serviceBindingParameters, region, subaccount)
+		log.C(ctx).Debugf("Creating service binding with name %q, service instance id %q and parameters %q for region %q and subaccount %q...", serviceBindingName, serviceInstanceID, serviceBindingParameters, region, subaccount)
 		serviceBindingID, err := i.SMClient.CreateResource(ctx, region, subaccount, &types.ServiceBindingReqBody{Name: serviceBindingName, ServiceBindingID: serviceInstanceID, Parameters: serviceBindingParameters}, &types.ServiceBinding{})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating service instance binding for service instance with ID %q", serviceInstanceID)
 		}
 
-		log.C(ctx).Debugf("Getting raw service binding with id %q for subaccount %q and region %q...", serviceBindingID, region, subaccount)
+		log.C(ctx).Debugf("Getting raw service binding with id %q for region %q and subaccount %q...", serviceBindingID, region, subaccount)
 		serviceBindingRaw, err := i.SMClient.RetrieveRawResourceByID(ctx, region, subaccount, &types.ServiceBinding{ID: serviceBindingID})
 		if err != nil {
 			return nil, errors.Wrapf(err, "while retrieving service instance binding with ID %q", serviceBindingID)

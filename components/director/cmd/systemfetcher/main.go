@@ -6,10 +6,11 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 	"sync"
 	"time"
+
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 
@@ -31,8 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/systemssync"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenantbusinesstype"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
@@ -136,7 +135,6 @@ type config struct {
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 }
 
 type securityConfig struct {
@@ -198,9 +196,8 @@ func main() {
 	httpClient := &http.Client{Timeout: cfg.ClientTimeout}
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
-	extSvcMtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient, certCache, keyCache)
+	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetching, cfg.OperationsManagerConfig)
@@ -341,8 +338,6 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 		return nil, errors.Wrapf(err, "while calculating application templates mappings")
 	}
 
-	calculateSortedTemplateMappingKeys()
-
 	return templateRenderer, nil
 }
 
@@ -360,13 +355,18 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
+		processingError := &ord.ProcessingError{
+			RuntimeError: &ord.RuntimeError{
+				Message: errProcess.Error(),
+			},
+		}
+		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 			return op.ID, errMarkAsFailed
 		}
 		return op.ID, errProcess
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, nil); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}
@@ -415,7 +415,7 @@ func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager
 	logger.Infof("Registering sync endpoint...")
 	if cfg.SystemFetcher.OperationalMode == discoverSystemsOpMode {
 		logger.Infof("Sync endpoint is enabled.")
-		handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel)
+		handler := systemfetcher.NewSystemFetcherAggregatorHTTPHandler(opMgr, businessTenantMappingSvc, transact, onDemandChannel, make(chan struct{}, cfg.SystemFetcher.AsyncRequestProcessors))
 		apiRouter.HandleFunc(syncEndpoint, handler.ScheduleAggregationForSystemFetcherData).Methods(http.MethodPost)
 	} else {
 		logger.Infof("Sync endpoint is not enabled.")
@@ -487,14 +487,13 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient, extSvcMtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")
 	}
 
 	tenantConverter := tenant.NewConverter()
-	tenantBusinessTypeConverter := tenantbusinesstype.NewConverter()
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
 	versionConverter := version.NewConverter()
@@ -523,7 +522,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	certSubjectMappingConv := certsubjectmapping.NewConverter()
 
 	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantBusinessTypeRepo := tenantbusinesstype.NewRepository(tenantBusinessTypeConverter)
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
 	applicationRepo := application.NewRepository(appConverter)
 	labelRepo := label.NewRepository(labelConverter)
@@ -554,10 +552,9 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	uidSvc := uid.NewService()
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	tenantBusinessTypeSvc := tenantbusinesstype.NewService(tenantBusinessTypeRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
-	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName))
+	fetchRequestSvc := fetchrequest.NewService(fetchRequestRepo, httpClient, accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName))
 	specSvc := spec.NewService(specRepo, fetchRequestRepo, uidSvc, fetchRequestSvc)
 	bundleReferenceSvc := bundlereferences.NewService(bundleReferenceRepo, uidSvc)
 	apiSvc := api.NewService(apiRepo, uidSvc, specSvc, bundleReferenceSvc)
@@ -567,7 +564,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -622,7 +619,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 		return nil, errors.Wrapf(err, "while reload templates")
 	}
 
-	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, tenantBusinessTypeSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
+	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
 }
 
 func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
@@ -748,17 +745,4 @@ func createSelectFilter(selectFilterProperties map[string]bool, placeholdersMapp
 	}
 
 	return selectFilter
-}
-
-func calculateSortedTemplateMappingKeys() {
-	templateMappingKeys := make([]systemfetcher.TemplateMappingKey, 0, len(systemfetcher.ApplicationTemplates))
-	for key := range systemfetcher.ApplicationTemplates {
-		templateMappingKeys = append(templateMappingKeys, key)
-	}
-
-	sort.Slice(templateMappingKeys, func(i, j int) bool {
-		return templateMappingKeys[i].Label < templateMappingKeys[j].Label
-	})
-
-	systemfetcher.SortedTemplateMappingKeys = templateMappingKeys
 }

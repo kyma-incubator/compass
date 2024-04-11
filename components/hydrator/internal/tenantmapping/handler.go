@@ -314,7 +314,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	c := consumer.Consumer{}
 	if len(objectContexts) == 1 {
 		c.ConsumerID = objectContexts[0].ConsumerID
-		c.ConsumerType = objectContexts[0].ConsumerType
+		c.Type = objectContexts[0].ConsumerType
 		c.Flow = objectContexts[0].AuthFlow
 	} else {
 		c = getCertServiceObjectContextProviderConsumer(objectContexts)
@@ -330,7 +330,7 @@ func addConsumersToExtra(objectContexts []ObjectContext, reqData oathkeeper.ReqD
 	}
 
 	reqData.Body.Extra["consumerID"] = c.ConsumerID
-	reqData.Body.Extra["consumerType"] = c.ConsumerType
+	reqData.Body.Extra["consumerType"] = c.Type
 	reqData.Body.Extra["flow"] = c.Flow
 	reqData.Body.Extra["onBehalfOf"] = c.OnBehalfOf
 	reqData.Body.Extra["region"] = region
@@ -356,7 +356,7 @@ func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext)
 	for _, objCtx := range objectContexts {
 		if objCtx.ContextProvider == tenantmapping.CertServiceObjectContextProvider {
 			c.ConsumerID = objCtx.ConsumerID
-			c.ConsumerType = objCtx.ConsumerType
+			c.Type = objCtx.ConsumerType
 			c.Flow = objCtx.AuthFlow
 		}
 	}

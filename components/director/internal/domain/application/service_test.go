@@ -990,7 +990,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
-			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID)
+			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID, false)
 
 			// then
 			assert.IsType(t, "string", result)
@@ -2574,6 +2574,117 @@ func TestService_UpdateBaseURL(t *testing.T) {
 
 			// WHEN
 			err := svc.UpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_UpdateBaseURLAndReadyState(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+	ctxErr := errors.New("while loading tenant from context: cannot read tenant from context")
+
+	id := "foo"
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+	conditionTimestamp := time.Now()
+	updatedBaseURL := "http://compass.kyma.local"
+
+	var applicationModelBefore *model.Application
+	var applicationModelAfter *model.Application
+
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+
+	resetModels := func() {
+		appName := "initial"
+		description := "description"
+		url := "url.com"
+		applicationModelBefore = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, nil, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelBefore.Ready = false
+		applicationModelAfter = fixModelApplicationWithAllUpdatableFields(id, appName, description, url, &updatedBaseURL, nil, model.ApplicationStatusConditionConnected, conditionTimestamp)
+		applicationModelAfter.Ready = true
+	}
+
+	resetModels()
+
+	testCases := []struct {
+		Name               string
+		AppRepoFn          func() *automock.ApplicationRepository
+		Input              model.ApplicationUpdateInput
+		InputID            string
+		TargetURL          string
+		Context            context.Context
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(nil).Once()
+				return repo
+			},
+			InputID:            id,
+			Context:            ctx,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when application update failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(applicationModelBefore, nil).Once()
+				repo.On("Update", ctx, tnt, applicationModelAfter).Return(testErr).Once()
+				return repo
+			},
+			InputID:            id,
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application retrieval failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, id).Return(nil, testErr).Once()
+				repo.AssertNotCalled(t, "Update")
+				return repo
+			},
+			InputID:            id,
+			Context:            ctx,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when tenant is not in the context",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "Update")
+				repo.AssertNotCalled(t, "GetByID")
+
+				return repo
+			},
+			InputID:            id,
+			Context:            context.Background(),
+			ExpectedErrMessage: ctxErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			resetModels()
+			appRepo := testCase.AppRepoFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			err := svc.UpdateBaseURLAndReadyState(testCase.Context, testCase.InputID, updatedBaseURL, true)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {
@@ -5384,6 +5495,99 @@ func TestService_GetBySystemNumber(t *testing.T) {
 
 			// WHEN
 			value, err := svc.GetBySystemNumber(ctx, testCase.InputSystemNumber)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.Nil(t, err)
+			}
+
+			assert.Equal(t, testCase.ExptectedValue, value)
+			appRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListByLocalTenantID(t *testing.T) {
+	tnt := "tenant"
+	externalTnt := "external-tnt"
+
+	modelApplications := fixApplicationPage([]*model.Application{fixModelApplication("foo", "tenant-foo", "foo", "Lorem Ipsum")})
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
+	testError := errors.New("Test error")
+	filter := labelfilter.MultipleFromGraphQL([]*graphql.LabelFilter{{Key: "key", Query: str.Ptr("query")}})
+	first := 200
+	cursor := "cursor"
+
+	testCases := []struct {
+		Name           string
+		Ctx            context.Context
+		RepositoryFn   func() *automock.ApplicationRepository
+		LocalTenantID  string
+		Filter         []*labelfilter.LabelFilter
+		First          int
+		Cursor         string
+		ExptectedValue *model.ApplicationPage
+		ExpectedError  error
+	}{
+		{
+			Name: "Getting tenant from context fails",
+			Ctx:  context.TODO(),
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.AssertNotCalled(t, "ListByLocalTenantID")
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			Filter:         filter,
+			First:          first,
+			Cursor:         cursor,
+			ExptectedValue: nil,
+			ExpectedError:  errors.New("cannot read tenant from context"),
+		},
+		{
+			Name: "Repository operation fails",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, filter, first, cursor).Return(nil, testError).Once()
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			Filter:         filter,
+			First:          first,
+			Cursor:         cursor,
+			ExptectedValue: nil,
+			ExpectedError:  testError,
+		},
+		{
+			Name: "Success",
+			Ctx:  ctx,
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, filter, first, cursor).Return(modelApplications, nil).Once()
+				return repo
+			},
+			LocalTenantID:  localTenantID,
+			Filter:         filter,
+			First:          first,
+			Cursor:         cursor,
+			ExptectedValue: modelApplications,
+			ExpectedError:  nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			appRepo := testCase.RepositoryFn()
+			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			value, err := svc.ListByLocalTenantID(testCase.Ctx, testCase.LocalTenantID, testCase.Filter, testCase.First, testCase.Cursor)
 
 			// THEN
 			if testCase.ExpectedError != nil {

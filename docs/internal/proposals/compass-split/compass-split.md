@@ -1,11 +1,11 @@
-# Splitting the Compass project
+# Splitting the Compass Project
 
 
 This document describes the technical implementation of the Compass project split into two separate projects.
 
 Previously, Compass consisted of two main areas: Application Connectivity and Runtime provisioning. The mixed responsibilities of Compass caused some misunderstanding of the project. The goal of splitting the Compass project is to separate the responsibilities and develop these two areas independently.
 
-The Compass project split is the next step after separating Compass from Kyma. To read more about the separation, see the [Compass as a separate component](../separate-compass/separate-compass.md) document.
+The Compass project split is the next step after separating Compass from Kyma. To read more about the separation, see the [Compass as a Separate Component](../separate-compass/separate-compass.md) document.
 
 ## Reasons
 
@@ -96,7 +96,7 @@ The following steps have to be executed to complete the Compass project split:
   - Modify the file from which we get the Kyma version to install (install Kyma from the fixed `KYMA_VERSION` file from the KCP repo).
   - Install the KCP installer as a new step.
 
-### Migration of the existing Compass installations
+### Migration of the Existing Compass Installations
 
 Migration of the existing Compass installation doesn't require any custom operations.
 

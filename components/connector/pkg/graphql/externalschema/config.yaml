@@ -10,6 +10,9 @@ model:
   filename: models_gen.go
   package: externalschema
 
+# Disables getters generation for interface types
+omit_getters: true
+
 # Optional enables binding to field names by tag provided
 struct_tag: json
 

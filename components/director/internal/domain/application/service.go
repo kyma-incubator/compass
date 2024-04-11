@@ -49,6 +49,11 @@ const (
 	ManagedLabelKey = "managed"
 	// ApplicationTypeLabelKey is the key of the application label for determining the type of the application.
 	ApplicationTypeLabelKey = "applicationType"
+
+	// TenantBusinessTypeNameLabelKey is a label key for tenant business type names
+	TenantBusinessTypeNameLabelKey = "tenantBusinessTypeName"
+	// TenantBusinessTypeCodeLabelKey is a label key for tenant business type codes
+	TenantBusinessTypeCodeLabelKey = "tenantBusinessTypeCode"
 )
 
 type repoCreatorFunc func(ctx context.Context, tenant string, application *model.Application) error
@@ -64,6 +69,7 @@ type ApplicationRepository interface {
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error)
+	ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -326,6 +332,20 @@ func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Applicati
 	return app, nil
 }
 
+// ListByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
+func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while loading tenant from context")
+	}
+	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, filter, pageSize, cursor)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing applications")
+	}
+
+	return apps, nil
+}
+
 // GetByLocalTenantIDAndAppTemplateID returns an application retrieved by local tenant id and app template id
 func (s *service) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID, appTemplateID string) (*model.Application, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
@@ -488,8 +508,12 @@ func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 }
 
 // CreateFromTemplate missing godoc
-func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error) {
+func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error) {
 	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
+		// this is needed, if the applicationInputJSON contains webhook of type SYSTEM_FIELD_DISCOVERY, which must be executed first before setting the app ready state to true
+		if systemFieldDiscoveryLabelIsTrue {
+			application.Ready = false
+		}
 		application.ApplicationTemplateID = appTemplateID
 		if err = s.appRepo.Create(ctx, tenant, application); err != nil {
 			return errors.Wrapf(err, "while creating Application with name %s from template", application.Name)
@@ -498,30 +522,6 @@ func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRe
 	}
 
 	return s.genericCreate(ctx, in, creator)
-}
-
-// CreateManyIfNotExistsWithEventualTemplate missing godoc
-func (s *service) CreateManyIfNotExistsWithEventualTemplate(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) error {
-	appsToAdd, err := s.filterUniqueNonExistingApplications(ctx, applicationInputs)
-	if err != nil {
-		return errors.Wrap(err, "while filtering unique and non-existing applications")
-	}
-	log.C(ctx).Infof("Will create %d systems", len(appsToAdd))
-	for _, a := range appsToAdd {
-		if a.TemplateID == "" {
-			_, err = s.Create(ctx, a.ApplicationRegisterInput)
-			if err != nil {
-				return errors.Wrap(err, "while creating application")
-			}
-			continue
-		}
-		_, err = s.CreateFromTemplate(ctx, a.ApplicationRegisterInput, &a.TemplateID)
-		if err != nil {
-			return errors.Wrap(err, "while creating application")
-		}
-	}
-
-	return nil
 }
 
 // Update missing godoc
@@ -647,6 +647,24 @@ func (s *service) UpdateBaseURL(ctx context.Context, appID, targetURL string) er
 	}
 
 	app.BaseURL = str.Ptr(fmt.Sprintf("%s://%s", parsedTargetURL.Scheme, parsedTargetURL.Host))
+
+	return s.appRepo.Update(ctx, appTenant, app)
+}
+
+// UpdateBaseURLAndReadyState Gets application by ID and updates it base URL and ready state
+func (s *service) UpdateBaseURLAndReadyState(ctx context.Context, appID, baseURL string, ready bool) error {
+	appTenant, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	app, err := s.Get(ctx, appID)
+	if err != nil {
+		return err
+	}
+
+	app.BaseURL = str.Ptr(baseURL)
+	app.Ready = ready
 
 	return s.appRepo.Update(ctx, appTenant, app)
 }

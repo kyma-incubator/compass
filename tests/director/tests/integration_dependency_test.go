@@ -16,7 +16,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAddIntegrationDependencyToApplication(t *testing.T) {
+var (
+	defaultLabelsRaw   = `{"displayName":"bar","test":["val","val2"]}`
+	defaultLabelsModel = graphql.Labels{
+		"displayName": "bar",
+		"test": []interface{}{
+			"val",
+			"val2",
+		},
+	}
+)
+
+func TestAddIntegrationDependencyToApplicationWithoutLabels(t *testing.T) {
+	testsAddIntegrationDependencyToApplication(t, nil)
+}
+
+func TestAddIntegrationDependencyToApplicationWithLabels(t *testing.T) {
+	testsAddIntegrationDependencyToApplication(t, defaultLabelsModel)
+}
+
+func testsAddIntegrationDependencyToApplication(t *testing.T, labels graphql.Labels) {
 	ctx := context.Background()
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
@@ -30,7 +49,7 @@ func TestAddIntegrationDependencyToApplication(t *testing.T) {
 	require.NotEmpty(t, application.ID)
 	t.Logf("Successfully registered application with id %q", application.ID)
 
-	inputGQL, err := testctx.Tc.Graphqlizer.IntegrationDependencyInputToGQL(fixIntegrationDependencyInput())
+	inputGQL, err := testctx.Tc.Graphqlizer.IntegrationDependencyInputToGQL(fixIntegrationDependencyInput(labels))
 	require.NoError(t, err)
 
 	t.Logf("Add integration dependency to application with id %q", application.ID)
@@ -39,10 +58,16 @@ func TestAddIntegrationDependencyToApplication(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, IntegrationDependencyAddRequest, &integrationDependency)
 	require.NoError(t, err)
 
+	if labels == nil {
+		require.Nil(t, integrationDependency.Labels, "labels do not match")
+	} else {
+		require.Equal(t, defaultLabelsModel, integrationDependency.Labels, "labels do not match")
+	}
+
 	assert.NotNil(t, integrationDependency.ID)
 	t.Logf("Successfully added integration dependency with id %q to application with id %q", integrationDependency.ID, application.ID)
 
-	t.Logf("Delete integration dependency wiht id %q", integrationDependency.ID)
+	t.Logf("Delete integration dependency with id %q", integrationDependency.ID)
 	var deletedIntegrationDependency graphql.IntegrationDependency
 	deleteReq := fixDeleteIntegrationDependencyRequest(integrationDependency.ID)
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, deleteReq, &deletedIntegrationDependency)
@@ -57,7 +82,7 @@ func TestAddIntegrationDependencyToApplication(t *testing.T) {
 	example.SaveExample(t, deleteReq.Query(), "delete integration dependency")
 }
 
-func fixIntegrationDependencyInput() graphql.IntegrationDependencyInput {
+func fixIntegrationDependencyInput(labels graphql.Labels) graphql.IntegrationDependencyInput {
 	mandatory := false
 	return graphql.IntegrationDependencyInput{
 		Name:          "Int dep name",
@@ -66,6 +91,7 @@ func fixIntegrationDependencyInput() graphql.IntegrationDependencyInput {
 		Visibility:    str.Ptr("public"),
 		ReleaseStatus: str.Ptr("active"),
 		Description:   str.Ptr("int dep desc"),
+		Labels:        labels,
 		Aspects: []*graphql.AspectInput{
 			{
 				Name:        "Aspect name",

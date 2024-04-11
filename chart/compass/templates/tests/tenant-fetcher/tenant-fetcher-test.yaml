@@ -1,0 +1,151 @@
+{{ if .Values.global.isForTesting }}
+apiVersion: "testing.kyma-project.io/v1alpha1"
+kind: TestDefinition
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher
+  labels:
+    app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+    release: {{ .Release.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}-tenant-fetcher-tests
+    app.kubernetes.io/managed-by: {{ .Release.Service }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+    helm.sh/chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+  namespace: {{ .Values.global.tests.namespace }}
+spec:
+  template:
+    metadata:
+      annotations:
+        cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
+      labels:
+        app: {{ .Chart.Name }}-tenant-fetcher-tests-app
+        sidecar.istio.io/inject: "true"
+    spec:
+      serviceAccountName: {{ .Chart.Name }}-e2e-tenant-fetcher
+    {{ if eq .Values.global.portieris.isEnabled true }}
+      imagePullSecrets:
+      - name: {{ .Values.global.portieris.imagePullSecretName }}
+    {{ end }}
+      containers:
+        - name: tenant-fetcher-tests
+          image: {{ .Values.global.images.containerRegistry.path }}/{{ .Values.global.images.e2e_tests.dir }}compass-e2e-tests:{{ .Values.global.images.e2e_tests.version }}
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh"]
+          args: ["-c", "./tenant-fetcher.test -test.v; exit_code=$?; echo code is $exit_code; echo 'killing pilot-agent...'; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
+          resources:
+            limits:
+              memory: "1Gi"
+          env:
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_NAME
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
+            - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
+              value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
+            - name: APP_TENANT_PROVIDER_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER_COST_OBJECT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.costObjectIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subdomainProperty }}
+            - name: APP_TENANT_PROVIDER_LICENSE_TYPE_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.licenseTypeProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.subscriptionProviderIdProperty }}
+            - name: APP_TENANT_PROVIDER_PROVIDER_SUBACCOUNT_ID_PROPERTY #The property which states the provider subaccount used in the tenant provider
+              value: {{.Values.global.tenantFetcher.tenantProvider.providerSubaccountIdProperty }}
+            - name: APP_TENANT_PROVIDER_CONSUMER_TENANT_ID_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
+            - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
+              value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
+            - name: APP_TENANT_FETCHER_URL
+              value: "https://{{ .Values.global.gateway.tls.host }}.{{ .Values.global.ingress.domainName }}"
+            - name: APP_EXTERNAL_SERVICES_MOCK_URL
+              value: {{ .Values.global.tests.externalServicesMockFQDN }}:8080
+            - name: INTERNAL_DIRECTOR_URL
+              value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
+            - name: APP_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientIdKey }}
+            - name: APP_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.externalServicesMock.oauthSecret.name }}
+                  key: {{ .Values.global.externalServicesMock.oauthSecret.clientSecretKey }}
+            - name: APP_ROOT_API
+              value: "{{ .Values.global.tenantFetcher.prefix }}"
+            - name: APP_REGIONAL_HANDLER_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.regionalHandlerEndpoint }}"
+            - name: APP_REGIONAL_DEPENDENCIES_ENDPOINT
+              value: "{{ .Values.global.tenantFetcher.server.dependenciesEndpoint }}"
+            - name: APP_TENANT_PATH_PARAM
+              value: "{{ .Values.global.tenantFetcher.server.tenantPathParam }}"
+            - name: APP_REGION_PATH_PARAM
+              value: "{{ .Values.global.tenantFetcher.server.regionPathParam }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_SECURED_URL
+              value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
+            - name: APP_SKIP_SSL_VALIDATION
+              value: "{{ .Values.global.tests.http.client.skipSSLValidation }}"
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}/{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.certKey }}"
+            - name: APP_EXTERNAL_CLIENT_KEY_KEY
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
+            - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
+              value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
+            - name: APP_SUBSCRIPTION_CALLBACK_SCOPE
+              value: "{{ .Values.global.tenantFetcher.requiredAuthScope }}"
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
+              value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
+            - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
+              value: {{ .Values.global.tests.subscription.subscriptionProviderIdValue | quote }}
+            - name: APP_SELF_REG_REGION
+              value: {{ .Values.global.tests.selfRegistration.region }}
+            - name: APP_ON_DEMAND_TENANT
+              value: {{ .Values.global.tests.tenantFetcher.missingTenantOnDemandID }}
+            - name: APP_TENANT_REGION
+              value: {{ .Values.global.tests.tenantFetcher.tenantRegion }}
+            - name: APP_TENANT_REGION_PREFIX
+              value: {{ .Values.global.tests.tenantFetcher.tenantRegionPrefix }}
+      restartPolicy: Never
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher
+  namespace: {{ .Values.global.tests.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: {{ .Chart.Name }}-e2e-tenant-fetcher-client-cert
+  namespace: {{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.namespace }}
+  labels:
+    app: {{ $.Chart.Name }}
+    release: {{ $.Release.Name }}
+    helm.sh/chart: {{ $.Chart.Name }}-{{ $.Chart.Version | replace "+" "_" }}
+    app.kubernetes.io/name: {{ template "name" . }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ .Chart.Name }}-e2e-tenant-fetcher
+    namespace: {{ .Values.global.tests.namespace }}
+roleRef:
+  kind: Role
+  name: director-{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}
+  apiGroup: rbac.authorization.k8s.io
+{{ end }}

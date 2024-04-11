@@ -25,8 +25,25 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
+	bundleutil "github.com/kyma-incubator/compass/components/director/internal/domain/bundle"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
-	auth "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
+	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
@@ -68,6 +85,12 @@ type config struct {
 	Features features.Config
 
 	SecurityConfig securityConfig
+
+	WebhookProcessorElectionConfig cronjob.ElectionConfig
+	WebhookProcessorJobInterval    time.Duration `envconfig:"APP_WEBHOOK_PROCESSOR_JOB_INTERVAL,default=1m"`
+
+	SystemFieldDiscoveryWebhookPartialProcessing     bool `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING"`
+	SystemFieldDiscoveryWebhookPartialProcessMaxDays int  `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
 }
 
 type securityConfig struct {
@@ -123,6 +146,43 @@ func main() {
 		<-ctx.Done()
 		// Interrupt signal received - shut down the servers
 		shutdownMainSrv()
+	}()
+
+	authConverter := auth.NewConverter()
+	frConverter := fetchrequest.NewConverter(authConverter)
+	versionConverter := version.NewConverter()
+	docConverter := document.NewConverter(frConverter)
+	webhookConverter := webhook.NewConverter(authConverter)
+	specConverter := spec.NewConverter(frConverter)
+	apiConverter := api.NewConverter(versionConverter, specConverter)
+	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
+	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
+	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	tenantConverter := tenant.NewConverter()
+	tenantRepo := tenant.NewRepository(tenantConverter)
+
+	webhookRepo := webhook.NewRepository(webhookConverter)
+	applicationRepo := application.NewRepository(appConverter)
+	uidSvc := uid.NewService()
+	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, nil, nil, nil, nil, uidSvc, nil, "", nil)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
+
+	webhookClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
+
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "error while closing the connection to the database")
+	}()
+
+	webhookProcessor := webhookprocessor.NewWebhookProcessor(transact, webhookSvc, tenantSvc, appSvc, webhookClient, cfg.WebhookProcessorElectionConfig, cfg.WebhookProcessorJobInterval, cfg.SystemFieldDiscoveryWebhookPartialProcessing, cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+	go func() {
+		if err := webhookProcessor.StartWebhookProcessorJob(ctx, webhookprocessor.SaaSRegistryLabelValue); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to run WebhookProcessorJob. Stopping app...")
+			cancel()
+		}
 	}()
 
 	runMainSrv()
@@ -201,7 +261,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 
 func configureAuthMiddleware(ctx context.Context, httpClient *http.Client, router *mux.Router, cfg securityConfig, requiredScopes ...string) {
 	scopeValidator := claims.NewScopesValidator(requiredScopes)
-	middleware := auth.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
+	middleware := authmiddleware.New(httpClient, cfg.JwksEndpoint, cfg.AllowJWTSigningNone, "", scopeValidator)
 	router.Use(middleware.Handler())
 
 	log.C(ctx).Infof("JWKS synchronization enabled. Sync period: %v", cfg.JWKSSyncPeriod)

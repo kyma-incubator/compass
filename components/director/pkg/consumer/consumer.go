@@ -6,43 +6,45 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 )
 
-// ConsumerType missing godoc
-type ConsumerType string
+// Type missing godoc
+type Type string
 
 const (
-	// Runtime missing godoc
-	Runtime ConsumerType = "Runtime"
+	// Runtime represents a runtime consumer type
+	Runtime Type = "Runtime"
 	// ExternalCertificate missing godoc
-	ExternalCertificate ConsumerType = "External Certificate"
-	// Application missing godoc
-	Application ConsumerType = "Application"
-	// IntegrationSystem missing godoc
-	IntegrationSystem ConsumerType = "Integration System"
+	ExternalCertificate Type = "External Certificate"
+	// Application represents an application consumer type
+	Application Type = "Application"
+	// IntegrationSystem represents an integration system consumer type
+	IntegrationSystem Type = "Integration System"
 	// User missing godoc
-	User ConsumerType = "Static User"
+	User Type = "Static User"
 	// SuperAdmin is a consumer type that is used only in our tests
-	SuperAdmin ConsumerType = "Super Admin"
+	SuperAdmin Type = "Super Admin"
 	// TechnicalClient is a consumer type that is used by Atom
-	TechnicalClient ConsumerType = "Technical Client"
-	// BusinessIntegration missing godoc
-	BusinessIntegration ConsumerType = "Business Integration"
+	TechnicalClient Type = "Technical Client"
+	// BusinessIntegration is a consumer type that is used by Business Integration operator
+	BusinessIntegration Type = "Business Integration"
 	// ManagedApplicationProviderOperator is a consumer type that is used by Managed Application Provider operator
-	ManagedApplicationProviderOperator ConsumerType = "Managed Application Provider Operator"
+	ManagedApplicationProviderOperator Type = "Managed Application Provider Operator"
 	// ManagedApplicationConsumer is a consumer type that is used by Managed Application Provider operator
 	// when creating Certificate Subject Mappings
-	ManagedApplicationConsumer ConsumerType = "Managed Application Consumer"
+	ManagedApplicationConsumer Type = "Managed Application Consumer"
 	// LandscapeResourceOperator is a consumer type that is used by Landscape Resource operator
-	LandscapeResourceOperator ConsumerType = "Landscape Resource Operator"
+	LandscapeResourceOperator Type = "Landscape Resource Operator"
 	// TenantDiscoveryOperator is a consumer type that is used by Tenant Discovery operator
-	TenantDiscoveryOperator ConsumerType = "Tenant Discovery Operator"
+	TenantDiscoveryOperator Type = "Tenant Discovery Operator"
 	// InstanceCreator is a consumer type that is used by Instance Creator operator
-	InstanceCreator ConsumerType = "Instance Creator"
+	InstanceCreator Type = "Instance Creator"
+	// FormationViewer is a consumer type that is used by Instance Creator operator
+	FormationViewer Type = "Formation Viewer"
 )
 
 // Consumer missing godoc
 type Consumer struct {
 	ConsumerID    string `json:"ConsumerID"`
-	ConsumerType  `json:"ConsumerType"`
+	Type          `json:"ConsumerType"`
 	Flow          oathkeeper.AuthFlow `json:"Flow"`
 	OnBehalfOf    string              `json:"onBehalfOf"`
 	Region        string              `json:"region"`
@@ -50,7 +52,7 @@ type Consumer struct {
 }
 
 // MapSystemAuthToConsumerType missing godoc
-func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (ConsumerType, error) {
+func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Type, error) {
 	switch refObj {
 	case model.ApplicationReference:
 		return Application, nil
@@ -74,6 +76,8 @@ func MapSystemAuthToConsumerType(refObj model.SystemAuthReferenceObjectType) (Co
 		return TenantDiscoveryOperator, nil
 	case model.InstanceCreatorConsumerReference:
 		return InstanceCreator, nil
+	case model.FormationViewerConsumerReference:
+		return FormationViewer, nil
 	case model.SuperAdminReference:
 		return SuperAdmin, nil
 	}

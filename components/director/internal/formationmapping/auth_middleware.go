@@ -201,13 +201,19 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 				return
 			}
 
-			clientID := r.Header.Get(ClientIDFromCertificateHeader)
-			if clientID == "" {
-				log.C(ctx).Errorf("Failed to find client ID from header: %s", ClientIDFromCertificateHeader)
-				respondWithError(ctx, w, http.StatusBadRequest, errors.New("tenant not found in the request"))
+			tntFromToken, err := tenant.LoadFromContext(ctx)
+			if err != nil {
+				log.C(ctx).Debug("Tenant was not found in context")
 			}
 
-			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID, clientID)
+			clientID := r.Header.Get(ClientIDFromCertificateHeader)
+			if clientID == "" && tntFromToken == "" {
+				log.C(ctx).Errorf("Failed to find client ID from header: %s", ClientIDFromCertificateHeader)
+				respondWithError(ctx, w, http.StatusBadRequest, errors.New("tenant not found in the request"))
+				return
+			}
+
+			isAuthorized, statusCode, err := a.isFormationAssignmentAuthorized(ctx, formationAssignmentID, formationID, clientID, tntFromToken)
 			if err != nil {
 				log.C(ctx).Error(err.Error())
 				errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
@@ -276,7 +282,7 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
 	}
 	consumerID := consumerInfo.ConsumerID
-	consumerType := consumerInfo.ConsumerType
+	consumerType := consumerInfo.Type
 	log.C(ctx).Infof("Consumer with ID: %q and type: %q is trying to update formation with ID: %q", consumerID, consumerType, formationID)
 
 	tx, err := a.transact.Begin()
@@ -316,13 +322,13 @@ func (a *Authenticator) isFormationAuthorized(ctx context.Context, formationID s
 }
 
 // isFormationAssignmentAuthorized verify through custom logic the caller is authorized to update the formation assignment status
-func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID, clientID string) (bool, int, error) {
+func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, formationAssignmentID, formationID, clientID, tntFromToken string) (bool, int, error) {
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return false, http.StatusInternalServerError, errors.Wrap(err, "while fetching consumer info from context")
 	}
 	consumerID := consumerInfo.ConsumerID
-	consumerType := consumerInfo.ConsumerType
+	consumerType := consumerInfo.Type
 
 	tx, err := a.transact.Begin()
 	if err != nil {
@@ -352,6 +358,18 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 		tnt, err := a.tenantRepo.Get(ctx, fa.TenantID)
 		if err != nil {
 			return false, http.StatusInternalServerError, errors.Wrapf(err, "while getting tenant with ID: %q", fa.TenantID)
+		}
+
+		if consumerType == consumer.User { // call with external token
+			if tntFromToken != fa.TenantID {
+				return false, http.StatusInternalServerError, errors.Errorf("internal tenant from token with ID %q is not allowed to update formation assignment in tenant %q", tntFromToken, fa.TenantID)
+			}
+			if err := tx.Commit(); err != nil {
+				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
+			}
+
+			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
+			return true, http.StatusOK, nil
 		}
 
 		if consumerType == consumer.BusinessIntegration && tnt.Type == tenantpkg.ResourceGroup {

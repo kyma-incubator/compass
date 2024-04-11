@@ -14,11 +14,17 @@ import (
 type UnassignAppFromFormationOperation struct {
 	applicationID string
 	tenantID      string
+	formationName string // used when the test operates with formation different from the one provided in pre  setup
 	asserters     []asserters.Asserter
 }
 
-func NewUnassignAppToFormationOperation(applicationID string, tenantID string) *UnassignAppFromFormationOperation {
+func NewUnassignAppFromFormationOperation(applicationID string, tenantID string) *UnassignAppFromFormationOperation {
 	return &UnassignAppFromFormationOperation{applicationID: applicationID, tenantID: tenantID}
+}
+
+func (o *UnassignAppFromFormationOperation) WithFormationName(formationName string) *UnassignAppFromFormationOperation {
+	o.formationName = formationName
+	return o
 }
 
 func (o *UnassignAppFromFormationOperation) WithAsserters(asserters ...asserters.Asserter) *UnassignAppFromFormationOperation {
@@ -29,7 +35,12 @@ func (o *UnassignAppFromFormationOperation) WithAsserters(asserters ...asserters
 }
 
 func (o *UnassignAppFromFormationOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	formationName := ctx.Value(context_keys.FormationNameKey).(string)
+	var formationName string
+	if o.formationName != "" {
+		formationName = o.formationName
+	} else {
+		formationName = ctx.Value(context_keys.FormationNameKey).(string)
+	}
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
