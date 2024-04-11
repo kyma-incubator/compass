@@ -1148,7 +1148,6 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, shouldReset bool) (*model.Formation, error) {
-	log.C(ctx).Infof("Resynchronizing formation with ID: %q", formationID)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -1158,6 +1157,7 @@ func (s *service) ResynchronizeFormationNotifications(ctx context.Context, forma
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting formation with ID %q for tenant %q", formationID, tenantID)
 	}
+	log.C(ctx).Infof("Resynchronizing formation with ID: %s and name: %s", formationID, formation.Name)
 
 	return s.resynchronizeFormation(ctx, formation, tenantID, shouldReset)
 }
@@ -1254,16 +1254,18 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				}
 			}
 
-			if notificationForFA != nil {
-				faClone := fa.Clone()
-				if operation == model.UnassignFormation {
-					faClone.SetStateToDeleting()
-					formationassignment.ResetAssignmentConfigAndError(faClone)
-				} else if operation == model.AssignFormation {
-					faClone.State = string(model.InitialAssignmentState)
-					// Cleanup the error if present as new notification will be sent. The previous configuration should be left intact.
-					faClone.Error = nil
+			faClone := fa.Clone()
+			if notificationForFA != nil && operation == model.UnassignFormation {
+				faClone.SetStateToDeleting()
+				formationassignment.ResetAssignmentConfigAndError(faClone)
+				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
+					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
+			}
+			if operation == model.AssignFormation {
+				faClone.State = string(model.InitialAssignmentState)
+				// Cleanup the error if present as new notification will be sent. The previous configuration should be left intact.
+				faClone.Error = nil
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
