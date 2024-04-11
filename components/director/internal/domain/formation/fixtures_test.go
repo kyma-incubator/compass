@@ -1450,7 +1450,7 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 	}
 }
 
-func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationAssignmentState) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:                            id,
 		FormationID:                   formationID,
