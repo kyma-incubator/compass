@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -361,7 +362,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
@@ -372,7 +375,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+			params := url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
 			if appsLen != 1 {
@@ -416,8 +422,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
-			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?", headers, params)
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
@@ -432,12 +442,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -666,7 +678,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", consumerApp.ID), headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
 		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, providerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
 		verifyFormationDetails(stdT, gjson.Result{Raw: respBody}, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
@@ -676,7 +690,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json", consumerApp.ID), headers)
+			params := url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 
 			appName := gjson.Get(respBody, "title").String()
 			if appName != consumerApp.Name {
@@ -713,7 +730,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer client.DeleteDestination(stdT, destinationSecond.Name)
 
 		// With destinations - reload
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", consumerApp.ID), headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "consumptionBundles.0.destinations").Raw)
 		destinationsFromResponse := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
@@ -726,12 +747,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -962,7 +985,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
@@ -973,7 +998,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+			params = url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
 			if appsLen != 1 {
@@ -1017,8 +1045,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
-			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?", headers, params)
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
@@ -1033,12 +1065,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
