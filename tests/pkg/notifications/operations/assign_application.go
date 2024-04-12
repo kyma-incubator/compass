@@ -2,12 +2,13 @@ package operations
 
 import (
 	"context"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	gcli "github.com/machinebox/graphql"
-	"testing"
 )
 
 type AssignAppToFormationOperation struct {
@@ -65,10 +66,11 @@ func (o *AssignAppToFormationOperation) Cleanup(t *testing.T, ctx context.Contex
 	for _, webhook := range application.Webhooks {
 		fixtures.DeleteWebhook(t, ctx, gqlClient, o.tenantID, webhook.ID)
 	}
-
-	applicationTemplate := fixtures.GetApplicationTemplate(t, ctx, gqlClient, o.tenantID, *application.ApplicationTemplateID)
-	for _, webhook := range applicationTemplate.Webhooks {
-		fixtures.DeleteWebhook(t, ctx, gqlClient, o.tenantID, webhook.ID)
+	if application.ApplicationTemplateID != nil {
+		applicationTemplate := fixtures.GetApplicationTemplate(t, ctx, gqlClient, o.tenantID, *application.ApplicationTemplateID)
+		for _, webhook := range applicationTemplate.Webhooks {
+			fixtures.DeleteWebhook(t, ctx, gqlClient, o.tenantID, webhook.ID)
+		}
 	}
 
 	fixtures.UnassignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)

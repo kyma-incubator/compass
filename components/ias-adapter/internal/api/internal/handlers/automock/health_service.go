@@ -19,10 +19,6 @@ type HealthService struct {
 func (_m *HealthService) CheckHealth(ctx context.Context) (types.HealthStatus, error) {
 	ret := _m.Called(ctx)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CheckHealth")
-	}
-
 	var r0 types.HealthStatus
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context) (types.HealthStatus, error)); ok {
@@ -43,12 +39,13 @@ func (_m *HealthService) CheckHealth(ctx context.Context) (types.HealthStatus, e
 	return r0, r1
 }
 
-// NewHealthService creates a new instance of HealthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewHealthService(t interface {
+type mockConstructorTestingTNewHealthService interface {
 	mock.TestingT
 	Cleanup(func())
-}) *HealthService {
+}
+
+// NewHealthService creates a new instance of HealthService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewHealthService(t mockConstructorTestingTNewHealthService) *HealthService {
 	mock := &HealthService{}
 	mock.Mock.Test(t)
 

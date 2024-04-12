@@ -15,7 +15,7 @@ import (
 //go:generate mockery --name=Repository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Repository interface {
 	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
-	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (*model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 }
 
@@ -54,15 +54,15 @@ func (s *service) ListForTargetTenant(ctx context.Context, targetTenantInternalI
 }
 
 // GetForScenarioName missing godoc
-func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (*model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return model.AutomaticScenarioAssignment{}, err
+		return nil, err
 	}
 
 	sa, err := s.repo.GetForScenarioName(ctx, tenantID, scenarioName)
 	if err != nil {
-		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while getting Assignment")
+		return nil, errors.Wrap(err, "while getting Assignment")
 	}
 	return sa, nil
 }

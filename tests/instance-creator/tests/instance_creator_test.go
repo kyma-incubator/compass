@@ -216,7 +216,7 @@ func TestInstanceCreator(t *testing.T) {
 	t.Logf("app1 ID: %q", app1.ID)
 
 	t.Logf("Create application 2 from template: %q", applicationType2)
-	appProvider2 := resource_providers.NewApplicationProvider(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
+	appProvider2 := resource_providers.NewApplicationFromTemplateProvider(applicationType2, namePlaceholder, "app2-formation-notifications-tests", displayNamePlaceholder, "App 2 Display Name", tnt)
 	defer appProvider2.Cleanup(t, ctx, certSecuredGraphQLClient)
 	app2ID := appProvider2.Provide(t, ctx, certSecuredGraphQLClient)
 

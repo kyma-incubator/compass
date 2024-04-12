@@ -173,7 +173,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
 	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa)
 	originalStateFromStatusReport := notificationStatusReport.State
-	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, reset) {
+	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
 		errResp := errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", originalStateFromStatusReport, formationOperation, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
@@ -186,6 +186,12 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	if reset {
 		if stateFromStatusReport != string(model.ReadyAssignmentState) && stateFromStatusReport != string(model.ConfigPendingAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+
+		if formationassignmentpkg.IsConfigEmpty(string(notificationStatusReport.Configuration)) {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s because provided configuration is empty. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
@@ -438,7 +444,7 @@ func (b FormationAssignmentRequestBody) Validate(ctx context.Context) error {
 	fieldRules = append(
 		fieldRules,
 		validation.Field(&b.State,
-			validation.Required.When(consumerType != consumer.BusinessIntegration),
+			validation.Required.When(consumerType != consumer.BusinessIntegration && consumerType != consumer.User),
 			validation.When(b.Error != "", validation.In(model.CreateErrorAssignmentState, model.DeleteErrorAssignmentState)),
 			validation.When(len(b.Configuration) > 0, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState, model.CreateReadyFormationAssignmentState, model.DeleteReadyFormationAssignmentState)),
 			// in case of empty error and configuration
@@ -777,7 +783,7 @@ func isSupportedStateForStatusUpdateWithUnassignOperation(state model.FormationA
 		state == model.DeleteReadyFormationAssignmentState
 }
 
-func isStateSupportedForOperation(ctx context.Context, state model.FormationAssignmentState, operation model.FormationOperation, isReset bool) bool {
+func isStateSupportedForOperation(ctx context.Context, state model.FormationAssignmentState, operation model.FormationOperation, formationState model.FormationState, isReset bool) bool {
 	isSupportedForOperation := false
 
 	if operation == model.AssignFormation {
@@ -795,6 +801,10 @@ func isStateSupportedForOperation(ctx context.Context, state model.FormationAssi
 	consumerInfo, err := consumer.LoadFromContext(ctx)
 	if err != nil {
 		return isSupportedForOperation
+	}
+
+	if consumerInfo.Type == consumer.User {
+		isSupportedForOperation = isSupportedForOperation || (formationState == model.DraftFormationState && operation == model.AssignFormation && state == model.InitialAssignmentState)
 	}
 
 	if consumerInfo.Type == consumer.BusinessIntegration {
