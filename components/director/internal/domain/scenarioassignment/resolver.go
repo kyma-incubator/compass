@@ -14,14 +14,14 @@ import (
 
 //go:generate mockery --exported --name=gqlConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type gqlConverter interface {
-	ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
+	ToGraphQL(in *model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment
 }
 
 //go:generate mockery --exported --name=asaService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type asaService interface {
 	List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
 	ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error)
-	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	GetForScenarioName(ctx context.Context, scenarioName string) (*model.AutomaticScenarioAssignment, error)
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -105,7 +105,7 @@ func (r *Resolver) AutomaticScenarioAssignmentsForSelector(ctx context.Context, 
 	gqlAssignments := make([]*graphql.AutomaticScenarioAssignment, 0, len(assignments))
 
 	for _, v := range assignments {
-		assignment := r.converter.ToGraphQL(*v, in.Value)
+		assignment := r.converter.ToGraphQL(v, in.Value)
 		gqlAssignments = append(gqlAssignments, &assignment)
 	}
 
@@ -143,7 +143,7 @@ func (r *Resolver) AutomaticScenarioAssignments(ctx context.Context, first *int,
 			return nil, errors.Wrap(err, "while converting tenant")
 		}
 
-		assignment := r.converter.ToGraphQL(*v, targetTenant)
+		assignment := r.converter.ToGraphQL(v, targetTenant)
 		gqlAssignments = append(gqlAssignments, &assignment)
 	}
 

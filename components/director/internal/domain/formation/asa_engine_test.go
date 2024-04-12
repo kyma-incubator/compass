@@ -64,7 +64,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 		FormationRepositoryFn         func() *automock.FormationRepository
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		ProcessFunc                   func() *automock.ProcessFunc
-		InputASA                      model.AutomaticScenarioAssignment
+		InputASA                      *model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
 		{
@@ -408,7 +408,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 		FormationRepositoryFn         func() *automock.FormationRepository
 		FormationTemplateRepositoryFn func() *automock.FormationTemplateRepository
 		ProcessFunc                   func() *automock.ProcessFunc
-		InputASA                      model.AutomaticScenarioAssignment
+		InputASA                      *model.AutomaticScenarioAssignment
 		ExpectedErrMessage            string
 	}{
 		{

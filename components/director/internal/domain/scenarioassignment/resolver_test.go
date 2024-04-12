@@ -80,7 +80,7 @@ func TestResolver_GetAutomaticScenarioAssignmentByScenario(t *testing.T) {
 	t.Run("error on receiving assignment by service", func(t *testing.T) {
 		tx, transact := txGen.ThatDoesntExpectCommit()
 		mockSvc := &automock.AsaService{}
-		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
+		mockSvc.On("GetForScenarioName", txtest.CtxWithDBMatcher(), scenarioName).Return(nil, fixError()).Once()
 		defer mock.AssertExpectationsForObjects(t, tx, transact, mockSvc)
 
 		sut := scenarioassignment.NewResolver(transact, mockSvc, nil, nil)
@@ -151,8 +151,8 @@ func TestResolver_AutomaticScenarioAssignmentsForSelector(t *testing.T) {
 		tx, transact := txGen.ThatSucceeds()
 
 		mockConverter := &automock.GqlConverter{}
-		mockConverter.On("ToGraphQL", *expectedModels[0], externalTargetTenantID).Return(*expectedOutput[0]).Once()
-		mockConverter.On("ToGraphQL", *expectedModels[1], externalTargetTenantID).Return(*expectedOutput[1]).Once()
+		mockConverter.On("ToGraphQL", expectedModels[0], externalTargetTenantID).Return(*expectedOutput[0]).Once()
+		mockConverter.On("ToGraphQL", expectedModels[1], externalTargetTenantID).Return(*expectedOutput[1]).Once()
 
 		mockSvc := &automock.AsaService{}
 		mockSvc.On("ListForTargetTenant", mock.Anything, targetTenantID).Return(expectedModels, nil).Once()
@@ -248,7 +248,7 @@ func TestResolver_AutomaticScenarioAssignments(t *testing.T) {
 	mod1 := fixModelWithScenarioName("foo")
 	mod2 := fixModelWithScenarioName("bar")
 	modItems := []*model.AutomaticScenarioAssignment{
-		&mod1, &mod2,
+		mod1, mod2,
 	}
 	modelPage := fixModelPageWithItems(modItems)
 
