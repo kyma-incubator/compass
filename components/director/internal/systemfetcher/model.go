@@ -2,7 +2,6 @@ package systemfetcher
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"strings"
@@ -79,8 +78,6 @@ func (s *System) UnmarshalJSON(data []byte) error {
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
 	for _, tm := range ApplicationTemplates {
-		fmt.Println(s.SystemPayload, "INPUT PAYLOAD")
-
 		slisFilter, slisFilterExists := tm.Labels["slisFilter"]
 		if !slisFilterExists {
 			return *s, errors.Errorf("missing slis filter for application template with ID %q", tm.AppTemplate.ID)
@@ -98,8 +95,6 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 			return *s, err
 		}
 
-		fmt.Println(productIDFilterMappings, "mappings")
-
 		systemSource, systemSourceValueExists := s.SystemPayload[SystemSourceKey]
 
 		if !systemSourceValueExists {
@@ -108,7 +103,6 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 
 		for _, mapping := range productIDFilterMappings {
 			if mapping.ProductID == systemSource {
-				fmt.Println(mapping.ProductID, systemSource, "CCC")
 				systemMatches, err := systemMatchesSlisFilters(s.SystemPayload, mapping.Filter)
 				if err != nil {
 					return *s, err
@@ -136,7 +130,6 @@ func systemMatchesSlisFilters(systemPayload map[string]interface{}, slisFilters 
 	for _, filter := range slisFilters {
 		path := strings.TrimPrefix(filter.Key, prefix)
 		valueFromSystemPayload := gjson.Get(string(payload), path)
-		fmt.Println(valueFromSystemPayload, "value from sys payload")
 
 		switch filter.Operation {
 		case IncludeOperationType:

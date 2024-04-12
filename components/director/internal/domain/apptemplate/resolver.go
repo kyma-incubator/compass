@@ -46,6 +46,14 @@ const (
 	slisFilterLabelKey         = "slisFilter"
 )
 
+var defaultSlisFilterValueForManagedByProperty = []map[string]interface{}{
+	{
+		"key":       "$.additionalAttributes.managedBy",
+		"value":     []string{"SAP Cloud"},
+		"operation": "exclude",
+	},
+}
+
 // ApplicationTemplateService missing godoc
 //
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -339,9 +347,9 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	systemRole, hasSystemRole := labels[r.appTemplateProductLabel]
-	_, exists := labels[slisFilterLabelKey]
+	_, slisFilterLabelExists := labels[slisFilterLabelKey]
 
-	if hasSystemRole && !exists {
+	if hasSystemRole && !slisFilterLabelExists {
 		log.C(ctx).Infof("Application Template with name %s has system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
 
 		systemRoleValues, ok := systemRole.([]interface{})
@@ -358,13 +366,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			}
 			slisFilter := map[string]interface{}{
 				"productId": systemRoleValueStr,
-				"filter": []map[string]interface{}{
-					{
-						"key":       "$.additionalAttributes.managedBy",
-						"value":     []string{"SAP Cloud"},
-						"operation": "exclude",
-					},
-				},
+				"filter":    defaultSlisFilterValueForManagedByProperty,
 			}
 
 			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
