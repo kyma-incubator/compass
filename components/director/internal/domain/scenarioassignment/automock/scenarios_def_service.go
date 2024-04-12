@@ -17,6 +17,10 @@ type ScenariosDefService struct {
 func (_m *ScenariosDefService) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
 	ret := _m.Called(ctx, tenantID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableScenarios")
+	}
+
 	var r0 []string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]string, error)); ok {

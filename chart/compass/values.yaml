@@ -175,7 +175,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3802"
+      version: "PR-3796"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -183,7 +183,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3807"
+      version: "PR-3811"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -1053,6 +1053,8 @@ global:
     userContextHeader: "user_context"
     authTokenPath: "/var/run/secrets/kubernetes.io/serviceaccount/token"
     skipSSLValidation: false
+    specification:
+      protocol: "https"
   ordAggregator:
     port: 3000
     prefix: /ord-aggregator

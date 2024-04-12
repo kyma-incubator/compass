@@ -1,6 +1,7 @@
 package operators_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
@@ -8,6 +9,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -15,6 +17,15 @@ import (
 )
 
 func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
+	certConsumer := consumer.Consumer{
+		Type: consumer.ExternalCertificate,
+	}
+	instanceCreatorConsumer := consumer.Consumer{
+		Type: consumer.InstanceCreator,
+	}
+	ctxWithCertConsumer := consumer.SaveToContext(context.TODO(), certConsumer)
+	ctxWithInstanceCreatorConsumer := consumer.SaveToContext(context.TODO(), instanceCreatorConsumer)
+
 	inputForNotificationStatusReturnedAssign := fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(model.AssignFormation, fixWebhook(), preNotificationStatusReturnedLocation)
 	inputForNotificationStatusReturnedUnassign := fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(model.UnassignFormation, fixWebhook(), preNotificationStatusReturnedLocation)
 	inputForSendNotificationAssign := fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(true, model.AssignFormation, fixWebhook(), preSendNotificationLocation)
@@ -31,6 +42,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 
 	testCases := []struct {
 		Name                                   string
+		Context                                context.Context
 		Input                                  *formationconstraintpkg.AsynchronousFlowControlOperatorInput
 		Assignment                             *model.FormationAssignment
 		ReverseAssignment                      *model.FormationAssignment
@@ -48,6 +60,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                 "Success when sending notification and state is READY",
 			Input:                inputForSendNotificationAssign,
+			Context:              ctxWithCertConsumer,
 			Assignment:           fixFormationAssignmentWithState(model.ReadyAssignmentState),
 			ReverseAssignment:    fixFormationAssignmentWithState(model.ReadyAssignmentState),
 			ExpectShouldRedirect: true,
@@ -57,6 +70,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                 "Success when sending notification and state is INSTANCE_CREATOR_DELETING state",
 			Input:                inputForSendNotificationUnassign,
+			Context:              ctxWithCertConsumer,
 			Assignment:           fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
 			ReverseAssignment:    fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectShouldRedirect: true,
@@ -65,6 +79,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                 "Success when sending notification and state is INSTANCE_CREATOR_DELETE_ERROR state",
 			Input:                inputForSendNotificationUnassign,
+			Context:              ctxWithCertConsumer,
 			Assignment:           fixFormationAssignmentWithState(model.InstanceCreatorDeleteErrorAssignmentState),
 			ReverseAssignment:    fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectShouldRedirect: true,
@@ -73,6 +88,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                 "Success when sending notification and state is READY state",
 			Input:                inputForSendNotificationUnassign,
+			Context:              ctxWithCertConsumer,
 			Assignment:           fixFormationAssignmentWithState(model.ReadyAssignmentState),
 			ReverseAssignment:    fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectShouldRedirect: false,
@@ -81,6 +97,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Error when retrieving formation assignment pointer fails during send notification",
 			Input:                            inputForSendNotificationUnassign,
+			Context:                          ctxWithCertConsumer,
 			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
 			StatusReport:                     fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), configWithDifferentStructure),
 			ExpectedErrorMsg:                 "The join point details' assignment memory address cannot be 0",
@@ -89,6 +106,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Error when formation assignment config is invalid",
 			Input:                            inputForNotificationStatusReturnedAssign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
@@ -99,6 +117,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning to READY state with no configuration",
 			Input:                            inputForNotificationStatusReturnedAssign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
@@ -109,6 +128,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning to READY state with inbound credentials",
 			Input:                            inputForNotificationStatusReturnedAssign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
@@ -119,6 +139,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning to READY state without inbound credentials",
 			Input:                            inputForNotificationStatusReturnedAssign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.InitialAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
@@ -130,6 +151,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning from DELETING to READY",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
@@ -137,24 +159,48 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
 			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
+				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentService: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
-				svc.On("CleanupFormationAssignment", ctx, testAssignmentPair).Return(false, nil)
+				svc.On("CleanupFormationAssignment", ctxWithCertConsumer, testAssignmentPair).Return(false, nil)
 				return svc
 			},
 			FormationAssignmentNotificationService: func() *automock.FormationAssignmentNotificationService {
 				notificationSvc := &automock.FormationAssignmentNotificationService{}
-				notificationSvc.On("GenerateFormationAssignmentPair", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
+				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
 				return notificationSvc
 			},
 			ExpectedResult: true,
 		},
 		{
+			Name:                             "Success when transitioning from DELETING to READY but consumer type is instance creator",
+			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithInstanceCreatorConsumer,
+			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
+			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
+			ExpectedStatusReportState:        string(model.ReadyAssignmentState),
+			ExpectedResult:                   true,
+		},
+		{
+			Name:                             "Error when transitioning from DELETING to READY but there is no consumer in context",
+			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctx,
+			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
+			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
+			ExpectedStatusReportState:        string(model.ReadyAssignmentState),
+			ExpectedResult:                   false,
+			ExpectedErrorMsg:                 "while fetching consumer info from context",
+		},
+		{
 			Name:                             "Error when cleanup formation assignment fails",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
@@ -162,17 +208,17 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
 			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
+				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentService: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
-				svc.On("CleanupFormationAssignment", ctx, testAssignmentPair).Return(false, testErr)
+				svc.On("CleanupFormationAssignment", ctxWithCertConsumer, testAssignmentPair).Return(false, testErr)
 				return svc
 			},
 			FormationAssignmentNotificationService: func() *automock.FormationAssignmentNotificationService {
 				notificationSvc := &automock.FormationAssignmentNotificationService{}
-				notificationSvc.On("GenerateFormationAssignmentPair", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
+				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
 				return notificationSvc
 			},
 			ExpectedResult:   false,
@@ -181,6 +227,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Error during generating formation assignment pair",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
@@ -188,12 +235,12 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
 			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
+				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
 				return repo
 			},
 			FormationAssignmentNotificationService: func() *automock.FormationAssignmentNotificationService {
 				notificationSvc := &automock.FormationAssignmentNotificationService{}
-				notificationSvc.On("GenerateFormationAssignmentPair", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(nil, testErr).Once()
+				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(nil, testErr).Once()
 				return notificationSvc
 			},
 			ExpectedResult:   false,
@@ -202,6 +249,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Error during formation assignment update to INSTANCE_CREATOR_DELETING state",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
@@ -209,7 +257,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
 			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctx, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(testErr).Once()
+				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(testErr).Once()
 				return repo
 			},
 			ExpectedResult:   false,
@@ -218,6 +266,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning from DELETING to DELETE_ERROR",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
@@ -228,6 +277,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning from INSTANCE_CREATOR_DELETING to DELETE_ERROR",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
@@ -238,6 +288,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                             "Success when transitioning from INSTANCE_CREATOR_DELETING to READY",
 			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
@@ -248,6 +299,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:                      "Success when transitioning from INSTANCE_CREATOR_DELETING to READY without reverse assignment",
 			Input:                     inputForNotificationStatusReturnedUnassign,
+			Context:                   ctxWithCertConsumer,
 			Assignment:                fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
 			StatusReport:              fixNotificationStatusReportWithState(model.ReadyAssignmentState),
 			ExpectedStatusReportState: string(model.ReadyAssignmentState),
@@ -256,6 +308,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:              "Error when retrieving status report pointer fails",
 			Input:             inputForNotificationStatusReturnedUnassign,
+			Context:           ctxWithCertConsumer,
 			Assignment:        fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
 			ReverseAssignment: fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedErrorMsg:  "The join point details' notification status report memory address cannot be 0",
@@ -263,11 +316,13 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		{
 			Name:             "Error when retrieving formation assignment pointer fails",
 			Input:            inputForNotificationStatusReturnedUnassign,
+			Context:          ctxWithCertConsumer,
 			ExpectedErrorMsg: "The join point details' assignment memory address cannot be 0",
 		},
 		{
 			Name:           "Error when retrieving formation assignment pointer fails",
 			Input:          inputForPreAssign,
+			Context:        ctxWithCertConsumer,
 			ExpectedResult: true,
 		},
 	}
@@ -299,7 +354,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 				setStatusReportToAsynchronousFlowControlInput(inputClone, testCase.StatusReport)
 			}
 
-			result, err := engine.AsynchronousFlowControlOperator(ctx, inputClone)
+			result, err := engine.AsynchronousFlowControlOperator(testCase.Context, inputClone)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -327,7 +382,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 
 		// WHEN
 		input := "wrong input"
-		result, err := engine.AsynchronousFlowControlOperator(ctx, input)
+		result, err := engine.AsynchronousFlowControlOperator(ctxWithCertConsumer, input)
 
 		// THEN
 		assert.Equal(t, false, result)

@@ -129,12 +129,12 @@ type uuidService interface {
 
 //go:generate mockery --exported --name=automaticFormationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type automaticFormationAssignmentService interface {
-	GetForScenarioName(ctx context.Context, scenarioName string) (model.AutomaticScenarioAssignment, error)
+	GetForScenarioName(ctx context.Context, scenarioName string) (*model.AutomaticScenarioAssignment, error)
 }
 
 //go:generate mockery --exported --name=automaticFormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type automaticFormationAssignmentRepository interface {
-	Create(ctx context.Context, model model.AutomaticScenarioAssignment) error
+	Create(ctx context.Context, model *model.AutomaticScenarioAssignment) error
 	DeleteForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) error
 	DeleteForScenarioName(ctx context.Context, tenantID string, scenarioName string) error
 	ListAll(ctx context.Context, tenantID string) ([]*model.AutomaticScenarioAssignment, error)
@@ -154,8 +154,8 @@ type constraintEngine interface {
 
 //go:generate mockery --exported --name=asaEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type asaEngine interface {
-	EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
-	RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
+	EnsureScenarioAssigned(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
+	RemoveAssignedScenario(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
 	GetMatchingFuncByFormationObjectType(objType graphql.FormationObjectType) (MatchingFunc, error)
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error)
@@ -446,6 +446,14 @@ func (s *service) DeleteFormation(ctx context.Context, tnt string, formation mod
 
 	if len(assignmentsForFormation) > 0 {
 		return nil, errors.Errorf("cannot delete formation with ID %q, because it is not empty", formationID)
+	}
+
+	asa, err := s.asaService.GetForScenarioName(ctx, formationName)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return nil, errors.Wrapf(err, "while getting automatic scenario assignment for formation with name %q", formationName)
+	}
+	if asa != nil {
+		return nil, errors.Errorf("cannot delete formation with ID %q, because there is still a subaccount part of it", formationID)
 	}
 
 	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreDelete, joinPointDetails, formationTemplateID); err != nil {
@@ -808,13 +816,20 @@ func (s *service) UnassignFromScenarioLabel(ctx context.Context, tnt, objectID s
 func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formationTemplate *model.FormationTemplate) error {
 	switch objectType {
 	case graphql.FormationObjectTypeApplication:
+		app, err := s.applicationRepository.GetByID(ctx, tnt, objectID)
+		if err != nil {
+			return errors.Wrapf(err, "while getting application with ID: %q", objectID)
+		}
 		if err := s.isValidApplicationType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating application type for application %q", objectID)
 		}
-		if err := s.isValidApplication(ctx, tnt, objectID); err != nil {
+		if err := s.isValidApplication(app); err != nil {
 			return errors.Wrapf(err, "while validating application with ID: %q", objectID)
 		}
 	case graphql.FormationObjectTypeRuntime:
+		if _, err := s.runtimeRepo.GetByID(ctx, tnt, objectID); err != nil {
+			return errors.Wrapf(err, "while getting runtime with ID: %q", objectID)
+		}
 		if err := s.isValidRuntimeType(ctx, tnt, objectID, formationTemplate); err != nil {
 			return errors.Wrapf(err, "while validating runtime type")
 		}
@@ -1427,27 +1442,27 @@ func (s *service) resynchronizeFormationNotifications(ctx context.Context, tenan
 
 // CreateAutomaticScenarioAssignment creates a new AutomaticScenarioAssignment for a given ScenarioName, Tenant and TargetTenantID
 // It also ensures that all runtimes(or/and runtime contexts) with given scenarios are assigned for the TargetTenantID
-func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) (model.AutomaticScenarioAssignment, error) {
+func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in *model.AutomaticScenarioAssignment) (*model.AutomaticScenarioAssignment, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
-		return model.AutomaticScenarioAssignment{}, err
+		return nil, err
 	}
 
 	in.Tenant = tenantID
 	if err := s.validateThatScenarioExists(ctx, in); err != nil {
-		return model.AutomaticScenarioAssignment{}, err
+		return nil, err
 	}
 
 	if err = s.repo.Create(ctx, in); err != nil {
 		if apperrors.IsNotUniqueError(err) {
-			return model.AutomaticScenarioAssignment{}, apperrors.NewInvalidOperationError("a given scenario already has an assignment")
+			return nil, apperrors.NewInvalidOperationError("a given scenario already has an assignment")
 		}
 
-		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while persisting Assignment")
+		return nil, errors.Wrap(err, "while persisting Assignment")
 	}
 
 	if err = s.asaEngine.EnsureScenarioAssigned(ctx, in, s.AssignFormation); err != nil {
-		return model.AutomaticScenarioAssignment{}, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
+		return nil, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
 	}
 
 	return in, nil
@@ -1455,7 +1470,7 @@ func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in mode
 
 // DeleteAutomaticScenarioAssignment deletes the assignment for a given scenario in a scope of a tenant
 // It also removes corresponding assigned scenarios for the ASA
-func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in *model.AutomaticScenarioAssignment) error {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while loading tenant from context")
@@ -1475,7 +1490,7 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in mode
 // RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
 func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
-		if err := s.asaEngine.RemoveAssignedScenario(ctx, *asa, s.UnassignFormation); err != nil {
+		if err := s.asaEngine.RemoveAssignedScenario(ctx, asa, s.UnassignFormation); err != nil {
 			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
 		}
 	}
@@ -1681,8 +1696,8 @@ func newLabelInput(formation, objectID string, objectType model.LabelableObject)
 	}
 }
 
-func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+func newAutomaticScenarioAssignmentModel(formation, callerTenant, targetTenant string) *model.AutomaticScenarioAssignment {
+	return &model.AutomaticScenarioAssignment{
 		ScenarioName:   formation,
 		Tenant:         callerTenant,
 		TargetTenantID: targetTenant,
@@ -1731,7 +1746,7 @@ func (s *service) ensureSameTargetTenant(in []*model.AutomaticScenarioAssignment
 	return targetTenant, nil
 }
 
-func (s *service) validateThatScenarioExists(ctx context.Context, in model.AutomaticScenarioAssignment) error {
+func (s *service) validateThatScenarioExists(ctx context.Context, in *model.AutomaticScenarioAssignment) error {
 	availableScenarios, err := s.getAvailableScenarios(ctx, in.Tenant)
 	if err != nil {
 		return err
@@ -1820,17 +1835,12 @@ func (s *service) isValidRuntimeType(ctx context.Context, tnt string, runtimeID 
 	return nil
 }
 
-func (s *service) isValidApplication(ctx context.Context, tnt string, applicationID string) error {
-	application, err := s.applicationRepository.GetByID(ctx, tnt, applicationID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting application with ID %q", applicationID)
-	}
-
+func (s *service) isValidApplication(application *model.Application) error {
 	if application.DeletedAt != nil {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is currently being deleted", applicationID))
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is currently being deleted", application.ID))
 	}
 	if !application.Ready {
-		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", applicationID))
+		return apperrors.NewInvalidOperationError(fmt.Sprintf("application with ID %q is not ready", application.ID))
 	}
 	return nil
 }
