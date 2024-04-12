@@ -40,6 +40,7 @@ var s4Config = &types.TenantMappingConfiguration{
 
 func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping types.TenantMapping) {
 	log := logger.FromContext(ctx)
+
 	reverseAssignmentState := tenantMapping.AssignedTenant.ReverseAssignmentState
 	if tenantMapping.Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
@@ -54,6 +55,7 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 
 	if err := p.TenantMappingsService.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
+		log.Err(err)
 
 		if operation == types.OperationAssign {
 			if errors.Is(err, errors.IASApplicationNotFound) {
@@ -62,7 +64,7 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 			}
 
 			if errors.Is(err, errors.S4CertificateNotFound) {
-				log.Info().Msgf("S/4 certificate not provided. Responding with CONFIG_PENDING.")
+				log.Info().Msgf("S/4 certificate not provided")
 				p.ReportStatus(ctx, ucl.StatusReport{State: types.StateConfigPending, Configuration: s4Config})
 				return
 			}
@@ -76,8 +78,12 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 }
 
 func (p AsyncProcessor) ReportStatus(ctx context.Context, statusReport ucl.StatusReport) {
+	log := logger.FromContext(ctx)
+
 	statusReportURL := ctx.Value(locationHeader).(string)
+	log.Info().Msgf("reporting status '%s' to '%s'", statusReport.State, statusReportURL)
+
 	if err := p.UCLService.ReportStatus(ctx, statusReportURL, statusReport); err != nil {
-		logger.FromContext(ctx).Error().Msgf("failed to report status to '%s': %s", statusReportURL, err)
+		log.Error().Msgf("failed to report status to '%s': %s", statusReportURL, err)
 	}
 }
