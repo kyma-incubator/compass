@@ -2,6 +2,7 @@ package systemfetcher
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"strings"
@@ -78,6 +79,8 @@ func (s *System) UnmarshalJSON(data []byte) error {
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
 	for _, tm := range ApplicationTemplates {
+		fmt.Println(s.SystemPayload, "INPUT PAYLOAD")
+
 		slisFilter, slisFilterExists := tm.Labels["slisFilter"]
 		if !slisFilterExists {
 			return *s, errors.Errorf("missing slis filter for application template with ID %q", tm.AppTemplate.ID)
@@ -95,6 +98,8 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 			return *s, err
 		}
 
+		fmt.Println(productIDFilterMappings, "mappings")
+
 		systemSource, systemSourceValueExists := s.SystemPayload[SystemSourceKey]
 
 		if !systemSourceValueExists {
@@ -103,6 +108,7 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 
 		for _, mapping := range productIDFilterMappings {
 			if mapping.ProductID == systemSource {
+				fmt.Println(mapping.ProductID, systemSource, "CCC")
 				systemMatches, err := systemMatchesSlisFilters(s.SystemPayload, mapping.Filter)
 				if err != nil {
 					return *s, err
@@ -122,23 +128,27 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 func systemMatchesSlisFilters(systemPayload map[string]interface{}, slisFilters []SlisFilter) (bool, error) {
 	prefix := "$."
 
-	payload, _ := json.Marshal(systemPayload)
+	payload, err := json.Marshal(systemPayload)
+	if err != nil {
+		return false, err
+	}
 
-	for _, f := range slisFilters {
-		path := strings.TrimPrefix(f.Key, prefix)
+	for _, filter := range slisFilters {
+		path := strings.TrimPrefix(filter.Key, prefix)
 		valueFromSystemPayload := gjson.Get(string(payload), path)
+		fmt.Println(valueFromSystemPayload, "value from sys payload")
 
-		switch f.Operation {
+		switch filter.Operation {
 		case IncludeOperationType:
-			if !valueMatchesFilter(valueFromSystemPayload.String(), f.Value, true) {
+			if !valueMatchesFilter(valueFromSystemPayload.String(), filter.Value, true) {
 				return false, nil
 			}
 		case ExcludeOperationType:
-			if !valueMatchesFilter(valueFromSystemPayload.String(), f.Value, false) {
+			if !valueMatchesFilter(valueFromSystemPayload.String(), filter.Value, false) {
 				return false, nil
 			}
 		default:
-			return false, errors.New("not from op type error")
+			return false, errors.New("slis filter operation doesn't match the defined operation types")
 		}
 	}
 
@@ -146,8 +156,8 @@ func systemMatchesSlisFilters(systemPayload map[string]interface{}, slisFilters 
 }
 
 func valueMatchesFilter(value string, filterValues []string, expectedResultIfEqualValue bool) bool {
-	for _, v := range filterValues {
-		if value == v {
+	for _, filterValue := range filterValues {
+		if value == filterValue {
 			return expectedResultIfEqualValue
 		}
 	}

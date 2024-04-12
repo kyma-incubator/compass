@@ -113,11 +113,11 @@ func labelsRuleFunc(value interface{}) error {
 
 	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
 	if !ok {
-		return errors.New("invalid format of cld system roles label")
+		return errors.New("invalid format of system roles label")
 	}
 
 	if (!hasSystemRoles || len(systemRolesLabelValue) == 0) && hasSlisFilter {
-		return errors.New("cld system role is required when slis filter is defined")
+		return errors.New("system role is required when slis filter is defined")
 	}
 
 	if !hasSlisFilter {
@@ -129,7 +129,7 @@ func labelsRuleFunc(value interface{}) error {
 	for _, systemRoleValue := range systemRolesLabelValue {
 		systemRoleValueStr, ok := systemRoleValue.(string)
 		if !ok {
-			return errors.New("value of cld system role is not a string")
+			return errors.New("value of system role should be a string")
 		}
 		systemRoles = append(systemRoles, systemRoleValueStr)
 	}
@@ -164,15 +164,15 @@ func labelsRuleFunc(value interface{}) error {
 	slisFilterProductIdsCount := len(productIds)
 
 	if systemRolesCount != slisFilterProductIdsCount {
-		return errors.New("cld system roles count does not match the product ids count in slis filter")
+		return errors.New("system roles count does not match the product ids count in slis filter")
 	}
 
 	sort.Strings(systemRoles)
 	sort.Strings(productIds)
 
-	for i, s := range systemRoles {
-		if s != productIds[i] {
-			return errors.New("cld system roles don't match with product ids in slis filter")
+	for i, systemRole := range systemRoles {
+		if systemRole != productIds[i] {
+			return errors.New("system roles don't match with product ids in slis filter")
 		}
 	}
 

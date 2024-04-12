@@ -338,22 +338,26 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
-	cldSystemRole, hasCldSystemRole := labels[r.appTemplateProductLabel]
+	systemRole, hasSystemRole := labels[r.appTemplateProductLabel]
 	_, exists := labels[slisFilterLabelKey]
 
-	if hasCldSystemRole && !exists {
-		log.C(ctx).Infof("Application Template with name %s has cld system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
+	if hasSystemRole && !exists {
+		log.C(ctx).Infof("Application Template with name %s has system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
 
-		cldSystemRoleValues, ok := cldSystemRole.([]interface{})
+		systemRoleValues, ok := systemRole.([]interface{})
 		if !ok {
-			return nil, errors.New("invalid format of cld system roles")
+			return nil, errors.Errorf("invalid format of system roles for application template with ID %s", convertedIn.Name)
 		}
 
-		filtersFromCldSystemRoles := make([]map[string]interface{}, 0)
+		filtersFromSystemRoles := make([]map[string]interface{}, 0)
 
-		for _, v := range cldSystemRoleValues {
+		for _, systemRoleValue := range systemRoleValues {
+			systemRoleValueStr, ok := systemRoleValue.(string)
+			if !ok {
+				return nil, errors.Errorf("system role value should be a string for application template with ID %s", convertedIn.Name)
+			}
 			slisFilter := map[string]interface{}{
-				"productId": v.(string),
+				"productId": systemRoleValueStr,
 				"filter": []map[string]interface{}{
 					{
 						"key":       "$.additionalAttributes.managedBy",
@@ -363,10 +367,10 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 				},
 			}
 
-			filtersFromCldSystemRoles = append(filtersFromCldSystemRoles, slisFilter)
+			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
 		}
 
-		labels[slisFilterLabelKey] = filtersFromCldSystemRoles
+		labels[slisFilterLabelKey] = filtersFromSystemRoles
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)

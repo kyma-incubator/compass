@@ -342,9 +342,6 @@ func (s *SystemFetcher) processSystemsForTenant(ctx context.Context, tenantMappi
 				system.StatusCondition = app.Status.Condition
 			}
 
-			if system.TemplateID == "" {
-				return nil
-			}
 			appInput, err := s.convertSystemToAppRegisterInput(ctx, system)
 			if err != nil {
 				return err

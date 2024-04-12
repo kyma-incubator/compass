@@ -70,6 +70,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 
 	sourceKey := "key"
 	labelFilter := "templateProp"
+	slisFilterLabelKey := "slisFilter"
 
 	tenantID := "tenantId1"
 	syncTimestampID := "timestampId1"
@@ -90,7 +91,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		SystemRPSLimit:  15,
 	}, mock.httpClient, mock.jwtClient)
 
-	t.Run("No fetched systems when system payload does not match any application template", func(t *testing.T) {
+	t.Run("No saved systems when system payload does not match any application template", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantModel, emptySystemSynchronizationTimestamps)
@@ -98,7 +99,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 		require.Len(t, systems, 0)
 	})
 
-	t.Run("No fetched systems when system payload does not match any application template for customer", func(t *testing.T) {
+	t.Run("No saved systems when system payload does not match any application template for customer", func(t *testing.T) {
 		mock.callNumber = 0
 		mock.pageCount = 1
 		systems, err := client.FetchSystemsForTenant(context.Background(), tenantCustomerModel, emptySystemSynchronizationTimestamps)
@@ -119,8 +120,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -170,8 +171,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter: []systemfetcher.SlisFilter{{
@@ -194,8 +195,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter: []systemfetcher.SlisFilter{{
@@ -256,8 +257,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -307,8 +308,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -347,8 +348,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type1"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type1",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -365,8 +366,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type2"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type2",
 							Filter:    make([]systemfetcher.SlisFilter, 0),
@@ -383,8 +384,8 @@ func TestFetchSystemsForTenant(t *testing.T) {
 						Key:   labelFilter,
 						Value: []interface{}{"type3"},
 					},
-					"slisFilter": {
-						Key: "slisFilter",
+					slisFilterLabelKey: {
+						Key: slisFilterLabelKey,
 						Value: []systemfetcher.ProductIDFilterMapping{{
 							ProductID: "type3",
 							Filter:    make([]systemfetcher.SlisFilter, 0),

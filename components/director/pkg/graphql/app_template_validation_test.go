@@ -402,6 +402,7 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 	validSystemRolesOneValue2 := []interface{}{"role2"}
 	validSystemRolesTwoValues := []interface{}{"role1", "role2"}
 	invalidSystemRoleValueIsNotString := []interface{}{1}
+	emptySystemRole := []interface{}{}
 
 	validSlisFilterOneValue := []interface{}{
 		map[string]interface{}{
@@ -424,11 +425,6 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 		},
 	}
 
-	labelsInputWithSystemRole := fixLabelsInputWithSystemRole(validSystemRolesOneValue1)
-	labelsInputWithSystemRoleAndSlisFilter := fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, validSlisFilterOneValue)
-
-	labelsInputWithMissingSystemRole := fixLabelsInputWithSystemRoleAndSlisFilter([]interface{}{}, validSlisFilterOneValue)
-
 	testCases := []struct {
 		Name  string
 		Value graphql.Labels
@@ -436,12 +432,12 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 	}{
 		{
 			Name:  "Valid with system roles",
-			Value: labelsInputWithSystemRole,
+			Value: fixLabelsInputWithSystemRole(validSystemRolesOneValue1),
 			Valid: true,
 		},
 		{
 			Name:  "Valid with system roles and slis filter",
-			Value: labelsInputWithSystemRoleAndSlisFilter,
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, validSlisFilterOneValue),
 			Valid: true,
 		},
 		{
@@ -456,11 +452,11 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 		},
 		{
 			Name:  "Not valid - missing system role when slis filter is defined",
-			Value: labelsInputWithMissingSystemRole,
+			Value: fixLabelsInputWithSystemRoleAndSlisFilter(emptySystemRole, validSlisFilterOneValue),
 			Valid: false,
 		},
 		{
-			Name:  "Not valid - value of cld system role is not a string",
+			Name:  "Not valid - value of system role should be a string",
 			Value: fixLabelsInputWithSystemRoleAndSlisFilter(invalidSystemRoleValueIsNotString, validSlisFilterOneValue),
 			Valid: false,
 		},
@@ -485,12 +481,12 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 			Valid: false,
 		},
 		{
-			Name:  "Not valid - cld system roles count does not match the product ids count in slis filter",
+			Name:  "Not valid - system roles count does not match the product ids count in slis filter",
 			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesTwoValues, validSlisFilterOneValue),
 			Valid: false,
 		},
 		{
-			Name:  "Not valid - cld system roles don't match with product ids in slis filter",
+			Name:  "Not valid - system roles don't match with product ids in slis filter",
 			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue2, validSlisFilterOneValue),
 			Valid: false,
 		},

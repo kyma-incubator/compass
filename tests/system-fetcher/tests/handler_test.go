@@ -135,7 +135,7 @@ const (
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type2",
-        "%s": "val2",
+        "%s": "val1",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
@@ -149,6 +149,7 @@ const (
 	displayNamePlaceholder  = "display-name"
 	regionLabelKey          = "region"
 	applicationTypeLabelKey = "applicationType"
+	slisFilterLabelKey      = "slisFilter"
 )
 
 var (
@@ -194,6 +195,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	description1 := "name1"
@@ -722,7 +724,7 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 	tenants := []string{tenant.TestTenants.GetDefaultTenantID(), tenant.TestTenants.GetDefaultCustomerTenantID()}
 	tenantName1 := "default"
 	tenant1 := tenant.TestTenants.GetDefaultTenantID()
-	//for index, tenantID := range tenants {
+
 	setMultipleMockSystemsResponses(t, tenant1)
 	defer cleanupMockSystems(t)
 
@@ -899,7 +901,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"%s": "val1",
-"systemId": "id",
+        "systemId": "id",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
@@ -1065,9 +1067,6 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 
 func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
-	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
-	defer cleanupMockSystems(t)
 
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
@@ -1085,43 +1084,160 @@ func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
 	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
-	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, []interface{}{"val1"}))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
-	require.NoError(t, err)
-	require.NotEmpty(t, template.ID)
-
-	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
-
-	description1 := "name1"
-	baseUrl := "http://mainurl.com"
-	expectedApps := []directorSchema.ApplicationExt{
-		{
-			Application: directorSchema.Application{
-				Name:                  "name1",
-				Description:           &description1,
-				BaseURL:               &baseUrl,
-				ApplicationTemplateID: &template.ID,
-				SystemNumber:          str.Ptr("1"),
-				IntegrationSystemID:   &intSys.ID,
+	t.Run("Save 1 system from system payload that has systemId matching with the app template slis filter value", func(t *testing.T) {
+		mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+		setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+		defer cleanupMockSystems(t)
+		appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+		labels := map[string]interface{}{
+			cfg.TemplateLabelFilter: []interface{}{"val1"},
+			slisFilterLabelKey: []map[string]interface{}{
+				{
+					"productId": "val1",
+					"filter": []map[string]interface{}{
+						{
+							"key":       "$.systemId",
+							"value":     []string{"system-id-1"},
+							"operation": "include",
+						},
+					},
+				},
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
-		},
-	}
+		}
 
-	resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
-	for _, app := range resp.Data {
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
-	}
+		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, labels))
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+		require.NoError(t, err)
+		require.NotEmpty(t, template.ID)
 
-	req := fixtures.FixGetApplicationBySystemNumberRequest("1")
-	var appResp directorSchema.ApplicationExt
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
-	require.NoError(t, err)
-	require.Equal(t, "name1", appResp.Name)
+		triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+		waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
-	require.ElementsMatch(t, expectedApps, actualApps)
+		description1 := "name1"
+		baseUrl := "http://mainurl.com"
+		expectedApps := []directorSchema.ApplicationExt{
+			{
+				Application: directorSchema.Application{
+					Name:                  "name1",
+					Description:           &description1,
+					BaseURL:               &baseUrl,
+					ApplicationTemplateID: &template.ID,
+					SystemNumber:          str.Ptr("1"),
+					IntegrationSystemID:   &intSys.ID,
+				},
+				Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
+			},
+		}
+
+		resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+		for _, app := range resp.Data {
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+
+		req := fixtures.FixGetApplicationBySystemNumberRequest("1")
+		var appResp directorSchema.ApplicationExt
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+		require.NoError(t, err)
+		require.Equal(t, "name1", appResp.Name)
+
+		require.ElementsMatch(t, expectedApps, actualApps)
+	})
+	t.Run("Save 1 system from system payload that satisfies the exclude filter", func(t *testing.T) {
+		mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+		setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+		defer cleanupMockSystems(t)
+		appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+		labels := map[string]interface{}{
+			cfg.TemplateLabelFilter: []interface{}{"val1"},
+			slisFilterLabelKey: []map[string]interface{}{
+				{
+					"productId": "val1",
+					"filter": []map[string]interface{}{
+						{
+							"key":       "$.additionalAttributes.systemSCPLandscapeID",
+							"value":     []string{"cf-eu10"},
+							"operation": "exclude",
+						},
+					},
+				},
+			},
+		}
+
+		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, labels))
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+		require.NoError(t, err)
+		require.NotEmpty(t, template.ID)
+
+		triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+		waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
+
+		description2 := "name2"
+		baseUrl := "http://mainurl.com"
+		expectedApps := []directorSchema.ApplicationExt{
+			{
+				Application: directorSchema.Application{
+					Name:                  "name2",
+					Description:           &description2,
+					BaseURL:               &baseUrl,
+					ApplicationTemplateID: &template.ID,
+					SystemNumber:          str.Ptr("2"),
+					IntegrationSystemID:   &intSys.ID,
+				},
+				Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, ""),
+			},
+		}
+
+		resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+		for _, app := range resp.Data {
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+
+		req := fixtures.FixGetApplicationBySystemNumberRequest("2")
+		var appResp directorSchema.ApplicationExt
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+		require.NoError(t, err)
+		require.Equal(t, "name2", appResp.Name)
+
+		require.ElementsMatch(t, expectedApps, actualApps)
+	})
+	t.Run("Save 0 systems from system payload because the slis filter is not satisfied", func(t *testing.T) {
+		mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+		setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+		defer cleanupMockSystems(t)
+		appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+		labels := map[string]interface{}{
+			cfg.TemplateLabelFilter: []interface{}{"val1"},
+			slisFilterLabelKey: []map[string]interface{}{
+				{
+					"productId": "val1",
+					"filter": []map[string]interface{}{
+						{
+							"key":       "$.type",
+							"value":     []string{"type4", "type5"},
+							"operation": "include",
+						},
+					},
+				},
+			},
+		}
+
+		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, labels))
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+		require.NoError(t, err)
+		require.NotEmpty(t, template.ID)
+
+		triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+		waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 0)
+
+		expectedApps := []directorSchema.ApplicationExt{}
+
+		resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+		for _, app := range resp.Data {
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+
+		require.ElementsMatch(t, expectedApps, actualApps)
+	})
 }
 
 // fail
@@ -1808,7 +1924,7 @@ func fixApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles
 func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []interface{}, region string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := fixRegionalApplicationTemplate(name, intSystemID, region)
 	appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRoles
-	appTemplateInput.Labels["slisFilter"] = []map[string]interface{}{
+	appTemplateInput.Labels[slisFilterLabelKey] = []map[string]interface{}{
 		{
 			"productId": systemRoles[0],
 			"filter": []map[string]interface{}{
@@ -1824,23 +1940,9 @@ func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, sys
 	return appTemplateInput
 }
 
-func fixApplicationTemplateWithSystemRoleAndSlisFilter(name, intSystemID string, systemRoles []interface{}) directorSchema.ApplicationTemplateInput {
+func fixApplicationTemplateWithSystemRoleAndSlisFilter(name, intSystemID string, labels map[string]interface{}) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := fixApplicationTemplate(name, intSystemID)
-	appTemplateInput.Labels = map[string]interface{}{
-		cfg.TemplateLabelFilter: systemRoles,
-		"slisFilter": []map[string]interface{}{
-			{
-				"productId": systemRoles[0],
-				"filter": []map[string]interface{}{
-					{
-						"key":       "$.systemId",
-						"value":     []string{"system-id-1"},
-						"operation": "include",
-					},
-				},
-			},
-		},
-	}
+	appTemplateInput.Labels = labels
 
 	return appTemplateInput
 }

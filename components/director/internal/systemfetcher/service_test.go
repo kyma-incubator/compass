@@ -293,7 +293,7 @@ func TestSyncSystems(t *testing.T) {
 			setupDirectorClient: emptySetupDirectorClient,
 		},
 		{
-			name: "Success with one tenant and no fetched systems, because no system matches any application template",
+			name: "Success with one tenant and no saved systems, because no system matches any application template",
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				mockedTx, transactioner := txtest.NewTransactionContextGenerator(nil).ThatSucceedsMultipleTimes(3)
 				return mockedTx, transactioner
