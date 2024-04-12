@@ -219,8 +219,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			// So we can verify the destination creator will not fail if in the configuration there is no destination information
 			constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
 			defer func() {
-				for i := len(constraintCleanupFunctions) - 1; i >= 0; i-- {
-					constraintCleanupFunctions[i]()
+				for _, cleanup := range constraintCleanupFunctions {
+					cleanup()
 				}
 			}()
 
@@ -361,8 +361,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 			require.NotEmpty(t, firstConstraint.ID)
 
-			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
 			defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, ft.ID)
+			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
 
 			// second constraint
 			secondConstraintInput := graphql.FormationConstraintInput{
@@ -380,8 +380,8 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
 			require.NotEmpty(t, secondConstraint.ID)
 
-			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
 			defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, ft.ID)
+			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
 
 			// create formation
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)

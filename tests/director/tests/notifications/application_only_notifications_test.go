@@ -345,8 +345,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		// So we can verify the destination creator will not fail if in the configuration there is no destination information
 		constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
 		defer func() {
-			for i := len(constraintCleanupFunctions) - 1; i >= 0; i-- {
-				constraintCleanupFunctions[i]()
+			for _, cleanup := range constraintCleanupFunctions {
+				cleanup()
 			}
 		}()
 
@@ -641,8 +641,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		// So we can verify the destination creator will not fail if in the configuration there is no destination information
 		constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
 		defer func() {
-			for i := len(constraintCleanupFunctions) - 1; i >= 0; i-- {
-				constraintCleanupFunctions[i]()
+			for _, cleanup := range constraintCleanupFunctions {
+				cleanup()
 			}
 		}()
 

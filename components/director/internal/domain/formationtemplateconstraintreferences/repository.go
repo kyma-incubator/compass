@@ -64,7 +64,7 @@ func (r *repository) ListByConstraintID(ctx context.Context, constraintID string
 	var entityCollection EntityCollection
 
 	if err := r.lister.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(formationConstraintColumn, constraintID)); err != nil {
-		return nil, errors.Wrap(err, "while listing formationTemplate-constraint references by constraint ID")
+		return nil, errors.Wrapf(err, "while listing formationTemplate-constraint references by constraint ID for constraint ID: %q", constraintID)
 	}
 	return r.multipleFromEntities(entityCollection)
 }

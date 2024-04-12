@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
@@ -170,7 +169,7 @@ func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationI
 }
 
 func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, formationTemplate graphql.FormationTemplate, statusReturnedConstraintResourceType, sendNotificationConstraintResourceType graphql.ResourceType) []func() {
-	deferredFunctions := make([]func(), 0, 2)
+	deferredFunctions := make([]func(), 0, 4)
 	firstConstraintInput := graphql.FormationConstraintInput{
 		Name:            "e2e-destination-creator-notification-status-returned",
 		ConstraintType:  graphql.ConstraintTypePre,
@@ -183,15 +182,15 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 	}
 
 	firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
-	deferredFunctions = append(deferredFunctions, func() {
+	deferredFunctions = append([]func(){func() {
 		fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
-	})
+	}}, deferredFunctions...)
 	require.NotEmpty(t, firstConstraint.ID)
 
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, formationTemplate.ID, formationTemplate.Name)
-	deferredFunctions = append(deferredFunctions, func() {
+	deferredFunctions = append([]func(){func() {
 		fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, formationTemplate.ID)
-	})
+	}}, deferredFunctions...)
 
 	// second constraint
 	secondConstraintInput := graphql.FormationConstraintInput{
@@ -206,67 +205,16 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 	}
 
 	secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
-	deferredFunctions = append(deferredFunctions, func() {
+	deferredFunctions = append([]func(){func() {
 		fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
-	})
+	}}, deferredFunctions...)
 	require.NotEmpty(t, secondConstraint.ID)
 
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, formationTemplate.ID, formationTemplate.Name)
-	deferredFunctions = append(deferredFunctions, func() {
+	deferredFunctions = append([]func(){func() {
 		fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
-	})
+	}}, deferredFunctions...)
 	return deferredFunctions
-}
-
-//func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, formationTemplate graphql.FormationTemplate, statusReturnedConstraintResourceType, sendNotificationConstraintResourceType graphql.ResourceType) {
-//	firstConstraintInput := graphql.FormationConstraintInput{
-//		Name:            "e2e-destination-creator-notification-status-returned",
-//		ConstraintType:  graphql.ConstraintTypePre,
-//		TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-//		Operator:        formationconstraintpkg.DestinationCreator,
-//		ResourceType:    statusReturnedConstraintResourceType,
-//		ResourceSubtype: "ANY",
-//		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .NotificationStatusReport }}\\\"notification_status_report_memory_address\\\":{{ .NotificationStatusReport.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
-//		ConstraintScope: graphql.ConstraintScopeFormationType,
-//	}
-//
-//	firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
-//	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
-//	require.NotEmpty(t, firstConstraint.ID)
-//
-//	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, formationTemplate.ID, formationTemplate.Name)
-//
-//	// second constraint
-//	secondConstraintInput := graphql.FormationConstraintInput{
-//		Name:            "e2e-destination-creator-send-notification",
-//		ConstraintType:  graphql.ConstraintTypePre,
-//		TargetOperation: graphql.TargetOperationSendNotification,
-//		Operator:        formationconstraintpkg.DestinationCreator,
-//		ResourceType:    sendNotificationConstraintResourceType,
-//		ResourceSubtype: "ANY",
-//		InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
-//		ConstraintScope: graphql.ConstraintScopeFormationType,
-//	}
-//
-//	secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
-//	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
-//	require.NotEmpty(t, secondConstraint.ID)
-//
-//	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, formationTemplate.ID, formationTemplate.Name)
-//}
-
-func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjectOne, expectedSubjectSecond string) {
-	t.Logf("Assert trust details are send to the target")
-	notificationItems := assignNotificationAboutApp2.Get("RequestBody.items")
-	app1FromNotification := notificationItems.Array()[0]
-	targetTrustDetails := app1FromNotification.Get("target-trust-details")
-	certificateDetails := targetTrustDetails.Array()[0].String()
-	certificateDetailsSecond := targetTrustDetails.Array()[1].String()
-	require.ElementsMatch(t, []string{certs.SortSubject(expectedSubjectOne), certs.SortSubject(expectedSubjectSecond)}, []string{certificateDetails, certificateDetailsSecond})
-
-	t.Logf("Assert that there are no trust details for the source")
-	sourceTrustDetails := app1FromNotification.Get("source-trust-details")
-	require.Equal(t, 0, len(sourceTrustDetails.Array()))
 }
 
 func cleanupNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) {

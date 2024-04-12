@@ -535,8 +535,8 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			// So we can verify the destination creator will not fail if in the configuration there is no destination information
 			constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeRuntimeContext, graphql.ResourceTypeApplication)
 			defer func() {
-				for i := len(constraintCleanupFunctions) - 1; i >= 0; i-- {
-					constraintCleanupFunctions[i]()
+				for _, cleanup := range constraintCleanupFunctions {
+					cleanup()
 				}
 			}()
 
