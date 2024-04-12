@@ -44,7 +44,7 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 	reverseAssignmentState := tenantMapping.AssignedTenant.ReverseAssignmentState
 	if tenantMapping.Operation == types.OperationAssign {
 		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
-			log.Warn().Msgf("skipping processing tenant mapping notification with $.assignedTenant.state '%s'",
+			log.Warn().Msgf("Skipping processing tenant mapping notification with $.assignedTenant.state '%s'",
 				reverseAssignmentState)
 			p.ReportStatus(ctx, ucl.StatusReport{State: types.StateConfigPending})
 			return
@@ -55,7 +55,7 @@ func (p AsyncProcessor) ProcessTMRequest(ctx context.Context, tenantMapping type
 
 	if err := p.TenantMappingsService.ProcessTenantMapping(ctx, tenantMapping); err != nil {
 		err = errors.Newf("failed to process tenant mapping notification: %w", err)
-		log.Err(err)
+		log.Err(err).Send()
 
 		if operation == types.OperationAssign {
 			if errors.Is(err, errors.IASApplicationNotFound) {
@@ -81,9 +81,9 @@ func (p AsyncProcessor) ReportStatus(ctx context.Context, statusReport ucl.Statu
 	log := logger.FromContext(ctx)
 
 	statusReportURL := ctx.Value(locationHeader).(string)
-	log.Info().Msgf("reporting status '%s' to '%s'", statusReport.State, statusReportURL)
+	log.Info().Msgf("Reporting status '%s' to '%s'", statusReport.State, statusReportURL)
 
 	if err := p.UCLService.ReportStatus(ctx, statusReportURL, statusReport); err != nil {
-		log.Error().Msgf("failed to report status to '%s': %s", statusReportURL, err)
+		log.Err(err).Msgf("Failed to report status to '%s'", statusReportURL)
 	}
 }
