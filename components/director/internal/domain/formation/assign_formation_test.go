@@ -233,8 +233,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			TargetType: model.FormationAssignmentTypeRuntimeContext,
 		},
 	}
-
-	asa := model.AutomaticScenarioAssignment{
+	asa := &model.AutomaticScenarioAssignment{
 		ScenarioName:   testFormationName,
 		Tenant:         TntInternalID,
 		TargetTenantID: TargetTenant,
@@ -1547,7 +1546,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			AsaRepoFn: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
-				asaRepo.On("Create", ctx, model.AutomaticScenarioAssignment{ScenarioName: testFormationName, Tenant: TntInternalID, TargetTenantID: TargetTenant}).Return(testErr).Once()
+				asaRepo.On("Create", ctx, asa).Return(testErr).Once()
 
 				return asaRepo
 			},
