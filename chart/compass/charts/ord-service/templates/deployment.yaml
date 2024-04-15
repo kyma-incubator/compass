@@ -109,6 +109,8 @@ spec:
               value: {{ .Values.global.ordService.authTokenPath | quote }}
             - name: DESTINATION_FETCHER_SKIP_SSL_VALIDATION
               value: {{ .Values.global.ordService.skipSSLValidation | quote }}
+            - name: SPECIFICATION_PROTOCOL
+              value: {{ .Values.global.ordService.specification.protocol }}
           livenessProbe:
             httpGet:
               port: {{.Values.deployment.args.containerPort }}

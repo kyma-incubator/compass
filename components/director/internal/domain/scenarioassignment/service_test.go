@@ -50,7 +50,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(model.AutomaticScenarioAssignment{}, fixError()).Once()
+		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(nil, fixError()).Once()
 		sut := scenarioassignment.NewService(mockRepo, nil)
 
 		// WHEN
@@ -65,7 +65,7 @@ func TestService_ListForTargetTenant(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		// GIVEN
 		assignment := fixModel()
-		result := []*model.AutomaticScenarioAssignment{&assignment}
+		result := []*model.AutomaticScenarioAssignment{assignment}
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("ListForTargetTenant", mock.Anything, tenantID, targetTenantID).Return(result, nil).Once()
@@ -109,7 +109,7 @@ func TestService_List(t *testing.T) {
 	mod1 := fixModelWithScenarioName("foo")
 	mod2 := fixModelWithScenarioName("bar")
 	modItems := []*model.AutomaticScenarioAssignment{
-		&mod1, &mod2,
+		mod1, mod2,
 	}
 
 	modelPage := fixModelPageWithItems(modItems)

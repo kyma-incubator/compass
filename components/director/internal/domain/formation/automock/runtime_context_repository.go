@@ -19,6 +19,10 @@ type RuntimeContextRepository struct {
 func (_m *RuntimeContextRepository) ExistsByRuntimeID(ctx context.Context, tenant string, rtmID string) (bool, error) {
 	ret := _m.Called(ctx, tenant, rtmID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ExistsByRuntimeID")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
@@ -42,6 +46,10 @@ func (_m *RuntimeContextRepository) ExistsByRuntimeID(ctx context.Context, tenan
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
 
 	var r0 *model.RuntimeContext
 	var r1 error
@@ -69,6 +77,10 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant string, runtimeID string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, runtimeID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByRuntimeID")
+	}
+
 	var r0 *model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
@@ -94,6 +106,10 @@ func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant s
 // ListByIDs provides a mock function with given fields: ctx, tenant, ids
 func (_m *RuntimeContextRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByIDs")
+	}
 
 	var r0 []*model.RuntimeContext
 	var r1 error
@@ -121,6 +137,10 @@ func (_m *RuntimeContextRepository) ListByIDs(ctx context.Context, tenant string
 func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, scenarios)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenarios")
+	}
+
 	var r0 []*model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.RuntimeContext, error)); ok {
@@ -146,6 +166,10 @@ func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant 
 // ListByScenariosAndRuntimeIDs provides a mock function with given fields: ctx, tenant, scenarios, runtimeIDs
 func (_m *RuntimeContextRepository) ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, scenarios, runtimeIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenariosAndRuntimeIDs")
+	}
 
 	var r0 []*model.RuntimeContext
 	var r1 error

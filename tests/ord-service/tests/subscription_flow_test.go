@@ -377,7 +377,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Eventually(stdT, func() bool {
 			params := url.Values{}
 			params.Add("$format", "json")
-			params.Add("$expand", "consumptionBundles($expand=destinations)")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
 			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
@@ -424,7 +424,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
 		params = url.Values{}
 		params.Add("$format", "json")
-		params.Add("$expand", "consumptionBundles($expand=destinations)")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
 		params.Add("reload", "true")
 		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
 			"/systemInstances?", headers, params)
@@ -692,7 +692,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Eventually(stdT, func() bool {
 			params := url.Values{}
 			params.Add("$format", "json")
-			params.Add("$expand", "consumptionBundles($expand=destinations)")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
 			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 
 			appName := gjson.Get(respBody, "title").String()
@@ -732,7 +732,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - reload
 		params = url.Values{}
 		params.Add("$format", "json")
-		params.Add("$expand", "consumptionBundles($expand=destinations)")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
 		params.Add("reload", "true")
 		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
@@ -1000,7 +1000,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Eventually(stdT, func() bool {
 			params = url.Values{}
 			params.Add("$format", "json")
-			params.Add("$expand", "consumptionBundles($expand=destinations)")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
 			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
@@ -1047,7 +1047,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
 		params = url.Values{}
 		params.Add("$format", "json")
-		params.Add("$expand", "consumptionBundles($expand=destinations)")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
 		params.Add("reload", "true")
 		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
 			"/systemInstances?", headers, params)

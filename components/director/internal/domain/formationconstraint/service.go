@@ -24,6 +24,7 @@ type formationConstraintRepository interface {
 type formationTemplateConstraintReferenceRepository interface {
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error)
 	ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([]*model.FormationTemplateConstraintReference, error)
+	ListByConstraintID(ctx context.Context, constraintID string) ([]*model.FormationTemplateConstraintReference, error)
 }
 
 //go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -150,6 +151,20 @@ func (s *service) ListByFormationTemplateIDs(ctx context.Context, formationTempl
 
 // Delete deletes formation constraint by id
 func (s *service) Delete(ctx context.Context, id string) error {
+	formationTemplateConstraintReferences, err := s.formationTemplateConstraintReferenceRepo.ListByConstraintID(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while listing Formation Template Constraint References for Constraint with ID %s", id)
+	}
+
+	formationTemplateIDs := make([]string, 0, len(formationTemplateConstraintReferences))
+	for _, reference := range formationTemplateConstraintReferences {
+		formationTemplateIDs = append(formationTemplateIDs, reference.FormationTemplateID)
+	}
+
+	if len(formationTemplateConstraintReferences) > 0 {
+		return errors.Errorf("cannot delete Formation Constraint with ID %s because it is used by Formation Templates with IDs %v", id, formationTemplateIDs)
+	}
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Constraint with ID %s", id)
 	}

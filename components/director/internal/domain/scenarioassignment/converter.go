@@ -16,7 +16,7 @@ func NewConverter() *converter {
 type converter struct{}
 
 // ToGraphQL converts from internal model to GraphQL output
-func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
+func (c *converter) ToGraphQL(in *model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
 	return graphql.AutomaticScenarioAssignment{
 		ScenarioName: in.ScenarioName,
 		Selector: &graphql.Label{
@@ -27,7 +27,7 @@ func (c *converter) ToGraphQL(in model.AutomaticScenarioAssignment, targetTenant
 }
 
 // ToEntity converts from internal model to entity
-func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
+func (c *converter) ToEntity(in *model.AutomaticScenarioAssignment) Entity {
 	return Entity{
 		TenantID:       in.Tenant,
 		Scenario:       in.ScenarioName,
@@ -36,8 +36,8 @@ func (c *converter) ToEntity(in model.AutomaticScenarioAssignment) Entity {
 }
 
 // FromEntity converts from entity to internal model
-func (c *converter) FromEntity(in Entity) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+func (c *converter) FromEntity(in Entity) *model.AutomaticScenarioAssignment {
+	return &model.AutomaticScenarioAssignment{
 		ScenarioName:   in.Scenario,
 		Tenant:         in.TenantID,
 		TargetTenantID: in.TargetTenantID,

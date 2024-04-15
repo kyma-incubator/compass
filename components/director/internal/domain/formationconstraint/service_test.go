@@ -3,6 +3,7 @@ package formationconstraint_test
 import (
 	"context"
 	"errors"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -306,11 +307,12 @@ func TestService_Delete(t *testing.T) {
 	testErr := errors.New("test error")
 
 	testCases := []struct {
-		Name                          string
-		Context                       context.Context
-		Input                         string
-		FormationConstraintRepository func() *automock.FormationConstraintRepository
-		ExpectedError                 error
+		Name                                            string
+		Context                                         context.Context
+		Input                                           string
+		FormationConstraintRepository                   func() *automock.FormationConstraintRepository
+		FormationTemplateConstraintReferencesRepository func() *automock.FormationTemplateConstraintReferenceRepository
+		ExpectedErrorMessage                            string
 	}{
 		{
 			Name:    "Success",
@@ -321,7 +323,12 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctx, testID).Return(nil).Once()
 				return repo
 			},
-			ExpectedError: nil,
+			FormationTemplateConstraintReferencesRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
+				repo := &automock.FormationTemplateConstraintReferenceRepository{}
+				repo.On("ListByConstraintID", ctx, testID).Return(nil, nil).Once()
+				return repo
+			},
+			ExpectedErrorMessage: "",
 		},
 		{
 			Name:    "Error when deleting formation constraint",
@@ -332,23 +339,57 @@ func TestService_Delete(t *testing.T) {
 				repo.On("Delete", ctx, testID).Return(testErr).Once()
 				return repo
 			},
-			ExpectedError: testErr,
+			FormationTemplateConstraintReferencesRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
+				repo := &automock.FormationTemplateConstraintReferenceRepository{}
+				repo.On("ListByConstraintID", ctx, testID).Return(nil, nil).Once()
+				return repo
+			},
+			ExpectedErrorMessage: testErr.Error(),
+		},
+		{
+			Name:    "Error when the constraint is attached to formation templates",
+			Context: ctx,
+			Input:   testID,
+			FormationTemplateConstraintReferencesRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
+				repo := &automock.FormationTemplateConstraintReferenceRepository{}
+				repo.On("ListByConstraintID", ctx, testID).Return([]*model.FormationTemplateConstraintReference{formationConstraintReference}, nil).Once()
+				return repo
+			},
+			ExpectedErrorMessage: fmt.Sprintf("cannot delete Formation Constraint with ID %s because it is used by Formation Templates with IDs %v", testID, []string{formationConstraintReference.FormationTemplateID}),
+		},
+		{
+			Name:    "Error when listing formation template constraint references",
+			Context: ctx,
+			Input:   testID,
+			FormationTemplateConstraintReferencesRepository: func() *automock.FormationTemplateConstraintReferenceRepository {
+				repo := &automock.FormationTemplateConstraintReferenceRepository{}
+				repo.On("ListByConstraintID", ctx, testID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErrorMessage: testErr.Error(),
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			formationConstraintRepo := testCase.FormationConstraintRepository()
+			formationConstraintRepo := UnusedFormationConstraintRepository()
+			if testCase.FormationConstraintRepository != nil {
+				formationConstraintRepo = testCase.FormationConstraintRepository()
+			}
+			formationConstraintReferenceRepo := UnusedFormationTemplateConstraintReferenceRepository()
+			if testCase.FormationTemplateConstraintReferencesRepository != nil {
+				formationConstraintReferenceRepo = testCase.FormationTemplateConstraintReferencesRepository()
+			}
 
-			svc := formationconstraint.NewService(formationConstraintRepo, nil, nil, nil)
+			svc := formationconstraint.NewService(formationConstraintRepo, formationConstraintReferenceRepo, nil, nil)
 
 			// WHEN
 			err := svc.Delete(testCase.Context, testCase.Input)
 
 			// THEN
-			if testCase.ExpectedError != nil {
+			if testCase.ExpectedErrorMessage != "" {
 				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+				assert.Contains(t, err.Error(), testCase.ExpectedErrorMessage)
 			} else {
 				assert.NoError(t, err)
 			}
