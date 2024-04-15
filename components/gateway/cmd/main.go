@@ -148,41 +148,52 @@ func createServer(address string, handler http.Handler, readHeadersTimeout time.
 	}
 }
 
-func startServer(parentCtx context.Context, server *http.Server, name string, wg *sync.WaitGroup) {
-	ctx, cancel := context.WithCancel(parentCtx)
-	defer cancel()
-
+func startServer(ctx context.Context, server *http.Server, name string, wg *sync.WaitGroup) {
+	defer wg.Done()
 	go func() {
-		defer wg.Done()
-		<-ctx.Done()
-		stopServer(server)
+		log.C(ctx).Infof("Running %s server on %s...", name, server.Addr)
+		if err := server.ListenAndServe(); !errors.Is(err, http.ErrServerClosed) {
+			log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
+		}
 	}()
 
-	log.C(ctx).Infof("Running %s server on %s...", name, server.Addr)
+	// Wait for the context to be canceled
+	select {
+	case <-ctx.Done():
+		//// Shutdown the server gracefully
+		//log.C(ctx).Infof("Shutting down '%s' HTTP server gracefully...", name)
+		//shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 15*time.Second)
+		//defer cancelShutdown()
+		//
+		//err := server.Shutdown(shutdownCtx)
+		//if err != nil {
+		//	log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s: %v", name, err)
+		//}
 
-	if err := server.ListenAndServe(); err != http.ErrServerClosed {
-		log.C(ctx).Fatalf("Could not listen on %s://%s: %v\n", "http", server.Addr, err)
+		// Shutdown the server gracefully
+		stopServer(server, name)
 	}
 }
 
-func stopServer(server *http.Server) {
+func stopServer(server *http.Server, name string) {
 	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
 	defer cancel()
 
 	go func(ctx context.Context) {
 		<-ctx.Done()
 
-		if ctx.Err() == context.Canceled {
+		if errors.Is(ctx.Err(), context.Canceled) {
 			return
-		} else if ctx.Err() == context.DeadlineExceeded {
+		} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
 			log.C(ctx).Panic("Timeout while stopping the server, killing instance!")
 		}
 	}(ctx)
 
 	server.SetKeepAlivesEnabled(false)
 
+	log.C(ctx).Infof("Shutting down '%s' HTTP server gracefully...", name)
 	if err := server.Shutdown(ctx); err != nil {
-		log.C(ctx).Fatalf("Could not gracefully shutdown the server: %v\n", err)
+		log.C(ctx).Fatalf("Could not gracefully shutdown the server %s: %v\n", name, err)
 	}
 }
 
