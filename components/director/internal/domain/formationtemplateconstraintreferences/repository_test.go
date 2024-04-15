@@ -119,3 +119,35 @@ func TestRepository_ListByFormationTemplateIDs(t *testing.T) {
 
 	suite.Run(t)
 }
+
+func TestRepository_ListByConstraintID(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List Formation Constraints by Constraint ID",
+		MethodName: "ListByConstraintID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT formation_constraint_id, formation_template_id FROM public.formation_template_constraint_references WHERE formation_constraint_id = $1`),
+				IsSelect: true,
+				Args: []driver.Value{
+					constraintID,
+				},
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(entity.FormationTemplateID, entity.ConstraintID)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			}},
+		ConverterMockProvider: func() testdb.Mock {
+			conv := &automock.ConstraintReferenceConverter{}
+			return conv
+		},
+		RepoConstructorFunc:       formationtemplateconstraintreferences.NewRepository,
+		MethodArgs:                []interface{}{constraintID},
+		ExpectedDBEntities:        []interface{}{entity},
+		ExpectedModelEntities:     []interface{}{constraintReference},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}

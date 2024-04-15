@@ -368,7 +368,7 @@ func (a *Authenticator) isFormationAssignmentAuthorized(ctx context.Context, for
 				return false, http.StatusInternalServerError, errors.Wrap(err, "while closing database transaction")
 			}
 
-			log.C(ctx).Infof("The caller with ID: %s and type: %s is allowed to update formation assignments in tenants of type %s", consumerID, consumerType, tnt.Type)
+			log.C(ctx).Infof("The caller with type: %s is allowed to update formation assignments in tenants of type %s", consumerType, tnt.Type)
 			return true, http.StatusOK, nil
 		}
 

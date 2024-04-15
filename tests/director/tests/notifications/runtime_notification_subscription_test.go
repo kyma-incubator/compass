@@ -533,7 +533,12 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 			// Create formation constraints for destination creator operator and attach them to a given formation template.
 			// So we can verify the destination creator will not fail if in the configuration there is no destination information
-			attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeRuntimeContext, graphql.ResourceTypeApplication)
+			constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeRuntimeContext, graphql.ResourceTypeApplication)
+			defer func() {
+				for _, cleanup := range constraintCleanupFunctions {
+					cleanup()
+				}
+			}()
 
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTemplateName)
 			defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)

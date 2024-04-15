@@ -605,7 +605,7 @@ func (r *Resolver) ResynchronizeFormationNotifications(ctx context.Context, form
 
 	updatedFormation, err := r.service.ResynchronizeFormationNotifications(ctx, formationID, shouldReset)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while resynchronizing formation with ID: %s", formationID)
 	}
 
 	if err = tx.Commit(); err != nil {

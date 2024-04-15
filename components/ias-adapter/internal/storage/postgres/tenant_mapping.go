@@ -48,10 +48,10 @@ func (c Connection) ListTenantMappings(ctx context.Context, formationID string) 
 		if err := json.Unmarshal([]byte(tenantMappingJSONString), &tenantMapping); err != nil {
 			return tenantMappings, errors.Newf("failed to unmarshal tenant mapping: %w", err)
 		}
-		if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
+		if err := tenantMapping.AssignedTenant.SetConfiguration(ctx); err != nil {
 			return tenantMappings, errors.Newf("failed to set tenant mapping assigned tenant configuration: %w", err)
 		}
-		tenantMappings[tenantMapping.AssignedTenants[0].UCLApplicationID] = tenantMapping
+		tenantMappings[tenantMapping.AssignedTenant.AppID] = tenantMapping
 	}
 
 	return tenantMappings, nil
@@ -71,7 +71,7 @@ func tenantMappingFields(tenantMapping types.TenantMapping) ([]any, error) {
 	}
 	return []any{
 		tenantMapping.FormationID,
-		tenantMapping.AssignedTenants[0].UCLApplicationID,
+		tenantMapping.AssignedTenant.AppID,
 		string(tenantMappingBytes),
 	}, nil
 }

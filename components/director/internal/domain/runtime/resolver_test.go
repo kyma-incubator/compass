@@ -1332,7 +1332,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
 				assert.NoError(t, err)
 
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(model.AutomaticScenarioAssignment{}, testErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(nil, testErr)
 				return svc
 			},
 			ConverterFn: UnusedRuntimeConverter,
@@ -1368,7 +1368,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.ScenarioAssignmentService{}
 				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
 				assert.NoError(t, err)
-				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(model.AutomaticScenarioAssignment{}, scenarioAssignmentNotFoundErr)
+				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(nil, scenarioAssignmentNotFoundErr)
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -1411,15 +1411,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.ScenarioAssignmentService{}
 				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
 				assert.NoError(t, err)
-				scenarioAssignment := model.AutomaticScenarioAssignment{}
+				scenarioAssignment := &model.AutomaticScenarioAssignment{}
 				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
 				return svc
 			},
 			FormationsSvcFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 
-				scenarioAssignment := model.AutomaticScenarioAssignment{}
-				svc.On("DeleteAutomaticScenarioAssignment", contextParam, scenarioAssignment).Return(testErr)
+				svc.On("DeleteAutomaticScenarioAssignment", contextParam, emptyAssignment).Return(testErr)
 				return svc
 			},
 			ConverterFn: UnusedRuntimeConverter,
@@ -1454,15 +1453,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.ScenarioAssignmentService{}
 				scenarios, err := label.ValueToStringsSlice(singleScenarioLabel.Value)
 				assert.NoError(t, err)
-				scenarioAssignment := model.AutomaticScenarioAssignment{}
+				scenarioAssignment := &model.AutomaticScenarioAssignment{}
 				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment, nil)
 				return svc
 			},
 			FormationsSvcFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 
-				scenarioAssignment := model.AutomaticScenarioAssignment{}
-				svc.On("DeleteAutomaticScenarioAssignment", contextParam, scenarioAssignment).Return(nil)
+				svc.On("DeleteAutomaticScenarioAssignment", contextParam, emptyAssignment).Return(nil)
 				return svc
 			},
 			ConverterFn: func() *automock.RuntimeConverter {
@@ -1506,9 +1504,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
 				assert.NoError(t, err)
 
-				emptyAssignment := model.AutomaticScenarioAssignment{}
-				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
-				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
+				scenarioAssignment1 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
+				scenarioAssignment2 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
 
 				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
 				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(scenarioAssignment1, nil)
@@ -1522,8 +1519,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
 				assert.NoError(t, err)
 
-				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
-				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
+				scenarioAssignment1 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
+				scenarioAssignment2 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
 				svc.On("DeleteAutomaticScenarioAssignment", contextParam, scenarioAssignment1).Return(nil).Once()
 				svc.On("DeleteAutomaticScenarioAssignment", contextParam, scenarioAssignment2).Return(nil).Once()
 				return svc
@@ -1569,10 +1566,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
 				assert.NoError(t, err)
 
-				scenarioAssignment0 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[0]}
-				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
-				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
-				scenarioAssignment3 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[3]}
+				scenarioAssignment0 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[0]}
+				scenarioAssignment1 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
+				scenarioAssignment2 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
+				scenarioAssignment3 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[3]}
 
 				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(scenarioAssignment0, nil)
 				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(scenarioAssignment1, nil)
@@ -1607,10 +1604,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
 				assert.NoError(t, err)
 
-				scenarioAssignment0 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[0]}
-				scenarioAssignment1 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
-				scenarioAssignment2 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
-				scenarioAssignment3 := model.AutomaticScenarioAssignment{ScenarioName: scenarios[3]}
+				scenarioAssignment0 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[0]}
+				scenarioAssignment1 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[1]}
+				scenarioAssignment2 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[2]}
+				scenarioAssignment3 := &model.AutomaticScenarioAssignment{ScenarioName: scenarios[3]}
 
 				svc.On("DeleteAutomaticScenarioAssignment", contextParam, scenarioAssignment0).Return(nil).Once()
 				svc.On("DeleteAutomaticScenarioAssignment", contextParam, scenarioAssignment1).Return(nil).Once()
@@ -1638,8 +1635,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.ScenarioAssignmentService{}
 				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
 				assert.NoError(t, err)
-
-				emptyAssignment := model.AutomaticScenarioAssignment{}
 
 				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
 				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
@@ -1689,8 +1684,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.ScenarioAssignmentService{}
 				scenarios, err := label.ValueToStringsSlice(multiScenariosLabel.Value)
 				assert.NoError(t, err)
-
-				emptyAssignment := model.AutomaticScenarioAssignment{}
 
 				svc.On("GetForScenarioName", contextParam, scenarios[0]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
 				svc.On("GetForScenarioName", contextParam, scenarios[1]).Return(emptyAssignment, scenarioAssignmentNotFoundErr)
