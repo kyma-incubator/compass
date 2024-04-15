@@ -110,6 +110,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
+	if formationassignmentpkg.IsConfigEmpty(string(assignmentReqBody.Configuration)) {
+		assignmentReqBody.Configuration = nil
+	}
+
 	log.C(ctx).Info("Validating formation assignment request body...")
 	if err = assignmentReqBody.Validate(ctx); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
