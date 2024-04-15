@@ -15,9 +15,43 @@ type FormationTemplateConstraintReferenceRepository struct {
 	mock.Mock
 }
 
+// ListByConstraintID provides a mock function with given fields: ctx, constraintID
+func (_m *FormationTemplateConstraintReferenceRepository) ListByConstraintID(ctx context.Context, constraintID string) ([]*model.FormationTemplateConstraintReference, error) {
+	ret := _m.Called(ctx, constraintID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByConstraintID")
+	}
+
+	var r0 []*model.FormationTemplateConstraintReference
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationTemplateConstraintReference, error)); ok {
+		return rf(ctx, constraintID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.FormationTemplateConstraintReference); ok {
+		r0 = rf(ctx, constraintID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationTemplateConstraintReference)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, constraintID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByFormationTemplateID provides a mock function with given fields: ctx, formationTemplateID
 func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error) {
 	ret := _m.Called(ctx, formationTemplateID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByFormationTemplateID")
+	}
 
 	var r0 []*model.FormationTemplateConstraintReference
 	var r1 error
@@ -44,6 +78,10 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 // ListByFormationTemplateIDs provides a mock function with given fields: ctx, formationTemplateIDs
 func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([]*model.FormationTemplateConstraintReference, error) {
 	ret := _m.Called(ctx, formationTemplateIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByFormationTemplateIDs")
+	}
 
 	var r0 []*model.FormationTemplateConstraintReference
 	var r1 error

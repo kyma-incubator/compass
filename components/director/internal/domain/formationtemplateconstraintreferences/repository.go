@@ -59,6 +59,16 @@ func (r *repository) ListByFormationTemplateIDs(ctx context.Context, formationTe
 	return r.multipleFromEntities(entityCollection)
 }
 
+// ListByConstraintID lists formationTemplateConstraintReferences for the provided constraint ID
+func (r *repository) ListByConstraintID(ctx context.Context, constraintID string) ([]*model.FormationTemplateConstraintReference, error) {
+	var entityCollection EntityCollection
+
+	if err := r.lister.ListGlobal(ctx, &entityCollection, repo.NewEqualCondition(formationConstraintColumn, constraintID)); err != nil {
+		return nil, errors.Wrapf(err, "while listing formationTemplate-constraint references by constraint ID for constraint ID: %q", constraintID)
+	}
+	return r.multipleFromEntities(entityCollection)
+}
+
 // Create stores new formationTemplateConstraintReference in the database
 func (r *repository) Create(ctx context.Context, item *model.FormationTemplateConstraintReference) error {
 	if item == nil {
