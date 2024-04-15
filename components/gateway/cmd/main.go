@@ -160,16 +160,6 @@ func startServer(ctx context.Context, server *http.Server, name string, wg *sync
 	// Wait for the context to be canceled
 	select {
 	case <-ctx.Done():
-		//// Shutdown the server gracefully
-		//log.C(ctx).Infof("Shutting down '%s' HTTP server gracefully...", name)
-		//shutdownCtx, cancelShutdown := context.WithTimeout(context.Background(), 15*time.Second)
-		//defer cancelShutdown()
-		//
-		//err := server.Shutdown(shutdownCtx)
-		//if err != nil {
-		//	log.C(ctx).WithError(err).Errorf("An error has occurred while shutting down HTTP server %s: %v", name, err)
-		//}
-
 		// Shutdown the server gracefully
 		stopServer(server, name)
 	}
