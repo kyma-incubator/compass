@@ -64,8 +64,8 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
-	h.acceptAndExecute(ctx, func(execCtx context.Context) {
-		h.AsyncProcessor.ProcessTMRequest(execCtx, tenantMapping)
+	h.processAsynchronously(ctx, func(asyncCtx context.Context) {
+		h.AsyncProcessor.ProcessTMRequest(asyncCtx, tenantMapping)
 	})
 }
 
@@ -98,16 +98,16 @@ func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, 
 	}
 
 	logger.FromContext(ctx).Info().Msgf("%s. Responding OK as assignment is safe to remove", err.Error())
-	h.acceptAndExecute(ctx, func(execCtx context.Context) {
-		h.AsyncProcessor.ReportStatus(execCtx, ucl.StatusReport{State: types.ReadyState(operation)})
+	h.processAsynchronously(ctx, func(asyncCtx context.Context) {
+		h.AsyncProcessor.ReportStatus(asyncCtx, ucl.StatusReport{State: types.ReadyState(operation)})
 	})
 }
 
-func (h TenantMappingsHandler) acceptAndExecute(ctx *gin.Context, execute func(execCtx context.Context)) {
+func (h TenantMappingsHandler) processAsynchronously(ctx *gin.Context, processAsync func(asyncCtx context.Context)) {
 	go func() {
 		newCtx := ctx.Copy()
 		<-ctx.Request.Context().Done()
-		execute(newCtx)
+		processAsync(newCtx)
 	}()
 	ctx.AbortWithStatus(http.StatusAccepted)
 }
