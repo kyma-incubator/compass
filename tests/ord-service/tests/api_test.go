@@ -174,6 +174,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service do not have tenant header", func(t *testing.T) {
 		params := url.Values{}
+		params.Add("$select", "id,title")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/consumptionBundles?" + params.Encode()
@@ -182,6 +183,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service have wrong tenant header", func(t *testing.T) {
 		params := url.Values{}
+		params.Add("$select", "id,title")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/consumptionBundles?" + params.Encode()
@@ -190,6 +192,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service api specification do not have tenant header", func(t *testing.T) {
 		params := url.Values{}
+		params.Add("$select", "id,resourceDefinitions")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/apis?" + params.Encode()
@@ -205,6 +208,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service event specification do not have tenant header", func(t *testing.T) {
 		params := url.Values{}
+		params.Add("$select", "id,resourceDefinitions")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/events?" + params.Encode()
@@ -220,6 +224,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service api specification have wrong tenant header", func(t *testing.T) {
 		params := url.Values{}
+		params.Add("$select", "id,resourceDefinitions")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/apis?" + params.Encode()
@@ -235,6 +240,7 @@ func TestORDService(t *testing.T) {
 
 	t.Run("400 when requests to ORD Service event specification have wrong tenant header", func(t *testing.T) {
 		params := url.Values{}
+		params.Add("$select", "id,resourceDefinitions")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/events?" + params.Encode()
@@ -249,11 +255,19 @@ func TestORDService(t *testing.T) {
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to configured default response type when Accept header allows everything", func(t *testing.T) {
-		makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {defaultTestTenant}})
+		params := url.Values{}
+		params.Add("$select", "id,title")
+		serviceURL := conf.ORDServiceURL + "/consumptionBundles?" + params.Encode()
+
+		makeRequestWithHeaders(t, intSystemHttpClient, serviceURL, map[string][]string{acceptHeader: {"*/*"}, tenantHeader: {defaultTestTenant}})
 	})
 
 	t.Run("Requesting entities without specifying response format falls back to response type specified by Accept header when it provides a specific type", func(t *testing.T) {
-		makeRequestWithHeaders(t, intSystemHttpClient, conf.ORDServiceURL+"/consumptionBundles", map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {defaultTestTenant}})
+		params := url.Values{}
+		params.Add("$select", "id,title")
+		serviceURL := conf.ORDServiceURL + "/consumptionBundles?" + params.Encode()
+
+		makeRequestWithHeaders(t, intSystemHttpClient, serviceURL, map[string][]string{acceptHeader: {"application/json"}, tenantHeader: {defaultTestTenant}})
 	})
 
 	t.Run("Requesting Packages returns empty", func(t *testing.T) {
@@ -269,7 +283,8 @@ func TestORDService(t *testing.T) {
 	t.Run("Requesting filtering of Bundles that do not have only ODATA APIs", func(t *testing.T) {
 		params := url.Values{}
 		params.Add("$filter", "apis/any(d:d/apiProtocol ne 'odata-v2')")
-		params.Add("$expand", "apis")
+		params.Add("$select", "title,description")
+		params.Add("$expand", "apis($select=apiProtocol)")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
@@ -297,7 +312,8 @@ func TestORDService(t *testing.T) {
 	t.Run("Requesting filtering of Bundles that have only ODATA APIs", func(t *testing.T) {
 		params := url.Values{}
 		params.Add("$filter", "apis/all(d:d/apiProtocol eq 'odata-v2')")
-		params.Add("$expand", "apis")
+		params.Add("$select", "title,description")
+		params.Add("$expand", "apis($select=apiProtocol)")
 		params.Add("$format", "json")
 
 		serviceURL := conf.ORDServiceURL + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
@@ -413,7 +429,7 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting System Instances with apis for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := url.Values{}
-			params.Add("$expand", "apis")
+			params.Add("$expand", "apis($select=id,title,description,entryPoints,partOfConsumptionBundles,releaseStatus,apiProtocol,resourceDefinitions)")
 			params.Add("$format", "json")
 
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/systemInstances?", testData.headers, params)
@@ -426,7 +442,7 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting System Instances with events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := url.Values{}
-			params.Add("$expand", "events")
+			params.Add("$expand", "events($select=id,title,description,partOfConsumptionBundles,releaseStatus,resourceDefinitions)")
 			params.Add("$format", "json")
 
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/systemInstances?", testData.headers, params)
@@ -439,6 +455,7 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting Bundles for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := url.Values{}
+			params.Add("$select", "title,description")
 			params.Add("$format", "json")
 
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
@@ -450,6 +467,7 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting APIs and their specs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := url.Values{}
+			params.Add("$select", "id,title,description,entryPoints,partOfConsumptionBundles,releaseStatus,apiProtocol,resourceDefinitions")
 			params.Add("$format", "json")
 
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/apis?", testData.headers, params)
@@ -459,6 +477,7 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting Events and their specs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := url.Values{}
+			params.Add("$select", "id,title,description,partOfConsumptionBundles,releaseStatus,resourceDefinitions")
 			params.Add("$format", "json")
 
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/events?", testData.headers, params)
@@ -472,6 +491,7 @@ func TestORDService(t *testing.T) {
 			params := url.Values{}
 			params.Add("$top", "10")
 			params.Add("$skip", "0")
+			params.Add("$select", "id,title")
 			params.Add("$format", "json")
 
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
@@ -480,6 +500,7 @@ func TestORDService(t *testing.T) {
 			params = url.Values{}
 			params.Add("$top", "10")
 			params.Add("$skip", fmt.Sprintf("%d", totalCount))
+			params.Add("$select", "id,title")
 			params.Add("$format", "json")
 
 			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
@@ -490,13 +511,14 @@ func TestORDService(t *testing.T) {
 			totalCount := len(testData.appInput.Bundles[0].APIDefinitions)
 			params := urlpkg.Values{}
 
-			params.Add("$expand", "apis($top=10)")
+			params.Add("$select", "id,title")
+			params.Add("$expand", "apis($top=10;$select=id,title)")
 			params.Add("$format", "json")
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.apis").Array()))
 
 			expectedItemCount := 1
-			params.Set("$expand", fmt.Sprintf("apis($top=10;$skip=%d)", totalCount-expectedItemCount))
+			params.Set("$expand", fmt.Sprintf("apis($top=10;$skip=%d;$select=id,title)", totalCount-expectedItemCount))
 			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
@@ -505,13 +527,14 @@ func TestORDService(t *testing.T) {
 			totalCount := len(testData.appInput.Bundles[0].EventDefinitions)
 			params := urlpkg.Values{}
 
-			params.Add("$expand", "events($top=10)")
+			params.Add("$select", "id,title")
+			params.Add("$expand", "events($top=10;$select=id,title)")
 			params.Add("$format", "json")
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, totalCount, len(gjson.Get(respBody, "value.0.events").Array()))
 
 			expectedItemCount := 1
-			params.Set("$expand", fmt.Sprintf("events($top=10;$skip=%d)", totalCount-expectedItemCount))
+			params.Set("$expand", fmt.Sprintf("events($top=10;$skip=%d;$select=id,title)", totalCount-expectedItemCount))
 			respBody = makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
 			require.Equal(t, expectedItemCount, len(gjson.Get(respBody, "value").Array()))
 		})
@@ -522,6 +545,7 @@ func TestORDService(t *testing.T) {
 
 			params := urlpkg.Values{}
 			params.Add("$filter", fmt.Sprintf("(title eq '%s')", bndlName))
+			params.Add("$select", "id,title")
 			params.Add("$format", "json")
 			serviceURL := testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody := makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
@@ -539,13 +563,14 @@ func TestORDService(t *testing.T) {
 
 			params := urlpkg.Values{}
 
-			params.Add("$expand", fmt.Sprintf("apis($filter=(title eq '%s'))", apiName))
+			params.Add("$expand", fmt.Sprintf("apis($filter=(title eq '%s');$select=id,title)", apiName))
+			params.Add("$select", "id,title")
 			params.Add("$format", "json")
 			serviceURL := testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody := makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
 			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
-			params.Set("$expand", fmt.Sprintf("apis($filter=(title ne '%s'))", apiName))
+			params.Set("$expand", fmt.Sprintf("apis($filter=(title ne '%s');$select=id,title)", apiName))
 			serviceURL = testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody = makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
 			require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.apis").Array()))
@@ -556,13 +581,14 @@ func TestORDService(t *testing.T) {
 			eventName := testData.appInput.Bundles[0].EventDefinitions[0].Name
 
 			params := urlpkg.Values{}
-			params.Add("$expand", fmt.Sprintf("events($filter=(title eq '%s'))", eventName))
+			params.Add("$expand", fmt.Sprintf("events($filter=(title eq '%s');$select=id,title)", eventName))
+			params.Add("$select", "id,title")
 			params.Add("$format", "json")
 			serviceURL := testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody := makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
 			require.Equal(t, 1, len(gjson.Get(respBody, "value").Array()))
 
-			params.Set("$expand", fmt.Sprintf("events($filter=(title ne '%s'))", eventName))
+			params.Set("$expand", fmt.Sprintf("events($filter=(title ne '%s');$select=id,title)", eventName))
 			serviceURL = testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody = makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
 			require.Equal(t, totalCount-1, len(gjson.Get(respBody, "value.0.events").Array()))
@@ -583,6 +609,7 @@ func TestORDService(t *testing.T) {
 		t.Run(fmt.Sprintf("Requesting projection of Bundle APIs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := urlpkg.Values{}
 
+			params.Add("$select", "id,title")
 			params.Add("$expand", "apis($select=title)")
 			params.Add("$format", "json")
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
@@ -603,6 +630,7 @@ func TestORDService(t *testing.T) {
 		t.Run(fmt.Sprintf("Requesting projection of Bundle Events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := urlpkg.Values{}
 
+			params.Add("$select", "id,title")
 			params.Add("$expand", "events($select=title)")
 			params.Add("$format", "json")
 			respBody := makeRequestWithHeadersAndQueryParams(t, testData.client, testData.url+"/consumptionBundles?", testData.headers, params)
@@ -623,6 +651,7 @@ func TestORDService(t *testing.T) {
 		//Ordering:
 		t.Run(fmt.Sprintf("Requesting ordering of Bundles for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := urlpkg.Values{}
+			params.Add("$select", "id,title,description")
 			params.Add("$orderby", "title asc,description desc")
 			params.Add("$format", "json")
 			serviceURL := testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
@@ -634,7 +663,8 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting ordering of Bundle APIs for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := urlpkg.Values{}
-			params.Add("$expand", fmt.Sprintf("apis($orderby=%s)", "title asc,description desc"))
+			params.Add("$select", "id,title,description")
+			params.Add("$expand", fmt.Sprintf("apis($orderby=%s;$select=id,title,description)", "title asc,description desc"))
 			params.Add("$format", "json")
 			serviceURL := testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody := makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
@@ -655,8 +685,8 @@ func TestORDService(t *testing.T) {
 
 		t.Run(fmt.Sprintf("Requesting ordering of Bundle Events for tenant %s returns them as expected", testData.msg), func(t *testing.T) {
 			params := urlpkg.Values{}
-
-			params.Add("$expand", fmt.Sprintf("events($orderby=%s)", "title asc,description desc"))
+			params.Add("$select", "id,title,description")
+			params.Add("$expand", fmt.Sprintf("events($orderby=%s;$select=id,title,description)", "title asc,description desc"))
 			params.Add("$format", "json")
 			serviceURL := testData.url + "/consumptionBundles?" + strings.ReplaceAll(params.Encode(), "+", "%20")
 			respBody := makeRequestWithHeaders(t, testData.client, serviceURL, testData.headers)
@@ -679,6 +709,7 @@ func TestORDService(t *testing.T) {
 	t.Run("404 when request to ORD Service for api spec have another tenant header value", func(t *testing.T) {
 		params := urlpkg.Values{}
 
+		params.Add("$select", "id,resourceDefinitions")
 		params.Add("$format", "json")
 		respBody := makeRequestWithHeadersAndQueryParams(t, intSystemHttpClient, conf.ORDServiceURL+"/apis?", map[string][]string{tenantHeader: {defaultTestTenant}}, params)
 		require.Equal(t, len(appInput.Bundles[0].APIDefinitions), len(gjson.Get(respBody, "value").Array()))
@@ -695,6 +726,7 @@ func TestORDService(t *testing.T) {
 	t.Run("404 when request to ORD Service for event spec have another tenant header value", func(t *testing.T) {
 		params := urlpkg.Values{}
 
+		params.Add("$select", "id,resourceDefinitions")
 		params.Add("$format", "json")
 		respBody := makeRequestWithHeadersAndQueryParams(t, intSystemHttpClient, conf.ORDServiceURL+"/events?", map[string][]string{tenantHeader: {defaultTestTenant}}, params)
 		require.Equal(t, len(appInput.Bundles[0].EventDefinitions), len(gjson.Get(respBody, "value").Array()))

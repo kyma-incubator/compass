@@ -207,7 +207,7 @@ global:
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
-      version: "PR-130"
+      version: "PR-131"
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
