@@ -1047,12 +1047,12 @@ func fixCtxWithTenant() context.Context {
 	return ctx
 }
 
-func fixModel(scenarioName string) model.AutomaticScenarioAssignment {
+func fixModel(scenarioName string) *model.AutomaticScenarioAssignment {
 	return fixModelWithScenarioName(scenarioName)
 }
 
-func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+func fixModelWithScenarioName(scenario string) *model.AutomaticScenarioAssignment {
+	return &model.AutomaticScenarioAssignment{
 		ScenarioName:   scenario,
 		Tenant:         tenantID.String(),
 		TargetTenantID: TargetTenantID,
@@ -1450,7 +1450,7 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 	}
 }
 
-func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationAssignmentState) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:                            id,
 		FormationID:                   formationID,

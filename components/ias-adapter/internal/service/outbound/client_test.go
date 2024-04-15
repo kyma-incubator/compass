@@ -1,4 +1,4 @@
-package ias
+package outbound
 
 import (
 	"net/http"
@@ -11,7 +11,7 @@ import (
 	logCtx "github.com/kyma-incubator/compass/components/ias-adapter/internal/logger/context"
 )
 
-var _ = Describe("IAS Client", func() {
+var _ = Describe("Outbound Client", func() {
 	When("Outbound request is sent", func() {
 		It("Request ID header should be present", func() {
 			testClient := &http.Client{
