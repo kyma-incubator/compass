@@ -64,8 +64,9 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
-	ctx.AbortWithStatus(http.StatusAccepted)
-	h.AsyncProcessor.ProcessTMRequest(ctx, tenantMapping)
+	h.acceptAndExecute(ctx, func(execCtx context.Context) {
+		h.AsyncProcessor.ProcessTMRequest(execCtx, tenantMapping)
+	})
 }
 
 func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, tenantMapping *types.TenantMapping) {
@@ -97,8 +98,18 @@ func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, 
 	}
 
 	logger.FromContext(ctx).Info().Msgf("%s. Responding OK as assignment is safe to remove", err.Error())
+	h.acceptAndExecute(ctx, func(execCtx context.Context) {
+		h.AsyncProcessor.ReportStatus(execCtx, ucl.StatusReport{State: types.ReadyState(operation)})
+	})
+}
+
+func (h TenantMappingsHandler) acceptAndExecute(ctx *gin.Context, execute func(execCtx context.Context)) {
+	go func() {
+		newCtx := ctx.Copy()
+		<-ctx.Request.Context().Done()
+		execute(newCtx)
+	}()
 	ctx.AbortWithStatus(http.StatusAccepted)
-	h.AsyncProcessor.ReportStatus(ctx, ucl.StatusReport{State: types.ReadyState(operation)})
 }
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {
