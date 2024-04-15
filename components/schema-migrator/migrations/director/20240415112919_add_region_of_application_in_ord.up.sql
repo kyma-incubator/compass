@@ -61,7 +61,7 @@ FROM applications apps
                                     f.formation_template_id AS formation_type_id,
                                     fa.source,
                                     fa.target AS target_id
-                    FROM formation_assignments fa JOIN formations f ON fa.formation_id = f.id) formation_details ON formation_details.source = t_apps.id AND formation_details.formation_id = t_apps.formation_id -- the second join by formation_id is required so that we have records (tenant + default formation_id + null formation_details) that are needed for backwards compatibility when we call the ORD Service only with tenant filtering; otherwise, since the join will be only on source, there are records (tenant + default formation_id + valid formation_details) which are invalid because we want null ones as there is no formation filtering
+                    FROM formation_assignments fa JOIN formations f ON fa.formation_id = f.id) formation_details ON formation_details.source = t_apps.id AND formation_details.formation_id = t_apps.formation_id
          LEFT JOIN labels AS labels_app ON labels_app.app_id = apps.id AND labels_app.key = 'region'
          LEFT JOIN labels AS labels_tmpl ON labels_tmpl.app_template_id = tmpl.id AND labels_tmpl.key = 'region';
 COMMIT;
