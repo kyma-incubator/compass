@@ -19,10 +19,6 @@ type TenantMappingsStorage struct {
 func (_m *TenantMappingsStorage) DeleteTenantMapping(ctx context.Context, formationID string, applicationID string) error {
 	ret := _m.Called(ctx, formationID, applicationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteTenantMapping")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, formationID, applicationID)
@@ -36,10 +32,6 @@ func (_m *TenantMappingsStorage) DeleteTenantMapping(ctx context.Context, format
 // ListTenantMappings provides a mock function with given fields: ctx, formationID
 func (_m *TenantMappingsStorage) ListTenantMappings(ctx context.Context, formationID string) (map[string]types.TenantMapping, error) {
 	ret := _m.Called(ctx, formationID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListTenantMappings")
-	}
 
 	var r0 map[string]types.TenantMapping
 	var r1 error
@@ -67,10 +59,6 @@ func (_m *TenantMappingsStorage) ListTenantMappings(ctx context.Context, formati
 func (_m *TenantMappingsStorage) UpsertTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
 	ret := _m.Called(ctx, tenantMapping)
 
-	if len(ret) == 0 {
-		panic("no return value specified for UpsertTenantMapping")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, types.TenantMapping) error); ok {
 		r0 = rf(ctx, tenantMapping)
@@ -81,12 +69,13 @@ func (_m *TenantMappingsStorage) UpsertTenantMapping(ctx context.Context, tenant
 	return r0
 }
 
-// NewTenantMappingsStorage creates a new instance of TenantMappingsStorage. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewTenantMappingsStorage(t interface {
+type mockConstructorTestingTNewTenantMappingsStorage interface {
 	mock.TestingT
 	Cleanup(func())
-}) *TenantMappingsStorage {
+}
+
+// NewTenantMappingsStorage creates a new instance of TenantMappingsStorage. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewTenantMappingsStorage(t mockConstructorTestingTNewTenantMappingsStorage) *TenantMappingsStorage {
 	mock := &TenantMappingsStorage{}
 	mock.Mock.Test(t)
 

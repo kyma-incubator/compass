@@ -343,7 +343,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		// Create formation constraints for destination creator operator and attach them to a given formation template.
 		// So we can verify the destination creator will not fail if in the configuration there is no destination information
-		attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		defer func() {
+			for _, cleanup := range constraintCleanupFunctions {
+				cleanup()
+			}
+		}()
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
@@ -634,7 +639,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		// Create formation constraints for destination creator operator and attach them to a given formation template.
 		// So we can verify the destination creator will not fail if in the configuration there is no destination information
-		attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		defer func() {
+			for _, cleanup := range constraintCleanupFunctions {
+				cleanup()
+			}
+		}()
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)

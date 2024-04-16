@@ -20,10 +20,6 @@ type IASService struct {
 func (_m *IASService) CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error) {
 	ret := _m.Called(ctx, iasHost, app)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateApplication")
-	}
-
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *types.Application) (string, error)); ok {
@@ -47,10 +43,6 @@ func (_m *IASService) CreateApplication(ctx context.Context, iasHost string, app
 // GetApplicationByClientID provides a mock function with given fields: ctx, iasHost, clientID, appTenantID
 func (_m *IASService) GetApplicationByClientID(ctx context.Context, iasHost string, clientID string, appTenantID string) (types.Application, error) {
 	ret := _m.Called(ctx, iasHost, clientID, appTenantID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetApplicationByClientID")
-	}
 
 	var r0 types.Application
 	var r1 error
@@ -76,10 +68,6 @@ func (_m *IASService) GetApplicationByClientID(ctx context.Context, iasHost stri
 func (_m *IASService) GetApplicationByName(ctx context.Context, iasHost string, name string) (types.Application, error) {
 	ret := _m.Called(ctx, iasHost, name)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetApplicationByName")
-	}
-
 	var r0 types.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (types.Application, error)); ok {
@@ -104,10 +92,6 @@ func (_m *IASService) GetApplicationByName(ctx context.Context, iasHost string, 
 func (_m *IASService) UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error {
 	ret := _m.Called(ctx, data)
 
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateApplicationConsumedAPIs")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, ias.UpdateData) error); ok {
 		r0 = rf(ctx, data)
@@ -118,12 +102,13 @@ func (_m *IASService) UpdateApplicationConsumedAPIs(ctx context.Context, data ia
 	return r0
 }
 
-// NewIASService creates a new instance of IASService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewIASService(t interface {
+type mockConstructorTestingTNewIASService interface {
 	mock.TestingT
 	Cleanup(func())
-}) *IASService {
+}
+
+// NewIASService creates a new instance of IASService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewIASService(t mockConstructorTestingTNewIASService) *IASService {
 	mock := &IASService{}
 	mock.Mock.Test(t)
 
