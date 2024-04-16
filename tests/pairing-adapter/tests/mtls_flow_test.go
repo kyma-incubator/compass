@@ -43,28 +43,22 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 	appTemplate := &directorSchema.ApplicationTemplate{}
 	newIntSys := directorSchema.IntegrationSystemExt{}
 
-	t.Log("Creating integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, "update-app-template-with-override")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
-
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys.ID)
-	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
-
-	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
-	require.True(t, ok)
-
-	t.Log("Issuing a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
-	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
-
 	if conf.IsLocalEnv {
 		updateAdaptersConfigmapWithDefaultValues(t, ctx, conf) // pre-clean-up
 
 		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &newIntSys)
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issuing a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
 
 		updateAdaptersConfigmap(t, ctx, newIntSys.ID, conf)
 

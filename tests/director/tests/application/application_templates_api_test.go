@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -112,7 +111,8 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Success for global template with product label created with certificate", func(t *testing.T) {
 		// GIVEN
-		directorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-global-product-cn")
+		cn := "app-template-global-product-cn"
+		directorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, cn, conf.SkipSSLValidation)
 
 		productLabelValue := []interface{}{"productLabelValue"}
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-product")
@@ -130,7 +130,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, directorCertSecuredClient, output)
 		require.NoError(t, err)
 
-		csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
+		csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, output.ID, cn)
 
 		// THEN
 		require.Equal(t, output.Labels[conf.ApplicationTemplateProductLabel], productLabelValue)
@@ -313,7 +313,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Error for self register when distinguished label or product label have not been defined and the call is made with a certificate", func(t *testing.T) {
 		// GIVEN
-		appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-error-self-reg-cn")
+		appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-error-self-reg-cn", conf.SkipSSLValidation)
 
 		ctx := context.Background()
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-invalid")
@@ -336,7 +336,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Error for self register when distinguished label and product label have been defined and the call is made with a certificate", func(t *testing.T) {
 		// GIVEN
-		appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-error-self-reg-product-label-cn")
+		appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-error-self-reg-product-label-cn", conf.SkipSSLValidation)
 
 		ctx := context.Background()
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-invalid")
@@ -361,8 +361,8 @@ func TestCreateApplicationTemplate(t *testing.T) {
 
 	t.Run("Error when Self Registered Application Template already exists for a given region and distinguished label key", func(t *testing.T) {
 		// GIVEN
-		appProviderDirectorCertSecuredClient1 := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-region-exists-1-cn")
-		appProviderDirectorCertSecuredClient2 := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-region-exists-2-cn")
+		appProviderDirectorCertSecuredClient1 := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-region-exists-1-cn", conf.SkipSSLValidation)
+		appProviderDirectorCertSecuredClient2 := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-region-exists-2-cn", conf.SkipSSLValidation)
 
 		ctx := context.Background()
 		appTemplateName1 := fixtures.CreateAppTemplateName("app-template-name-self-reg-1")
@@ -622,10 +622,10 @@ func TestCreateApplicationTemplate_SameNamesAndDifferentRegions(t *testing.T) {
 
 func TestCreateApplicationTemplate_DifferentNamesAndDistinguishLabelsAndSameRegionsAndApplicationTypeLabels(t *testing.T) {
 	ctx := context.Background()
-	appProviderDirectorOnboardingCertSecuredClient1 := createDirectorCertClientWithOtherSubject(t, ctx, "DifferentNamesAndDistinguishLabel1-technical")
-	appProviderDirectorOnboardingCertSecuredClient2 := createDirectorCertClientWithOtherSubject(t, ctx, "DifferentNamesAndDistinguishLabel2-technical")
-	appProviderDirectorOnboardingCertSecuredClient3 := createDirectorCertClientWithOtherSubject(t, ctx, "DifferentNamesAndDistinguishLabel3-technical")
-	appProviderDirectorOnboardingCertSecuredClient4 := createDirectorCertClientWithOtherSubject(t, ctx, "DifferentNamesAndDistinguishLabel4-technical")
+	appProviderDirectorOnboardingCertSecuredClient1 := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "DifferentNamesAndDistinguishLabel1-technical", conf.SkipSSLValidation)
+	appProviderDirectorOnboardingCertSecuredClient2 := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "DifferentNamesAndDistinguishLabel2-technical", conf.SkipSSLValidation)
+	appProviderDirectorOnboardingCertSecuredClient3 := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "DifferentNamesAndDistinguishLabel3-technical", conf.SkipSSLValidation)
+	appProviderDirectorOnboardingCertSecuredClient4 := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "DifferentNamesAndDistinguishLabel4-technical", conf.SkipSSLValidation)
 
 	applicationTypeLabelValue := "SAP app-template"
 	appTemplateRegion := conf.SubscriptionConfig.SelfRegRegion
@@ -717,7 +717,7 @@ func TestCreateApplicationTemplate_NotValid(t *testing.T) {
 	ctx := context.Background()
 
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "CreateApplicationTemplate_NotValid")
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "CreateApplicationTemplate_NotValid", conf.SkipSSLValidation)
 
 	t.Log("Creating integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "app-template-not-valid")
@@ -1154,7 +1154,7 @@ func TestUpdateLabelsOfApplicationTemplateFailsWithInsufficientScopes(t *testing
 	}
 
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
-	//appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "TestUpdateLabelsOfAppTemplateFails")
+
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "create-app-template-same-region")
 	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
@@ -1404,7 +1404,7 @@ func TestUpdateApplicationTemplate_NotValid(t *testing.T) {
 	tenantID := tenant.TestTenants.GetDefaultSubaccountTenantID()
 	ctx := context.Background()
 
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "CreateApplicationTemplate_NotValid")
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "CreateApplicationTemplate_NotValid", conf.SkipSSLValidation)
 
 	t.Log("Creating integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "app-template-not-valid")
@@ -1638,10 +1638,10 @@ func TestDeleteApplicationTemplateWithCertSubjMapping(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
 	appTemplateName := fixtures.CreateAppTemplateName("app-template")
-
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+	cn := "DeleteAppTemplateWithCSM"
 
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "DeleteAppTemplateWithCSM")
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, cn, conf.SkipSSLValidation)
 
 	t.Logf("Create application template with name %q", appTemplateName)
 	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
@@ -1661,7 +1661,7 @@ func TestDeleteApplicationTemplateWithCertSubjMapping(t *testing.T) {
 
 	//THEN
 	t.Log("Check if all certificate subject mappings were deleted")
-	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTemplate.ID)
+	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTemplate.ID, cn)
 	require.Nil(t, csm)
 }
 
@@ -1927,7 +1927,7 @@ func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
 	//GIVEN
 	ctx := context.TODO()
 	appTemplateName := fixtures.CreateAppTemplateName("template")
-	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
+	appTmplInput := fixtures.FixApplicationTemplate(appTemplateName)
 	appTmplInput.Webhooks = []*graphql.WebhookInput{{
 		Type: graphql.WebhookTypeOpenResourceDiscovery,
 		URL:  ptr.String("http://test.test"),
@@ -1935,9 +1935,26 @@ func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "int-system-ord-webhook")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
 	t.Log("Create application template")
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTmpl)
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantId, appTmpl)
 	require.NoError(t, err)
 
 	appFromTmpl := fixtures.FixApplicationFromTemplateInput(appTemplateName, "name", "new-name", "display-name", "new-display-name")
@@ -1949,8 +1966,8 @@ func TestRegisterApplicationFromTemplateWithOrdWebhook(t *testing.T) {
 
 	//WHEN
 	t.Log("Create application from application template")
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplRequest, &outputApp)
-	defer fixtures.UnregisterApplication(t, ctx, certSecuredGraphQLClient, tenantId, outputApp.ID)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, tenantId, createAppFromTmplRequest, &outputApp)
+	defer fixtures.UnregisterApplication(t, ctx, oauthGraphQLClient, tenantId, outputApp.ID)
 
 	//THEN
 	require.NoError(t, err)
@@ -2130,8 +2147,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 	}
 
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-different-sa-cn")
-
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-different-sa-cn", conf.SkipSSLValidation)
 	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenantId, appTmplInput)
 	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 	require.NoError(t, err)
@@ -2345,24 +2361,6 @@ func createDirectorCertClientForAnotherRegion(t *testing.T, ctx context.Context,
 		ExternalClientCertExpectedIssuerLocality: &conf.ExternalClientCertExpectedIssuerLocalityRegion2,
 		ExternalCertProvider:                     certprovider.CertificateService,
 	}
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
-	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
-}
-
-func createDirectorCertClientWithOtherSubject(t *testing.T, ctx context.Context, subject string) *gcli.Client {
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, subject, -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 }

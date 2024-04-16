@@ -80,6 +80,30 @@ func (_m *CertMappingRepository) Exists(ctx context.Context, id string) (bool, e
 	return r0, r1
 }
 
+// ExistsBySubject provides a mock function with given fields: ctx, subject
+func (_m *CertMappingRepository) ExistsBySubject(ctx context.Context, subject string) (bool, error) {
+	ret := _m.Called(ctx, subject)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, subject)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, subject)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, subject)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Get provides a mock function with given fields: ctx, id
 func (_m *CertMappingRepository) Get(ctx context.Context, id string) (*model.CertSubjectMapping, error) {
 	ret := _m.Called(ctx, id)
@@ -146,12 +170,13 @@ func (_m *CertMappingRepository) Update(ctx context.Context, _a1 *model.CertSubj
 	return r0
 }
 
-// NewCertMappingRepository creates a new instance of CertMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewCertMappingRepository(t interface {
+type mockConstructorTestingTNewCertMappingRepository interface {
 	mock.TestingT
 	Cleanup(func())
-}) *CertMappingRepository {
+}
+
+// NewCertMappingRepository creates a new instance of CertMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewCertMappingRepository(t mockConstructorTestingTNewCertMappingRepository) *CertMappingRepository {
 	mock := &CertMappingRepository{}
 	mock.Mock.Test(t)
 

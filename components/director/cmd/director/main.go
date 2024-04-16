@@ -240,6 +240,10 @@ func main() {
 
 	certSubjects := make([]string, 0, len(subjectMappings))
 	for _, subjectMapping := range subjectMappings {
+		if err := subjectMapping.Validate(); err != nil {
+			log.C(ctx).Errorf("Certificate subject mapping for internal consumer %s is invalid. Will not add it to the list.", subjectMapping.InternalConsumerID)
+			continue
+		}
 		certSubjects = append(certSubjects, subjectMapping.Subject)
 	}
 

@@ -20,6 +20,7 @@ type CertMappingRepository interface {
 	Delete(ctx context.Context, id string) error
 	DeleteByConsumerID(ctx context.Context, consumerID string) error
 	Exists(ctx context.Context, id string) (bool, error)
+	ExistsBySubject(ctx context.Context, subject string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
 }
 
@@ -87,6 +88,16 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	exists, err := s.repo.Exists(ctx, id)
 	if err != nil {
 		return false, errors.Wrapf(err, "while checking certificate subject mapping existence for ID: %s", id)
+	}
+	return exists, nil
+}
+
+// ExistsBySubject check if a certificate subject mapping with a given subject exists
+func (s *service) ExistsBySubject(ctx context.Context, subj string) (bool, error) {
+	log.C(ctx).Infof("Checking certificate subject mapping existence for subject: %s", subj)
+	exists, err := s.repo.ExistsBySubject(ctx, subj)
+	if err != nil {
+		return false, errors.Wrapf(err, "while checking certificate subject mapping existence for Subject: %s", subj)
 	}
 	return exists, nil
 }

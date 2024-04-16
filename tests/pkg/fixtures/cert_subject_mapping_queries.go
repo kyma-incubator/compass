@@ -4,6 +4,9 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -47,7 +50,7 @@ func CleanupCertificateSubjectMapping(t require.TestingT, ctx context.Context, g
 	return &result
 }
 
-func FindCertSubjectMappingForApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appTemplateID string) *graphql.CertificateSubjectMapping {
+func FindCertSubjectMappingForApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appTemplateID, expectedCN string) *graphql.CertificateSubjectMapping {
 	after := ""
 	for {
 		queryCertSubjectMappingReq := FixQueryCertificateSubjectMappingsRequestWithPagination(300, after)
@@ -61,6 +64,9 @@ func FindCertSubjectMappingForApplicationTemplate(t *testing.T, ctx context.Cont
 
 		for _, csm := range currentCertSubjectMappings.Data {
 			if str.PtrStrToStr(csm.InternalConsumerID) == appTemplateID {
+				require.Contains(t, csm.Subject, expectedCN)
+				require.Equal(t, string(consumer.ApplicationProvider), csm.ConsumerType)
+				require.Equal(t, []string{inputvalidation.GlobalAccessLevel}, csm.TenantAccessLevels)
 				return csm
 			}
 		}

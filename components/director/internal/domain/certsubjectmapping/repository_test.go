@@ -144,6 +144,35 @@ func TestRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ExistsBySubject(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Exists certificate subject mapping by ID",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.cert_subject_mapping WHERE subject = $1`),
+				Args:     []driver.Value{TestSubject},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		RepoConstructorFunc: certsubjectmapping.NewRepository,
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		TargetID:   TestID,
+		IsGlobal:   true,
+		MethodName: "ExistsBySubject",
+		MethodArgs: []interface{}{TestSubject},
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_List(t *testing.T) {
 	suite := testdb.RepoListPageableTestSuite{
 		Name:       "List certificate subject mappings with paging",

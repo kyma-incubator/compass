@@ -73,6 +73,7 @@ type LabelUpsertService interface {
 type CertSubjectMappingService interface {
 	DeleteByConsumerID(ctx context.Context, consumerID string) error
 	Create(ctx context.Context, item *model.CertSubjectMapping) (string, error)
+	ExistsBySubject(ctx context.Context, subj string) (bool, error)
 }
 
 // TimeService is responsible for time operations

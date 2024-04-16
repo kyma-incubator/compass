@@ -795,8 +795,9 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testing.T) {
 	ctx := context.Background()
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
+	cn := "ord-svc-system-with-csm-discovery-test"
 
-	technicalCertSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-svc-system-with-csm-discovery-test", -1)
+	technicalCertSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, cn, -1)
 	technicalCertProvider := createExternalConfigProvider(technicalCertSubject)
 	technicalProviderClientKey, technicalProviderRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, technicalCertProvider, false)
 	technicalCertDirectorGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, technicalProviderClientKey, technicalProviderRawCertChain, conf.SkipSSLValidation)
@@ -848,7 +849,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	require.NotEmpty(t, application.ID)
 	t.Logf("app ID: %q", application.ID)
 
-	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTmpl.ID)
+	csm := fixtures.FindCertSubjectMappingForApplicationTemplate(t, ctx, certSecuredGraphQLClient, appTmpl.ID, cn)
 	require.NotNil(t, csm)
 
 	t.Logf("Sleeping for %s, so the hydrator component could update the certificate subject mapping cache with the new data", conf.CertSubjectMappingResyncInterval.String())

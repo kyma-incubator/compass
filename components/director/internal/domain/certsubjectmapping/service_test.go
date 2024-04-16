@@ -292,6 +292,58 @@ func TestService_Exists(t *testing.T) {
 	}
 }
 
+func TestService_ExistsBySubject(t *testing.T) {
+	testCases := []struct {
+		Name           string
+		Repo           func() *automock.CertMappingRepository
+		ExpectedOutput bool
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ExistsBySubject", emptyCtx, TestSubject).Return(true, nil).Once()
+				return repo
+			},
+			ExpectedOutput: true,
+		},
+		{
+			Name: "Error when checking for existence of certificate subject mapping fails",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ExistsBySubject", emptyCtx, TestSubject).Return(false, testErr).Once()
+				return repo
+			},
+			ExpectedOutput: false,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.Repo()
+
+			svc := certsubjectmapping.NewService(repo)
+
+			// WHEN
+			result, err := svc.ExistsBySubject(emptyCtx, TestSubject)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_List(t *testing.T) {
 	pageSize := 100
 	invalidPageSize := -100

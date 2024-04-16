@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -52,9 +54,11 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
 		},
 	}
+	cn1 := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-cn", -1)
+	cn2 := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1)
 
-	appProviderDirectorOnboardingCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-cn", -1))
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1))
+	appProviderDirectorOnboardingCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, cn1, conf.SkipSSLValidation)
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, cn2, conf.SkipSSLValidation)
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
@@ -373,7 +377,8 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	})
 
 	t.Run("When creating app template with optional placeholders", func(stdT *testing.T) {
-		appProviderDirectorOnboardingCertSecuredClient = createDirectorCertClientWithOtherSubject(baseT, ctx, strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-optional-placeholders-cn", -1))
+		cn := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-optional-placeholders-cn", -1)
+		appProviderDirectorOnboardingCertSecuredClient = certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, cn, conf.SkipSSLValidation)
 
 		t := testingx.NewT(stdT)
 
@@ -449,7 +454,7 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 		},
 	}
 
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, "app-template-subscription-discovery-label-cn")
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-subscription-discovery-label-cn", conf.SkipSSLValidation)
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.SubscriptionProviderAppNameValue)
 
@@ -540,7 +545,7 @@ func TestSubscriptionApplicationTemplateFlowWithIndirectDependency(baseT *testin
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: conf.SkipSSLValidation},
 		},
 	}
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(baseT, ctx, "app-template-subscription-indirect-dependency-cn")
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-subscription-indirect-dependency-cn", conf.SkipSSLValidation)
 
 	apiPath := fmt.Sprintf("/saas-manager/v1/applications/%s/subscription", conf.IndirectDependencySubscriptionProviderAppNameValue)
 

@@ -114,7 +114,7 @@ func (m *systemAuthContextProvider) Match(_ context.Context, data oathkeeper.Req
 	// Certificate flow
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
-	subject := data.Body.Header.Get(oathkeeper.SubjectKey)
+	subject := data.Body.Header.Get(oathkeeper.CertificateSubjectHeader)
 
 	if idVal != "" && certIssuer != oathkeeper.ExternalIssuer {
 		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject}, nil

@@ -102,14 +102,6 @@ func TestSensitiveDataStrip(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, integrationSystem.ID)
 
-	//t.Log(fmt.Sprintf("Registering OAuth client for integration system %q", intSysName))
-	//intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, context.Background(), certSecuredGraphQLClient, tenantId, integrationSystem.ID)
-	//intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
-	//require.True(t, ok)
-	//require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
-	//require.NotEmpty(t, intSysOauthCredentialData.ClientID)
-	//intSystemOAuthGraphQLClient := gqlClient(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
-
 	t.Log(fmt.Sprintf("assign runtime and app to scenario: %q", testScenario))
 	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)
 	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, testScenario)

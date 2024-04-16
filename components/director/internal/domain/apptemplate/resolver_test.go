@@ -736,6 +736,40 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
 		},
 		{
+			Name: "Do not create cert subject mapping when the subject already exists",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
+				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithSelfRegLabels).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplateWithSelfRegLabels, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labelsContainingSelfRegistration),
+			LabelSvcFn:              UnusedLabelService,
+			CertSubjectMappingSvcFn: SuccessfulSkipCertSubjectMappingCreation(csm),
+			Ctx:                     ctxWithCertConsumer,
+			Input:                   gqlAppTemplateInputWithSelfRegLabels,
+			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
+		},
+		{
 			Name: "Error when self registered app template already exists for the given self reg labels",
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
@@ -782,6 +816,29 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
 			ExpectedError:           errors.New(`while creating a cert subject mapping for app template consumer "foo"`),
+		},
+		{
+			Name: "Error when checking cert subject mapping existence as part of the self reg flow",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithSelfRegLabels).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration),
+			LabelSvcFn:              UnusedLabelService,
+			CertSubjectMappingSvcFn: FailedCertSubjMappingExists(csm),
+			Ctx:                     ctxWithCertConsumer,
+			Input:                   gqlAppTemplateInputWithSelfRegLabels,
+			ExpectedError:           errors.New(`while checking if a certificate subject mapping exists with a subject`),
 		},
 		{
 			Name: "Error when app template is regional and the region already exists for the given product labels",
@@ -3236,6 +3293,7 @@ func SuccessfulWebhookSvc(webhooksInput, enriched []*graphql.WebhookInput) func(
 func SuccessfulCertSubjMappingCreate(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
 	return func() *automock.CertSubjectMappingService {
 		svc := &automock.CertSubjectMappingService{}
+		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(false, nil)
 		svc.On("Create", txtest.CtxWithDBMatcher(), csm).Return(testUUID, nil)
 		return svc
 	}
@@ -3244,7 +3302,24 @@ func SuccessfulCertSubjMappingCreate(csm *model.CertSubjectMapping) func() *auto
 func FailedCertSubjMappingCreate(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
 	return func() *automock.CertSubjectMappingService {
 		svc := &automock.CertSubjectMappingService{}
+		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(false, nil)
 		svc.On("Create", txtest.CtxWithDBMatcher(), csm).Return("", testError)
+		return svc
+	}
+}
+
+func FailedCertSubjMappingExists(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
+	return func() *automock.CertSubjectMappingService {
+		svc := &automock.CertSubjectMappingService{}
+		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(false, testError)
+		return svc
+	}
+}
+
+func SuccessfulSkipCertSubjectMappingCreation(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
+	return func() *automock.CertSubjectMappingService {
+		svc := &automock.CertSubjectMappingService{}
+		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(true, nil)
 		return svc
 	}
 }

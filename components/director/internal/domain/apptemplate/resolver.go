@@ -1060,6 +1060,16 @@ func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID,
 		}
 	}
 
+	exists, err := r.certSubjectMappingSvc.ExistsBySubject(ctx, subject)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if a certificate subject mapping exists with a subject: %s", subject)
+	}
+
+	if exists {
+		log.C(ctx).Debug("Subject is already allow-listed. Skipping certificate subject mapping creation.")
+		return nil
+	}
+
 	id := r.uidService.Generate()
 	model := &model.CertSubjectMapping{
 		ID:                 id,

@@ -702,7 +702,7 @@ func TestORDAggregator(stdT *testing.T) {
 	})
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		ctx := context.Background()
-		appTechnicalProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-verify-ord-doc-technical-cn")
+		appTechnicalProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, testConfig.ExternalCertProviderConfig, testConfig.DirectorExternalCertSecuredURL, "app-template-verify-ord-doc-technical-cn", testConfig.SkipSSLValidation)
 
 		packagesMap := make(map[string]string)
 		packagesMap[firstExpectedPackageTitle] = firstExpectedPackageDescription
@@ -1811,22 +1811,4 @@ func fixAppTemplateInputWitSelfRegLabel(name, webhookURL string) directorSchema.
 	input.Labels[testConfig.SubscriptionConfig.SelfRegDistinguishLabelKey] = testConfig.SubscriptionConfig.SelfRegDistinguishLabelValue
 
 	return input
-}
-
-func createDirectorCertClientWithOtherSubject(t *testing.T, ctx context.Context, subject string) *gcli.Client {
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      testConfig.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: testConfig.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         testConfig.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      testConfig.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               testConfig.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(testConfig.ExternalCertProviderConfig.TestExternalCertSubject, testConfig.ExternalCertProviderConfig.TestExternalCertCN, subject, -1),
-		ExternalClientCertCertKey:             testConfig.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              testConfig.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
-	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(testConfig.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, testConfig.SkipSSLValidation)
 }

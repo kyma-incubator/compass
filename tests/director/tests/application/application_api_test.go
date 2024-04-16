@@ -1871,8 +1871,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	formationTemplateName := "merge-applications-template"
 	nameJSONPath := "$.name-json-path"
 	displayNameJSONPath := "$.display-name-json-path"
-	appTechnicalProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-merge-technical-cn")
-	appProviderDirectorCertSecuredClient := createDirectorCertClientWithOtherSubject(t, ctx, "app-template-merge-cn")
+	appTechnicalProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-merge-technical-cn", conf.SkipSSLValidation)
+	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-merge-cn", conf.SkipSSLValidation)
 
 	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTmplInput.ApplicationInput.Name = "{{name}}"

@@ -51,8 +51,8 @@ const (
 	UserContextKey = "User_context"
 	// ScopesKey missing godoc
 	ScopesKey = "scope"
-	// SubjectKey represents a header key for cert subject
-	SubjectKey = "subject-from-certificate"
+	// CertificateSubjectHeader represents a header key for cert subject
+	CertificateSubjectHeader = "subject-from-certificate"
 	// ConnectorIssuer missing godoc
 	ConnectorIssuer = "connector"
 	// ExternalIssuer missing godoc

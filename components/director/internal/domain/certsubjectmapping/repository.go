@@ -117,6 +117,12 @@ func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
+// ExistsBySubject check if a certificate subject mapping with given subject exists
+func (r *repository) ExistsBySubject(ctx context.Context, subject string) (bool, error) {
+	log.C(ctx).Debugf("Check if certificate mapping with Subject: %s exists", subject)
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("subject", subject)})
+}
+
 // List queries for all certificate subject mappings sorted by ID and paginated by the pageSize and cursor parameters
 func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error) {
 	log.C(ctx).Debug("Listing certificate subject mappings from DB")
