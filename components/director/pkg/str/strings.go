@@ -4,9 +4,10 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"github.com/pkg/errors"
 	"strconv"
 	"strings"
+
+	"github.com/pkg/errors"
 
 	"golang.org/x/text/language"
 

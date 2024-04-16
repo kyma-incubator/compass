@@ -3,13 +3,14 @@ package systemfetcher_test
 import (
 	"context"
 	"encoding/json"
-	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"net/http"
 	"net/http/httptest"
 	"sort"
 	"strings"
 	"testing"
 	"time"
+
+	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"

@@ -3,11 +3,12 @@ package graphql
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 
@@ -17,8 +18,10 @@ import (
 )
 
 const (
+	// SlisFilterLabelKey is the name of the slis filter label for app template
 	SlisFilterLabelKey = "slisFilter"
-	ProductIDKey       = "productId"
+	// ProductIDKey is the name of the property relating to system roles in system payload
+	ProductIDKey = "productId"
 )
 
 // Validate missing godoc

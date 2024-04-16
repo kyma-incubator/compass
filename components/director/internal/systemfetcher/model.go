@@ -2,15 +2,17 @@ package systemfetcher
 
 import (
 	"encoding/json"
+	"strings"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
-	"strings"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+// TrimPrefix is the prefix which should be trimmed from the jsonpath input when building select criteria for system fetcher
 const TrimPrefix = "$."
 
 var (

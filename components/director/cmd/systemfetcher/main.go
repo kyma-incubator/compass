@@ -4,13 +4,14 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
