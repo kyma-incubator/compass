@@ -15,18 +15,24 @@ type Repository struct {
 }
 
 // GetForScenarioName provides a mock function with given fields: ctx, tenantID, scenarioName
-func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, scenarioName string) (*model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, tenantID, scenarioName)
 
-	var r0 model.AutomaticScenarioAssignment
+	if len(ret) == 0 {
+		panic("no return value specified for GetForScenarioName")
+	}
+
+	var r0 *model.AutomaticScenarioAssignment
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (model.AutomaticScenarioAssignment, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.AutomaticScenarioAssignment, error)); ok {
 		return rf(ctx, tenantID, scenarioName)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) model.AutomaticScenarioAssignment); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.AutomaticScenarioAssignment); ok {
 		r0 = rf(ctx, tenantID, scenarioName)
 	} else {
-		r0 = ret.Get(0).(model.AutomaticScenarioAssignment)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AutomaticScenarioAssignment)
+		}
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
@@ -41,6 +47,10 @@ func (_m *Repository) GetForScenarioName(ctx context.Context, tenantID string, s
 // List provides a mock function with given fields: ctx, tenant, pageSize, cursor
 func (_m *Repository) List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	ret := _m.Called(ctx, tenant, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.AutomaticScenarioAssignmentPage
 	var r1 error
@@ -67,6 +77,10 @@ func (_m *Repository) List(ctx context.Context, tenant string, pageSize int, cur
 // ListForTargetTenant provides a mock function with given fields: ctx, tenantID, targetTenantID
 func (_m *Repository) ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, tenantID, targetTenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForTargetTenant")
+	}
 
 	var r0 []*model.AutomaticScenarioAssignment
 	var r1 error

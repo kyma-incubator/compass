@@ -2264,7 +2264,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 		TenantID:            TntInternalID,
 		State:               model.ReadyFormationState,
 	}
-	asa := model.AutomaticScenarioAssignment{
+	asa := &model.AutomaticScenarioAssignment{
 		ScenarioName:   testFormationName,
 		Tenant:         TntInternalID,
 		TargetTenantID: TargetTenant,
@@ -2424,7 +2424,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			Name: "error for tenant when getting asa fails",
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(model.AutomaticScenarioAssignment{}, testErr).Once()
+				asaService.On("GetForScenarioName", ctx, testFormationName).Return(nil, testErr).Once()
 				return asaService
 			},
 			TenantServiceFn: func() *automock.TenantService {

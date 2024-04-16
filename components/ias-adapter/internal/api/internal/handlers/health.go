@@ -10,7 +10,6 @@ import (
 )
 
 //go:generate mockery --name=HealthService --output=automock --outpkg=automock --case=underscore --disable-version-string
-
 type HealthService interface {
 	CheckHealth(ctx context.Context) (types.HealthStatus, error)
 }

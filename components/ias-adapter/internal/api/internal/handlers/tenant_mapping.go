@@ -8,15 +8,15 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
 const (
-	S4SAPManagedCommunicationScenario = "SAP_COM_1002"
+	locationHeader = "Location"
 )
 
 //go:generate mockery --name=TenantMappingsService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -26,11 +26,20 @@ type TenantMappingsService interface {
 	RemoveTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error
 }
 
+//go:generate mockery --name=AsyncProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
+type AsyncProcessor interface {
+	ProcessTMRequest(ctx context.Context, tenantMapping types.TenantMapping)
+	ReportStatus(ctx context.Context, statusReport ucl.StatusReport)
+}
+
 type TenantMappingsHandler struct {
-	Service TenantMappingsService
+	Service        TenantMappingsService
+	AsyncProcessor AsyncProcessor
 }
 
 func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
+	ctx.Set(locationHeader, ctx.GetHeader(locationHeader))
+
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
@@ -38,7 +47,7 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		return
 	}
 
-	if err := tenantMapping.AssignedTenants[0].SetConfiguration(ctx); err != nil {
+	if err := tenantMapping.AssignedTenant.SetConfiguration(ctx); err != nil {
 		err = errors.Newf("failed to set assigned tenant configuration: %w", err)
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
@@ -55,53 +64,15 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
-	reverseAssignmentState := tenantMapping.AssignedTenants[0].ReverseAssignmentState
-	if tenantMapping.AssignedTenants[0].Operation == types.OperationAssign {
-		if reverseAssignmentState != types.StateInitial && reverseAssignmentState != types.StateReady {
-			errMsgf := "skipped processing tenant mapping notification with $.assignedTenants[0].reverseAssignmentState '%s'"
-			err := errors.Newf(errMsgf, reverseAssignmentState)
-			internal.RespondWithError(ctx, internal.IncompleteStatusCode, err)
-			return
-		}
-	}
-	if err := h.Service.ProcessTenantMapping(ctx, tenantMapping); err != nil {
-		err = errors.Newf("failed to process tenant mapping notification: %w", err)
-		operation := tenantMapping.AssignedTenants[0].Operation
-
-		if operation == types.OperationAssign {
-			if errors.Is(err, errors.IASApplicationNotFound) {
-				internal.RespondWithError(ctx, internal.NotFoundStatusCode, err)
-				return
-			}
-
-			if errors.Is(err, errors.S4CertificateNotFound) {
-				logger.FromContext(ctx).Info().Msgf("S/4 certificate not provided. Responding with CONFIG_PENDING.")
-				s4Config := &types.TenantMappingConfiguration{
-					Credentials: types.Credentials{
-						OutboundCommunicationCredentials: types.CommunicationCredentials{
-							OAuth2mTLSAuthentication: types.OAuth2mTLSAuthentication{
-								CorrelationIds: []string{S4SAPManagedCommunicationScenario},
-							},
-						},
-					},
-				}
-				internal.RespondWithConfigPending(ctx, s4Config)
-				return
-			}
-		}
-
-		internal.RespondWithError(ctx, internal.ErrorStatusCode, err)
-		return
-	}
-
-	ctx.Status(http.StatusOK)
+	ctx.AbortWithStatus(http.StatusAccepted)
+	h.AsyncProcessor.ProcessTMRequest(ctx, tenantMapping)
 }
 
 func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, tenantMapping *types.TenantMapping) {
-	operation := tenantMapping.AssignedTenants[0].Operation
+	operation := tenantMapping.Operation
 	if operation != types.OperationUnassign ||
 		errors.Is(err, types.ErrInvalidFormationID) ||
-		errors.Is(err, types.ErrInvalidAssignedTenantID) {
+		errors.Is(err, types.ErrInvalidAssignedTenantAppID) {
 		internal.RespondWithError(ctx, http.StatusBadRequest, err)
 		return
 	}
@@ -126,7 +97,8 @@ func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, 
 	}
 
 	logger.FromContext(ctx).Info().Msgf("%s. Responding OK as assignment is safe to remove", err.Error())
-	ctx.Status(http.StatusOK)
+	ctx.AbortWithStatus(http.StatusAccepted)
+	h.AsyncProcessor.ReportStatus(ctx, ucl.StatusReport{State: types.ReadyState(operation)})
 }
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {

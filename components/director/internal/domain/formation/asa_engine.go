@@ -38,16 +38,16 @@ func NewASAEngine(asaRepository automaticFormationAssignmentRepository, runtimeR
 }
 
 // EnsureScenarioAssigned ensures that the scenario is assigned to all the runtimes and runtimeContexts that are in the ASAs target_tenant_id
-func (s *ASAEngine) EnsureScenarioAssigned(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error {
+func (s *ASAEngine) EnsureScenarioAssigned(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error {
 	return s.processScenario(ctx, in, processScenarioFunc, model.AssignFormation)
 }
 
 // RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
-func (s *ASAEngine) RemoveAssignedScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error {
+func (s *ASAEngine) RemoveAssignedScenario(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error {
 	return s.processScenario(ctx, in, processScenarioFunc, model.UnassignFormation)
 }
 
-func (s *ASAEngine) processScenario(ctx context.Context, in model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc, processingType model.FormationOperation) error {
+func (s *ASAEngine) processScenario(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc, processingType model.FormationOperation) error {
 	runtimeTypes, err := s.getFormationTemplateRuntimeTypes(ctx, in.ScenarioName, in.Tenant)
 	if err != nil {
 		return err

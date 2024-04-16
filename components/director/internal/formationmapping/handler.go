@@ -190,6 +190,12 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			return
 		}
 
+		if formationassignmentpkg.IsConfigEmpty(string(notificationStatusReport.Configuration)) {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s because provided configuration is empty. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+
 		if fa.State != string(model.ReadyAssignmentState) {
 			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because assignment is not in %q state. X-Request-Id: %s", fa.Source, fa.Target, model.ReadyAssignmentState, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
