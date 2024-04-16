@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	urlpkg "net/url"
 	"strings"
 	"testing"
 	"time"
@@ -542,6 +543,66 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			t.Log("Destinations and destination certificates have been successfully created")
 
+			t.Run("Create a destination associated with a bundle using existing destinations created from destination creator", func(t *testing.T) {
+				const correlationID = "e2e-client-cert-auth-correlation-ids" // the client cert dest has that correlationID as well
+				bndlInput := graphql.BundleCreateInput{
+					Name:           "test-bundle",
+					CorrelationIDs: []string{correlationID},
+				}
+				bundle := fixtures.CreateBundleWithInput(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID, bndlInput)
+				require.NotEmpty(stdT, bundle.ID)
+
+				stdT.Log("Getting consumer application using both provider and consumer credentials...")
+
+				consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
+				consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+				consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+				require.NoError(stdT, err)
+				headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
+
+				// HTTP client configured with certificate with patched subject, issued from cert-rotation job
+				certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+				// Make a request to the ORD service with http client.
+				respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", app1.ID), headers)
+
+				require.Equal(stdT, app1.Name, gjson.Get(respBody, "title").String())
+				stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+				// Make a request to the ORD service expanding bundles and destinations.
+				// With destinations - waiting for the synchronization job
+				stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
+
+				params := urlpkg.Values{}
+				params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+				params.Add("$format", "json")
+				params.Add("reload", "true")
+				ordURL := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURL = ordURL + params.Encode()
+
+				require.Eventually(stdT, func() bool {
+					respBody = makeRequestWithHeaders(stdT, certHttpClient, ordURL, headers)
+					appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
+					if appDestinationsRaw == "" {
+						return false
+					}
+					require.NotEmpty(stdT, appDestinationsRaw)
+
+					appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
+					if len(appDestinations) != 1 {
+						return false
+					}
+					require.Len(stdT, appDestinations, 1)
+
+					expectedDestinationName := "e2e-client-cert-auth-destination-name"
+					appDestinationName := gjson.Get(respBody, "consumptionBundles.0.destinations.0.name").String()
+					require.Equal(t, expectedDestinationName, appDestinationName)
+
+					return true
+				}, time.Second*30, time.Second)
+				stdT.Log("Successfully fetched system with bundles and destinations while waiting for the synchronization job")
+			})
+
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 			unassignStartTime := time.Now()
@@ -611,168 +672,6 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, nil)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
-		})
-
-		t.Run("Create a destination associated with a bundle using existing destinations created from destination creator", func(t *testing.T) {
-			const correlationID = "e2e-client-cert-auth-correlation-ids"
-			bndlInput := graphql.BundleCreateInput{
-				Name:           "test-bundle",
-				CorrelationIDs: []string{correlationID},
-			}
-			bundle := fixtures.CreateBundleWithInput(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID, bndlInput)
-			require.NotEmpty(stdT, bundle.ID)
-
-			cleanupNotificationsFromExternalSvcMock(stdT, certSecuredHTTPClient)
-			defer cleanupNotificationsFromExternalSvcMock(stdT, certSecuredHTTPClient)
-
-			cleanupDestinationsFromExternalSvcMock(stdT, certSecuredHTTPClient)
-			defer cleanupDestinationsFromExternalSvcMock(stdT, certSecuredHTTPClient)
-
-			cleanupDestnationCertificatesFromExternalSvcMock(stdT, certSecuredHTTPClient)
-			defer cleanupDestnationCertificatesFromExternalSvcMock(stdT, certSecuredHTTPClient)
-
-			// first app
-			applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
-			asyncCallbackWebhookMode := graphql.WebhookModeAsyncCallback
-			urlTemplateAsyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async/destinations/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
-			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\":\\\"{{.Body.error}}\\\",\\\"success_status_code\\\":202}"
-
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication, emptyHeaderTemplate)
-
-			stdT.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, asyncCallbackWebhookMode, app2.ID)
-			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(stdT, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, subscriptionConsumerAccountID, app2.ID)
-			defer fixtures.CleanupWebhook(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationAsyncWebhookInput.ID)
-
-			// second app
-			syncWebhookMode := graphql.WebhookModeSync
-			urlTemplateSyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/destinations/configuration/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			outputTemplateSyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\":200}"
-
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication, emptyHeaderTemplate)
-
-			stdT.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
-			actualApplicationWebhook := fixtures.AddWebhookToApplication(stdT, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
-			defer fixtures.CleanupWebhook(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, actualApplicationWebhook.ID)
-
-			// create formation constraints and attach them to formation template
-			firstConstraintInput := graphql.FormationConstraintInput{
-				Name:            "e2e-destination-creator-notification-status-returned",
-				ConstraintType:  graphql.ConstraintTypePre,
-				TargetOperation: graphql.TargetOperationNotificationStatusReturned,
-				Operator:        formationconstraintpkg.DestinationCreator,
-				ResourceType:    graphql.ResourceTypeApplication,
-				ResourceSubtype: applicationType1,
-				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .NotificationStatusReport }}\\\"notification_status_report_memory_address\\\":{{ .NotificationStatusReport.GetAddress }},{{ end }}{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
-				ConstraintScope: graphql.ConstraintScopeFormationType,
-			}
-
-			stdT.Logf("Creating formation constraint with name: %q", firstConstraintInput.Name)
-			firstConstraint := fixtures.CreateFormationConstraint(stdT, ctx, certSecuredGraphQLClient, firstConstraintInput)
-			defer fixtures.CleanupFormationConstraint(stdT, ctx, certSecuredGraphQLClient, firstConstraint.ID)
-			require.NotEmpty(stdT, firstConstraint.ID)
-
-			fixtures.AttachConstraintToFormationTemplate(stdT, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
-
-			// second constraint
-			secondConstraintInput := graphql.FormationConstraintInput{
-				Name:            "e2e-destination-creator-send-notification",
-				ConstraintType:  graphql.ConstraintTypePre,
-				TargetOperation: graphql.TargetOperationSendNotification,
-				Operator:        formationconstraintpkg.DestinationCreator,
-				ResourceType:    graphql.ResourceTypeApplication,
-				ResourceSubtype: applicationType1,
-				InputTemplate:   "{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"operation\\\": \\\"{{.Operation}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}{{ if .ReverseFormationAssignment }}\\\"reverse_formation_assignment_memory_address\\\":{{ .ReverseFormationAssignment.GetAddress }},{{ end }}\\\"join_point_location\\\": {\\\"OperationName\\\":\\\"{{.Location.OperationName}}\\\",\\\"ConstraintType\\\":\\\"{{.Location.ConstraintType}}\\\"}}",
-				ConstraintScope: graphql.ConstraintScopeFormationType,
-			}
-
-			stdT.Logf("Creating formation constraint with name: %q", secondConstraintInput.Name)
-			secondConstraint := fixtures.CreateFormationConstraint(stdT, ctx, certSecuredGraphQLClient, secondConstraintInput)
-			defer fixtures.CleanupFormationConstraint(stdT, ctx, certSecuredGraphQLClient, secondConstraint.ID)
-			require.NotEmpty(stdT, secondConstraint.ID)
-
-			fixtures.AttachConstraintToFormationTemplate(stdT, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
-
-			// create formation
-			stdT.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)
-			defer fixtures.DeleteFormationWithinTenant(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)
-			formation := fixtures.CreateFormationFromTemplateWithinTenant(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName, &providerFormationTmplName)
-			require.NotEmpty(stdT, formation.ID)
-
-			formationInput := graphql.FormationInput{Name: formationName}
-			stdT.Logf("Assign application 2 with ID: %s to formation: %q", app2.ID, formationName)
-			defer fixtures.UnassignFormationWithApplicationObjectType(stdT, ctx, certSecuredGraphQLClient, formationInput, app2.ID, subscriptionConsumerAccountID)
-			assignedFormation := fixtures.AssignFormationWithApplicationObjectType(stdT, ctx, certSecuredGraphQLClient, formationInput, app2.ID, subscriptionConsumerAccountID)
-			require.Equal(stdT, formation.ID, assignedFormation.ID)
-			require.Equal(stdT, formation.State, assignedFormation.State)
-
-			stdT.Logf("Assign application 1 with ID: %s to formation %s", app1.ID, formationName)
-			defer fixtures.UnassignFormationWithApplicationObjectType(stdT, ctx, certSecuredGraphQLClient, formationInput, app1.ID, subscriptionConsumerAccountID)
-			assignedFormation = fixtures.AssignFormationWithApplicationObjectType(stdT, ctx, certSecuredGraphQLClient, formationInput, app1.ID, subscriptionConsumerAccountID)
-			require.Equal(stdT, formationName, assignedFormation.Name)
-
-			assignmentWithDestDetails := fixtures.GetFormationAssignmentsBySourceAndTarget(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formation.ID, app2.ID, app1.ID)
-			require.NotEmpty(stdT, assignmentWithDestDetails)
-
-			stdT.Logf("Assert formation assignments during %s operation...", assignOperation)
-			noAuthDestinationName := "e2e-design-time-destination-name"
-			noAuthDestinationURL := "http://e2e-design-time-url-example.com"
-
-			// Configure destination service client
-			region := conf.SubscriptionConfig.SelfRegRegion
-			instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
-			require.True(stdT, ok)
-			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
-			require.NoError(stdT, err)
-
-			destinationProviderToken := token.GetClientCredentialsToken(stdT, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderClaimKey)
-
-			stdT.Log("Assert destinations and destination certificates are created...")
-			assertNoAuthDestination(stdT, destinationClient, conf.ProviderDestinationConfig.ServiceURL, noAuthDestinationName, noAuthDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken)
-			stdT.Log("Destinations and destination certificates have been successfully created")
-
-			stdT.Log("Getting consumer application using both provider and consumer credentials...")
-
-			consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
-			consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-			consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
-			require.NoError(stdT, err)
-			headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
-
-			// HTTP client configured with certificate with patched subject, issued from cert-rotation job
-			certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
-
-			// Make a request to the ORD service with http client.
-			respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", app1.ID), headers)
-
-			require.Equal(stdT, app1.Name, gjson.Get(respBody, "title").String())
-			stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
-
-			// Make a request to the ORD service expanding bundles and destinations.
-			// With destinations - waiting for the synchronization job
-			stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
-			require.Eventually(stdT, func() bool {
-				respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", app1.ID), headers)
-
-				appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
-				if appDestinationsRaw == "" {
-					return false
-				}
-				require.NotEmpty(stdT, appDestinationsRaw)
-
-				appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
-				if len(appDestinations) != 1 {
-					return false
-				}
-				require.Len(stdT, appDestinations, 1)
-
-				expectedDestinationName := "e2e-client-cert-auth-destination-name"
-				appDestinationName := gjson.Get(respBody, "consumptionBundles.0.destinations.0.name").String()
-				require.Equal(t, expectedDestinationName, appDestinationName)
-
-				return true
-			}, time.Second*30, time.Second)
-			stdT.Log("Successfully fetched system with bundles and destinations while waiting for the synchronization job")
 		})
 	})
 }
