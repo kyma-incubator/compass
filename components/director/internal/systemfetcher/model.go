@@ -2,6 +2,7 @@ package systemfetcher
 
 import (
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 	"strings"
@@ -10,13 +11,12 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+const TrimPrefix = "$."
+
 var (
 	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshalling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates []TemplateMapping
-	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
-	// should match to the SystemSourceKey's value of the fetched systems
-	ApplicationTemplateLabelFilter string
 	// SelectFilter represents the select filter that determines which properties of a system will be fetched
 	SelectFilter []string
 	// SystemSourceKey represents a key for filtering systems
@@ -78,7 +78,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
 	for _, tm := range ApplicationTemplates {
-		slisFilter, slisFilterExists := tm.Labels["slisFilter"]
+		slisFilter, slisFilterExists := tm.Labels[graphql.SlisFilterLabelKey]
 		if !slisFilterExists {
 			return *s, errors.Errorf("missing slis filter for application template with ID %q", tm.AppTemplate.ID)
 		}
@@ -120,15 +120,13 @@ func (s *System) EnhanceWithTemplateID() (System, error) {
 }
 
 func systemMatchesSlisFilters(systemPayload map[string]interface{}, slisFilters []SlisFilter) (bool, error) {
-	prefix := "$."
-
 	payload, err := json.Marshal(systemPayload)
 	if err != nil {
 		return false, err
 	}
 
 	for _, filter := range slisFilters {
-		path := strings.TrimPrefix(filter.Key, prefix)
+		path := strings.TrimPrefix(filter.Key, TrimPrefix)
 		valueFromSystemPayload := gjson.Get(string(payload), path)
 
 		switch filter.Operation {

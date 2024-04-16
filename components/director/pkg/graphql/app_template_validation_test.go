@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"github.com/stretchr/testify/require"
 )
 
@@ -497,6 +498,7 @@ func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateInput()
 			sut.Labels = testCase.Value
+			systemfetcher.ApplicationTemplateLabelFilter = "systemRole"
 			// WHEN
 			err := sut.Validate()
 			// THEN

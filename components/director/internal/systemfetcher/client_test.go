@@ -3,6 +3,7 @@ package systemfetcher_test
 import (
 	"context"
 	"encoding/json"
+	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"net/http"
 	"net/http/httptest"
 	"sort"
@@ -79,7 +80,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, testExternal, "tenantName")
 	tenantCustomerModel.Type = tenant.Customer
 	systemfetcher.SystemSourceKey = sourceKey
-	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
+	globalsystemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",

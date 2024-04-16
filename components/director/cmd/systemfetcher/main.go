@@ -4,6 +4,8 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"net/http"
 	"os"
 	"strings"
@@ -94,7 +96,6 @@ import (
 
 const (
 	discoverSystemsOpMode = "DISCOVER_SYSTEMS"
-	slisFilterLabelKey    = "slisFilter"
 )
 
 type config struct {
@@ -663,7 +664,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		slisFilterLabel, slisFilterLabelExists := labels[slisFilterLabelKey]
+		slisFilterLabel, slisFilterLabelExists := labels[graphql.SlisFilterLabelKey]
 		if !slisFilterLabelExists {
 			return errors.Errorf("missing slis filter label for application template with ID %q", appTemplate.ID)
 		}
@@ -699,16 +700,15 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	systemfetcher.ApplicationTemplates = applicationTemplates
 	systemfetcher.SelectFilter = createSelectFilter(selectFilterProperties, placeholdersMapping)
-	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
+	globalsystemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
 	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
 	return nil
 }
 
 func getTopParentFromJSONPath(jsonPath string) string {
-	prefix := "$."
 	infix := "."
 
-	topParent := strings.TrimPrefix(jsonPath, prefix)
+	topParent := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
 	firstInfixIndex := strings.Index(topParent, infix)
 	if firstInfixIndex == -1 {
 		return topParent

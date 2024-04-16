@@ -3,6 +3,8 @@ package graphql
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"regexp"
 	"sort"
 	"strings"
@@ -15,9 +17,8 @@ import (
 )
 
 const (
-	systemRoleLabelKey = "systemRole"
-	slisFilterLabelKey = "slisFilter"
-	productIDKey       = "productId"
+	SlisFilterLabelKey = "slisFilter"
+	ProductIDKey       = "productId"
 )
 
 // Validate missing godoc
@@ -104,8 +105,12 @@ func labelsRuleFunc(value interface{}) error {
 		return errors.New("value could not be cast to Labels object")
 	}
 
-	systemRolesLabel, hasSystemRoles := labels[systemRoleLabelKey]
-	slisFilterLabel, hasSlisFilter := labels[slisFilterLabelKey]
+	systemRolesLabel, hasSystemRoles := labels[systemfetcher.ApplicationTemplateLabelFilter]
+	slisFilterLabel, hasSlisFilter := labels[SlisFilterLabelKey]
+
+	if !hasSystemRoles && hasSlisFilter {
+		return errors.New("system role is required when slis filter is defined")
+	}
 
 	if !hasSystemRoles {
 		return nil
@@ -116,22 +121,17 @@ func labelsRuleFunc(value interface{}) error {
 		return errors.New("invalid format of system roles label")
 	}
 
-	if (!hasSystemRoles || len(systemRolesLabelValue) == 0) && hasSlisFilter {
-		return errors.New("system role is required when slis filter is defined")
+	if len(systemRolesLabelValue) == 0 && hasSlisFilter {
+		return errors.New("system role must not be empty when slis filter is defined")
 	}
 
 	if !hasSlisFilter {
 		return nil
 	}
 
-	systemRoles := make([]string, 0)
-
-	for _, systemRoleValue := range systemRolesLabelValue {
-		systemRoleValueStr, ok := systemRoleValue.(string)
-		if !ok {
-			return errors.New("value of system role should be a string")
-		}
-		systemRoles = append(systemRoles, systemRoleValueStr)
+	systemRoles, err := str.ConvertToStringArray(systemRolesLabelValue)
+	if err != nil {
+		return err
 	}
 
 	slisFilterLabelValue, ok := slisFilterLabel.([]interface{})
@@ -147,7 +147,7 @@ func labelsRuleFunc(value interface{}) error {
 			return errors.New("invalid format of slis filter value")
 		}
 
-		productID, ok := filter[productIDKey]
+		productID, ok := filter[ProductIDKey]
 		if !ok {
 			return errors.New("missing productId in slis filter")
 		}

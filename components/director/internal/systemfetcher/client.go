@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"io"
 	"net/http"
 	"strings"
@@ -177,7 +178,7 @@ func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSy
 	usedSystemRoles := make(map[string]bool)
 
 	for _, templateMapping := range ApplicationTemplates {
-		appTemplateLblFilter, ok := templateMapping.Labels[ApplicationTemplateLabelFilter]
+		appTemplateLblFilter, ok := templateMapping.Labels[systemfetcher.ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}

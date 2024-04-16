@@ -43,7 +43,6 @@ const (
 	globalSubaccountIDLabelKey = "global_subaccount_id"
 	sapProviderName            = "SAP"
 	displayNameLabelKey        = "displayName"
-	slisFilterLabelKey         = "slisFilter"
 )
 
 var defaultSlisFilterValueForManagedByProperty = []map[string]interface{}{
@@ -347,7 +346,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}
 
 	systemRole, hasSystemRole := labels[r.appTemplateProductLabel]
-	_, slisFilterLabelExists := labels[slisFilterLabelKey]
+	_, slisFilterLabelExists := labels[graphql.SlisFilterLabelKey]
 
 	if hasSystemRole && !slisFilterLabelExists {
 		log.C(ctx).Infof("Application Template with name %s has system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
@@ -372,7 +371,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
 		}
 
-		labels[slisFilterLabelKey] = filtersFromSystemRoles
+		labels[graphql.SlisFilterLabelKey] = filtersFromSystemRoles
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
