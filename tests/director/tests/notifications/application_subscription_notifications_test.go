@@ -571,7 +571,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 				// Make a request to the ORD service with http client.
-				respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", app1.ID), headers)
+				params := urlpkg.Values{}
+				params.Add("$format", "json")
+				ordURLForSystems := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURLForSystems = ordURLForSystems + params.Encode()
+
+				respBody := makeRequestWithHeaders(stdT, certHttpClient, ordURLForSystems, headers)
 
 				require.Equal(stdT, app1.Name, gjson.Get(respBody, "title").String())
 				stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
@@ -580,15 +585,13 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 				// With destinations - waiting for the synchronization job
 				stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 
-				params := urlpkg.Values{}
 				params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
-				params.Add("$format", "json")
 				params.Add("reload", "true")
-				ordURL := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
-				ordURL = ordURL + params.Encode()
+				ordURLForSystemsWithBundlesAndDests := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURLForSystemsWithBundlesAndDests = ordURLForSystemsWithBundlesAndDests + params.Encode()
 
 				require.Eventually(stdT, func() bool {
-					respBody = makeRequestWithHeaders(stdT, certHttpClient, ordURL, headers)
+					respBody = makeRequestWithHeaders(stdT, certHttpClient, ordURLForSystemsWithBundlesAndDests, headers)
 					appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
 					if appDestinationsRaw == "" {
 						return false
