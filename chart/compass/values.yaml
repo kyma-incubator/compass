@@ -1622,7 +1622,3 @@ global:
         - "runtime:read"
         - "runtime:write"
         - "tenant:read"
-  cockpit:
-    auth:
-      idpHost: ""
-      clientID: ""
