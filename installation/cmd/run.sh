@@ -80,6 +80,18 @@ do
             shift # past argument
             shift # past value
         ;;
+        --oidc-host)
+            checkInputParameterValue "${2}"
+            OIDC_HOST="${2}"
+            shift # past argument
+            shift # past value
+        ;;
+        --oidc-admin-group)
+            checkInputParameterValue "${2}"
+            OIDC_ADMIN_GROUP="${2}"
+            shift # past argument
+            shift # past value
+        ;;
         --api-metadata-validator-image)
             checkInputParameterValue "${2}"
             API_METADATA_VALIDATOR_IMAGE="${2}"
