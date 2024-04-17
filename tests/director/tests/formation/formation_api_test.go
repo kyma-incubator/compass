@@ -1110,7 +1110,6 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			validateRuntimesScenariosLabels(t, ctx, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntime.ID, providerRuntime.ID)
 
 			unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
-			unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 		})
 
 		t.Run("Create Automatic Scenario Assignment AFTER runtime creation", func(t *testing.T) {

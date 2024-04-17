@@ -754,6 +754,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 	testCases := []struct {
 		Name                    string
+		Context                 context.Context
 		TransactionerFn         func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn               func() *automock.RuntimeService
 		ScenarioAssignmentFn    func() *automock.ScenarioAssignmentService
@@ -763,12 +764,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		BundleInstanceAuthSvcFn func() *automock.BundleInstanceAuthService
 		SelfRegManagerFn        func() *automock.SelfRegisterManager
 		FormationsSvcFn         func() *automock.FormationService
+		TenantSvcFn             func() *automock.TenantSvc
 		InputID                 string
 		ExpectedRuntime         *graphql.Runtime
 		ExpectedErr             error
 	}{
 		{
 			Name:            "Success",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -806,6 +809,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc.On("Update", contextParam, auth).Return(nil)
 				return svc
 			},
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn:  UnusedFormationService,
 			InputID:          "foo",
@@ -813,7 +821,8 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ExpectedErr:      nil,
 		},
 		{
-			Name: "Success for self registered runtime",
+			Name:    "Success for self registered runtime",
+			Context: fixContextWithTenant(tenantID, ""),
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTx.On("Commit").Return(nil).Times(2)
@@ -863,12 +872,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
-			Name: "Returns error when second transaction fails",
+			Name:    "Returns error when second transaction fails",
+			Context: fixContextWithTenant(tenantID, ""),
 			TransactionerFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
 				persistTx := &persistenceautomock.PersistenceTx{}
 				persistTxSecond := &persistenceautomock.PersistenceTx{}
@@ -921,13 +936,19 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesCleanupWithNoErrors,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns error when self-registration had been done but cleanup fails",
 			TransactionerFn: txGen.ThatSucceeds,
+			Context:         fixContextWithTenant(tenantID, ""),
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
@@ -953,9 +974,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatReturnsErrorOnCleanup,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      errors.New("An error occurred during cleanup of self-registered runtime"),
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     errors.New("An error occurred during cleanup of self-registered runtime"),
 		},
 		{
 			Name:            "Returns error when region label retrieval fails",
@@ -990,6 +1016,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		},
 		{
 			Name:            "Returns error when runtime deletion failed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1025,9 +1052,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns error when runtime retrieval failed",
@@ -1069,6 +1101,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		{
 			Name:            "Returns error when transaction commit failed",
 			TransactionerFn: txGen.ThatFailsOnCommit,
+			Context:         fixContextWithTenant(tenantID, ""),
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
@@ -1100,9 +1133,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Return error when listing all system auths failed",
@@ -1212,6 +1250,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		},
 		{
 			Name:            "Return error when removing oauth from hydra",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1244,12 +1283,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns error when listing scenarios label",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1273,12 +1318,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns empty scenarios when listing scenarios label should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1313,12 +1364,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and error when listing scenario assignments should fail",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1349,12 +1406,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and not found when listing scenario assignments should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1393,12 +1456,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments but fails on deletion of scenario assignment should fail",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1434,12 +1503,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerReturnsDistinguishingLabel,
-			InputID:          "foo",
-			ExpectedRuntime:  nil,
-			ExpectedErr:      testErr,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: nil,
+			ExpectedErr:     testErr,
 		},
 		{
 			Name:            "Returns scenario when listing scenarios label and scenario assignment when listing scenario assignments and succeeds on deletion of scenario assignment should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1484,12 +1559,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and only some are created by a scenario assignment should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1546,12 +1627,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				return svc
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and all are created by a scenario assignment should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1616,12 +1703,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 
 				return svc
 			},
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
 			InputID:         "foo",
 			ExpectedRuntime: gqlRuntime,
 			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and none are created by a scenario assignment should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1665,12 +1758,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
 			Name:            "Returns multiple scenarios when listing scenarios label and none are created by a scenario assignment should succeed",
+			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
@@ -1714,9 +1813,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			TenantSvcFn: func() *automock.TenantSvc {
+				tntSvc := &automock.TenantSvc{}
+				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
+				return tntSvc
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 	}
 	for _, testCase := range testCases {
@@ -1730,12 +1834,21 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			bundleInstanceAuthSvc := testCase.BundleInstanceAuthSvcFn()
 			selfRegisterManager := testCase.SelfRegManagerFn()
 			formationSvc := testCase.FormationsSvcFn()
+			tenantSvc := &automock.TenantSvc{}
+			if testCase.TenantSvcFn != nil {
+				tenantSvc = testCase.TenantSvcFn()
+			}
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil, nil, nil, nil, nil, nil, formationSvc, nil)
+			ctx := context.TODO()
+			if testCase.Context != nil {
+				ctx = testCase.Context
+			}
+
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil, nil, nil, nil, nil, nil, formationSvc, tenantSvc)
 
 			// WHEN
-			result, err := resolver.DeleteRuntime(context.TODO(), testCase.InputID)
+			result, err := resolver.DeleteRuntime(ctx, testCase.InputID)
 
 			// then
 			assert.Equal(t, testCase.ExpectedRuntime, result)

@@ -862,34 +862,45 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 // deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,
 // if runtime doesn't have the scenarios label or is part of a scenario for which no scenario assignment exists => noop
 func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runtimeID string) error {
-	scenariosLbl, err := r.runtimeService.GetLabel(ctx, runtimeID, model.ScenariosKey)
-	notFound := apperrors.IsNotFoundError(err)
-	if err != nil && !notFound {
-		return err
-	}
+	tnt, err := tenant.LoadFromContext(ctx)
 
-	if notFound {
-		return nil
-	}
-
-	scenarios, err := labelPkg.ValueToStringsSlice(scenariosLbl.Value)
+	tntMapping, err := r.tenantSvc.GetTenantByID(ctx, tnt)
 	if err != nil {
 		return err
 	}
 
-	for _, scenario := range scenarios {
-		scenarioAssignment, err := r.scenarioAssignmentService.GetForScenarioName(ctx, scenario)
+	for _, parentTenantID := range tntMapping.Parents {
+		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
+
+		scenariosLbl, err := r.runtimeService.GetLabel(ctxWithParentTenant, runtimeID, model.ScenariosKey)
 		notFound := apperrors.IsNotFoundError(err)
 		if err != nil && !notFound {
 			return err
 		}
 
 		if notFound {
-			continue
+			return nil
 		}
 
-		if err := r.formationSvc.DeleteAutomaticScenarioAssignment(ctx, scenarioAssignment); err != nil {
+		scenarios, err := labelPkg.ValueToStringsSlice(scenariosLbl.Value)
+		if err != nil {
 			return err
+		}
+
+		for _, scenario := range scenarios {
+			scenarioAssignment, err := r.scenarioAssignmentService.GetForScenarioName(ctxWithParentTenant, scenario)
+			notFound := apperrors.IsNotFoundError(err)
+			if err != nil && !notFound {
+				return err
+			}
+
+			if notFound {
+				continue
+			}
+
+			if err := r.formationSvc.DeleteAutomaticScenarioAssignment(ctxWithParentTenant, scenarioAssignment); err != nil {
+				return err
+			}
 		}
 	}
 
