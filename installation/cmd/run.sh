@@ -102,6 +102,13 @@ function revert_migrator_file() {
     echo "$UPDATE_EXPECTED_SCHEMA_VERSION_FILE" > "$ROOT_PATH"/chart/compass/templates/update-expected-schema-version-job.yaml
 }
 
+function set_oidc_config() {
+  yq -i ".global.oathkeeper.auth.idpHost = \"$1\"" "$PATH_TO_VALUES"
+  if [[ -n ${2}  ]]; then
+   yq -i ".adminGroupNames = \"$2\"" "$PATH_TO_HYDRATOR_VALUES"
+  fi
+}
+
 function set_api_metadata_validator_image() {
   yq -i ".global.ordAggregator.metadataValidator.enabled = \"$1\"" "$PATH_TO_VALUES"
   yq -i ".global.ordAggregator.metadataValidator.image = \"$2\"" "$PATH_TO_VALUES"
@@ -121,6 +128,7 @@ function cleanup_trap() {
       rm -rf "${DATA_DIR}"/dump || true
   fi
   if [[ ${RESET_VALUES_YAML} ]] ; then
+    set_oidc_config "" "$DEFAULT_OIDC_ADMIN_GROUPS"
     set_api_metadata_validator_image false "" ""
   fi
   pkill -P $$ || true # This MUST be at the end of the cleanup_trap function.
@@ -159,6 +167,30 @@ function patchJWKS() {
 
 if [[ -n ${API_METADATA_VALIDATOR_IMAGE} ]]; then
   set_api_metadata_validator_image true $API_METADATA_VALIDATOR_IMAGE "http://localhost"
+fi
+
+if [[ -z ${OIDC_HOST} ]]; then
+  if [[ -f ${PATH_TO_COMPASS_OIDC_CONFIG_FILE} ]]; then
+    echo -e "${YELLOW}OIDC configuration not provided. Configuration from default config file will be used.${NC}"
+    DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_HYDRATOR_VALUES")"
+    OIDC_HOST=$(yq ".idpHost" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
+    OIDC_GROUPS=$(yq ".adminGroupNames" "$PATH_TO_COMPASS_OIDC_CONFIG_FILE")
+    set_oidc_config "$OIDC_HOST" "$OIDC_GROUPS"
+  else
+    echo -e "${RED}OIDC configuration not provided and config file was not found. JWT flows will not work!${NC}"
+    RESET_VALUES_YAML=false
+  fi
+else
+  DEFAULT_OIDC_ADMIN_GROUPS="$(yq ".adminGroupNames" "$PATH_TO_HYDRATOR_VALUES")"
+  if [[ -z ${OIDC_ADMIN_GROUP} ]]; then
+    echo -e "${GREEN}Using provided OIDC host.${NC}"
+    echo -e "${YELLOW}OIDC admin group was not provided. Will use default values.${NC}"
+    set_oidc_config "$OIDC_HOST"
+  else
+    echo -e "${GREEN}Using provided OIDC host and admin group.${NC}"
+    OIDC_GROUPS="$DEFAULT_OIDC_ADMIN_GROUPS , $OIDC_ADMIN_GROUP"
+    set_oidc_config "$OIDC_HOST" "$OIDC_GROUPS"
+  fi
 fi
 
 if [[ ${DUMP_DB} ]]; then
