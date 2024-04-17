@@ -33,6 +33,8 @@ const (
 	consumerID                      = "test-consumer-id"
 	testSaaSAppName                 = "testSaaSAppName-1"
 	secondTestSaaSAppName           = "testSaaSAppName-2"
+	appTemplateProductLabelKey      = "systemRole"
+	productLabelValue               = "TEST"
 )
 
 var (
@@ -166,12 +168,30 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 			ExpectedOutput: false,
 		},
 		{
+			Name:           "Success for product label",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    fixLblWithProduct(),
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    nil,
+			ExpectedOutput: false,
+		},
+		{
 			Name:           "Error for missing distinguished label",
 			Config:         testConfig,
 			Region:         testRegion,
 			InputLabels:    map[string]interface{}{},
 			Context:        ctxWithCertConsumer,
-			ExpectedErr:    fmt.Errorf("missing %q label", selfRegisterDistinguishLabelKey),
+			ExpectedErr:    fmt.Errorf("missing %q or %q label", selfRegisterDistinguishLabelKey, appTemplateProductLabelKey),
+			ExpectedOutput: false,
+		},
+		{
+			Name:           "Error when distinguished label and product label are present",
+			Config:         testConfig,
+			Region:         testRegion,
+			InputLabels:    fixLblWithProductAndDistinguish(),
+			Context:        ctxWithCertConsumer,
+			ExpectedErr:    fmt.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", selfRegisterDistinguishLabelKey, appTemplateProductLabelKey),
 			ExpectedOutput: false,
 		},
 		{
@@ -196,7 +216,7 @@ func TestSelfRegisterManager_IsSelfRegistrationFlow(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, nil, appTemplateProductLabelKey)
 			require.NoError(t, err)
 
 			output, err := manager.IsSelfRegistrationFlow(testCase.Context, testCase.InputLabels)
@@ -417,7 +437,7 @@ func TestSelfRegisterManager_PrepareForSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, appTemplateProductLabelKey)
 			require.NoError(t, err)
 
 			output, err := manager.PrepareForSelfRegistration(testCase.Context, testCase.ResourceType, testCase.InputLabels, testUUID, testCase.Validation)
@@ -534,7 +554,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			svcCallerProvider := testCase.CallerProvider(t, testCase.Config, testCase.Region)
-			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider)
+			manager, err := selfregmanager.NewSelfRegisterManager(testCase.Config, svcCallerProvider, appTemplateProductLabelKey)
 			require.NoError(t, err)
 
 			err = manager.CleanupSelfRegistration(testCase.Context, testCase.SelfRegisteredDistinguishLabelValue, testCase.Region)
@@ -551,7 +571,7 @@ func TestSelfRegisterManager_CleanupSelfRegistration(t *testing.T) {
 func TestNewSelfRegisterManager(t *testing.T) {
 	t.Run("Error when creating self register manager fails", func(t *testing.T) {
 		cfg := config.SelfRegConfig{}
-		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil)
+		manager, err := selfregmanager.NewSelfRegisterManager(cfg, nil, appTemplateProductLabelKey)
 		require.Error(t, err)
 		require.Contains(t, err.Error(), "config path cannot be empty")
 		require.Nil(t, manager)
@@ -578,6 +598,19 @@ func fixLblInputAfterPrepForRuntime() map[string]interface{} {
 func fixLblWithDistinguish() map[string]interface{} {
 	return map[string]interface{}{
 		selfRegisterDistinguishLabelKey: distinguishLblVal,
+	}
+}
+
+func fixLblWithProduct() map[string]interface{} {
+	return map[string]interface{}{
+		appTemplateProductLabelKey: productLabelValue,
+	}
+}
+
+func fixLblWithProductAndDistinguish() map[string]interface{} {
+	return map[string]interface{}{
+		selfRegisterDistinguishLabelKey: distinguishLblVal,
+		appTemplateProductLabelKey:      productLabelValue,
 	}
 }
 
