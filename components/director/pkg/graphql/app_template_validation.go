@@ -4,24 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
-	"sort"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
-
-	"github.com/go-ozzo/ozzo-validation/v4/is"
-
 	validation "github.com/go-ozzo/ozzo-validation/v4"
+	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
 	"github.com/pkg/errors"
-)
-
-const (
-	// SlisFilterLabelKey is the name of the slis filter label for app template
-	SlisFilterLabelKey = "slisFilter"
-	// ProductIDKey is the name of the property relating to system roles in system payload
-	ProductIDKey = "productId"
 )
 
 // Validate missing godoc
@@ -35,7 +23,6 @@ func (i ApplicationTemplateInput) Validate() error {
 		"accessLevel":            validation.Validate(i.AccessLevel, validation.Required, validation.In(ApplicationTemplateAccessLevelGlobal)),
 		"webhooks":               validation.Validate(i.Webhooks, validation.By(webhooksRuleFunc)),
 		"applicationNamespace":   validation.Validate(i.ApplicationNamespace, validation.Length(1, longStringLengthLimit)),
-		"labels":                 validation.Validate(i.Labels, validation.By(labelsRuleFunc)),
 	}.Filter()
 }
 
@@ -100,86 +87,6 @@ func (i TemplateValueInput) Validate() error {
 		validation.Field(&i.Placeholder, validation.Required, inputvalidation.DNSName),
 		validation.Field(&i.Value, validation.RuneLength(0, shortStringLengthLimit)),
 	)
-}
-
-func labelsRuleFunc(value interface{}) error {
-	labels, ok := value.(Labels)
-	if !ok {
-		return errors.New("value could not be cast to Labels object")
-	}
-
-	systemRolesLabel, hasSystemRoles := labels[systemfetcher.ApplicationTemplateLabelFilter]
-	slisFilterLabel, hasSlisFilter := labels[SlisFilterLabelKey]
-
-	if !hasSystemRoles && hasSlisFilter {
-		return errors.New("system role is required when slis filter is defined")
-	}
-
-	if !hasSystemRoles {
-		return nil
-	}
-
-	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
-	if !ok {
-		return errors.New("invalid format of system roles label")
-	}
-
-	if len(systemRolesLabelValue) == 0 && hasSlisFilter {
-		return errors.New("system role must not be empty when slis filter is defined")
-	}
-
-	if !hasSlisFilter {
-		return nil
-	}
-
-	systemRoles, err := str.ConvertToStringArray(systemRolesLabelValue)
-	if err != nil {
-		return err
-	}
-
-	slisFilterLabelValue, ok := slisFilterLabel.([]interface{})
-	if !ok {
-		return errors.Errorf("invalid format of slis filter label")
-	}
-
-	productIds := make([]string, 0)
-
-	for _, slisFilterValue := range slisFilterLabelValue {
-		filter, ok := slisFilterValue.(map[string]interface{})
-		if !ok {
-			return errors.New("invalid format of slis filter value")
-		}
-
-		productID, ok := filter[ProductIDKey]
-		if !ok {
-			return errors.New("missing productId in slis filter")
-		}
-
-		productIDStr, ok := productID.(string)
-		if !ok {
-			return errors.New("invalid format of productId value")
-		}
-
-		productIds = append(productIds, productIDStr)
-	}
-
-	systemRolesCount := len(systemRoles)
-	slisFilterProductIdsCount := len(productIds)
-
-	if systemRolesCount != slisFilterProductIdsCount {
-		return errors.New("system roles count does not match the product ids count in slis filter")
-	}
-
-	sort.Strings(systemRoles)
-	sort.Strings(productIds)
-
-	for i, systemRole := range systemRoles {
-		if systemRole != productIds[i] {
-			return errors.New("system roles don't match with product ids in slis filter")
-		}
-	}
-
-	return nil
 }
 
 func webhooksRuleFunc(value interface{}) error {

@@ -10,8 +10,6 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -179,7 +177,7 @@ func (c *Client) buildFilter(systemSynchronizationTimestamps map[string]SystemSy
 	usedSystemRoles := make(map[string]bool)
 
 	for _, templateMapping := range ApplicationTemplates {
-		appTemplateLblFilter, ok := templateMapping.Labels[systemfetcher.ApplicationTemplateLabelFilter]
+		appTemplateLblFilter, ok := templateMapping.Labels[ApplicationTemplateLabelFilter]
 		if !ok {
 			continue
 		}

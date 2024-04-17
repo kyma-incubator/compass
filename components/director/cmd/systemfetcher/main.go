@@ -10,9 +10,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
-
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
@@ -665,7 +662,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		slisFilterLabel, slisFilterLabelExists := labels[graphql.SlisFilterLabelKey]
+		slisFilterLabel, slisFilterLabelExists := labels[systemfetcher.SlisFilterLabelKey]
 		if !slisFilterLabelExists {
 			return errors.Errorf("missing slis filter label for application template with ID %q", appTemplate.ID)
 		}
@@ -701,7 +698,7 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	systemfetcher.ApplicationTemplates = applicationTemplates
 	systemfetcher.SelectFilter = createSelectFilter(selectFilterProperties, placeholdersMapping)
-	globalsystemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
+	systemfetcher.ApplicationTemplateLabelFilter = cfg.TemplateConfig.LabelFilter
 	systemfetcher.SystemSourceKey = cfg.APIConfig.SystemSourceKey
 	return nil
 }

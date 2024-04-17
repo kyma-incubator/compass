@@ -11,7 +11,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
 	"github.com/stretchr/testify/require"
 )
 
@@ -386,119 +385,6 @@ func TestApplicationTemplateInput_Validate_Webhooks(t *testing.T) {
 			//GIVEN
 			sut := fixValidApplicationTemplateInput()
 			sut.Webhooks = testCase.Value
-			// WHEN
-			err := sut.Validate()
-			// THEN
-			if testCase.Valid {
-				require.NoError(t, err)
-			} else {
-				require.Error(t, err)
-			}
-		})
-	}
-}
-
-func TestApplicationTemplateInput_Validate_Labels(t *testing.T) {
-	validSystemRolesOneValue1 := []interface{}{"role1"}
-	validSystemRolesOneValue2 := []interface{}{"role2"}
-	validSystemRolesTwoValues := []interface{}{"role1", "role2"}
-	invalidSystemRoleValueIsNotString := []interface{}{1}
-	emptySystemRole := []interface{}{}
-
-	validSlisFilterOneValue := []interface{}{
-		map[string]interface{}{
-			"productId": "role1",
-			"filter":    []map[string]interface{}{},
-		},
-	}
-	invalidSlisFilterLabelWrongFormat := ""
-	invalidSlisFilterValueWrongFormat := []interface{}{1}
-	invalidSlisFilterMissingProductID := []interface{}{
-		map[string]interface{}{
-			"filter": []map[string]interface{}{},
-		},
-	}
-
-	invalidSlisFilterInvalidFormatOfProductID := []interface{}{
-		map[string]interface{}{
-			"productId": []interface{}{},
-			"filter":    []map[string]interface{}{},
-		},
-	}
-
-	testCases := []struct {
-		Name  string
-		Value graphql.Labels
-		Valid bool
-	}{
-		{
-			Name:  "Valid with system roles",
-			Value: fixLabelsInputWithSystemRole(validSystemRolesOneValue1),
-			Valid: true,
-		},
-		{
-			Name:  "Valid with system roles and slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, validSlisFilterOneValue),
-			Valid: true,
-		},
-		{
-			Name:  "Valid - Empty",
-			Value: graphql.Labels{},
-			Valid: true,
-		},
-		{
-			Name:  "Valid - nil",
-			Value: nil,
-			Valid: true,
-		},
-		{
-			Name:  "Not valid - missing system role when slis filter is defined",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(emptySystemRole, validSlisFilterOneValue),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - value of system role should be a string",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(invalidSystemRoleValueIsNotString, validSlisFilterOneValue),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - invalid format of slis filter label",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterLabelWrongFormat),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - invalid format of slis filter value",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterValueWrongFormat),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - missing productId in slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterMissingProductID),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - invalid format of productId value in slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue1, invalidSlisFilterInvalidFormatOfProductID),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - system roles count does not match the product ids count in slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesTwoValues, validSlisFilterOneValue),
-			Valid: false,
-		},
-		{
-			Name:  "Not valid - system roles don't match with product ids in slis filter",
-			Value: fixLabelsInputWithSystemRoleAndSlisFilter(validSystemRolesOneValue2, validSlisFilterOneValue),
-			Valid: false,
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			//GIVEN
-			sut := fixValidApplicationTemplateInput()
-			sut.Labels = testCase.Value
-			systemfetcher.ApplicationTemplateLabelFilter = "systemRole"
 			// WHEN
 			err := sut.Validate()
 			// THEN

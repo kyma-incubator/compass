@@ -62,22 +62,38 @@ var (
 	testTableColumns                          = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
 	newTestLabels                             = map[string]interface{}{"label1": "test"}
 	timestamp                                 = time.Now()
-	defaultValueForProductLabelWithSlisFilter = map[string]interface{}{
-		AppTemplateProductLabel: []interface{}{"role"},
-		SlisFilterLabelKey: []map[string]interface{}{
-			{
-				"productId": "role",
-				"filter": []map[string]interface{}{
-					{
-						"key":       "$.additionalAttributes.managedBy",
-						"value":     []string{"SAP Cloud"},
-						"operation": "exclude",
-					},
+	defaultValueForProductLabelWithSlisFilter = []interface{}{
+		map[string]interface{}{
+			"productId": "role",
+			"filter": []map[string]interface{}{
+				{
+					"key":       "$.additionalAttributes.managedBy",
+					"value":     []string{"SAP Cloud"},
+					"operation": "exclude",
+				},
+			},
+		},
+	}
+	customValueForProductLabelWithSlisFilter = []interface{}{
+		map[string]interface{}{
+			"productId": "role",
+			"filter": []map[string]interface{}{
+				{
+					"key":       "$.systemId",
+					"value":     []string{"system-id"},
+					"operation": "include",
 				},
 			},
 		},
 	}
 )
+
+func fixProductLabelAndSlisFilter(slisFilterValue []interface{}) map[string]interface{} {
+	return map[string]interface{}{
+		AppTemplateProductLabel: []interface{}{"role"},
+		SlisFilterLabelKey:      slisFilterValue,
+	}
+}
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
 	desc := testDescription

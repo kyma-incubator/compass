@@ -10,8 +10,6 @@ import (
 	"testing"
 	"time"
 
-	globalsystemfetcher "github.com/kyma-incubator/compass/components/director/pkg/systemfetcher"
-
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
@@ -81,7 +79,7 @@ func TestFetchSystemsForTenant(t *testing.T) {
 	tenantCustomerModel := newModelBusinessTenantMapping(tenantID, testExternal, "tenantName")
 	tenantCustomerModel.Type = tenant.Customer
 	systemfetcher.SystemSourceKey = sourceKey
-	globalsystemfetcher.ApplicationTemplateLabelFilter = labelFilter
+	systemfetcher.ApplicationTemplateLabelFilter = labelFilter
 
 	client := systemfetcher.NewClient(systemfetcher.APIConfig{
 		Endpoint:        url + "/fetch",

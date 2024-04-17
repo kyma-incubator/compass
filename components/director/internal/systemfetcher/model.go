@@ -5,20 +5,28 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
-// TrimPrefix is the prefix which should be trimmed from the jsonpath input when building select criteria for system fetcher
-const TrimPrefix = "$."
+const (
+	// SlisFilterLabelKey is the name of the slis filter label for app template
+	SlisFilterLabelKey = "slisFilter"
+	// ProductIDKey is the name of the property relating to system roles in system payload
+	ProductIDKey = "productId"
+	// TrimPrefix is the prefix which should be trimmed from the jsonpath input when building select criteria for system fetcher
+	TrimPrefix = "$."
+)
 
 var (
 	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshalling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
 	ApplicationTemplates []TemplateMapping
+	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
+	// should match to the SystemSourceKey's value of the fetched systems
+	ApplicationTemplateLabelFilter string
 	// SelectFilter represents the select filter that determines which properties of a system will be fetched
 	SelectFilter []string
 	// SystemSourceKey represents a key for filtering systems
@@ -80,7 +88,7 @@ func (s *System) UnmarshalJSON(data []byte) error {
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
 	for _, tm := range ApplicationTemplates {
-		slisFilter, slisFilterExists := tm.Labels[graphql.SlisFilterLabelKey]
+		slisFilter, slisFilterExists := tm.Labels[SlisFilterLabelKey]
 		if !slisFilterExists {
 			return *s, errors.Errorf("missing slis filter for application template with ID %q", tm.AppTemplate.ID)
 		}
