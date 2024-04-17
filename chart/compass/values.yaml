@@ -162,8 +162,8 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: dev/incubator/
-      version: "PR-3741"
+      dir: prod/incubator/
+      version: "v20240318-8734b35c"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
