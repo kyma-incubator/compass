@@ -299,7 +299,7 @@ func NewRootResolver(
 	opRepo := operation.NewRepository(opConv)
 	opSvc := operation.NewService(opRepo, uidSvc)
 
-	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{})
+	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{}, appTemplateProductLabel)
 	if err != nil {
 		return nil, err
 	}
