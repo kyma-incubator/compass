@@ -64,26 +64,16 @@ var (
 	timestamp                                 = time.Now()
 	defaultValueForProductLabelWithSlisFilter = []interface{}{
 		map[string]interface{}{
-			"productId": "role",
-			"filter": []map[string]interface{}{
-				{
-					"key":       "$.additionalAttributes.managedBy",
-					"value":     []string{"SAP Cloud"},
-					"operation": "exclude",
-				},
-			},
+			"key":       "$.additionalAttributes.managedBy",
+			"value":     []string{"SAP Cloud"},
+			"operation": "exclude",
 		},
 	}
 	customValueForProductLabelWithSlisFilter = []interface{}{
 		map[string]interface{}{
-			"productId": "role",
-			"filter": []map[string]interface{}{
-				{
-					"key":       "$.systemId",
-					"value":     []string{"system-id"},
-					"operation": "include",
-				},
-			},
+			"key":       "$.systemId",
+			"value":     []string{"system-id"},
+			"operation": "include",
 		},
 	}
 )
@@ -91,7 +81,12 @@ var (
 func fixProductLabelAndSlisFilter(slisFilterValue []interface{}) map[string]interface{} {
 	return map[string]interface{}{
 		AppTemplateProductLabel: []interface{}{"role"},
-		SlisFilterLabelKey:      slisFilterValue,
+		SlisFilterLabelKey: []interface{}{
+			map[string]interface{}{
+				"productId": "role",
+				"filter":    slisFilterValue,
+			},
+		},
 	}
 }
 

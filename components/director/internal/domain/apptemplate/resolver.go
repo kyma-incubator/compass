@@ -48,8 +48,8 @@ const (
 	displayNameLabelKey        = "displayName"
 )
 
-var defaultSlisFilterValueForManagedByProperty = []map[string]interface{}{
-	{
+var defaultSlisFilterValueForManagedByProperty = []interface{}{
+	map[string]interface{}{
 		"key":       "$.additionalAttributes.managedBy",
 		"value":     []string{"SAP Cloud"},
 		"operation": "exclude",
