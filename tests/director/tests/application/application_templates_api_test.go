@@ -854,6 +854,58 @@ func TestUpdateApplicationTemplate(t *testing.T) {
 	example.SaveExample(t, updateAppTemplateRequest.Query(), "update application template")
 }
 
+func TestUpdateApplicationTemplateWithProductLabel(t *testing.T) {
+	// GIVEN
+	ctx := context.Background()
+	appTemplateName := fixtures.CreateAppTemplateName("app-template")
+	newName := fixtures.CreateAppTemplateName("new-app-template")
+	newDescription := "new description"
+	newAppCreateInput := &graphql.ApplicationJSONInput{
+		Name:           "new-app-create-input",
+		Description:    ptr.String("{{name}} {{display-name}}"),
+		HealthCheckURL: ptr.String("http://url.valid"),
+	}
+
+	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
+
+	t.Log("Create application template")
+	appTmplInput := fixtures.FixAppTemplateInputWithDefaultProductLabel(appTemplateName, conf.ApplicationTemplateProductLabel, []string{"E2E_TEST"})
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, tenantId, appTmplInput)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, tenantId, appTemplate)
+
+	require.NoError(t, err)
+	require.NotEmpty(t, appTemplate.ID)
+
+	newAppCreateInput.Labels = map[string]interface{}{"displayName": "{{display-name}}"}
+	appTemplateInput := graphql.ApplicationTemplateUpdateInput{Name: newName, ApplicationInput: newAppCreateInput, Description: &newDescription, AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal}
+	appTemplateInput.Placeholders = []*graphql.PlaceholderDefinitionInput{
+		{
+			Name: "name",
+		},
+		{
+			Name: "display-name",
+		},
+	}
+
+	appTemplateGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateUpdateInputToGQL(appTemplateInput)
+	require.NoError(t, err)
+
+	updateAppTemplateRequest := fixtures.FixUpdateApplicationTemplateRequest(appTemplate.ID, appTemplateGQL)
+	updateOutput := graphql.ApplicationTemplate{}
+
+	// WHEN
+	t.Log("Update application template")
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateAppTemplateRequest, &updateOutput)
+	appTemplateInput.ApplicationInput.Labels = map[string]interface{}{"applicationType": newName, "displayName": "{{display-name}}"}
+
+	require.NoError(t, err)
+	require.NotEmpty(t, updateOutput.ID)
+
+	//THEN
+	t.Log("Check if application template was updated")
+	assertions.AssertUpdateApplicationTemplate(t, appTemplateInput, updateOutput)
+}
+
 func TestUpdateApplicationTemplateWithOverride(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
