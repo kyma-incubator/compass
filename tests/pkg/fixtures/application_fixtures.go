@@ -19,6 +19,13 @@ func FixAppTemplateInputWithDefaultDistinguishLabel(name, selfRegDistinguishLabe
 	return input
 }
 
+func FixAppTemplateInputWithDefaultProductLabel(name, productLabelKey string, productLabelValue []string) graphql.ApplicationTemplateInput {
+	input := FixApplicationTemplate(name)
+	input.Labels[productLabelKey] = productLabelValue
+
+	return input
+}
+
 func FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder string) graphql.ApplicationTemplateInput {
 	return FixApplicationTemplateWithWebhookInput(applicationType, localTenantID, region, namespace, namePlaceholder, displayNamePlaceholder, nil, graphql.ApplicationStatusConditionInitial)
 }

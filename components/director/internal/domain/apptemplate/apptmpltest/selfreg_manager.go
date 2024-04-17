@@ -37,10 +37,9 @@ func SelfRegManagerThatDoesPrepWithNoErrors(res map[string]interface{}) func() *
 }
 
 // SelfRegManagerThatReturnsErrorOnPrep mock for GetSelfRegDistinguishingLabelKey executed once with error
-func SelfRegManagerThatReturnsErrorOnPrep() *automock.SelfRegisterManager {
+func SelfRegManagerThatReturnsErrorOnPrep(labels map[string]interface{}) *automock.SelfRegisterManager {
 	srm := &automock.SelfRegisterManager{}
-	labels := make(map[string]interface{})
-	srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
+	srm.On("IsSelfRegistrationFlow", mock.Anything, labels).Return(true, nil).Once()
 	srm.On("PrepareForSelfRegistration", mock.Anything, resource.ApplicationTemplate, mock.Anything, mock.AnythingOfType("string"), mock.Anything).Return(labels, errors.New(SelfRegErrorMsg)).Once()
 	return srm
 }
@@ -78,29 +77,32 @@ func SelfRegManagerReturnsDistinguishingLabel() *automock.SelfRegisterManager {
 }
 
 // SelfRegManagerThatDoesCleanup mock for GetSelfRegDistinguishingLabelKey executed 3 times, PrepareForSelfRegistration once, CleanupSelfRegistration once
-func SelfRegManagerThatDoesCleanup(res map[string]interface{}) func() *automock.SelfRegisterManager {
+func SelfRegManagerThatDoesCleanup(res, labels map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
-		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(3)
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(2)
+		srm.On("IsSelfRegistrationFlow", mock.Anything, labels).Return(true, nil).Once()
 		srm.On("CleanupSelfRegistration", mock.Anything, mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return(nil).Once()
 		return srm
 	}
 }
 
 // SelfRegManagerThatDoesNotCleanupFunc mock for GetSelfRegDistinguishingLabelKey executed once, PrepareForSelfRegistration once
-func SelfRegManagerThatDoesNotCleanupFunc(res map[string]interface{}) func() *automock.SelfRegisterManager {
+func SelfRegManagerThatDoesNotCleanupFunc(res, labels map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
-		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(2)
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
+		srm.On("IsSelfRegistrationFlow", mock.Anything, labels).Return(true, nil).Once()
+
 		return srm
 	}
 }
 
-// SelfRegManagerOnlyGetDistinguishedLabelKeyOnce mock for GetSelfRegDistinguishingLabelKey once
-func SelfRegManagerOnlyGetDistinguishedLabelKeyOnce() func() *automock.SelfRegisterManager {
+// SelfRegManagerCheckIsSelfRegistrationFlowOnce mock for IsSelfRegistrationFlow once
+func SelfRegManagerCheckIsSelfRegistrationFlowOnce(labels map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
-		srm := NoopSelfRegManager()
-		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Once()
+		srm := &automock.SelfRegisterManager{}
+		srm.On("IsSelfRegistrationFlow", mock.Anything, labels).Return(false, nil).Once()
 		return srm
 	}
 }
@@ -115,19 +117,21 @@ func SelfRegManagerOnlyGetDistinguishedLabelKeyTwice() func() *automock.SelfRegi
 }
 
 // SelfRegManagerThatDoesPrepAndInitiatesCleanupButNotFinishIt mock for GetSelfRegDistinguishingLabelKey executed 3 times, PrepareForSelfRegistration once
-func SelfRegManagerThatDoesPrepAndInitiatesCleanupButNotFinishIt(res map[string]interface{}) func() *automock.SelfRegisterManager {
+func SelfRegManagerThatDoesPrepAndInitiatesCleanupButNotFinishIt(res, labels map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := SelfRegManagerThatDoesPrepWithNoErrors(res)()
-		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(3)
+		srm.On("IsSelfRegistrationFlow", mock.Anything, labels).Return(true, nil).Once()
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(2)
 		return srm
 	}
 }
 
 // SelfRegManagerThatInitiatesCleanupButNotFinishIt mock for GetSelfRegDistinguishingLabelKey executed 3 times
-func SelfRegManagerThatInitiatesCleanupButNotFinishIt() func() *automock.SelfRegisterManager {
+func SelfRegManagerThatInitiatesCleanupButNotFinishIt(labels map[string]interface{}) func() *automock.SelfRegisterManager {
 	return func() *automock.SelfRegisterManager {
 		srm := NoopSelfRegManager()
-		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(3)
+		srm.On("GetSelfRegDistinguishingLabelKey").Return(TestDistinguishLabel).Times(2)
+		srm.On("IsSelfRegistrationFlow", mock.Anything, labels).Return(false, nil).Once()
 		return srm
 	}
 }
