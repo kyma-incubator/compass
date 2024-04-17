@@ -19,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 type DestinationServiceAPIConfig struct {
@@ -53,8 +52,7 @@ type DestinationClient struct {
 	apiURL     string
 }
 
-func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	subdomain string) (*DestinationClient, error) {
+func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig) (*DestinationClient, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -65,14 +63,7 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 	if len(parts) < 2 {
 		return nil, errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
 	}
-	originalSubdomain := parts[0]
 
-	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
-	cfg := clientcredentials.Config{
-		ClientID:  instanceConfig.ClientID,
-		TokenURL:  tokenURL,
-		AuthStyle: oauth2.AuthStyleInParams,
-	}
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {
 		return nil, errors.Errorf("failed to create destinations client x509 pair: %v", err)
@@ -92,7 +83,12 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, mtlsClient)
 
-	httpClient := cfg.Client(ctx)
+	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: apiConfig.SkipSSLVerify,
+		},
+	}
 	httpClient.Timeout = apiConfig.Timeout
 
 	return &DestinationClient{
@@ -112,15 +108,7 @@ func (c *DestinationClient) CreateDestinationInDestService(t *testing.T, destina
 
 	request.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
 
-	httpClient := &http.Client{}
-	httpClient.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
-		},
-	}
-	httpClient.Timeout = c.apiConfig.Timeout
-
-	resp, err := httpClient.Do(request)
+	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
@@ -168,15 +156,7 @@ func (c *DestinationClient) FindDestinationByName(t *testing.T, serviceURL, dest
 		request.Header.Set(util.UserTokenHeader, userTokenHeader)
 	}
 
-	httpClient := &http.Client{}
-	httpClient.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
-		},
-	}
-	httpClient.Timeout = c.apiConfig.Timeout
-
-	resp, err := httpClient.Do(request)
+	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
