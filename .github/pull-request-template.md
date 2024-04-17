@@ -23,3 +23,4 @@ Changes proposed in this pull request:
 - [ ] Integration tests
 - [ ] `chart/compass/values.yaml` is updated <!-- in case of code changes in the `components` or `tests` directories -->
 - [ ] Mocks are regenerated, using the automated script
+- [ ] Tests (inside the BOM repo) are executed with the latest version of the image - label "ok-tested"
