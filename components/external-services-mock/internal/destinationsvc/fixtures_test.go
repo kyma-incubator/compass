@@ -17,10 +17,12 @@ var (
 	certNameParamKey       = "certificateName"
 	nameParamKey           = "name"
 
-	testRegion                       = "testRegion"
-	testSubaccountID                 = "testSubaccountID"
-	testServiceInstanceID            = "testServiceInstanceID"
-	testDestinationCertName          = "test-destination-cert-name"
+	testRegion              = "testRegion"
+	testSubaccountID        = "testSubaccountID"
+	testServiceInstanceID   = "testServiceInstanceID"
+	testDestinationCertName = "test-destination-cert-name"
+	testDestinationName     = "test-dest-name"
+
 	testCertChain                    = esmdestinationcreator.CertChain
 	testDestinationCertWithExtension = testDestinationCertName + destinationcreatorpkg.JavaKeyStoreFileExtension
 
@@ -29,6 +31,9 @@ var (
 	noAuthDestName        = "test-no-auth-dest"
 	basicAuthDestName     = "test-basic-dest"
 	samlAssertionDestName = "test-saml-assertion-dest"
+
+	basicUsername = "test-basic-user"
+	basicPassword = "test-pass"
 
 	testDestURL              = "http://localhost"
 	testSecureDestURL        = "https://localhost"
@@ -44,10 +49,12 @@ var (
 
 	destinationCreatorReqBodyWithoutAuthType = fmt.Sprintf(`{"name":"%s","url":"http://localhost","type":"HTTP","proxyType":"Internet","additionalProperties":{"customKey":"customValue"}}`, noAuthDestName)
 
-	destinationCreatorCertReqBody                             = fmt.Sprintf(`{"name":"%s"}`, testDestinationCertName)
-	destinationServiceCertResponseBody                        = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestinationCertWithExtension, testCertChain)
-	destinationServiceSAMLDestCertResponseBody                = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestKeyStoreLocation, testCertChain)
-	destinationServiceFindAPIResponseBodyForSAMLAssertionDest = fmt.Sprintf(esmdestinationcreator.FindAPISAMLAssertionDestResponseTemplate, testSubaccountID, testServiceInstanceID, samlAssertionDestName, testDestType, testSecureDestURL, "SAMLAssertion", testDestProxyType, testSecureDestURL, testDestKeyStoreLocation, testDestKeyStoreLocation)
+	destinationCreatorCertReqBody                              = fmt.Sprintf(`{"name":"%s"}`, testDestinationCertName)
+	destinationServiceCertResponseBody                         = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestinationCertWithExtension, testCertChain)
+	destinationServiceSAMLDestCertResponseBody                 = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestKeyStoreLocation, testCertChain)
+	destinationServiceFindAPIResponseBodyForSAMLAssertionDest  = fmt.Sprintf(esmdestinationcreator.FindAPISAMLAssertionDestResponseTemplate, testSubaccountID, testServiceInstanceID, samlAssertionDestName, testDestType, testSecureDestURL, "SAMLAssertion", "SAMLAssertion", testDestProxyType, testSecureDestURL, testDestKeyStoreLocation, testDestKeyStoreLocation)
+	destinationServiceFindAPIResponseBodyForBasicAssertionDest = fmt.Sprintf(esmdestinationcreator.FindAPIBasicDestResponseTemplate, testSubaccountID, testServiceInstanceID, basicAuthDestName, testDestType, testSecureDestURL, "BasicAuthentication", "BasicAuthentication", testDestProxyType, basicUsername, basicPassword)
+	invalidDestination                                         = fmt.Sprintf(esmdestinationcreator.FindAPIBasicDestResponseTemplate, testSubaccountID, testServiceInstanceID, basicAuthDestName, testDestType, testSecureDestURL, "invalid", "invalid", testDestProxyType, basicUsername, basicPassword)
 )
 
 func fixNoAuthDestination(name string) esmdestcreatorpkg.Destination {
@@ -99,5 +106,11 @@ func fixDestinationMappings(destName string, destination esmdestcreatorpkg.Desti
 func fixCertMappings(certName string, bodyBytes []byte) map[string]json.RawMessage {
 	return map[string]json.RawMessage{
 		certName: bodyBytes,
+	}
+}
+
+func fixSensitiveData(destinationName string, bodyBytes []byte) map[string][]byte {
+	return map[string][]byte{
+		destinationName: bodyBytes,
 	}
 }

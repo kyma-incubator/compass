@@ -2,8 +2,11 @@ package destinationsvc_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -794,6 +797,390 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			if testCase.ExpectedCertificate != nil {
 				require.Equal(t, testCase.ExpectedCertificate, json.RawMessage(body))
 			}
+		})
+	}
+}
+
+func TestHandler_GetSensitiveData(t *testing.T) {
+	testCases := []struct {
+		Name                         string
+		ExpectedResponseCode         int
+		DestNameParam                string
+		DestName                     string
+		ExistingDestinationSensitive map[string][]byte
+		ExpectedDestinationSensitive []byte
+	}{
+		{
+			Name:                         "Success when getting destination",
+			ExpectedResponseCode:         http.StatusOK,
+			DestNameParam:                nameParamKey,
+			DestName:                     testDestinationName,
+			ExistingDestinationSensitive: fixSensitiveData(destinationsvc.GetDestinationPrefixNameIdentifier(testDestinationName), []byte(destinationServiceFindAPIResponseBodyForSAMLAssertionDest)),
+			ExpectedDestinationSensitive: []byte(destinationServiceFindAPIResponseBodyForSAMLAssertionDest),
+		},
+		{
+			Name:                         "Error when name param is missing",
+			ExpectedResponseCode:         http.StatusBadRequest,
+			ExpectedDestinationSensitive: []byte("Missing name parameter\n"),
+		},
+		{
+			Name:                         "Error when a destination with the given name does not exist",
+			ExpectedResponseCode:         http.StatusNotFound,
+			DestNameParam:                nameParamKey,
+			DestName:                     testDestinationName,
+			ExpectedDestinationSensitive: []byte("Destination not found\n"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodGet, url, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
+
+			urlVars := make(map[string]string)
+			if testCase.DestNameParam != "" {
+				urlVars[nameParamKey] = testCase.DestName
+				req = mux.SetURLVars(req, urlVars)
+			}
+
+			config := &destinationsvc.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
+					RegionParam:          regionParamValue,
+					SubaccountIDParam:    subaccountIDParamValue,
+					DestinationNameParam: destNameParamKey,
+				},
+			}
+
+			h := destinationsvc.NewHandler(config)
+			r := httptest.NewRecorder()
+
+			if testCase.ExistingDestinationSensitive != nil {
+				h.DestinationsSensitive = testCase.ExistingDestinationSensitive
+			}
+
+			// WHEN
+			h.GetSensitiveData(r, req)
+			resp := r.Result()
+
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+
+			require.Equal(t, testCase.ExpectedDestinationSensitive, body)
+		})
+	}
+}
+
+func TestHandler_CleanupDestinations(t *testing.T) {
+	t.Run("Successfully delete destinations data", func(t *testing.T) {
+		// GIVEN
+		req, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer([]byte{}))
+		require.NoError(t, err)
+
+		config := &destinationsvc.Config{
+			CorrelationIDsKey: correlationIDsKey,
+			DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
+				RegionParam:          regionParamValue,
+				SubaccountIDParam:    subaccountIDParamValue,
+				DestinationNameParam: destNameParamKey,
+			},
+		}
+
+		h := destinationsvc.NewHandler(config)
+		r := httptest.NewRecorder()
+
+		// WHEN
+		h.CleanupDestinations(r, req)
+		resp := r.Result()
+
+		// THEN
+		require.Equal(t, resp.StatusCode, http.StatusOK)
+		require.Equal(t, h.DestinationSvcDestinations, make(map[string]destcreatorpkg.Destination))
+		require.Equal(t, h.DestinationsSensitive, make(map[string][]byte))
+	})
+}
+
+func TestHandler_CleanupDestinationCertificates(t *testing.T) {
+	t.Run("Successfully delete destinations data", func(t *testing.T) {
+		// GIVEN
+		req, err := http.NewRequest(http.MethodDelete, url, bytes.NewBuffer([]byte{}))
+		require.NoError(t, err)
+
+		config := &destinationsvc.Config{
+			CorrelationIDsKey: correlationIDsKey,
+			DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
+				RegionParam:          regionParamValue,
+				SubaccountIDParam:    subaccountIDParamValue,
+				DestinationNameParam: destNameParamKey,
+			},
+		}
+
+		h := destinationsvc.NewHandler(config)
+		r := httptest.NewRecorder()
+
+		// WHEN
+		h.CleanupDestinationCertificates(r, req)
+		resp := r.Result()
+
+		// THEN
+		require.Equal(t, resp.StatusCode, http.StatusOK)
+		require.Equal(t, h.DestinationSvcCertificates, make(map[string]json.RawMessage))
+	})
+}
+
+func TestHandler_PostDestination(t *testing.T) {
+	tokenWithSubaccountIDAndInstanceID := generateJWT(t, testSubaccountID, testServiceInstanceID)
+	invalidToken := generateJWT(t, "", "")
+
+	testCases := []struct {
+		Name                         string
+		ExpectedResponseCode         int
+		ExpectedDestinationSensitive map[string][]byte
+		ExistingDestinations         map[string]destcreatorpkg.Destination
+		BodyData                     []byte
+		ExpectedResponseBodyData     string
+		AuthorizationToken           string
+		StatusCode                   int
+	}{
+		{
+			Name:                 "Success when getting destination",
+			ExpectedResponseCode: http.StatusCreated,
+			ExpectedDestinationSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			BodyData:                 []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
+			AuthorizationToken:       tokenWithSubaccountIDAndInstanceID,
+			ExpectedResponseBodyData: "",
+		},
+		{
+			Name:                         "Error when authentication type property is missing in the body",
+			ExpectedResponseCode:         http.StatusBadRequest,
+			ExpectedDestinationSensitive: map[string][]byte{},
+			ExpectedResponseBodyData:     "{\"error\":\"The authenticationType field in the request body is required and it should not be empty. X-Request-Id: \"}\n",
+			BodyData:                     []byte{},
+			AuthorizationToken:           tokenWithSubaccountIDAndInstanceID,
+		},
+		{
+			Name:                         "Error when there is no token",
+			ExpectedResponseCode:         http.StatusUnauthorized,
+			ExpectedDestinationSensitive: map[string][]byte{},
+			ExpectedResponseBodyData:     "{\"error\":\"Missing authorization header. X-Request-Id: \"}\n",
+			BodyData:                     []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
+		},
+		{
+			Name:                         "Error when there is token does not have subaccount",
+			ExpectedResponseCode:         http.StatusInternalServerError,
+			ExpectedDestinationSensitive: map[string][]byte{},
+			ExpectedResponseBodyData:     "{\"error\":\"The subaccount ID claim in the token could not be empty. X-Request-Id: \"}\n",
+			BodyData:                     []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
+			AuthorizationToken:           invalidToken,
+		},
+		{
+			Name:                         "Error when destination type is invalid",
+			ExpectedResponseCode:         http.StatusInternalServerError,
+			ExpectedDestinationSensitive: map[string][]byte{},
+			ExpectedResponseBodyData:     "{\"error\":\"The provided destination authentication type: invalid is invalid. X-Request-Id: \"}\n",
+			BodyData:                     []byte(gjson.Get(invalidDestination, "destinationConfiguration").String()),
+			AuthorizationToken:           tokenWithSubaccountIDAndInstanceID,
+		},
+		{
+			Name:                 "Error with conflict",
+			ExpectedResponseCode: http.StatusOK,
+			ExpectedDestinationSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExistingDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			BodyData:                 []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
+			AuthorizationToken:       tokenWithSubaccountIDAndInstanceID,
+			ExpectedResponseBodyData: "[{\"name\":\"test-basic-dest\",\"status\":409,\"cause\":\"Destination name already taken\"},{\"name\":\"test-basic-dest\",\"status\":201}]",
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			ctx := context.TODO()
+
+			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(testCase.BodyData))
+			require.NoError(t, err)
+
+			if testCase.AuthorizationToken != "" {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", testCase.AuthorizationToken))
+			}
+			req = req.WithContext(context.WithValue(ctx, correlation.RequestIDHeaderKey, "corr-id"))
+
+			config := &destinationsvc.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
+					RegionParam:          regionParamValue,
+					SubaccountIDParam:    subaccountIDParamValue,
+					DestinationNameParam: destNameParamKey,
+				},
+			}
+
+			h := destinationsvc.NewHandler(config)
+			r := httptest.NewRecorder()
+
+			if testCase.ExistingDestinations != nil {
+				h.DestinationSvcDestinations = testCase.ExistingDestinations
+			}
+
+			// WHEN
+			h.PostDestination(r, req)
+			resp := r.Result()
+
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseBodyData, string(body))
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedDestinationSensitive, h.DestinationsSensitive)
+		})
+	}
+}
+
+func TestHandler_DeleteDestination(t *testing.T) {
+	tokenWithSubaccountIDAndInstanceID := generateJWT(t, testSubaccountID, testServiceInstanceID)
+	invalidToken := generateJWT(t, "", "")
+	testCases := []struct {
+		Name                          string
+		ExpectedResponseCode          int
+		DestNameParam                 string
+		DestName                      string
+		ExistingDestinations          map[string]destcreatorpkg.Destination
+		ExistingDestinationsSensitive map[string][]byte
+		ExpectedDestinations          map[string]destcreatorpkg.Destination
+		ExpectedDestinationsSensitive map[string][]byte
+		AuthorizationToken            string
+		StatusCode                    int
+	}{
+		{
+			Name:                 "Success when getting destination",
+			ExpectedResponseCode: http.StatusOK,
+			ExistingDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExistingDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			AuthorizationToken:            tokenWithSubaccountIDAndInstanceID,
+			ExpectedDestinationsSensitive: map[string][]byte{},
+			ExpectedDestinations:          map[string]destcreatorpkg.Destination{},
+			DestNameParam:                 nameParamKey,
+			DestName:                      basicAuthDestName,
+		},
+		{
+			Name:                 "Error when destination name is missing",
+			ExpectedResponseCode: http.StatusBadRequest,
+			ExistingDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExistingDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			AuthorizationToken: tokenWithSubaccountIDAndInstanceID,
+			ExpectedDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExpectedDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			DestNameParam: nameParamKey,
+			DestName:      "",
+		},
+		{
+			Name:                 "Error when token is missing",
+			ExpectedResponseCode: http.StatusUnauthorized,
+			ExistingDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExistingDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			AuthorizationToken: "",
+			ExpectedDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExpectedDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			DestNameParam: nameParamKey,
+			DestName:      basicAuthDestName,
+		},
+		{
+			Name:                 "Error when token does not have subaccount data",
+			ExpectedResponseCode: http.StatusInternalServerError,
+			ExistingDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExistingDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			AuthorizationToken: invalidToken,
+			ExpectedDestinationsSensitive: map[string][]byte{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
+			},
+			ExpectedDestinations: map[string]destcreatorpkg.Destination{
+				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
+			},
+			DestNameParam: nameParamKey,
+			DestName:      basicAuthDestName,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte{}))
+			require.NoError(t, err)
+
+			if testCase.AuthorizationToken != "" {
+				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", testCase.AuthorizationToken))
+			}
+
+			config := &destinationsvc.Config{
+				CorrelationIDsKey: correlationIDsKey,
+				DestinationAPIConfig: &destinationsvc.DestinationAPIConfig{
+					RegionParam:          regionParamValue,
+					SubaccountIDParam:    subaccountIDParamValue,
+					DestinationNameParam: destNameParamKey,
+				},
+			}
+
+			urlVars := make(map[string]string)
+			if testCase.DestNameParam != "" {
+				urlVars[nameParamKey] = testCase.DestName
+				req = mux.SetURLVars(req, urlVars)
+			}
+
+			h := destinationsvc.NewHandler(config)
+			r := httptest.NewRecorder()
+
+			if testCase.ExistingDestinations != nil {
+				h.DestinationSvcDestinations = testCase.ExistingDestinations
+			}
+			if testCase.ExistingDestinationsSensitive != nil {
+				h.DestinationsSensitive = testCase.ExistingDestinationsSensitive
+			}
+
+			// WHEN
+			h.DeleteDestination(r, req)
+			resp := r.Result()
+
+			body, err := io.ReadAll(resp.Body)
+			require.NoError(t, err)
+
+			// THEN
+			require.Equal(t, testCase.ExpectedResponseCode, resp.StatusCode, string(body))
+			require.Equal(t, testCase.ExpectedDestinationsSensitive, h.DestinationsSensitive)
+			require.Equal(t, testCase.ExpectedDestinations, h.DestinationSvcDestinations)
 		})
 	}
 }

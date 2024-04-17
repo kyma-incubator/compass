@@ -10,7 +10,8 @@ var FindAPINoAuthDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s"
   }
 }`
@@ -25,7 +26,8 @@ var FindAPIBasicDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "User": "%s",
     "Password": "%s"
@@ -42,33 +44,6 @@ var FindAPIBasicDestResponseTemplate = `
   ]
 }`
 
-var sensitiveDataTemplate = `
-    {
-      "owner": {
-        "SubaccountId": "%s",
-        "InstanceId": null
-      },
-      "destinationConfiguration": {
-        "Name": "%s",
-        "Type": "%s",
-        "URL": "http://%s.com",
-        "Authentication": "BasicAuthentication",
-        "ProxyType": "Internet",
-        "User": "usr",
-        "Password": "pass"
-      },
-      "authTokens": [
-        {
-          "type": "Basic",
-          "value": "SkQyZ",
-          "http_header": {
-            "key": "Authorization",
-            "value": "Basic SkQyZ"
-          }
-        }
-      ]
-    }`
-
 var FindAPISAMLAssertionDestResponseTemplate = `
 {
   "owner": {
@@ -79,7 +54,8 @@ var FindAPISAMLAssertionDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "audience": "%s",
     "KeyStoreLocation": "%s"
@@ -112,7 +88,8 @@ var FindAPIClientCertDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "KeyStoreLocation": "%s"
   },
@@ -134,7 +111,8 @@ var FindAPIOAuth2ClientCredsDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "clientId": "%s",
     "clientSecret": "%s",
@@ -164,7 +142,8 @@ var FindAPIOAuth2mTLSDestResponseTemplate = `
         "Name": "%s",
         "Type": "%s",
         "URL": "%s",
-        "Authentication": "%s",
+        "AuthenticationType": "%s",
+		"Authentication": "%s",
         "ProxyType": "%s",
         "tokenServiceURLType": "%s",
         "clientId": "%s",

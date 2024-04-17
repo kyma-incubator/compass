@@ -303,11 +303,17 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 	}
 
 	destinationName := gjson.GetBytes(data, "Name").String()
-	authTypeResult := gjson.GetBytes(data, "Authentication")
+	authResult := gjson.GetBytes(data, "Authentication")
+	authTypeResult := gjson.GetBytes(data, "AuthenticationType")
+
+	authType := authTypeResult.String()
 	if !authTypeResult.Exists() || authTypeResult.String() == "" {
-		err := errors.New("The authenticationType field in the request body is required and it should not be empty")
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
-		return
+		if !authResult.Exists() || authResult.String() == "" {
+			err := errors.New("The authenticationType field in the request body is required and it should not be empty")
+			httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+			return
+		}
+		authType = authResult.String()
 	}
 
 	tokenValue, err := validateAuthorization(ctx, req)
@@ -325,10 +331,11 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 
 	var responses []PostResponse
 
-	destinationRequestBody, err := requestBodyToDestination(authTypeResult.String(), data)
+	destinationRequestBody, err := requestBodyToDestination(authType, data)
 	if err != nil {
 		responses = append(responses, PostResponse{destinationName, http.StatusInternalServerError, "Unable to unmarshall destination"})
-		isMultiStatusCodeEnabled = true
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
+		return
 	}
 
 	destinationIdentifier := destinationRequestBody.GetDestinationUniqueIdentifier(subaccountID, serviceInstanceID)
@@ -571,13 +578,13 @@ func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, su
 		if !ok {
 			return "", errors.New("error while type asserting destination to NoAuth one")
 		}
-		findAPIResponse = fmt.Sprintf(FindAPINoAuthDestResponseTemplate, subaccountID, instanceID, designTimeDest.Name, designTimeDest.Type, designTimeDest.URL, designTimeDest.Authentication, designTimeDest.ProxyType)
+		findAPIResponse = fmt.Sprintf(FindAPINoAuthDestResponseTemplate, subaccountID, instanceID, designTimeDest.Name, designTimeDest.Type, designTimeDest.URL, designTimeDest.Authentication, designTimeDest.Authentication, designTimeDest.ProxyType)
 	case destinationcreator.BasicAuthDestinationType:
 		basicDest, ok := dest.(*destinationcreator.BasicDestination)
 		if !ok {
 			return "", errors.New("error while type asserting destination to Basic one")
 		}
-		findAPIResponse = fmt.Sprintf(FindAPIBasicDestResponseTemplate, subaccountID, instanceID, basicDest.Name, basicDest.Type, basicDest.URL, basicDest.Authentication, basicDest.ProxyType, basicDest.User, basicDest.Password)
+		findAPIResponse = fmt.Sprintf(FindAPIBasicDestResponseTemplate, subaccountID, instanceID, basicDest.Name, basicDest.Type, basicDest.URL, basicDest.Authentication, basicDest.Authentication, basicDest.ProxyType, basicDest.User, basicDest.Password)
 	case destinationcreator.SAMLAssertionDestinationType:
 		samlAssertionDest, ok := dest.(*destinationcreator.SAMLAssertionDestination)
 		if !ok {
@@ -594,7 +601,7 @@ func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, su
 			}
 		}
 
-		findAPIResponse = fmt.Sprintf(FindAPISAMLAssertionDestResponseTemplate, subaccountID, instanceID, samlAssertionDest.Name, samlAssertionDest.Type, samlAssertionDest.URL, samlAssertionDest.Authentication, samlAssertionDest.ProxyType, samlAssertionDest.Audience, samlAssertionDest.KeyStoreLocation, certResponseName)
+		findAPIResponse = fmt.Sprintf(FindAPISAMLAssertionDestResponseTemplate, subaccountID, instanceID, samlAssertionDest.Name, samlAssertionDest.Type, samlAssertionDest.URL, samlAssertionDest.Authentication, samlAssertionDest.Authentication, samlAssertionDest.ProxyType, samlAssertionDest.Audience, samlAssertionDest.KeyStoreLocation, certResponseName)
 	case destinationcreator.ClientCertDestinationType:
 		clientCertDest, ok := dest.(*destinationcreator.ClientCertificateAuthenticationDestination)
 		if !ok {
@@ -611,13 +618,13 @@ func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, su
 			}
 		}
 
-		findAPIResponse = fmt.Sprintf(FindAPIClientCertDestResponseTemplate, subaccountID, instanceID, clientCertDest.Name, clientCertDest.Type, clientCertDest.URL, clientCertDest.Authentication, clientCertDest.ProxyType, clientCertDest.KeyStoreLocation, certResponseName)
+		findAPIResponse = fmt.Sprintf(FindAPIClientCertDestResponseTemplate, subaccountID, instanceID, clientCertDest.Name, clientCertDest.Type, clientCertDest.URL, clientCertDest.Authentication, clientCertDest.Authentication, clientCertDest.ProxyType, clientCertDest.KeyStoreLocation, certResponseName)
 	case destinationcreator.OAuth2ClientCredentialsType:
 		oauth2ClientCredsDest, ok := dest.(*destinationcreator.OAuth2ClientCredentialsDestination)
 		if !ok {
 			return "", errors.New("error while type asserting destination to OAuth2ClientCredentials one")
 		}
-		findAPIResponse = fmt.Sprintf(FindAPIOAuth2ClientCredsDestResponseTemplate, subaccountID, instanceID, oauth2ClientCredsDest.Name, oauth2ClientCredsDest.Type, oauth2ClientCredsDest.URL, oauth2ClientCredsDest.Authentication, oauth2ClientCredsDest.ProxyType, oauth2ClientCredsDest.ClientID, oauth2ClientCredsDest.ClientSecret, oauth2ClientCredsDest.TokenServiceURL)
+		findAPIResponse = fmt.Sprintf(FindAPIOAuth2ClientCredsDestResponseTemplate, subaccountID, instanceID, oauth2ClientCredsDest.Name, oauth2ClientCredsDest.Type, oauth2ClientCredsDest.URL, oauth2ClientCredsDest.Authentication, oauth2ClientCredsDest.Authentication, oauth2ClientCredsDest.ProxyType, oauth2ClientCredsDest.ClientID, oauth2ClientCredsDest.ClientSecret, oauth2ClientCredsDest.TokenServiceURL)
 	case destinationcreator.OAuth2mTLSType:
 		oauth2mTLSDest, ok := dest.(*destinationcreator.OAuth2mTLSDestination)
 		if !ok {
@@ -629,6 +636,7 @@ func (h *Handler) getSensitiveDataString(dest destinationcreator.Destination, su
 			oauth2mTLSDest.Name,
 			oauth2mTLSDest.Type,
 			oauth2mTLSDest.URL,
+			oauth2mTLSDest.Authentication,
 			oauth2mTLSDest.Authentication,
 			oauth2mTLSDest.ProxyType,
 			oauth2mTLSDest.TokenServiceURLType,
@@ -752,19 +760,13 @@ func (h *Handler) validateDestinationCreatorPathParams(routeVars map[string]stri
 }
 
 func (h *Handler) destinationsMapToSlice() []destinationcreator.Destination {
-	dest := make([]destinationcreator.Destination, 0)
+	destinations := make([]destinationcreator.Destination, 0)
 
-	for name, destination := range h.DestinationSvcDestinations {
-		empJSON1, err := json.MarshalIndent(destination, "", "  ")
-		if err != nil {
-			fmt.Println("err", err)
-		}
-		fmt.Printf("GetSubaccountDestinationsPage name: %s \n %s\n", name, string(empJSON1))
-
-		dest = append(dest, destination)
+	for _, destination := range h.DestinationSvcDestinations {
+		destinations = append(destinations, destination)
 	}
 
-	return dest
+	return destinations
 }
 
 // GetSensitiveData mocks getting a sensitive data by destination name from Destination Service
@@ -773,7 +775,7 @@ func (h *Handler) GetSensitiveData(writer http.ResponseWriter, req *http.Request
 	destinationName := mux.Vars(req)["name"]
 
 	if len(destinationName) == 0 {
-		http.Error(writer, "Bad request", http.StatusBadRequest)
+		http.Error(writer, "Missing name parameter", http.StatusBadRequest)
 		return
 	}
 
@@ -788,7 +790,7 @@ func (h *Handler) GetSensitiveData(writer http.ResponseWriter, req *http.Request
 	log.C(ctx).Infof("Sending sensitive data of destination: %s", destinationName)
 
 	if len(data) == 0 {
-		http.Error(writer, "Not Found", http.StatusNotFound)
+		http.Error(writer, "Destination not found", http.StatusNotFound)
 		return
 	}
 
@@ -881,13 +883,6 @@ func requestBodyToDestination(authType string, bodyBytes []byte) (DestinationReq
 	if err := json.Unmarshal(bodyBytes, &destinationRequestBody); err != nil {
 		return nil, errors.Wrapf(err, "An error occurred while unmarshalling %s destination request body", destinationTypeName)
 	}
-
-	fmt.Println("ALEX requestBodyToDestination")
-	empJSON1, err := json.MarshalIndent(destinationRequestBody, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("requestBodyToDestination \n %s\n", string(empJSON1))
 
 	return destinationRequestBody, nil
 }

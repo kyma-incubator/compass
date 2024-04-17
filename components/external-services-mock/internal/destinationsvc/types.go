@@ -56,10 +56,7 @@ type BaseDestinationRequestBody struct {
 	ProxyType            destinationcreatorpkg.ProxyType `json:"proxyType"`
 	AuthenticationType   destinationcreatorpkg.AuthType  `json:"authenticationType"`
 	AdditionalProperties json.RawMessage                 `json:"additionalProperties,omitempty"`
-	XCorrelationID       string                          `json:"x-correlation-id"` // from bundle
-	//XSystemTenantID      string                          `json:"x-system-id"`      // local tenant id
-	//XSystemTenantName    string                          `json:"x-system-name"`    // random or application name
-	//XSystemType          string                          `json:"x-system-type"`    // application type
+	XCorrelationID       string                          `json:"x-correlation-id"`
 }
 
 // DesignTimeDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth
