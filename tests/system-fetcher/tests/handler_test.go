@@ -189,7 +189,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 	}
 
@@ -268,7 +268,7 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 	}
 
@@ -349,7 +349,8 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -363,7 +364,8 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -489,7 +491,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 	}
 
@@ -526,7 +528,8 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -539,7 +542,8 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -595,7 +599,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				Description:  &description2,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 	}
 
@@ -781,7 +785,8 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -794,7 +799,8 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -857,7 +863,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				BaseURL:      &baseUrl,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 	}
 
@@ -887,7 +893,8 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -901,7 +908,8 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, region1, cfg.SystemInformationSourceKey, region2))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -991,7 +999,8 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1005,7 +1014,8 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, region1, cfg.SystemInformationSourceKey, region1))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -1062,7 +1072,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1075,7 +1086,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "3",
 		"displayName": "name1",
@@ -1088,7 +1100,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1147,7 +1160,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description2,
 				SystemNumber: str.Ptr("2"),
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -1155,7 +1168,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				Description:  &description2,
 				SystemNumber: str.Ptr("3"),
 			},
-			Labels: applicationLabels("name1", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name1", "", "", false, "", ""),
 		},
 	}
 
@@ -1198,7 +1211,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1211,7 +1225,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}, {
 		"systemNumber": "3",
 		"displayName": "name3",
@@ -1224,7 +1239,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1285,7 +1301,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:        "name2",
 				Description: &description2,
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -1328,7 +1344,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			"lifecycleStatus": "DELETED"
 		},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1341,7 +1358,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}, {
 		"systemNumber": "3",
 		"displayName": "name3",
@@ -1356,7 +1374,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			"lifecycleStatus": "DELETED"
 		},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1395,7 +1414,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				Name:        "name2",
 				Description: &description2,
 			},
-			Labels: applicationLabels("name2", "", "", false, "", "XYZ"),
+			Labels: applicationLabels("name2", "", "", false, "", ""),
 		},
 	}
 
@@ -1647,7 +1666,7 @@ func getFixExpectedMockSystems(count int, description string) []directorSchema.A
 				Description:  &description,
 				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, "", "", false, "", "XYZ"),
+			Labels: applicationLabels(systemName, "", "", false, "", ""),
 		}
 	}
 	return result
@@ -1683,7 +1702,6 @@ func applicationLabels(name, appTemplateName, integrationSystemID string, fromTe
 		"integrationSystemID":    integrationSystemID,
 		"tenantBusinessTypeCode": "tbtID",
 		"tenantBusinessTypeName": "tbt description name",
-		"dataCenter":             "",
 	}
 
 	if fromTemplate {
