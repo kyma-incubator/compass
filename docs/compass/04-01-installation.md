@@ -323,19 +323,19 @@ In this case, as this certificate is not used to issue other certificates, it is
 For local development, install Compass with the minimal Kyma installation on k3d from the `main` branch. To do so, run the following script:
 
 ```bash
-./installation/cmd/run.sh --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
+./installation/cmd/run.sh --oidc-host {URL_TO_OIDC_SERVER} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
 The Kyma version is read from the [`KYMA_VERSION`](../../installation/resources/KYMA_VERSION) file. You can override it with the following command:
 
 ```bash
-./installation/cmd/run.sh --kyma-release {KYMA_VERSION} --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
+./installation/cmd/run.sh --kyma-release {KYMA_VERSION} --oidc-host {URL_TO_OIDC_SERVER} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
 Optionally, you can use the `--dump-db` flag to populate the DB with sample data. As a result, a DB dump is downloaded from the Compass development environment and is imported into the DB during the installation of Compass. Note that you can only use this feature if you are part of the Compass contributors. Otherwise, you will not have access to the development environment, from which the data is obtained.
 Note that using this flag also results in building a new `schema-migrator` image from the local files.
 ```bash
-./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-client-id {OIDC_CLIENT_ID} --oidc-admin-group {OIDC_ADMIN_GROUP}
+./installation/cmd/run.sh --dump-db --oidc-host {URL_TO_OIDC_SERVER} --oidc-admin-group {OIDC_ADMIN_GROUP}
 ```
 
 To enable the API Metadata Validator that is used for validating Open Resource Discovery (ORD) documents (https://github.com/SAP/open-resource-discovery), run the installation script with an additional flag that sets the required container image of the validator.
@@ -351,12 +351,10 @@ If you want to build and deploy the local source code version of a component (fo
   ```
 
 > **_NOTE:_**  
->To configure an OIDC identity provider that is required for the JWT flows, the OIDC configuration arguments (`--oidc-host`, `--oidc-client-id`, `--oidc-admin-group`) are mandatory. If they are omitted, the **run.sh** script tries to get the required values from the **~/.compass.yaml** file. To run the `run.sh` script, you need the [yq](https://mikefarah.gitbook.io/yq/) tool.
+>To configure an OIDC identity provider that is required for the JWT flows, the OIDC configuration arguments (`--oidc-host`, `--oidc-admin-group`) are mandatory. If they are omitted, the **run.sh** script tries to get the required values from the **~/.compass.yaml** file. To run the `run.sh` script, you need the [yq](https://mikefarah.gitbook.io/yq/) tool.
 >
 >The  **~/compass.yaml** file must have the following structure:
 >  > idpHost: {URL_TO_OIDC_SERVER}
->  >
->  > clientID: {OIDC_CLIENT_ID}
 >  >
 >  > adminGroupNames: {OIDC_ADMIN_GROUPS}
 >
