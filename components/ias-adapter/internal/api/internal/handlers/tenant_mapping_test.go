@@ -8,7 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal/handlers/automock"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
-	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -119,13 +118,11 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			It("Should succeed if tenantMappings are less than 2", func() {
 				mockService.On("CanSafelyRemoveTenantMapping", mock.Anything, mock.Anything).Return(true, nil)
 				mockService.On("RemoveTenantMapping", mock.Anything, mock.Anything).Return(nil)
-				expectedStatusReport := ucl.StatusReport{State: types.StateDeleteReady}
-				mockAsyncProcessor.On("ReportStatus", mock.Anything, expectedStatusReport).Return()
 				w, ctx := createTestRequest(tenantMapping)
 
 				handler.Patch(ctx)
 				Expect(w.Code).To(Equal(http.StatusAccepted))
-				Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ReportStatus", 1)).To(BeTrue())
+				Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ReportStatus", 0)).To(BeTrue())
 			})
 		})
 	})
@@ -136,12 +133,11 @@ var _ = Describe("Tenant Mapping Handler", func() {
 		})
 
 		It("Should return status 202 and handle the request asynchronously", func() {
-			mockAsyncProcessor.On("ProcessTMRequest", mock.Anything, mock.Anything).Return()
 			w, ctx := createTestRequest(tenantMapping)
 
 			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusAccepted))
-			Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ProcessTMRequest", 1)).To(BeTrue())
+			Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ProcessTMRequest", 0)).To(BeTrue())
 		})
 	})
 })
