@@ -953,14 +953,14 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testing.T) {
 	ctx := context.Background()
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
-	cn := "ord-svc-system-with-csm-discovery-test"
+	cn := "ord-svc-system-with-csm-discovery"
 
-	technicalCertSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, cn, -1)
+	technicalCertSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "csm-discovery-technical", -1)
 	technicalCertProvider := createExternalConfigProvider(technicalCertSubject)
 	technicalProviderClientKey, technicalProviderRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, technicalCertProvider, false)
 	technicalCertDirectorGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, technicalProviderClientKey, technicalProviderRawCertChain, conf.SkipSSLValidation)
 
-	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-svc-system-with-csm-discovery", -1)
+	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, cn, -1)
 	// We need an externally issued cert with a subject that is not part of the access level mappings
 	externalCertProviderConfig := createExternalConfigProvider(certSubject)
 
@@ -1022,8 +1022,8 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	headers := map[string][]string{applicationTenantIDHeaderKey: {localTenantID}}
 	// Make a request to the ORD service with http client containing custom certificate and application tenant ID header
 	t.Log("Getting application using custom certificate and appplicationTenantId header before a formation is created...")
-	
-  params := urlpkg.Values{}
+
+	params := urlpkg.Values{}
 	params.Add("$format", "json")
 	respBody := makeRequestWithHeadersAndQueryParams(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
@@ -1053,7 +1053,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	defer unassignFromFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
 
 	t.Log("Getting application using custom certificate and appplicationTenantId header after formation is created...")
-  
+
 	respBody = makeRequestWithHeaders(t, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
 
 	require.Len(t, gjson.Get(respBody, "value").Array(), 2)
