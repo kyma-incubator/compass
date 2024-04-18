@@ -163,23 +163,23 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3766"
+      version: "PR-3681"
       name: compass-connector
     connectivity_adapter:
       dir: prod/incubator/
       version: "v20240320-ceeacd33"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: prod/incubator/
-      version: "v20240320-5c6016ea"
+      dir: dev/incubator/
+      version: "PR-3681"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3766"
+      version: "PR-3681"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3766"
+      version: "PR-3681"
       name: compass-hydrator
     ias_adapter:
       dir: prod/incubator/
@@ -199,7 +199,7 @@ global:
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3766"
+      version: "PR-3681"
       name: compass-gateway
     operations_controller:
       dir: prod/incubator/
@@ -223,12 +223,12 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20240327-9ddb4979"
+      dir: dev/incubator/
+      version: "PR-3681"
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3766"
+      version: "PR-3681"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1348,7 +1348,6 @@ global:
       region: "eu-1"
     destination:
       consumerSubdomain: "compass-external-services-mock"
-      consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
       instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
       claims:
         subaccountIDKey: "subaccountid"
