@@ -136,7 +136,7 @@ type service struct {
 	applicationTypeLabelKey string
 }
 
-// NewService creates a FormationTemplate service
+// NewService creates a Formation Assignment service
 func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		repo:                    repo,
