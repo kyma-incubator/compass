@@ -839,13 +839,14 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter).Return(gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndProductLabel.Webhooks, gqlAppTemplateInputWithProviderAndProductLabel.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
-			LabelSvcFn:       UnusedLabelService,
-			Ctx:              ctxWithTokenConsumer,
-			Input:            gqlAppTemplateInputWithProviderAndProductLabel,
-			ExpectedOutput:   gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter,
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndProductLabel.Webhooks, gqlAppTemplateInputWithProviderAndProductLabel.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
+			CertSubjectMappingSvcFn: UnusedCertSubjMappingSvc,
+			LabelSvcFn:              UnusedLabelService,
+			Ctx:                     ctxWithTokenConsumer,
+			Input:                   gqlAppTemplateInputWithProviderAndProductLabel,
+			ExpectedOutput:          gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter,
 		},
 		{
 			Name: "Success when providing product label with valid slis filter",
