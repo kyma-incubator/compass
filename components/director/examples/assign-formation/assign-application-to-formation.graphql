@@ -3,7 +3,7 @@ mutation {
   result: assignFormation(
     objectID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     objectType: APPLICATION
-    formation: { name: "ADDITIONAL" }
+    formation: { name: "first" }
   ) {
     id
     name

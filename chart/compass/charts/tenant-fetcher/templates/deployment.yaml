@@ -74,6 +74,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.tenantProvider.tenantIdProperty }}
             - name: APP_TENANT_PROVIDER_CUSTOMER_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.customerIdProperty }}
+            - name: APP_TENANT_PROVIDER_COST_OBJECT_ID_PROPERTY
+              value: {{ .Values.global.tenantFetcher.tenantProvider.costObjectIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBACCOUNT_TENANT_ID_PROPERTY
               value: {{ .Values.global.tenantFetcher.tenantProvider.subaccountTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBDOMAIN_PROPERTY
@@ -162,6 +164,16 @@ spec:
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamName | quote }}
             - name: APP_TENANT_FETCHER_OMIT_PARAM_VALUE
               value: {{ .Values.global.tenantFetcher.omitDependenciesParamValue | quote }}
+            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING
+              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessing }}"
+            - name: APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS
+              value: "{{ .Values.global.tenantFetcher.systemFieldDiscoveryWebhookPartialProcessMaxDays }}"
+            - name: APP_WEBHOOK_PROCESSOR_JOB_INTERVAL
+              value: "{{ .Values.global.tenantFetcher.webhookProcessorJobInterval }}"
+            - name: APP_ELECTION_LEASE_LOCK_NAME
+              value: {{ .Values.global.tenantFetcher.lease.lockname | quote }}
+            - name: APP_ELECTION_LEASE_LOCK_NAMESPACE
+              value: {{ .Release.Namespace }}
             {{- if and ($.Values.global.metrics.enabled) ($.Values.global.metrics.pushEndpoint) }}
             - name: APP_METRICS_PUSH_ENDPOINT
               value: {{ $.Values.global.metrics.pushEndpoint }}
@@ -213,6 +225,12 @@ spec:
               value: {{ $config.api.fieldMapping.nameField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_CUSTOMER_ID
               value: {{ $config.api.fieldMapping.customerIdField }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_COST_OBJECT_ID
+              value: {{ $config.api.fieldMapping.costObjectIDField }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_ID
+              value: {{ $config.api.fieldMapping.subaccountCostObjectIDField }}
+            - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_TYPE
+              value: {{ $config.api.fieldMapping.subaccountCostObjectTypeField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_SUBDOMAIN
               value: {{ default "subdomain" $config.api.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_API_MAPPING_FIELD_REGION
@@ -274,6 +292,12 @@ spec:
               value: {{ $config.regionalConfig.fieldMapping.idField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_CUSTOMER_ID
               value: {{ $config.regionalConfig.fieldMapping.customerIdField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_ID
+              value: {{ $config.api.fieldMapping.subaccountCostObjectIDField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_TYPE
+              value: {{ $config.api.fieldMapping.subaccountCostObjectTypeField }}
+            - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_COST_OBJECT_ID
+              value: {{ default "costObject" $config.regionalConfig.fieldMapping.costObjectIDField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_SUBDOMAIN
               value: {{ default "subdomain" $config.regionalConfig.fieldMapping.subdomainField }}
             - name: APP_{{ $tenantFetcherJobName }}_REGIONAL_CONFIG_{{ $regionNameEnv }}_MAPPING_FIELD_REGION

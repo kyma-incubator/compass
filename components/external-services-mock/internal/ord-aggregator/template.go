@@ -28,16 +28,9 @@ const ordConfig = `{
 const ordDocument = `{
    "$schema":"./spec/v1/generated/Document.schema.json",
    "openResourceDiscovery":"1.2",
+   "policyLevel": "sap:core:v1",
    "description":"Test Document",
    "describedSystemInstance":{
-      "ProviderName":null,
-      "Tenant":"",
-      "Name":"",
-      "Description":null,
-      "Status":null,
-      "HealthCheckURL":null,
-      "IntegrationSystemID":null,
-      "ApplicationTemplateID":null,
       "baseUrl":"{{ .baseURL }}",
       "labels":{
          "label-key-1":[
@@ -45,14 +38,14 @@ const ordDocument = `{
             "label-value-2"
          ]
       }
-	  {{ .additionalProperties }}
+	  
    },
    "packages":[
       {
          "ordId":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "vendor":"sap:vendor:SAP:",
          "title":"PACKAGE 1 TITLE",
-         "shortDescription":"short desc",
+         "shortDescription":"Short description",
          "description":"lorem ipsum dolor set",
          "version":"1.1.2",
          "packageLinks":[
@@ -62,7 +55,7 @@ const ordDocument = `{
             },
             {
                "type":"client-registration",
-               "url":"/ui/public/showRegisterForm"
+               "url":"https://ui/public/showRegisterForm"
             }
          ],
          "links":[
@@ -74,16 +67,16 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://testing/relative"
             }
          ],
-         "licenseType":"licence",
+         "licenseType":"AAL",
          "tags":[
             "testTag"
          ],
          "countries":[
             "BG",
-            "EN"
+            "US"
          ],
          "labels":{
             "label-key-1":[
@@ -100,7 +93,6 @@ const ordDocument = `{
             ]
          },
          "policyLevel":"sap:core:v1",
-         "customPolicyLevel":null,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
             "sap:product:SAPCloudPlatform:"
@@ -114,7 +106,74 @@ const ordDocument = `{
             "Banking",
             "Chemicals"
          ]
-		 {{ .additionalProperties }}	 
+        
+      },
+      {
+         "ordId":"ns:package:PACKAGE_ID_2{{ .randomSuffix }}:v2",
+         "vendor":"sap:vendor:SAP:",
+         "title":"PACKAGE 2 TITLE",
+         "shortDescription":"Short description",
+         "description":"lorem ipsum dolor set",
+         "version":"2.1.2",
+         "packageLinks":[
+            {
+               "type":"terms-of-service",
+               "url":"https://example.com/en/legal/terms-of-use.html"
+            },
+            {
+               "type":"client-registration",
+               "url":"https://ui/public/showRegisterForm"
+            }
+         ],
+         "links":[
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle1",
+               "url":"https://example.com/2018/04/11/testing/"
+            },
+            {
+               "description":"loremipsumdolornem",
+               "title":"LinkTitle2",
+               "url":"https://testing/relative"
+            }
+         ],
+         "licenseType":"AAL",
+         "tags":[
+            "testTag"
+         ],
+         "countries":[
+            "BG",
+            "US"
+         ],
+         "labels":{
+            "label-key-1":[
+               "label-val"
+            ],
+            "pkg-label":[
+               "label-val"
+            ]
+         },
+         "documentationLabels":{
+            "Documentation label key":[
+               "Markdown Documentation with links",
+               "With multiple values"
+            ]
+         },
+         "policyLevel":"sap:core:v1",
+         "partOfProducts":[
+            "sap:product:id{{ .randomSuffix }}:",
+            "sap:product:SAPCloudPlatform:"
+         ],
+         "lineOfBusiness":[
+            "Finance",
+            "Sales"
+         ],
+         "industry":[
+            "Automotive",
+            "Banking",
+            "Chemicals"
+         ]
+        
       }
    ],
    "entityTypes":[
@@ -129,6 +188,7 @@ const ordDocument = `{
          "visibility":"public",
          "version":"1.1.2",
          "releaseStatus":"active",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
          "links":[
             {
                "description":"loremipsumdolornem",
@@ -138,7 +198,7 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://testing/relative"
             }
          ],
          "tags":[
@@ -159,20 +219,21 @@ const ordDocument = `{
             ]
          },
          "policyLevel":"sap:core:v1",
-         "customPolicyLevel":null,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
             "sap:product:SAPCloudPlatform:"
          ]
-		 {{ .additionalProperties }}	 
+		 	 
       }
    ],
    "consumptionBundles":[
       {
          "title":"BUNDLE TITLE",
-         "description":"lorem ipsum dolor nsq sme",
+         "description":"Description for bundle",
          "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
-         "shortDescription":"lorem ipsum",
+         "shortDescription":"Short description bundle 1",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "version": "1.0.0",
          "links":[
             {
                "description":"loremipsumdolornem",
@@ -182,7 +243,7 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://testing/relative"
             }
          ],
          "correlationIds":[
@@ -203,30 +264,36 @@ const ordDocument = `{
          },
          "credentialExchangeStrategies":[
             {
-               "callbackUrl":"/credentials/relative",
+               "callbackUrl":"https://credentials/relative",
                "customType":"ns:credential-exchange:v1",
+               "customDescription":"custom description 1",
                "type":"custom"
             },
             {
-               "callbackUrl":"http://example.com/credentials",
+               "callbackUrl":"https://example.com/credentials",
                "customType":"ns:credential-exchange2:v3",
+               "customDescription":"custom description 2",
                "type":"custom"
             }
          ]
-		 {{ .additionalProperties }}
+		 
       },
       {
          "title":"BUNDLE TITLE 2",
          "ordId":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v2",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "version": "2.0.0",
          "credentialExchangeStrategies":[
             {
-               "callbackUrl":"/credentials/relative",
+               "callbackUrl":"https://credentials/relative",
                "customType":"ns:credential-exchange:v1",
+               "customDescription":"custom description 1",
                "type":"custom"
             },
             {
                "callbackUrl":"http://example.com/credentials",
                "customType":"ns:credential-exchange2:v3",
+               "customDescription":"custom description 2",
                "type":"custom"
             }
          ],
@@ -255,18 +322,18 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://testing/relative"
             }
          ]
-		 {{ .additionalProperties }}
+		 
       }
    ],
    "products":[
       {
          "ordId":"sap:product:id{{ .randomSuffix }}:",
          "title":"PRODUCT TITLE",
-         "description":"lorem ipsum dolor nsq sme",
-         "shortDescription":"lorem ipsum",
+         "description":"Description for product",
+         "shortDescription":"Short description for product",
          "vendor":"sap:vendor:SAP:",
          "parent":"ns:product:id2:",
          "correlationIds":[
@@ -285,20 +352,20 @@ const ordDocument = `{
                "With multiple values"
             ]
          }
-		 {{ .additionalProperties }}
+		 
       }
    ],
    "apiResources":[
       {
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "title":"API TITLE",
-         "description":"lorem ipsum dolor sit amet",
+         "description":"Description API 1",
          "entryPoints":[
             "https://exmaple.com/test/v1",
-            "https://exmaple.com/test/v2"
+            "./example/test/v2"
          ],
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v2",
-         "shortDescription":"lorem ipsum",
+         "shortDescription":"Short description for API",
          "systemInstanceAware":true,
          "apiProtocol":"odata-v2",
          "tags":[
@@ -317,7 +384,7 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://testing/relative"
             }
          ],
          "apiResourceLinks":[
@@ -327,11 +394,10 @@ const ordDocument = `{
             },
             {
                "type":"console",
-               "url":"/shell/discover/relative"
+               "url":"https://shell/discover/relative"
             }
          ],
          "releaseStatus":"active",
-         "sunsetDate":null,
          "changelogEntries":[
             {
                "date":"2020-04-29",
@@ -369,8 +435,6 @@ const ordDocument = `{
             "Chemicals"
          ],
          "implementationStandard":"cff:open-service-broker:v2",
-         "customImplementationStandard":null,
-         "customImplementationStandardDescription":null,
          "extensible":{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
@@ -378,40 +442,31 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"openapi-v3",
-               "customType":"",
                "mediaType":"application/json",
                "url":"/external-api/spec/flapping?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             },
             {
                "type":"openapi-v3",
-               "customType":"",
                "mediaType":"text/yaml",
                "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             },
             {
                "type":"edmx",
-               "customType":"",
                "mediaType":"application/xml",
                "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
@@ -449,17 +504,17 @@ const ordDocument = `{
          ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
-		 {{ .additionalProperties }}
+		 
       },
       {
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
          "title":"Gateway Sample Service",
-         "description":"lorem ipsum dolor sit amet",
+         "description":"Description API 1",
          "entryPoints":[
             "http://localhost:8080/some-api/v1"
          ],
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
-         "shortDescription":"lorem ipsum",
+         "shortDescription":"Short description for API",
          "systemInstanceAware":true,
          "apiProtocol":"odata-v2",
          "tags":[
@@ -477,7 +532,7 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://testing/relative"
             }
          ],
          "apiResourceLinks":[
@@ -518,7 +573,7 @@ const ordDocument = `{
             ]
          },
          "visibility":"public",
-         "disabled":null,
+         "disabled":false,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
             "sap:product:SAPCloudPlatform:"
@@ -533,8 +588,6 @@ const ordDocument = `{
             "Chemicals"
          ],
          "implementationStandard":"cff:open-service-broker:v2",
-         "customImplementationStandard":null,
-         "customImplementationStandardDescription":null,
          "extensible":{
             "supported":"automatic",
             "description":"Please find the extensibility documentation"
@@ -542,27 +595,21 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"edmx",
-               "customType":"",
                "mediaType":"application/xml",
                "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"	
                   }
                ]
             },
             {
                "type":"openapi-v3",
-               "customType":"",
                "mediaType":"application/json",
                "url":"/external-api/spec?format=yaml",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
@@ -576,23 +623,23 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
-		 {{ .additionalProperties }}
+		 
       },
       {
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v3",
          "title":"API TITLE INTERNAL",
-         "shortDescription":"Test",
-         "description":"Test description internal",
+         "shortDescription":"Short description for API",
+         "description":"Description for API internal",
          "entryPoints":[
             "https://exmaple.com/test/v1",
             "https://exmaple.com/test/v2"
          ],
-         "version":"1.0.0",
+         "version":"3.0.0",
          "visibility":"internal",
          "releaseStatus":"beta",
          "systemInstanceAware":true,
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
-         "apiProtocol":"rest",
+         "apiProtocol":"odata-v2",
          "apiResourceLinks":[
             {
                "type":"console",
@@ -652,48 +699,42 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"edmx",
-               "customType":"",
                "mediaType":"application/xml",
                "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             },
             {
                "type":"openapi-v3",
-               "customType":"",
                "mediaType":"text/yaml",
                "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
          ]
-		 {{ .additionalProperties }}
+		 
       },
       {
          "ordId":"ns:apiResource:API_ID{{ .randomSuffix }}:v4",
          "title":"API TITLE PRIVATE",
-         "shortDescription":"Test",
-         "description":"Test description private",
+         "shortDescription":"Short description for API",
+         "description":"Description for API private",
          "entryPoints":[
             "https://exmaple.com/test/v1",
             "https://exmaple.com/test/v2"
          ],
-         "version":"1.0.0",
+         "version":"4.0.0",
          "visibility":"private",
          "releaseStatus":"beta",
          "systemInstanceAware":true,
          "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
-         "apiProtocol":"rest",
+         "apiProtocol":"odata-v2",
          "apiResourceLinks":[
             {
                "type":"console",
@@ -713,42 +754,37 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"edmx",
-               "customType":"",
                "mediaType":"application/xml",
                "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             },
             {
                "type":"openapi-v3",
-               "customType":"",
                "mediaType":"text/yaml",
                "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
          ]
-		 {{ .additionalProperties }}
+		 
       }
    ],
    "eventResources":[
       {
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID_2{{ .randomSuffix }}:v2",
          "title":"EVENT TITLE",
-         "description":"lorem ipsum dolor sit amet",
-         "ordId":"ns:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
-         "shortDescription":"lorem ipsum",
+         "description":"Description Event 1",
+         "ordId":"ns:eventResource:EVENT_ID{{ .randomSuffix }}:v2",
+         "shortDescription":"Short description for Event",
          "systemInstanceAware":true,
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
          "changelogEntries":[
             {
                "date":"2020-04-29",
@@ -767,7 +803,7 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://example.com/2018/04/11/testing/relative"
             }
          ],
          "tags":[
@@ -778,7 +814,6 @@ const ordDocument = `{
             "US"
          ],
          "releaseStatus":"active",
-         "sunsetDate":null,
          "labels":{
             "label-key-1":[
                "label-value-1",
@@ -813,14 +848,11 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
-               "customType":"",
                "mediaType":"application/json",
                "url":"/external-api/spec?format=xml",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
@@ -853,15 +885,16 @@ const ordDocument = `{
          ],
          "defaultConsumptionBundle":"ns:consumptionBundle:BUNDLE_ID{{ .randomSuffix }}:v1",
          "version":"2.1.2"
-		 {{ .additionalProperties }}
+		 
       },
       {
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "partOfPackage":"ns:package:PACKAGE_ID_2{{ .randomSuffix }}:v2",
          "title":"EVENT TITLE 2",
-         "description":"lorem ipsum dolor sit amet",
+         "description":"Description Event 2",
          "ordId":"ns2:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
-         "shortDescription":"lorem ipsum",
+         "shortDescription":"Short description for Event",
          "systemInstanceAware":true,
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
          "changelogEntries":[
             {
                "date":"2020-04-29",
@@ -880,7 +913,7 @@ const ordDocument = `{
             {
                "description":"loremipsumdolornem",
                "title":"LinkTitle2",
-               "url":"/testing/relative"
+               "url":"https://example.com/2018/04/11/testing/relative"
             }
          ],
          "tags":[
@@ -908,7 +941,7 @@ const ordDocument = `{
             ]
          },
          "visibility":"public",
-         "disabled":null,
+         "disabled":false,
          "partOfProducts":[
             "sap:product:id{{ .randomSuffix }}:",
             "sap:product:SAPCloudPlatform:"
@@ -929,14 +962,11 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
-               "customType":"",
                "mediaType":"application/json",
                "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
@@ -950,16 +980,17 @@ const ordDocument = `{
             }
          ],
          "version":"1.1.0"
-		 {{ .additionalProperties }}
+		 
       },
       {
          "ordId":"ns3:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
          "title":"EVENT TITLE INTERNAL",
-         "shortDescription":"Test",
-         "description":"Test description internal",
-         "version":"0.1.0",
+         "shortDescription":"Short description for Event",
+         "description":"Description for Event internal",
+         "version":"1.1.0",
          "releaseStatus":"beta",
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "partOfPackage":"ns:package:PACKAGE_ID_2{{ .randomSuffix }}:v2",
          "visibility":"internal",
          "extensible":{
             "supported":"automatic",
@@ -1008,28 +1039,26 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
-               "customType":"",
                "mediaType":"application/json",
                "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
          ]
-		 {{ .additionalProperties }}
+		 
       },
       {
          "ordId":"ns4:eventResource:EVENT_ID{{ .randomSuffix }}:v1",
          "title":"EVENT TITLE PRIVATE",
-         "shortDescription":"Test",
-         "description":"Test description private",
-         "version":"0.1.0",
+         "shortDescription":"Short description for Event",
+         "description":"Description for Event private",
+         "version":"1.1.0",
          "releaseStatus":"beta",
-         "partOfPackage":"ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+         "lastUpdate": "2023-01-26T15:47:04+00:00",
+         "partOfPackage":"ns:package:PACKAGE_ID_2{{ .randomSuffix }}:v2",
          "visibility":"internal",
          "extensible":{
             "supported":"automatic",
@@ -1043,24 +1072,21 @@ const ordDocument = `{
          "resourceDefinitions":[
             {
                "type":"asyncapi-v2",
-               "customType":"",
                "mediaType":"application/json",
                "url":"/external-api/spec?format=json",
                "accessStrategies":[
                   {
-                     "type":"{{ .specsAccessStrategy }}",
-                     "customType":"",
-                     "customDescription":""
+                     "type":"{{ .specsAccessStrategy }}"
                   }
                ]
             }
          ]
-		 {{ .additionalProperties }}
+		 
       }
    ],
 	"capabilities":[
     {
-      "ordId": "sap.foo.bar:capability:{{ .randomSuffix }}:v1",
+      "ordId": "sap.s4:capability:{{ .randomSuffix }}:v1",
       "title": "CAPABILITY TITLE",
       "type": "sap.mdo:mdi-capability:v1",
       "shortDescription": "Short description of capability",
@@ -1077,9 +1103,7 @@ const ordDocument = `{
           "url": "/external-api/spec?format=json", 
           "accessStrategies": [
             {
-                "type":"{{ .specsAccessStrategy }}",
-                "customType":"",
-				"customDescription":""
+                "type":"{{ .specsAccessStrategy }}"
 			}
           ]
         }
@@ -1231,10 +1255,10 @@ const ordDocument = `{
       "shortDescription": "Short description of Data Product",
       "description": "Long description for a public Data Product resource",
       "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
+      "version": "1.2.3",
       "visibility": "public",
       "releaseStatus": "deprecated",
       "disabled": false,
-      "version": "1.9.2",
       "lastUpdate": "2020-12-08T15:47:04+00:00",
       "deprecationDate": "2020-12-08T15:47:04+00:00",
       "sunsetDate": "2022-01-08T15:47:04+00:00",
@@ -1270,7 +1294,7 @@ const ordDocument = `{
 		{
 		   "description":"loremipsumdolornem",
 		   "title":"LinkTitle2",
-		   "url":"/testing/relative"
+		   "url":"https://example.com/2018/04/11/testing/relative"
 		}
       ],
       "industry": [
@@ -1346,7 +1370,7 @@ const ordDocument = `{
 		{
 		   "description": "loremipsumdolornem",
 		   "title": "LinkTitle2",
-		   "url": "/testing/relative"
+		   "url": "https://example.com/2018/04/11/testing/relative"
 		}
       ],
       "industry": [
@@ -1390,7 +1414,7 @@ const ordDocument = `{
       "partOfPackage": "ns:package:PACKAGE_ID{{ .randomSuffix }}:v1",
       "visibility": "internal",
       "releaseStatus": "active",
-      "version": "2.1.0",
+      "version": "3.1.0",
       "lastUpdate": "2022-12-19T15:47:04+00:00",
       "type": "base",
       "category": "business-object",
@@ -1421,7 +1445,7 @@ const ordDocument = `{
 		{
 		   "description": "loremipsumdolornem",
 		   "title": "LinkTitle2",
-		   "url": "/testing/relative"
+		   "url": "https://example.com/2018/04/11/testing/relative"
 		}
       ],
       "industry": [
@@ -1458,7 +1482,7 @@ const ordDocument = `{
       {
          "ordId":"ns:apiResource:API_ID2{{ .randomSuffix }}:v1",
          "removalDate":"2020-12-02T14:12:59Z"
-		 {{ .additionalProperties }}
+		 
       }
    ],
    "vendors":[
@@ -1480,8 +1504,7 @@ const ordDocument = `{
                "With multiple values"
             ]
          }
-		 {{ .additionalProperties }}
+		 
       }
    ]
-   {{ .additionalEntities }}
 }`

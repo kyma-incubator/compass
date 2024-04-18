@@ -95,6 +95,36 @@ func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Fo
 	return r0, r1
 }
 
+// FinalizeDraftFormation provides a mock function with given fields: ctx, formationID
+func (_m *Service) FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error) {
+	ret := _m.Called(ctx, formationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for FinalizeDraftFormation")
+	}
+
+	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, formationID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
+		r0 = rf(ctx, formationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Get provides a mock function with given fields: ctx, id
 func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id)
@@ -147,6 +177,36 @@ func (_m *Service) GetFormationByName(ctx context.Context, formationName string,
 	return r0, r1
 }
 
+// GetGlobalByID provides a mock function with given fields: ctx, id
+func (_m *Service) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
+	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGlobalByID")
+	}
+
+	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // List provides a mock function with given fields: ctx, pageSize, cursor
 func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor)
@@ -166,6 +226,32 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListFormationsForObject provides a mock function with given fields: ctx, objectID
+func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	ret := _m.Called(ctx, objectID)
+
+	var r0 []*model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Formation, error)); ok {
+		return rf(ctx, objectID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
+		r0 = rf(ctx, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Formation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, objectID)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -14,23 +14,24 @@ import (
 )
 
 type DirectorConfig struct {
-	DirectorUrl                                 string
-	DirectorInternalGatewayUrl                  string
-	HealthUrl                                   string `envconfig:"default=https://director.kyma.local/healthz"`
-	WebhookUrl                                  string `envconfig:"default=https://kyma-project.io"`
-	InfoUrl                                     string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
-	DefaultNormalizationPrefix                  string `envconfig:"default=mp-"`
-	GatewayOauth                                string
-	CompassExternalMTLSGatewayURL               string `envconfig:"APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL"`
-	DirectorUserNameAuthenticatorURL            string `envconfig:"APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL"`
-	DirectorExternalCertSecuredURL              string
-	DirectorExternalCertFAAsyncStatusURL        string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
-	DirectorExternalCertFAAsyncResetStatusURL   string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
-	DirectorExternalCertFormationAsyncStatusURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
-	SkipSSLValidation                           bool   `envconfig:"default=false"`
-	ConsumerID                                  string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
-	UsernameAuthCfg                             authenticator.Config
-	CertLoaderConfig                            credloader.CertConfig
+	DirectorUrl                                       string
+	DirectorInternalGatewayUrl                        string
+	HealthUrl                                         string `envconfig:"default=https://director.kyma.local/healthz"`
+	WebhookUrl                                        string `envconfig:"default=https://kyma-project.io"`
+	InfoUrl                                           string `envconfig:"APP_INFO_API_ENDPOINT,default=https://director.kyma.local/v1/info"`
+	DefaultNormalizationPrefix                        string `envconfig:"default=mp-"`
+	GatewayOauth                                      string
+	CompassExternalMTLSGatewayURL                     string `envconfig:"APP_COMPASS_EXTERNAL_MTLS_GATEWAY_URL"`
+	DirectorUserNameAuthenticatorURL                  string `envconfig:"APP_DIRECTOR_USER_NAME_AUTHENTICATOR_URL"`
+	DirectorExternalCertSecuredURL                    string
+	DirectorExternalCertFAAsyncStatusURL              string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL"`
+	DirectorExternalCertFAAsyncStatusExternalTokenURL string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL"`
+	DirectorExternalCertFAAsyncResetStatusURL         string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL"`
+	DirectorExternalCertFormationAsyncStatusURL       string `envconfig:"APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL"`
+	SkipSSLValidation                                 bool   `envconfig:"default=false"`
+	ConsumerID                                        string `envconfig:"APP_INFO_CERT_CONSUMER_ID"`
+	UsernameAuthCfg                                   authenticator.Config
+	CertLoaderConfig                                  credloader.CertConfig
 	certprovider.ExternalCertProviderConfig
 	SubscriptionConfig                                 subscription.Config
 	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
@@ -39,6 +40,7 @@ type DirectorConfig struct {
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 	DestinationConsumerSubdomainMtls                   string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
+	TestCostObjectID                                   string
 	TestProviderAccountID                              string
 	TestProviderSubaccountID                           string
 	TestConsumerAccountID                              string

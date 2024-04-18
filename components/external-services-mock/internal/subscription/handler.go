@@ -2,6 +2,7 @@ package subscription
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -24,6 +25,10 @@ const (
 	subscribedRootProviderIdValue           = "subscribedRootProviderID"
 	subscribedRootProviderAppNameValue      = "subscribedRootProviderAppName"
 	subscribedRootProviderSubaccountIdValue = "subscribedRootProviderSubaccountID"
+	// useParentType is query parameter key used to specify parent tenant of which type should be used in the mocked tenant event
+	useParentType = "useParentType"
+	// useParentID is query parameter key used to specify which ID should be used in the mocked tenant event
+	useParentID = "useParentID"
 )
 
 type handler struct {
@@ -32,6 +37,8 @@ type handler struct {
 	providerConfig   ProviderConfig
 	jobID            string
 	tenantsHierarchy map[string]string // maps consumerSubaccount to consumerAccount
+	useParentType    string
+	useParentID      string
 }
 
 type JobStatus struct {
@@ -43,11 +50,17 @@ type ProviderSubscriptionInfo struct {
 	ProviderSubscriptionsIds []string
 }
 
-type Response struct {
-	SubscriptionGUID string `json:"subscriptionGUID"`
+var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
+
+// Subscription represents subscription object in a saas registry subscription api response payload.
+type Subscription struct {
+	AppURL string `json:"url"`
 }
 
-var Subscriptions = make(map[string]*ProviderSubscriptionInfo)
+// SubscriptionsResponse represents collection of all subscription objects in a saas registry subscriptions api response payload.
+type SubscriptionsResponse struct {
+	Subscriptions []Subscription `json:"subscriptions"`
+}
 
 // NewHandler returns new subscription handler responsible to subscribe and unsubscribe tenants
 func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig ProviderConfig, jobID string) *handler {
@@ -58,6 +71,27 @@ func NewHandler(httpClient *http.Client, tenantConfig Config, providerConfig Pro
 		jobID:            jobID,
 		tenantsHierarchy: map[string]string{tenantConfig.TestConsumerSubaccountIDTenantHierarchy: tenantConfig.TestConsumerAccountIDTenantHierarchy, tenantConfig.TestConsumerSubaccountID: tenantConfig.TestConsumerAccountID},
 	}
+}
+
+// GetSubscriptions mocks the response payload when calling SaaS registry subscriptions api. This method is invoked on local setup,
+// on real environment an external service with the same path but different host is called.
+func (h *handler) GetSubscriptions(writer http.ResponseWriter, r *http.Request) {
+	logger := log.C(r.Context())
+	subscriptions := SubscriptionsResponse{
+		Subscriptions: []Subscription{
+			{
+				AppURL: "https://new-url.com",
+			},
+		},
+	}
+	subscriptionsBytes, err := json.Marshal(subscriptions)
+	if err != nil {
+		logger.Errorf("Failed to marshal subscriptions: %s", err)
+		writer.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	writer.WriteHeader(http.StatusOK)
+	writer.Write(subscriptionsBytes)
 }
 
 // Subscribe build and execute subscribe request to tenant fetcher. This method is invoked on local setup,
@@ -129,6 +163,22 @@ func (h *handler) JobStatus(writer http.ResponseWriter, r *http.Request) {
 	log.C(ctx).Info("Successfully handled subscription job status request")
 }
 
+// ConfigureTenantTypeAndID defines what parent type and parent ID should be provided in the subscription payload
+func (h *handler) ConfigureTenantTypeAndID(writer http.ResponseWriter, r *http.Request) {
+	parentType := r.URL.Query().Get(useParentType)
+	parentID := r.URL.Query().Get(useParentID)
+	h.useParentType = parentType
+	h.useParentID = parentID
+	writer.WriteHeader(http.StatusOK)
+}
+
+// ResetTenantTypeAndID resets the parent type and parent ID that should be provided in the subscription payload
+func (h *handler) ResetTenantTypeAndID(writer http.ResponseWriter, r *http.Request) {
+	h.useParentType = ""
+	h.useParentID = ""
+	writer.WriteHeader(http.StatusOK)
+}
+
 func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string) (int, error) {
 	ctx := r.Context()
 	authorization := r.Header.Get(httphelpers.AuthorizationHeaderKey)
@@ -157,7 +207,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 
 	// Build a request for consumer subscribe/unsubscribe
 	BuildTenantFetcherRegionalURL(&h.tenantConfig)
-	request, err := h.createTenantRequest(httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, subscriptionFlow)
+	request, err := h.createTenantRequest(ctx, httpMethod, h.tenantConfig.TenantFetcherFullRegionalURL, token, providerSubaccID, subscriptionID, subscriptionFlow)
 	if err != nil {
 		log.C(ctx).Errorf("while creating subscription request: %s", err.Error())
 		return http.StatusInternalServerError, errors.Wrap(err, "while creating subscription request")
@@ -197,7 +247,7 @@ func (h *handler) executeSubscriptionRequest(r *http.Request, httpMethod string)
 	return http.StatusOK, nil
 }
 
-func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, subscriptionFlow string) (*http.Request, error) {
+func (h *handler) createTenantRequest(ctx context.Context, httpMethod, tenantFetcherUrl, token, providerSubaccID, subscriptionID, subscriptionFlow string) (*http.Request, error) {
 	var (
 		body = "{}"
 		err  error
@@ -247,6 +297,21 @@ func (h *handler) createTenantRequest(httpMethod, tenantFetcherUrl, token, provi
 	body, err = sjson.Set(body, h.providerConfig.LicenseTypeProperty, DefaultLicenseType)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+	}
+
+	if h.useParentType != "" && h.useParentID != "" {
+		log.C(ctx).Infof("Setting tenant parent of type %s with id %s", h.useParentType, h.useParentID)
+		if h.useParentType == "costObject" {
+			body, err = sjson.Set(body, h.providerConfig.CostObjectIDProperty, h.useParentID)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			}
+		} else {
+			body, err = sjson.Set(body, h.providerConfig.CustomerIDProperty, h.useParentID)
+			if err != nil {
+				return nil, errors.New(fmt.Sprintf("An error occured when setting json value: %v", err))
+			}
+		}
 	}
 
 	if len(h.tenantConfig.TestConsumerTenantID) > 0 {

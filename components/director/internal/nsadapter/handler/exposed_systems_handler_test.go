@@ -525,7 +525,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
-		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss"), false).Return("", errors.New("error"))
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
@@ -590,7 +590,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
-		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss"), false).Return("success", nil)
 
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
@@ -1202,7 +1202,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
-		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("", errors.New("error"))
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss"), false).Return("", errors.New("error"))
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)
@@ -1262,7 +1262,7 @@ func TestHandler_ServeHTTP(t *testing.T) {
 		appSvc := automock.ApplicationService{}
 		appSvc.Mock.On("GetSccSystem", mock.Anything, testSubaccount, "loc-id", "127.0.0.1:8080").
 			Return(nil, errors.New("Object not found"))
-		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss")).Return("success", nil)
+		appSvc.Mock.On("CreateFromTemplate", mock.Anything, input, str.Ptr("ss"), false).Return("success", nil)
 		appSvc.Mock.On("ListBySCC", mock.Anything, labelFilter).Return([]*model.ApplicationWithLabel{&appWithLabel}, nil)
 		appSvc.Mock.On("ListSCCs", mock.Anything).Return(nil, errors.New("error"))
 		defer mock.AssertExpectationsForObjects(t, tx, listSccsTx, &transact, &appTemplateSvc, &appConverterSvc, &appSvc, &tntSvc)

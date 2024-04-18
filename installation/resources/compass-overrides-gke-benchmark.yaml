@@ -35,9 +35,9 @@ global:
         manage: true
       publicPrivateKeysSecret:
         manage: true
-  extSvcCertConfiguration:
+  instanceCreatorCertConfiguration:
     secrets:
-      extSvcCertSvcSecret:
+      instanceCreatorSvcSecret:
         manage: true
   externalServicesMock:
     enabled: true

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
@@ -698,7 +700,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 		Name         string
 		RepositoryFn func() *automock.OperationRepository
 		Input        string
-		ErrorMsg     string
+		ErrorMsg     error
 		ExpectedErr  error
 	}{
 		{
@@ -714,7 +716,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				return repo
 			},
 			Input:    operationID,
-			ErrorMsg: "",
+			ErrorMsg: nil,
 		},
 		{
 			Name: "Success when there is an error message",
@@ -724,12 +726,12 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
 					arg := args.Get(1).(*model.Operation)
 					assert.Equal(t, model.OperationStatusCompleted, arg.Status)
-					assert.Equal(t, json.RawMessage(`{"error":"err"}`), arg.Error)
+					assert.Equal(t, json.RawMessage(`{"error":{"message":{"validation_errors":null,"runtime_error":{"message":"err"}}}}`), arg.Error)
 				})
 				return repo
 			},
 			Input:    operationID,
-			ErrorMsg: "err",
+			ErrorMsg: &ord.ProcessingError{RuntimeError: &ord.RuntimeError{Message: "err"}},
 		},
 		{
 			Name: "Error - Getting operation",
@@ -739,7 +741,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				return repo
 			},
 			Input:       operationID,
-			ErrorMsg:    "",
+			ErrorMsg:    nil,
 			ExpectedErr: testErr,
 		},
 		{
@@ -751,7 +753,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 				return repo
 			},
 			Input:       operationID,
-			ErrorMsg:    "",
+			ErrorMsg:    nil,
 			ExpectedErr: testErr,
 		},
 	}
@@ -790,7 +792,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 		Name         string
 		RepositoryFn func() *automock.OperationRepository
 		Input        string
-		InputErrMsg  string
+		InputErr     error
 		ExpectedErr  error
 	}{
 		{
@@ -801,15 +803,15 @@ func TestService_MarkAsFailed(t *testing.T) {
 				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
 					arg := args.Get(1).(*model.Operation)
 					assert.Equal(t, model.OperationStatusFailed, arg.Status)
-					opErr := operation.NewOperationError(operationErrMsg)
+					opErr := operation.NewOperationError(errors.New(operationErrMsg))
 					expectedMsg, err := opErr.ToJSONRawMessage()
 					require.NoError(t, err)
 					assert.Equal(t, expectedMsg, arg.Error)
 				})
 				return repo
 			},
-			Input:       operationID,
-			InputErrMsg: operationErrMsg,
+			Input:    operationID,
+			InputErr: errors.New(operationErrMsg),
 		},
 		{
 			Name: "Error - Getting operation",
@@ -819,7 +821,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 				return repo
 			},
 			Input:       operationID,
-			InputErrMsg: operationErrMsg,
+			InputErr:    errors.New(operationErrMsg),
 			ExpectedErr: testErr,
 		},
 		{
@@ -831,7 +833,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 				return repo
 			},
 			Input:       operationID,
-			InputErrMsg: operationErrMsg,
+			InputErr:    errors.New(operationErrMsg),
 			ExpectedErr: testErr,
 		},
 	}
@@ -844,7 +846,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 			svc := operation.NewService(repo, nil)
 
 			// WHEN
-			err := svc.MarkAsFailed(ctx, testCase.Input, testCase.InputErrMsg)
+			err := svc.MarkAsFailed(ctx, testCase.Input, testCase.InputErr)
 
 			// THEN
 			if testCase.ExpectedErr != nil {

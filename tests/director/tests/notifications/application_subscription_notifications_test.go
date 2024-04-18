@@ -209,7 +209,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"subdomain\\\": \\\"{{ if eq .TargetApplication.Tenant.Type \\\"subaccount\\\"}}{{ .TargetApplication.Tenant.Labels.subdomain }}{{end}}\\\"}], \\\"app-template\\\": \\\"{{ .TargetApplicationTemplate.Tenant.Labels}}\\\"}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
@@ -217,7 +217,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			// Create formation constraints for destination creator operator and attach them to a given formation template.
 			// So we can verify the destination creator will not fail if in the configuration there is no destination information
-			attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+			constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+			defer func() {
+				for _, cleanup := range constraintCleanupFunctions {
+					cleanup()
+				}
+			}()
 
 			t.Logf("Creating formation with name: %q from template with name: %q", formationName, providerFormationTmplName)
 			defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, formationName)
@@ -323,7 +328,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\":\\\"{{.Body.error}}\\\",\\\"success_status_code\\\":202}"
 
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication)
+			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication, emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, asyncCallbackWebhookMode, app2.ID)
 			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, subscriptionConsumerAccountID, app2.ID)
@@ -334,7 +339,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			urlTemplateSyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/destinations/configuration/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 			outputTemplateSyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\":200}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication, emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
@@ -356,6 +361,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
 			require.NotEmpty(t, firstConstraint.ID)
 
+			defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, ft.ID)
 			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, ft.ID, ft.Name)
 
 			// second constraint
@@ -374,6 +380,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
 			require.NotEmpty(t, secondConstraint.ID)
 
+			defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, ft.ID)
 			fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, ft.ID, ft.Name)
 
 			// create formation
@@ -431,19 +438,24 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			oauth2ClientCredsDestinationTokenURL := conf.ProviderDestinationConfig.TokenURL + conf.ProviderDestinationConfig.TokenPath
 			oauth2ClientCredsDestinationClientID := conf.ProviderDestinationConfig.ClientID
 			oauth2ClientCredsDestinationClientSecret := conf.ProviderDestinationConfig.ClientSecret
+			oauth2mTLSDestinationName := "e2e-oauth2mTLS-destination-name"
+			oauth2mTLSDestinationURL := "http://e2e-oauth2mTLS-url-example.com"
+			oauth2mTLSDestinationTokenURL := conf.ExternalServicesMockMtlsSecuredURL + "/cert/token"
+			oauth2mTLSDestinationClientID := conf.ProviderClientID
 
 			samlAssertionDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeSAMLAssertion, assignmentWithDestDetails.ID)
 			clientCertAuthDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeClientCertificate, assignmentWithDestDetails.ID)
 			clientCertAuthDestinationCertName = clientCertAuthDestinationCertName[:directordestinationcreator.MaxDestinationNameLength] // due to the longer client cert auth destination prefix we exceed the maximum length of the name, that's why we truncate it
+			oauth2mTLSDestinationCertName := fmt.Sprintf("%s-%s", directordestinationcreator.AuthTypeOAuth2mTLS, assignmentWithDestDetails.ID)
 
 			// NoAuthentication destination on 'provider' subaccount level
 			// OAuth2ClientCredentials destination on 'provider' subaccount level
 			// BasicDestination on 'provider' instance level. Also, the basic destination has only a path for the URL and no correlationIds property
 			// Client Certificate Authentication destination on 'consumer' subaccount(implicitly) level
 			// SAML Assertion destination in the 'consumer' subaccount(implicitly) on provider instance level
-			destinationDetailsConfigWithPlaceholders := "{\"destinations\":[{\"name\":\"%s\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"%s\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e-basic-destination description\",\"url\":\"%s\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e saml assertion destination description\",\"url\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e client cert auth destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}"
-			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, conf.TestProviderSubaccountID, basicDestinationName, basicDestinationURLPath, conf.TestProviderSubaccountID, testDestinationInstanceID, samlAssertionDestinationName, samlAssertionDestinationURL, testDestinationInstanceID, clientCertAuthDestinationName, clientCertAuthDestinationURL, oauth2ClientCredsDestinationName, conf.TestProviderSubaccountID, oauth2ClientCredsDestinationURL)
-			destinationCredentialsConfig := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"%s\",\"username\":\"%s\",\"password\":\"%s\"},\"samlAssertion\":{\"url\":\"%s\"},\"clientCertificateAuthentication\":{\"url\":\"%s\"},\"oauth2ClientCredentials\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"}}}}", basicDestinationURLFromCreds, basicDestinationUsername, basicDestinationPassword, samlAssertionDestinationURL, clientCertAuthDestinationURL, oauth2ClientCredsDestinationURL, oauth2ClientCredsDestinationTokenURL, oauth2ClientCredsDestinationClientID, oauth2ClientCredsDestinationClientSecret)
+			destinationDetailsConfigWithPlaceholders := "{\"destinations\":[{\"name\":\"%s\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"%s\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e-basic-destination description\",\"url\":\"%s\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e saml assertion destination description\",\"url\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e client cert auth destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]},\"oauth2mtls\":{\"correlationIds\":[\"e2e-oauth2mTLS-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 mTLS destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2mTLSAuthTestKey\":\"e2e-oauth2mTLSTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}"
+			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, conf.TestProviderSubaccountID, basicDestinationName, basicDestinationURLPath, conf.TestProviderSubaccountID, testDestinationInstanceID, samlAssertionDestinationName, samlAssertionDestinationURL, testDestinationInstanceID, clientCertAuthDestinationName, clientCertAuthDestinationURL, oauth2ClientCredsDestinationName, conf.TestProviderSubaccountID, oauth2ClientCredsDestinationURL, oauth2mTLSDestinationName, conf.TestProviderSubaccountID, oauth2mTLSDestinationURL)
+			destinationCredentialsConfig := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"%s\",\"username\":\"%s\",\"password\":\"%s\"},\"samlAssertion\":{\"url\":\"%s\"},\"clientCertificateAuthentication\":{\"url\":\"%s\"},\"oauth2ClientCredentials\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"},\"oauth2mtls\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\"}}}}", basicDestinationURLFromCreds, basicDestinationUsername, basicDestinationPassword, samlAssertionDestinationURL, clientCertAuthDestinationURL, oauth2ClientCredsDestinationURL, oauth2ClientCredsDestinationTokenURL, oauth2ClientCredsDestinationClientID, oauth2ClientCredsDestinationClientSecret, oauth2mTLSDestinationURL, oauth2mTLSDestinationTokenURL, oauth2mTLSDestinationClientID)
 			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
 				app1.ID: {
 					app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
@@ -530,6 +542,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertSAMLAssertionDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, samlAssertionDestinationName, samlAssertionDestinationCertName, samlAssertionDestinationURL, app2BaseURL, testDestinationInstanceID, conf.TestConsumerSubaccountID, destinationConsumerWithInstanceToken, consumerUserTokenHeader, map[string]bool{samlAssertionDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			assertClientCertAuthDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationName, clientCertAuthDestinationCertName, clientCertAuthDestinationURL, "", conf.TestConsumerSubaccountID, destinationConsumerToken, map[string]bool{clientCertAuthDestinationCertName + directordestinationcreator.JavaKeyStoreFileExtension: true})
 			assertOAuth2ClientCredsDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2ClientCredsDestinationName, oauth2ClientCredsDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
+			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			t.Log("Destinations and destination certificates have been successfully created")
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)

@@ -3,7 +3,12 @@ package tenant
 import (
 	"context"
 
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -25,7 +30,7 @@ type BusinessTenantMappingService interface {
 	ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error)
 	GetTenantByExternalID(ctx context.Context, externalID string) (*model.BusinessTenantMapping, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error)
+	UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error)
 	UpsertSingle(ctx context.Context, tenantInput model.BusinessTenantMappingInput) (string, error)
 	Update(ctx context.Context, id string, tenantInput model.BusinessTenantMappingInput) error
 	DeleteMany(ctx context.Context, externalTenantIDs []string) error
@@ -35,6 +40,7 @@ type BusinessTenantMappingService interface {
 	DeleteTenantAccessForResourceRecursively(ctx context.Context, tenantAccess *model.TenantAccess) error
 	GetTenantAccessForResource(ctx context.Context, tenantID, resourceID string, resourceType resource.Type) (*model.TenantAccess, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
+	UpsertLabel(ctx context.Context, tenantID, key string, value interface{}) error
 }
 
 // BusinessTenantMappingConverter is used to convert the internally used tenant representation model.BusinessTenantMapping
@@ -43,8 +49,8 @@ type BusinessTenantMappingService interface {
 //go:generate mockery --name=BusinessTenantMappingConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BusinessTenantMappingConverter interface {
 	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
-	MultipleInputFromGraphQL(in []*graphql.BusinessTenantMappingInput) []model.BusinessTenantMappingInput
-	InputFromGraphQL(tnt graphql.BusinessTenantMappingInput) model.BusinessTenantMappingInput
+	MultipleInputFromGraphQL(ctx context.Context, in []*graphql.BusinessTenantMappingInput, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) ([]model.BusinessTenantMappingInput, error)
+	InputFromGraphQL(ctx context.Context, tnt graphql.BusinessTenantMappingInput, externalTenantToType map[string]string, retrieveTenantTypeFn func(ctx context.Context, t string) (string, error)) (model.BusinessTenantMappingInput, error)
 	ToGraphQL(in *model.BusinessTenantMapping) *graphql.Tenant
 	TenantAccessInputFromGraphQL(in graphql.TenantAccessInput) (*model.TenantAccess, error)
 	TenantAccessToGraphQL(in *model.TenantAccess) (*graphql.TenantAccess, error)
@@ -56,18 +62,20 @@ type BusinessTenantMappingConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	srv     BusinessTenantMappingService
-	conv    BusinessTenantMappingConverter
-	fetcher Fetcher
+	srv                 BusinessTenantMappingService
+	conv                BusinessTenantMappingConverter
+	fetcher             Fetcher
+	systemFetcherClient *apiclient.SystemFetcherClient
 }
 
 // NewResolver returns the GraphQL resolver for tenants.
-func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher) *Resolver {
+func NewResolver(transact persistence.Transactioner, srv BusinessTenantMappingService, conv BusinessTenantMappingConverter, fetcher Fetcher, systemFetcherSyncClientConfig apiclient.SystemFetcherSyncClientConfig) *Resolver {
 	return &Resolver{
-		transact: transact,
-		srv:      srv,
-		conv:     conv,
-		fetcher:  fetcher,
+		transact:            transact,
+		srv:                 srv,
+		conv:                conv,
+		fetcher:             fetcher,
+		systemFetcherClient: apiclient.NewSystemFetcherClient(systemFetcherSyncClientConfig),
 	}
 }
 
@@ -261,9 +269,12 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenants := r.conv.MultipleInputFromGraphQL(inputTenants)
+	tenants, err := r.conv.MultipleInputFromGraphQL(ctx, inputTenants, r.retrieveTenantType)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenants from graphql to model")
+	}
 
-	tenantIDs, err := r.srv.UpsertMany(ctx, tenants...)
+	tenantsMap, err := r.srv.UpsertMany(ctx, tenants...)
 	if err != nil {
 		return nil, errors.Wrap(err, "while writing new tenants")
 	}
@@ -271,6 +282,17 @@ func (r *Resolver) Write(ctx context.Context, inputTenants []*graphql.BusinessTe
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	tenantIDs := make([]string, 0, len(tenantsMap))
+	tenantsToSync := make([]string, 0)
+	for tenantID, tenantType := range tenantsMap {
+		tenantIDs = append(tenantIDs, tenantID)
+		if r.isSyncableTenant(tenantType) {
+			tenantsToSync = append(tenantsToSync, tenantID)
+		}
+	}
+
+	r.syncSystemsForTenant(ctx, tenantsToSync)
 
 	return tenantIDs, nil
 }
@@ -285,7 +307,10 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	tenant := r.conv.InputFromGraphQL(inputTenant)
+	tenant, err := r.conv.InputFromGraphQL(ctx, inputTenant, map[string]string{}, r.retrieveTenantType)
+	if err != nil {
+		return "", errors.Wrap(err, "while converting tenant from graphql to model")
+	}
 
 	id, err := r.srv.UpsertSingle(ctx, tenant)
 	if err != nil {
@@ -294,6 +319,10 @@ func (r *Resolver) WriteSingle(ctx context.Context, inputTenant graphql.Business
 
 	if err = tx.Commit(); err != nil {
 		return "", err
+	}
+
+	if r.isSyncableTenant(tenantpkg.StrToType(tenant.Type)) {
+		r.syncSystemsForTenant(ctx, []string{id})
 	}
 
 	return id, nil
@@ -329,8 +358,13 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	tenantModels := r.conv.MultipleInputFromGraphQL([]*graphql.BusinessTenantMappingInput{&in})
-	if err := r.srv.Update(ctx, id, tenantModels[0]); err != nil {
+
+	tenantModel, err := r.conv.InputFromGraphQL(ctx, in, map[string]string{}, r.retrieveTenantType)
+	if err != nil {
+		return nil, errors.Wrap(err, "while converting tenant from graphql to model")
+	}
+
+	if err := r.srv.Update(ctx, id, tenantModel); err != nil {
 		return nil, errors.Wrapf(err, "while updating tenant with internal ID %s and external ID %s", id, in.ExternalTenant)
 	}
 
@@ -344,6 +378,35 @@ func (r *Resolver) Update(ctx context.Context, id string, in graphql.BusinessTen
 	}
 
 	return r.conv.ToGraphQL(tenant), nil
+}
+
+// SetTenantLabel sets a label to tenant
+func (r *Resolver) SetTenantLabel(ctx context.Context, tenantID, key string, value interface{}) (*graphql.Label, error) {
+	gqlLabel := graphql.LabelInput{Key: key, Value: value}
+	if err := inputvalidation.Validate(&gqlLabel); err != nil {
+		return nil, errors.Wrap(err, "validation error for type LabelInput")
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err = r.srv.UpsertLabel(ctx, tenantID, key, value); err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	return &graphql.Label{
+		Key:   key,
+		Value: value,
+	}, nil
 }
 
 func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx, externalID string) (persistence.PersistenceTx, error) {
@@ -361,8 +424,20 @@ func (r *Resolver) fetchTenant(ctx context.Context, tx persistence.PersistenceTx
 	return tr, nil
 }
 
+func (r *Resolver) syncSystemsForTenant(ctx context.Context, tenantIDs []string) {
+	if len(tenantIDs) == 0 {
+		return
+	}
+
+	log.C(ctx).Infof("Calling sync systems API for Tenants: %v", tenantIDs)
+	if err := r.systemFetcherClient.Sync(ctx, tenantIDs, true); err != nil {
+		log.C(ctx).WithError(err).Errorf("Error while calling sync systems API for Tenants %v", tenantIDs)
+	}
+}
+
 // AddTenantAccess adds a tenant access record for tenantID about resourceID
 func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessInput) (*graphql.TenantAccess, error) {
+	log.C(ctx).Infof("Adding access for tenant %s to resource with ID %s of type %s and access level %t", in.TenantID, in.ResourceID, in.ResourceType, in.Owner)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -401,12 +476,13 @@ func (r *Resolver) AddTenantAccess(ctx context.Context, in graphql.TenantAccessI
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
-
+	log.C(ctx).Infof("Successfully added access for tenant %s to resource with ID %s of type %s and access level %t", in.TenantID, in.ResourceID, in.ResourceType, in.Owner)
 	return output, nil
 }
 
 // RemoveTenantAccess removes the tenant access record for tenantID about resourceID
 func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID string, resourceType graphql.TenantAccessObjectType) (*graphql.TenantAccess, error) {
+	log.C(ctx).Infof("Removing access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -448,5 +524,19 @@ func (r *Resolver) RemoveTenantAccess(ctx context.Context, tenantID, resourceID 
 		return nil, err
 	}
 
+	log.C(ctx).Infof("Successfully removed access for tenant %s to resource with ID %s of type %s", tenantID, resourceID, resourceType)
+
 	return output, nil
+}
+
+func (r *Resolver) isSyncableTenant(tenantType tenantpkg.Type) bool {
+	return tenantType == tenantpkg.Account || tenantType == tenantpkg.Customer
+}
+
+func (r *Resolver) retrieveTenantType(ctx context.Context, t string) (string, error) {
+	tnt, err := r.srv.GetTenantByExternalID(ctx, t)
+	if err != nil {
+		return "", err
+	}
+	return tenantpkg.TypeToStr(tnt.Type), nil
 }

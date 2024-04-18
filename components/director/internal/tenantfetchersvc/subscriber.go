@@ -8,7 +8,7 @@ import (
 //
 //go:generate mockery --name=TenantProvisioner --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantProvisioner interface {
-	ProvisionTenants(context.Context, *TenantSubscriptionRequest) error
+	ProvisionMissingTenants(ctx context.Context, request *TenantSubscriptionRequest) error
 }
 
 type subscriptionFunc func(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error
@@ -28,7 +28,7 @@ func NewSubscriber(directorClient DirectorGraphQLClient, provisioner TenantProvi
 
 // Subscribe subscribes tenant to appTemplate/runtime. If the tenant does not exist it will be created
 func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error {
-	if err := s.provisioner.ProvisionTenants(ctx, tenantSubscriptionRequest); err != nil {
+	if err := s.provisioner.ProvisionMissingTenants(ctx, tenantSubscriptionRequest); err != nil {
 		return err
 	}
 

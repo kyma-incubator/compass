@@ -42,25 +42,25 @@ Pairing Adapter is a component that knows how to get credentials from the Integr
 
 ### Deployment
 
-#### As a sidecar container for the Director component
+#### As a Sidecar Container for the Director Component
 
 In this case, the Pairing Adapter container is deployed together with the Director container. This deployment allows the Director to communicate with the given Pairing Adapter through the localhost interface on a given port. The configuration details for the Pairing Adapter needs to be present during the deployment and its lifecycle is bound to the Director component.
 
 The given Integration System stores the internal port on which the Pairing Adapter service listens.
 
-#### As a separate Pod exposed by the Kubernetes service internally (service of the ClusterIP type)
+#### As a Separate Pod Exposed by the Kubernetes Service Internally (Service of the ClusterIP Type)
 
 This type of deployment allows to run Pairing Adapter in a separate Pod. The Pairing Adapter runs in the same cluster as the Director component and its API does not have to be publically available. The Pairing Adapter API must be exposed through the Kubernetes service of the ClusterIP type. Having the Kubernetes service, the Director can communicate with the given Pairing Adapter through the DNS name of that service. This approach also allows for using the mTLS communication between components inside the cluster.
 
 The given Integration System stores the DNS name of the internal Kubernetes service. The Pairing Adapter is exposed through this service.
 
-#### As an external service provided by the Interation System itself
+#### As an External Service Provided by the Interation System Itself
 
 If the external component offers the implementation of the Pairing Adapter contract, the deployment of an additional component is not required. The Integration System can be directly bound with the external service. In this case, authentication between the Director and the Integration System instance is required. The Director supports OAuth 2.0 Client Credentials Grant for that purpose.
 
 In this case, the Integration System stores the information regarding the credentials for the Pairing Adapter API access together with the required URLs.
 
-### Pairing Adapter contract
+### Pairing Adapter Contract
 
 To be able to act as a Pairing Adapter, the component must fulfill the following contract:
 

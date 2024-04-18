@@ -3,6 +3,8 @@ package ord
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
@@ -31,8 +33,9 @@ type globalRegistryService struct {
 
 	transact persistence.Transactioner
 
-	vendorService  GlobalVendorService
-	productService GlobalProductService
+	vendorService     GlobalVendorService
+	productService    GlobalProductService
+	documentValidator Validator
 
 	ordClient Client
 
@@ -40,7 +43,7 @@ type globalRegistryService struct {
 }
 
 // NewGlobalRegistryService creates new instance of GlobalRegistryService.
-func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping) *globalRegistryService {
+func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalRegistryConfig, vendorService GlobalVendorService, productService GlobalProductService, ordClient Client, credentialExchangeStrategyTenantMappings map[string]CredentialExchangeStrategyTenantMapping, documentValidator Validator) *globalRegistryService {
 	return &globalRegistryService{
 		transact:                                 transact,
 		config:                                   config,
@@ -48,6 +51,7 @@ func NewGlobalRegistryService(transact persistence.Transactioner, config GlobalR
 		productService:                           productService,
 		ordClient:                                ordClient,
 		credentialExchangeStrategyTenantMappings: credentialExchangeStrategyTenantMappings,
+		documentValidator:                        documentValidator,
 	}
 }
 
@@ -59,7 +63,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		Name: "global-registry",
 		Type: directorresource.Application,
 	}
-	documents, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
+	documents, docsString, _, err := s.ordClient.FetchOpenResourceDiscoveryDocuments(ctx, resource, &model.Webhook{
 		Type: model.WebhookTypeOpenResourceDiscovery,
 		URL:  &s.config.URL,
 	}, application.ORDWebhookMapping{}, webhook.OpenResourceDiscoveryWebhookRequestObject{})
@@ -67,7 +71,19 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	if err := documents.Validate(s.config.URL, ResourcesFromDB{}, nil, map[string]bool{}, s.credentialExchangeStrategyTenantMappings); err != nil {
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString, "sap:base:v1")
+	if len(validationErrors) > 0 {
+		// convert validationErrors array of pointers to array of objects in order to log them properly
+		var validationErrorsObjects []ValidationError
+		for _, errPtr := range validationErrors {
+			if errPtr != nil {
+				validationErrorsObjects = append(validationErrorsObjects, *errPtr)
+			}
+		}
+
+		log.C(ctx).WithError(errors.New("Error validating global registry resources")).WithField("validation_errors", validationErrorsObjects).Error(ValidationErrorMsg)
+	}
+	if err != nil {
 		return nil, errors.Wrap(err, "while validating global registry documents")
 	}
 

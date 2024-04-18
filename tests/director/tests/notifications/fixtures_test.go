@@ -19,7 +19,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	esmdestinationcreator "github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
-	"github.com/kyma-incubator/compass/tests/pkg/certs"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
@@ -51,6 +50,7 @@ const (
 	initialAssignmentState           = "INITIAL"
 	configPendingAssignmentState     = "CONFIG_PENDING"
 	deletingAssignmentState          = "DELETING"
+	draftFormationState              = "DRAFT"
 	basicAuthType                    = "Basic"
 	samlAuthType                     = "SAML2.0"
 	oauth2AuthType                   = "bearer"
@@ -98,7 +98,8 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 		listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 		assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 		if expectedAssignmentsCount != assignmentsPage.TotalCount {
-			t.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			tOnce.Logf("The expected assignments count: %d didn't match the actual: %d", expectedAssignmentsCount, assignmentsPage.TotalCount)
+			tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 			return
 		}
 		tOnce.Logf("There is/are: %d assignment(s), assert them with the expected ones...", assignmentsPage.TotalCount)
@@ -108,23 +109,28 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 			sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
 			if !ok {
 				tOnce.Logf("Could not find expectations for assignment with ID: %q and source ID: %q", assignment.ID, assignment.Source)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
 			if !ok {
 				tOnce.Logf("Could not find expectations for assignment with ID: %q, source ID: %q and target ID: %q", assignment.ID, assignment.Source, assignment.Target)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if assignmentExpectation.State != assignment.State {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
 				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Config, assignment.Configuration); !isEqual {
 				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
 		}
@@ -162,7 +168,8 @@ func assertFormationStatus(t *testing.T, ctx context.Context, tenant, formationI
 	}
 }
 
-func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, formationTemplate graphql.FormationTemplate, statusReturnedConstraintResourceType, sendNotificationConstraintResourceType graphql.ResourceType) {
+func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, formationTemplate graphql.FormationTemplate, statusReturnedConstraintResourceType, sendNotificationConstraintResourceType graphql.ResourceType) []func() {
+	deferredFunctions := make([]func(), 0, 4)
 	firstConstraintInput := graphql.FormationConstraintInput{
 		Name:            "e2e-destination-creator-notification-status-returned",
 		ConstraintType:  graphql.ConstraintTypePre,
@@ -175,10 +182,15 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 	}
 
 	firstConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraintInput)
-	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
+	deferredFunctions = append([]func(){func() {
+		fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, firstConstraint.ID)
+	}}, deferredFunctions...)
 	require.NotEmpty(t, firstConstraint.ID)
 
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, firstConstraint.Name, formationTemplate.ID, formationTemplate.Name)
+	deferredFunctions = append([]func(){func() {
+		fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, firstConstraint.ID, formationTemplate.ID)
+	}}, deferredFunctions...)
 
 	// second constraint
 	secondConstraintInput := graphql.FormationConstraintInput{
@@ -193,24 +205,16 @@ func attachDestinationCreatorConstraints(t *testing.T, ctx context.Context, form
 	}
 
 	secondConstraint := fixtures.CreateFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraintInput)
-	defer fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
+	deferredFunctions = append([]func(){func() {
+		fixtures.CleanupFormationConstraint(t, ctx, certSecuredGraphQLClient, secondConstraint.ID)
+	}}, deferredFunctions...)
 	require.NotEmpty(t, secondConstraint.ID)
 
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, secondConstraint.Name, formationTemplate.ID, formationTemplate.Name)
-}
-
-func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjectOne, expectedSubjectSecond string) {
-	t.Logf("Assert trust details are send to the target")
-	notificationItems := assignNotificationAboutApp2.Get("RequestBody.items")
-	app1FromNotification := notificationItems.Array()[0]
-	targetTrustDetails := app1FromNotification.Get("target-trust-details")
-	certificateDetails := targetTrustDetails.Array()[0].String()
-	certificateDetailsSecond := targetTrustDetails.Array()[1].String()
-	require.ElementsMatch(t, []string{certs.SortSubject(expectedSubjectOne), certs.SortSubject(expectedSubjectSecond)}, []string{certificateDetails, certificateDetailsSecond})
-
-	t.Logf("Assert that there are no trust details for the source")
-	sourceTrustDetails := app1FromNotification.Get("source-trust-details")
-	require.Equal(t, 0, len(sourceTrustDetails.Array()))
+	deferredFunctions = append([]func(){func() {
+		fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, secondConstraint.ID, formationTemplate.ID)
+	}}, deferredFunctions...)
+	return deferredFunctions
 }
 
 func cleanupNotificationsFromExternalSvcMock(t *testing.T, client *http.Client) {
@@ -355,6 +359,29 @@ func assertOAuth2ClientCredsDestination(t *testing.T, client *clients.Destinatio
 		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens[i].Type)
 		require.Equal(t, oauth2AuthType, oauth2ClientCredsDest.AuthTokens[i].Type)
 		require.NotEmpty(t, oauth2ClientCredsDest.AuthTokens[i].Value)
+	}
+}
+
+func assertOAuth2mTLSDestination(t *testing.T, client *clients.DestinationClient, serviceURL, oauth2mTLSDestinationName, oauth2mTLSCertName, oauth2mTLSDestinationURL, instanceID, ownerSubaccountID, authToken string, expectedNumberOfAuthTokens int) {
+	oauth2mTLSDestBytes := client.FindDestinationByName(t, serviceURL, oauth2mTLSDestinationName, authToken, "", http.StatusOK)
+
+	var oauth2mTLSDest esmdestinationcreator.DestinationSvcOAuth2mTLSDestResponse
+	err := json.Unmarshal(oauth2mTLSDestBytes, &oauth2mTLSDest)
+	require.NoError(t, err)
+	require.Equal(t, ownerSubaccountID, oauth2mTLSDest.Owner.SubaccountID)
+	require.Equal(t, instanceID, oauth2mTLSDest.Owner.InstanceID)
+	require.Equal(t, oauth2mTLSDestinationName, oauth2mTLSDest.DestinationConfiguration.Name)
+	require.Equal(t, directordestinationcreator.TypeHTTP, oauth2mTLSDest.DestinationConfiguration.Type)
+	require.Equal(t, oauth2mTLSDestinationURL, oauth2mTLSDest.DestinationConfiguration.URL)
+	require.Equal(t, directordestinationcreator.AuthTypeOAuth2ClientCredentials, oauth2mTLSDest.DestinationConfiguration.Authentication)
+	require.Equal(t, directordestinationcreator.ProxyTypeInternet, oauth2mTLSDest.DestinationConfiguration.ProxyType)
+	require.Equal(t, oauth2mTLSCertName+directordestinationcreator.JavaKeyStoreFileExtension, oauth2mTLSDest.DestinationConfiguration.KeyStoreLocation)
+
+	for i := 0; i < expectedNumberOfAuthTokens; i++ {
+		require.NotEmpty(t, oauth2mTLSDest.AuthTokens)
+		require.NotEmpty(t, oauth2mTLSDest.AuthTokens[i].Type)
+		require.Equal(t, oauth2AuthType, oauth2mTLSDest.AuthTokens[i].Type)
+		require.NotEmpty(t, oauth2mTLSDest.AuthTokens[i].Value)
 	}
 }
 
@@ -728,6 +755,11 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 		}
 
 		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.clientCertificateAuthentication.certificate")
+		if err != nil {
+			return err
+		}
+
+		modifiedNotification, err = sjson.Delete(modifiedNotification, "RequestBody.receiverTenant.configuration.credentials.inboundCommunication.oauth2mtls.certificate")
 		if err != nil {
 			return err
 		}

@@ -140,9 +140,6 @@ func (r *Resolver) FormationTemplate(ctx context.Context, id string) (*graphql.F
 
 	formationTemplate, err := r.formationTemplateSvc.Get(ctx, id)
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return nil, tx.Commit()
-		}
 		return nil, err
 	}
 

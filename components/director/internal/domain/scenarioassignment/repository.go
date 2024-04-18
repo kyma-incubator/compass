@@ -46,12 +46,12 @@ type repository struct {
 //
 //go:generate mockery --name=EntityConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
 type EntityConverter interface {
-	ToEntity(assignment model.AutomaticScenarioAssignment) Entity
-	FromEntity(assignment Entity) model.AutomaticScenarioAssignment
+	ToEntity(assignment *model.AutomaticScenarioAssignment) Entity
+	FromEntity(assignment Entity) *model.AutomaticScenarioAssignment
 }
 
 // Create missing godoc
-func (r *repository) Create(ctx context.Context, model model.AutomaticScenarioAssignment) error {
+func (r *repository) Create(ctx context.Context, model *model.AutomaticScenarioAssignment) error {
 	entity := r.conv.ToEntity(model)
 	return r.creator.Create(ctx, entity)
 }
@@ -67,7 +67,7 @@ func (r *repository) ListAll(ctx context.Context, tenantID string) ([]*model.Aut
 
 	for _, v := range out {
 		item := r.conv.FromEntity(v)
-		items = append(items, &item)
+		items = append(items, item)
 	}
 
 	return items, nil
@@ -88,14 +88,14 @@ func (r *repository) ListForTargetTenant(ctx context.Context, tenantID string, t
 
 	for _, v := range out {
 		item := r.conv.FromEntity(v)
-		items = append(items, &item)
+		items = append(items, item)
 	}
 
 	return items, nil
 }
 
 // GetForScenarioName missing godoc
-func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (model.AutomaticScenarioAssignment, error) {
+func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (*model.AutomaticScenarioAssignment, error) {
 	var ent Entity
 
 	conditions := repo.Conditions{
@@ -103,7 +103,7 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 	}
 
 	if err := r.singleGetter.Get(ctx, resource.AutomaticScenarioAssigment, tenantID, conditions, repo.NoOrderBy, &ent); err != nil {
-		return model.AutomaticScenarioAssignment{}, err
+		return nil, err
 	}
 
 	assignmentModel := r.conv.FromEntity(ent)
@@ -123,7 +123,7 @@ func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cu
 
 	for _, ent := range collection {
 		m := r.conv.FromEntity(ent)
-		items = append(items, &m)
+		items = append(items, m)
 	}
 
 	return &model.AutomaticScenarioAssignmentPage{

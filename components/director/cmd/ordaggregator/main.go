@@ -4,10 +4,10 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
@@ -134,11 +134,13 @@ type config struct {
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
-	ExtSvcClientCertSecretName   string `envconfig:"APP_EXT_SVC_CLIENT_CERT_SECRET_NAME"`
 
 	TenantMappingConfigPath                  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
 	TenantMappingCallbackURL                 string `envconfig:"APP_TENANT_MAPPING_CALLBACK_URL"`
 	CredentialExchangeStrategyTenantMappings string `envconfig:"APP_CREDENTIAL_EXCHANGE_STRATEGY_TENANT_MAPPINGS"`
+	APIMetadataValidatorHost                 string `envconfig:"APP_API_METADATA_VALIDATOR_HOST,optional"`
+	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
+	APIMetadataValidatorEnabled              bool   `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
 
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig
@@ -205,9 +207,8 @@ func main() {
 
 	securedHTTPClient := httputil.PrepareHTTPClientWithSSLValidation(cfg.ClientTimeout, cfg.SkipSSLValidation)
 	mtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
-	extSvcMtlsClient := httputil.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExtSvcClientCertSecretName)
 
-	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName)
 	retryHTTPExecutor := retry.NewHTTPExecutor(&cfg.RetryConfig)
 
 	authConverter := auth.NewConverter()
@@ -311,7 +312,7 @@ func main() {
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
 	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
-	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient, extSvcMtlsClient)
+	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
 	webhookTenantBuilder := databuilder.NewWebhookTenantBuilder(webhookLabelBuilder, tenantRepo)
 	certSubjectInputBuilder := databuilder.NewWebhookCertSubjectBuilder(certSubjectMappingRepo)
@@ -354,16 +355,9 @@ func main() {
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeOrdAggregation, cfg.OperationsManagerConfig)
 
-	jwtHTTPClient := &http.Client{
-		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
-	}
-
 	onDemandChannel := make(chan string, 100)
 
-	handler := initHandler(ctx, jwtHTTPClient, operationsManager, appSvc, webhookSvc, cfg, transact, onDemandChannel)
+	handler := initHandler(ctx, operationsManager, appSvc, webhookSvc, cfg, transact, onDemandChannel)
 	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
 
 	go func() {
@@ -376,10 +370,16 @@ func main() {
 	ordClientWithTenantExecutor := newORDClientWithTenantExecutor(cfg, clientConfig, certCache)
 	ordClientWithoutTenantExecutor := newORDClientWithoutTenantExecutor(cfg, clientConfig, certCache)
 
-	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings)
+	apiValidatorURL := fmt.Sprintf("%s:%s", cfg.APIMetadataValidatorHost, cfg.APIMetadataValidatorPort)
+
+	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient, cfg.APIMetadataValidatorEnabled)
+	documentValidator := ord.NewDocumentValidator(validationClient)
+	documentSanitizer := ord.NewDocumentSanitizer()
+
+	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings, documentValidator)
 
 	ordConfig := ord.NewServiceConfig(cfg.MaxParallelSpecificationProcessors, credentialExchangeStrategyTenantMappings)
-	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiSvc, apiProcessor, eventAPISvc, eventProcessor, entityTypeSvc, entityTypeProcessor, capabilitySvc, capabilityProcessor, integrationDependencySvc, integrationDependencyProcessor, dataProductSvc, dataProductProcessor, specSvc, fetchRequestSvc, packageSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc)
+	ordSvc := ord.NewAggregatorService(ordConfig, cfg.MetricsConfig, transact, appSvc, webhookSvc, bundleSvc, bundleReferenceSvc, apiProcessor, eventProcessor, entityTypeProcessor, capabilityProcessor, integrationDependencyProcessor, dataProductProcessor, specSvc, fetchRequestSvc, packageProcessor, productProcessor, vendorProcessor, tombstoneProcessor, tenantSvc, globalRegistrySvc, ordClientWithTenantExecutor, webhookConverter, appTemplateVersionSvc, appTemplateSvc, tombstonedResourcesDeleter, labelSvc, ordWebhookMapping, opSvc, documentValidator, documentSanitizer)
 	ordOpProcessor := &ord.OperationsProcessor{
 		OrdSvc: ordSvc,
 	}
@@ -405,7 +405,7 @@ func main() {
 
 					select {
 					case operationID := <-onDemandChannel:
-						log.C(ctx).Infof("Opeartion %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+						log.C(ctx).Infof("Operation %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
 					case <-time.After(cfg.OperationProcessorQuietPeriod):
 						log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
 					}
@@ -454,7 +454,7 @@ func newORDClientWithTenantExecutor(cfg config, clientConfig ord.ClientConfig, c
 			},
 		},
 	}
-	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithTenant := accessstrategy.NewExecutorProviderWithTenant(certCache, ctxTenantProvider, cfg.ExternalClientCertSecretName)
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithTenant)
 }
 
@@ -474,7 +474,7 @@ func newORDClientWithoutTenantExecutor(cfg config, clientConfig ord.ClientConfig
 			},
 		},
 	}
-	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName, cfg.ExtSvcClientCertSecretName)
+	accessStrategyExecutorProviderWithoutTenant := accessstrategy.NewDefaultExecutorProvider(certCache, cfg.ExternalClientCertSecretName)
 	return ord.NewClient(clientConfig, httpClient, accessStrategyExecutorProviderWithoutTenant)
 }
 
@@ -492,24 +492,50 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-		if strings.Contains(errProcess.Error(), ord.ValidationErrorMsg) && !strings.Contains(errProcess.Error(), ord.ProcessingErrorMsg) { // if is only validation error
-			if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, errProcess.Error()); errMarkAsCompleted != nil {
-				log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
-				return op.ID, errMarkAsCompleted
+
+		var processingError *ord.ProcessingError
+		if ok := errors.As(errProcess, &processingError); !ok {
+			newProcessingError := &ord.ProcessingError{
+				ValidationErrors: nil,
+				RuntimeError:     &ord.RuntimeError{Message: errProcess.Error()},
 			}
-			return op.ID, nil
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, newProcessingError); errMarkAsFailed != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+				return op.ID, errMarkAsFailed
+			}
+			return op.ID, processingError
 		}
-		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess.Error()); errMarkAsFailed != nil {
-			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
-			return op.ID, errMarkAsFailed
+
+		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && validationErrorsWithErrorSeverityExist(processingError.ValidationErrors)) {
+			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
+				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+				return op.ID, errMarkAsFailed
+			}
+			return op.ID, processingError
 		}
-		return op.ID, errProcess
+
+		if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError); errMarkAsCompleted != nil {
+			log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+			return op.ID, errMarkAsCompleted
+		}
+		return op.ID, nil
 	}
-	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, ""); errMarkAsCompleted != nil {
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, nil); errMarkAsCompleted != nil {
 		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
 		return op.ID, errMarkAsCompleted
 	}
+
 	return op.ID, nil
+}
+
+func validationErrorsWithErrorSeverityExist(errors []*ord.ValidationError) bool {
+	for _, e := range errors {
+		if e.Severity == ord.ErrorSeverity {
+			return true
+		}
+	}
+
+	return false
 }
 
 func startSyncORDOperationsJob(ctx context.Context, ordOperationMaintainer ord.OperationMaintainer, cfg config) error {
@@ -589,7 +615,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operationsmanager.OperationsManager, appSvc ord.ApplicationService, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
+func initHandler(ctx context.Context, opMgr *operationsmanager.OperationsManager, appSvc ord.ApplicationService, webhookSvc webhook.WebhookService, cfg config, transact persistence.Transactioner, onDemandChannel chan string) http.Handler {
 	const (
 		healthzEndpoint   = "/healthz"
 		readyzEndpoint    = "/readyz"
@@ -603,6 +629,14 @@ func initHandler(ctx context.Context, httpClient *http.Client, opMgr *operations
 
 	handler := ord.NewORDAggregatorHTTPHandler(opMgr, appSvc, webhookSvc, transact, onDemandChannel)
 	apiRouter := mainRouter.PathPrefix(cfg.AggregatorRootAPI).Subrouter()
+
+	httpClient := &http.Client{
+		Transport: httputilpkg.NewCorrelationIDTransport(httputilpkg.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport))),
+		CheckRedirect: func(req *http.Request, via []*http.Request) error {
+			return http.ErrUseLastResponse
+		},
+	}
+
 	configureAuthMiddleware(ctx, httpClient, apiRouter, cfg, cfg.SecurityConfig.AggregatorSyncScope)
 	apiRouter.HandleFunc(aggregateEndpoint, handler.ScheduleAggregationForORDData).Methods(http.MethodPost)
 

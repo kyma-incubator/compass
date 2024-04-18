@@ -7,6 +7,10 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs"
+	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/machinebox/graphql"
+
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/tidwall/sjson"
@@ -23,6 +27,9 @@ const (
 
 type NotificationsAsserter struct {
 	expectedNotificationsCount         int
+	useItemsStruct                     bool
+	assertTrustDetails                 bool
+	expectedSubjects                   []string
 	op                                 string
 	state                              *string
 	targetObjectID                     string
@@ -33,7 +40,9 @@ type NotificationsAsserter struct {
 	tenant                             string
 	tenantParentCustomer               string
 	config                             string
+	formationName                      string // used when the test operates with formation different from the one provided in pre  setup
 	externalServicesMockMtlsSecuredURL string
+	certSecuredGraphQLClient           *graphql.Client
 	client                             *http.Client
 }
 
@@ -59,16 +68,58 @@ func (a *NotificationsAsserter) WithState(state string) *NotificationsAsserter {
 	return a
 }
 
+func (a *NotificationsAsserter) WithFormationName(formationName string) *NotificationsAsserter {
+	a.formationName = formationName
+	return a
+}
+
+func (a *NotificationsAsserter) WithGQLClient(gqlClient *graphql.Client) *NotificationsAsserter {
+	a.certSecuredGraphQLClient = gqlClient
+	return a
+}
+
+func (a *NotificationsAsserter) WithUseItemsStruct(useItemsStruct bool) *NotificationsAsserter {
+	a.useItemsStruct = useItemsStruct
+	return a
+}
+
+func (a *NotificationsAsserter) WithAssertTrustDetails(assertTrustDetails bool) *NotificationsAsserter {
+	a.assertTrustDetails = assertTrustDetails
+	return a
+}
+
+func (a *NotificationsAsserter) WithExpectedSubjects(expectedSubjects []string) *NotificationsAsserter {
+	a.expectedSubjects = expectedSubjects
+	return a
+}
+
 func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Context) {
-	formationID := ctx.Value(context_keys.FormationIDKey).(string)
+	var formationID string
+	if a.formationName != "" {
+		formation := fixtures.GetFormationByName(t, ctx, a.certSecuredGraphQLClient, a.formationName, a.tenant)
+		formationID = formation.ID
+	} else {
+		formationID = ctx.Value(context_keys.FormationIDKey).(string)
+	}
 
 	body := getNotificationsFromExternalSvcMock(t, a.client, a.externalServicesMockMtlsSecuredURL)
 	assertNotificationsCount(t, body, a.targetObjectID, a.expectedNotificationsCount)
+	if a.expectedNotificationsCount == 0 {
+		return
+	}
 
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]
-	err := verifyFormationAssignmentNotification(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false, a.state)
-	require.NoError(t, err)
+	if a.useItemsStruct {
+		assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, &a.config)
+		if a.assertTrustDetails {
+			require.NotEmpty(t, a.expectedSubjects)
+			assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutSource, a.expectedSubjects)
+		}
+	} else {
+		err := verifyFormationAssignmentNotification(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false, a.state)
+		require.NoError(t, err)
+	}
 }
 
 func getNotificationsFromExternalSvcMock(t *testing.T, client *http.Client, ExternalServicesMockMtlsSecuredURL string) []byte {
@@ -96,7 +147,7 @@ func assertNotificationsCount(t *testing.T, body []byte, objectID string, count 
 	}
 }
 
-// will be used one the test that depend on the items structure are adapted to the new test format
+// will be used once the tests that depend on the items structure are adapted to the new test format
 func assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t *testing.T, notification gjson.Result, op, formationID, expectedAppID, expectedLocalTenantID, expectedAppNamespace, expectedAppRegion, expectedTenant, expectedCustomerID string, expectedConfig *string) {
 	require.Equal(t, op, notification.Get("Operation").String())
 	if op == unassignOperation {
@@ -118,6 +169,24 @@ func assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t 
 	if expectedConfig != nil {
 		require.Equal(t, *expectedConfig, notification.Get("RequestBody.config").String())
 	}
+}
+
+func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignNotificationAboutApp2 gjson.Result, expectedSubjects []string) {
+	t.Logf("Assert trust details are send to the target")
+	notificationItems := assignNotificationAboutApp2.Get("RequestBody.items")
+	app1FromNotification := notificationItems.Array()[0]
+	targetTrustDetails := app1FromNotification.Get("target-trust-details")
+	certificateDetails := targetTrustDetails.Array()[0].String()
+	certificateDetailsSecond := targetTrustDetails.Array()[1].String()
+	sortedSubjects := make([]string, 0, len(expectedSubjects))
+	for _, subject := range expectedSubjects {
+		sortedSubjects = append(sortedSubjects, certs.SortSubject(subject))
+	}
+	require.ElementsMatch(t, sortedSubjects, []string{certificateDetails, certificateDetailsSecond})
+
+	t.Logf("Assert that there are no trust details for the source")
+	sourceTrustDetails := app1FromNotification.Get("source-trust-details")
+	require.Equal(t, 0, len(sourceTrustDetails.Array()))
 }
 
 func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectNamespace, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool, expectedState *string) error {

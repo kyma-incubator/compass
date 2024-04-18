@@ -4,7 +4,7 @@
 # Following script installs necessary tooling, build and starts Director and Ord service, then runs the following smoke tests scenario:
 # - Crafts a local token
 # - Registers single application in Director using the register-application-with-bundles.graphql template
-# - Fetches applications and verify that the application was successfuly registered
+# - Fetches applications and verify that the application was successfully registered
 # - Fetches ORD service systems with all expands, and verify app info that is returned is the expected one
 
 set -o errexit
@@ -186,7 +186,7 @@ echo "Compass smoke test - start!"
 
 echo "Create Formation 'test-scenario'..."
 COMPASS_GQL_URL="${COMPASS_URL}/graphql"
-CREATE_FORMATION_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/create-formation/create-formation.graphql"
+CREATE_FORMATION_FILE_LOCATION="${COMPASS_DIR}/tests/smoke-test/create-formation.graphql"
 CREATE_FORMATION_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${CREATE_FORMATION_FILE_LOCATION}")"
 echo "Result from formation creation request:"
 echo "---------------------------------"
@@ -194,7 +194,7 @@ echo "${CREATE_FORMATION_RESULT}"
 echo "---------------------------------"
 
 echo "Register application ..."
-REG_APP_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/register-application/register-application-with-bundles.graphql"
+REG_APP_FILE_LOCATION="${COMPASS_DIR}/tests/smoke-test/register-application-with-bundles.graphql"
 CREATE_APP_IN_COMPASS_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${REG_APP_FILE_LOCATION}")"
 
 echo "Result from app creation request:"
@@ -223,7 +223,7 @@ CRT_BUNDLE_1_EVENT_DEFS_COUNT=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r 
 CRT_BUNDLE_1_EVENT_DEF_0_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r '.data.result.bundles.data[1].eventDefinitions.data[0].id')
 CRT_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${CREATE_APP_IN_COMPASS_RESULT} | jq -r '.data.result.bundles.data[1].eventDefinitions.data[1].id')
 
-GET_APPS_FILE_LOCATION="${COMPASS_DIR}/components/director/examples/query-applications/query-applications.graphql"
+GET_APPS_FILE_LOCATION="${COMPASS_DIR}/tests/smoke-test/query-applications.graphql"
 GET_APPS_FROM_COMPASS_RESULT="$(execute_gql_query_from_file "${COMPASS_GQL_URL}" "${DIRECTOR_TOKEN}" "${INTERNAL_TENANT_ID}" "${GET_APPS_FILE_LOCATION}")"
 
 echo "Result from get apps request:"
@@ -339,8 +339,8 @@ check_value "${GET_BUNDLE_1_EVENT_DEF_1}" "Event Def with ID: ${CRT_BUNDLE_1_EVE
 GET_BUNDLE_1_EVENT_DEF_1_ID=$(echo -E ${GET_BUNDLE_1_EVENT_DEF_1} | jq -r '.id')
 compare_values "${CRT_BUNDLE_1_EVENT_DEF_1_ID}" "${GET_BUNDLE_1_EVENT_DEF_1_ID}" "Application bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_1_EVENT_DEF_1_ID}. From Compass get: ${GET_BUNDLE_1_EVENT_DEF_1_ID}"
 
-
-GET_APPS_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24expand%3Dapis%2Cevents)&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
+# decoded query: /v0/systemInstances?$expand=consumptionBundles($select=id,title;$expand=events($select=id,title),apis($select=id,title))&$format=json
+GET_APPS_FROM_ORD_RESULT=$(curl --request GET --url "${ORD_URL}/open-resource-discovery-service/v0/systemInstances?%24expand=consumptionBundles(%24select%3Did%2Ctitle;%24expand%3Devents(%24select%3Did%2Ctitle)%2Capis(%24select%3Did%2Ctitle))&%24format=json" --header "authorization: Bearer ${DIRECTOR_TOKEN}" --header "tenant: ${INTERNAL_TENANT_ID}")
 
 echo "Result from get bundles request:"
 echo "---------------------------------"
@@ -358,9 +358,6 @@ echo "---------------------------------"
 
 ORD_BUNDLES_COUNT=$(echo -E ${ORD_APP} | jq -r '.consumptionBundles | length')
 compare_values "${CRT_BUNDLES_COUNT}" "${ORD_BUNDLES_COUNT}" "Application bundles count did not match. On creation: ${CRT_BUNDLES_COUNT}. From ORD service get: ${ORD_BUNDLES_COUNT}"
-
-ORD_BUNDLE_0=$(echo -E ${ORD_APP} | jq -c --arg bundleid ${CRT_BUNDLE_0_ID} '.consumptionBundles[] | select(.id==$bundleid)')
-check_value "${ORD_BUNDLE_0}" "Bundle with ID: ${CRT_BUNDLE_0_ID} not found in ORD service"
 
 ORD_BUNDLE_0=$(echo -E ${ORD_APP} | jq -c --arg bundleid ${CRT_BUNDLE_0_ID} '.consumptionBundles[] | select(.id==$bundleid)')
 check_value "${ORD_BUNDLE_0}" "Bundle with ID: ${CRT_BUNDLE_0_ID} not found in ORD service"
@@ -403,9 +400,6 @@ check_value "${ORD_BUNDLE_0_EVENT_DEF_1}" "Event Def with ID: ${CRT_BUNDLE_0_EVE
 
 ORD_BUNDLE_0_EVENT_DEF_1_ID=$(echo -E ${ORD_BUNDLE_0_EVENT_DEF_1} | jq -r '.id')
 compare_values "${CRT_BUNDLE_0_EVENT_DEF_1_ID}" "${ORD_BUNDLE_0_EVENT_DEF_1_ID}" "Application bundles Event Definitions IDs did not match. On creation: ${CRT_BUNDLE_0_EVENT_DEF_1_ID}. From ORD service get: ${ORD_BUNDLE_0_EVENT_DEF_1_ID}"
-
-ORD_BUNDLE_1=$(echo -E ${ORD_APP} | jq -c --arg bundleid ${CRT_BUNDLE_1_ID} '.consumptionBundles[] | select(.id==$bundleid)')
-check_value "${ORD_BUNDLE_1}" "Bundle with ID: ${CRT_BUNDLE_1_ID} not found in ORD service"
 
 ORD_BUNDLE_1=$(echo -E ${ORD_APP} | jq -c --arg bundleid ${CRT_BUNDLE_1_ID} '.consumptionBundles[] | select(.id==$bundleid)')
 check_value "${ORD_BUNDLE_1}" "Bundle with ID: ${CRT_BUNDLE_1_ID} not found in ORD service"

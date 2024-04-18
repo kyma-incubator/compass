@@ -31,7 +31,7 @@ const (
 
 //go:generate mockery --exported --name=applicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationService interface {
-	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error)
 	Upsert(ctx context.Context, in model.ApplicationRegisterInput) error
 	Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error
 	GetSccSystem(ctx context.Context, sccSubaccount, locationID, virtualHost string) (*model.Application, error)
@@ -441,7 +441,7 @@ func (a *Handler) createAppFromTemplate(ctx context.Context, scc nsmodel.SCC, sy
 		return false
 	}
 
-	if _, err := a.appSvc.CreateFromTemplate(ctx, *appInput, str.Ptr(system.TemplateID)); err != nil {
+	if _, err := a.appSvc.CreateFromTemplate(ctx, *appInput, str.Ptr(system.TemplateID), false); err != nil {
 		log.C(ctx).Warn(errors.Wrapf(err, "while creating Application"))
 		return false
 	}

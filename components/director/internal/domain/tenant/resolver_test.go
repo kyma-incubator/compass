@@ -11,6 +11,7 @@ import (
 
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
+	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -144,7 +145,7 @@ func TestResolver_Tenants(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Tenants(ctx, testCase.first, &gqlAfter, &searchTerm)
@@ -320,7 +321,7 @@ func TestResolver_Tenant(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, transact, tenantSvc, tenantConv, fetcherSvc, persistencesTx[0], persistencesTx[1])
 
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, fetcherSvc)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, fetcherSvc, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Tenant(ctx, testCase.IDInput)
@@ -434,7 +435,7 @@ func TestResolver_TenantByID(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.TenantByID(ctx, testCase.InternalIDInput)
@@ -521,7 +522,7 @@ func TestResolver_TenantByLowestOwnerForResource(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			tenantID, err := resolver.TenantByLowestOwnerForResource(ctx, resourceTypeStr, objectID)
@@ -569,7 +570,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		result, err := resolver.Labels(ctx, testTenant, nil)
 		assert.NoError(t, err)
@@ -586,7 +587,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		labels, err := resolver.Labels(ctx, testTenant, nil)
 		assert.NoError(t, err)
@@ -599,7 +600,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		_, err := resolver.Labels(ctx, nil, nil)
 		assert.Error(t, err)
@@ -612,7 +613,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		result, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -626,7 +627,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		_, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -640,7 +641,7 @@ func TestResolver_Labels(t *testing.T) {
 
 		defer mock.AssertExpectationsForObjects(t, tenantSvc, tenantConv, persist, transact)
 
-		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+		resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 		_, err := resolver.Labels(ctx, testTenant, nil)
 		assert.Error(t, err)
@@ -702,6 +703,10 @@ func TestResolver_Write(t *testing.T) {
 	}
 
 	upsertedTenantsIDs := []string{"6f4a589c-ac2e-4870-acb5-5a58abc85c6a", "eace9a3a-383b-44d1-8864-7e951ac5ec06"}
+	upsertedTenantsMap := map[string]tnt.Type{
+		upsertedTenantsIDs[0]: tnt.Account,
+		upsertedTenantsIDs[1]: tnt.Account,
+	}
 
 	testCases := []struct {
 		Name           string
@@ -717,12 +722,12 @@ func TestResolver_Write(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := unusedTenantService()
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsIDs, nil).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsMap, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(tenantsToUpsertModel, nil).Once()
 				return TenantConv
 			},
 			TenantsInput:   tenantsToUpsertGQL,
@@ -748,7 +753,20 @@ func TestResolver_Write(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(tenantsToUpsertModel, nil).Once()
+				return TenantConv
+			},
+			TenantsInput:   tenantsToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:        "Returns error when converting multiple input from graphql",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: unusedTenantService,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				TenantConv := &automock.BusinessTenantMappingConverter{}
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(nil, testError).Once()
 				return TenantConv
 			},
 			TenantsInput:   tenantsToUpsertGQL,
@@ -760,12 +778,12 @@ func TestResolver_Write(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsIDs, nil).Once()
+				TenantSvc.On("UpsertMany", txtest.CtxWithDBMatcher(), tenantsToUpsertModel[0], tenantsToUpsertModel[1]).Return(upsertedTenantsMap, nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				TenantConv := &automock.BusinessTenantMappingConverter{}
-				TenantConv.On("MultipleInputFromGraphQL", tenantsToUpsertGQL).Return(tenantsToUpsertModel).Once()
+				TenantConv.On("MultipleInputFromGraphQL", mock.Anything, tenantsToUpsertGQL, mock.Anything).Return(tenantsToUpsertModel, nil).Once()
 				return TenantConv
 			},
 			TenantsInput:   tenantsToUpsertGQL,
@@ -779,7 +797,7 @@ func TestResolver_Write(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Write(ctx, testCase.TenantsInput)
@@ -790,7 +808,7 @@ func TestResolver_Write(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
 			} else {
 				assert.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedResult, result)
+				assert.ElementsMatch(t, testCase.ExpectedResult, result)
 			}
 
 			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
@@ -848,7 +866,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				tenantConv := &automock.BusinessTenantMappingConverter{}
-				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(tenantToUpsertModel, nil).Once()
 				return tenantConv
 			},
 			TenantsInput:   tenantToUpsertGQL,
@@ -874,7 +892,20 @@ func TestResolver_WriteSingle(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				tenantConv := &automock.BusinessTenantMappingConverter{}
-				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(tenantToUpsertModel, nil).Once()
+				return tenantConv
+			},
+			TenantsInput:   tenantToUpsertGQL,
+			ExpectedError:  testError,
+			ExpectedResult: "",
+		},
+		{
+			Name:        "Error when converting input from graphql",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: unusedTenantService,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				tenantConv := &automock.BusinessTenantMappingConverter{}
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(model.BusinessTenantMappingInput{}, testError).Once()
 				return tenantConv
 			},
 			TenantsInput:   tenantToUpsertGQL,
@@ -891,7 +922,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				tenantConv := &automock.BusinessTenantMappingConverter{}
-				tenantConv.On("InputFromGraphQL", tenantToUpsertGQL).Return(tenantToUpsertModel).Once()
+				tenantConv.On("InputFromGraphQL", mock.Anything, tenantToUpsertGQL, map[string]string{}, mock.Anything).Return(tenantToUpsertModel, nil).Once()
 				return tenantConv
 			},
 			TenantsInput:   tenantToUpsertGQL,
@@ -905,7 +936,7 @@ func TestResolver_WriteSingle(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.WriteSingle(ctx, testCase.TenantsInput)
@@ -995,7 +1026,7 @@ func TestResolver_Delete(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Delete(ctx, testCase.TenantsInput)
@@ -1022,28 +1053,24 @@ func TestResolver_Update(t *testing.T) {
 	tenantParent := ""
 	tenantInternalID := "internal"
 
-	tenantsToUpdateGQL := []*graphql.BusinessTenantMappingInput{
-		{
-			Name:           testName,
-			ExternalTenant: testExternal,
-			Parents:        []*string{str.Ptr(tenantParent)},
-			Subdomain:      str.Ptr(testSubdomain),
-			Region:         str.Ptr(testRegion),
-			Type:           string(tnt.Account),
-			Provider:       testProvider,
-		},
+	tenantToUpdateGQL := graphql.BusinessTenantMappingInput{
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parents:        []*string{str.Ptr(tenantParent)},
+		Subdomain:      str.Ptr(testSubdomain),
+		Region:         str.Ptr(testRegion),
+		Type:           string(tnt.Account),
+		Provider:       testProvider,
 	}
 
-	tenantsToUpdateModel := []model.BusinessTenantMappingInput{
-		{
-			Name:           testName,
-			ExternalTenant: testExternal,
-			Parents:        []string{tenantParent},
-			Subdomain:      testSubdomain,
-			Region:         testRegion,
-			Type:           string(tnt.Account),
-			Provider:       testProvider,
-		},
+	tenantToUpdateModel := model.BusinessTenantMappingInput{
+		Name:           testName,
+		ExternalTenant: testExternal,
+		Parents:        []string{tenantParent},
+		Subdomain:      testSubdomain,
+		Region:         testRegion,
+		Type:           string(tnt.Account),
+		Provider:       testProvider,
 	}
 
 	expectedTenantModel := &model.BusinessTenantMapping{
@@ -1082,17 +1109,17 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(expectedTenantModel, nil).Once()
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantToUpdateGQL.ExternalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				conv.On("ToGraphQL", expectedTenantModel).Return(expectedTenantGQL)
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  nil,
 			ExpectedResult: expectedTenantGQL,
@@ -1102,7 +1129,7 @@ func TestResolver_Update(t *testing.T) {
 			TxFn:           txGen.ThatFailsOnBegin,
 			TenantSvcFn:    unusedTenantService,
 			TenantConvFn:   unusedTenantConverter,
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1112,15 +1139,15 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(testError).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(testError).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1130,16 +1157,30 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(nil, testError).Once()
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantToUpdateGQL.ExternalTenant).Return(nil, testError).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
+			IDInput:        tenantInternalID,
+			ExpectedError:  testError,
+			ExpectedResult: nil,
+		},
+		{
+			Name:        "Returns error when converting input from graphql",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: unusedTenantService,
+			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(model.BusinessTenantMappingInput{}, testError).Once()
+				return conv
+			},
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1149,16 +1190,16 @@ func TestResolver_Update(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			TenantSvcFn: func() *automock.BusinessTenantMappingService {
 				TenantSvc := &automock.BusinessTenantMappingService{}
-				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantsToUpdateGQL[0].ExternalTenant).Return(expectedTenantModel, nil).Once()
-				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantsToUpdateModel[0]).Return(nil).Once()
+				TenantSvc.On("GetTenantByExternalID", txtest.CtxWithDBMatcher(), tenantToUpdateGQL.ExternalTenant).Return(expectedTenantModel, nil).Once()
+				TenantSvc.On("Update", txtest.CtxWithDBMatcher(), tenantInternalID, tenantToUpdateModel).Return(nil).Once()
 				return TenantSvc
 			},
 			TenantConvFn: func() *automock.BusinessTenantMappingConverter {
 				conv := &automock.BusinessTenantMappingConverter{}
-				conv.On("MultipleInputFromGraphQL", tenantsToUpdateGQL).Return(tenantsToUpdateModel)
+				conv.On("InputFromGraphQL", mock.Anything, tenantToUpdateGQL, map[string]string{}, mock.Anything).Return(tenantToUpdateModel, nil).Once()
 				return conv
 			},
-			TenantInput:    *tenantsToUpdateGQL[0],
+			TenantInput:    tenantToUpdateGQL,
 			IDInput:        tenantInternalID,
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -1170,7 +1211,7 @@ func TestResolver_Update(t *testing.T) {
 			tenantSvc := testCase.TenantSvcFn()
 			tenantConv := testCase.TenantConvFn()
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.Update(ctx, testCase.IDInput, testCase.TenantInput)
@@ -1185,6 +1226,117 @@ func TestResolver_Update(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc, tenantConv)
+		})
+	}
+}
+
+func TestResolver_SetTenantLabel(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	txGen := txtest.NewTransactionContextGenerator(testError)
+
+	tenantInternalID := "internal"
+	labelKey := "label_key"
+	labelKeyInvalid := "label-key"
+	labelValue := "label_value"
+	expectedLabelGQL := &graphql.Label{
+		Key:   labelKey,
+		Value: labelValue,
+	}
+
+	testCases := []struct {
+		Name           string
+		TxFn           func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		TenantSvcFn    func() *automock.BusinessTenantMappingService
+		IDInput        string
+		LabelKey       string
+		LabelValue     string
+		ExpectedError  error
+		ExpectedResult *graphql.Label
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertLabel", txtest.CtxWithDBMatcher(), tenantInternalID, labelKey, labelValue).Return(nil).Once()
+				return tenantSvc
+			},
+			IDInput:        tenantInternalID,
+			LabelKey:       labelKey,
+			LabelValue:     labelValue,
+			ExpectedError:  nil,
+			ExpectedResult: expectedLabelGQL,
+		},
+		{
+			Name: "Fail on begin transaction",
+			TxFn: txGen.ThatFailsOnBegin,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				return &automock.BusinessTenantMappingService{}
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKey,
+			LabelValue:    labelValue,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Fail while upserting label",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertLabel", txtest.CtxWithDBMatcher(), tenantInternalID, labelKey, labelValue).Return(testError).Once()
+				return tenantSvc
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKey,
+			LabelValue:    labelValue,
+			ExpectedError: testError,
+		},
+		{
+			Name: "Fail when invalid label key",
+			TxFn: txGen.ThatDoesntStartTransaction,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				return &automock.BusinessTenantMappingService{}
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKeyInvalid,
+			LabelValue:    labelValue,
+			ExpectedError: errors.New("must be in a valid format"),
+		},
+		{
+			Name: "Fail on commit transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			TenantSvcFn: func() *automock.BusinessTenantMappingService {
+				tenantSvc := &automock.BusinessTenantMappingService{}
+				tenantSvc.On("UpsertLabel", txtest.CtxWithDBMatcher(), tenantInternalID, labelKey, labelValue).Return(nil).Once()
+				return tenantSvc
+			},
+			IDInput:       tenantInternalID,
+			LabelKey:      labelKey,
+			LabelValue:    labelValue,
+			ExpectedError: testError,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			tenantSvc := testCase.TenantSvcFn()
+			persist, transact := testCase.TxFn()
+			resolver := tenant.NewResolver(transact, tenantSvc, nil, nil, sfapiclient.SystemFetcherSyncClientConfig{})
+
+			// WHEN
+			result, err := resolver.SetTenantLabel(ctx, testCase.IDInput, testCase.LabelKey, testCase.LabelValue)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, result)
+			}
+
+			mock.AssertExpectationsForObjects(t, persist, transact, tenantSvc)
 		})
 	}
 }
@@ -1341,7 +1493,7 @@ func TestResolver_AddTenantAccess(t *testing.T) {
 				tenantConv = testCase.TenantConvFn()
 			}
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.AddTenantAccess(ctx, testCase.Input)
@@ -1506,7 +1658,7 @@ func TestResolver_RemoveTenantAccess(t *testing.T) {
 				tenantConv = testCase.TenantConvFn()
 			}
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConv, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.RemoveTenantAccess(ctx, testCase.Input.TenantID, testCase.Input.ResourceID, testCase.Input.ResourceType)
@@ -1591,7 +1743,7 @@ func TestResolver_RootTenants(t *testing.T) {
 				tenantConverter = testCase.TenantConverterFn()
 			}
 			persist, transact := testCase.TxFn()
-			resolver := tenant.NewResolver(transact, tenantSvc, tenantConverter, nil)
+			resolver := tenant.NewResolver(transact, tenantSvc, tenantConverter, nil, sfapiclient.SystemFetcherSyncClientConfig{})
 
 			// WHEN
 			result, err := resolver.RootTenants(ctx, externalTenant)

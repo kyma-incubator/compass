@@ -19,13 +19,24 @@ type TenantMappingsStorage interface {
 
 //go:generate mockery --name=IASService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type IASService interface {
-	GetApplication(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	GetApplicationByClientID(ctx context.Context, iasHost, clientID, appTenantID string) (types.Application, error)
+	GetApplicationByName(ctx context.Context, iasHost, name string) (types.Application, error)
+	CreateApplication(ctx context.Context, iasHost string, app *types.Application) (string, error)
 	UpdateApplicationConsumedAPIs(ctx context.Context, data ias.UpdateData) error
 }
 
 type TenantMappingsService struct {
 	Storage    TenantMappingsStorage
 	IASService IASService
+}
+
+func (s TenantMappingsService) CanSafelyRemoveTenantMapping(ctx context.Context, formationID string) (bool, error) {
+	tenantMappingsFromDB, err := s.Storage.ListTenantMappings(ctx, formationID)
+	if err != nil {
+		return false, errors.Newf("failed to get tenant mappings for formation '%s': %w", formationID, postgres.Error(err))
+	}
+
+	return len(tenantMappingsFromDB) < 2, nil
 }
 
 func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantMapping types.TenantMapping) error {
@@ -35,26 +46,48 @@ func (s TenantMappingsService) ProcessTenantMapping(ctx context.Context, tenantM
 		logger.FromContext(ctx).Err(err).Msgf("Failed to get tenant mappings for formation '%s'", formationID)
 		return errors.Newf("failed to get tenant mappings for formation '%s': %w", formationID, postgres.Error(err))
 	}
-	operation := tenantMapping.AssignedTenants[0].Operation
 
-	switch operation {
+	switch tenantMapping.Operation {
 	case types.OperationAssign:
 		return s.handleAssign(ctx, tenantMapping, tenantMappingsFromDB)
 	case types.OperationUnassign:
 		return s.handleUnassign(ctx, tenantMapping, tenantMappingsFromDB)
 	default:
-		panic(errors.Newf("invalid tenant mapping operation %s", operation))
+		panic(errors.Newf("invalid tenant mapping operation %s", tenantMapping.Operation))
 	}
+}
+
+func (s TenantMappingsService) RemoveTenantMapping(
+	ctx context.Context, tenantMapping types.TenantMapping) error {
+	formationID := tenantMapping.FormationID
+	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenant.AppID)
+	if err != nil {
+		logger.FromContext(ctx).Err(err).Msgf("Failed to clean up tenant mapping for formation '%s'", formationID)
+		return errors.Newf("failed to clean up tenant mapping for formation '%s': %w",
+			formationID, postgres.Error(err))
+	}
+	return nil
 }
 
 func (s TenantMappingsService) handleAssign(ctx context.Context,
 	tenantMapping types.TenantMapping, tenantMappingsFromDB map[string]types.TenantMapping) error {
 
 	formationID := tenantMapping.FormationID
-	uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
+	assignedTenant := tenantMapping.AssignedTenant
+	uclAppID := assignedTenant.AppID
 
 	_, tenantMappingAlreadyInDB := tenantMappingsFromDB[uclAppID]
-	if tenantMappingAlreadyInDB && len(tenantMapping.AssignedTenants[0].Configuration.ConsumedAPIs) == 0 {
+
+	if assignedTenant.AppNamespace == types.S4ApplicationNamespace && !tenantMappingAlreadyInDB {
+		appID, err := s.createIfNotExistsIASApp(ctx, tenantMapping)
+		if err != nil {
+			logger.FromContext(ctx).Err(err).Msgf("Failed to create/find suitable IAS application")
+			return errors.Newf("could not create/find suitable IAS application: %w", err)
+		}
+		tenantMapping.AssignedTenant.Parameters.IASApplicationID = appID
+	}
+
+	if tenantMappingAlreadyInDB && len(assignedTenant.Configuration.ConsumedAPIs) == 0 {
 		// Safeguard for empty consumedAPIs
 		logger.FromContext(ctx).Warn().Msgf(
 			"Received additional tenant mapping for app '%s' in formation '%s'. Skipping upsert.",
@@ -110,7 +143,7 @@ func (s TenantMappingsService) updateIASAppsConsumedAPIs(ctx context.Context,
 
 	for idx, consumerApp := range iasApps {
 		tenantMapping := tenantMappings[idx]
-		uclAppID := tenantMapping.AssignedTenants[0].UCLApplicationID
+		uclAppID := tenantMapping.AssignedTenant.AppID
 		providerAppID := iasApps[abs(idx-1)].ID
 
 		log.Info().Msgf(
@@ -140,29 +173,22 @@ func (s TenantMappingsService) handleUnassign(ctx context.Context,
 			return errors.Newf("failed to remove applications consumed APIs in formation '%s': %w", formationID, err)
 		}
 	}
-	return s.removeTenantMappingFromDB(ctx, tenantMapping)
-}
-
-func (s TenantMappingsService) removeTenantMappingFromDB(
-	ctx context.Context, tenantMapping types.TenantMapping) error {
-	formationID := tenantMapping.FormationID
-	err := s.Storage.DeleteTenantMapping(ctx, formationID, tenantMapping.AssignedTenants[0].UCLApplicationID)
-	if err != nil {
-		logger.FromContext(ctx).Err(err).Msgf("Failed to clean up tenant mapping for formation '%s'", formationID)
-		return errors.Newf("failed to clean up tenant mapping for formation '%s': %w",
-			formationID, postgres.Error(err))
-	}
-	return nil
+	return s.RemoveTenantMapping(ctx, tenantMapping)
 }
 
 func (s TenantMappingsService) getIASApplication(
 	ctx context.Context, tenantMapping types.TenantMapping) (types.Application, error) {
 	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
-	tenantMappingUCLApplicationID := tenantMapping.AssignedTenants[0].UCLApplicationID
-	clientID := tenantMapping.AssignedTenants[0].Parameters.ClientID
-	localTenantID := tenantMapping.AssignedTenants[0].LocalTenantID
+	tenantMappingUCLApplicationID := tenantMapping.AssignedTenant.AppID
+	clientID := tenantMapping.AssignedTenant.Parameters.ClientID
+	localTenantID := tenantMapping.AssignedTenant.LocalTenantID
+	iasAppID := tenantMapping.AssignedTenant.Parameters.IASApplicationID
 
-	iasApplication, err := s.IASService.GetApplication(ctx, iasHost, clientID, localTenantID)
+	if iasAppID != "" {
+		return types.Application{ID: iasAppID}, nil
+	}
+
+	iasApplication, err := s.IASService.GetApplicationByClientID(ctx, iasHost, clientID, localTenantID)
 	if err != nil {
 		return iasApplication, errors.Newf(
 			"failed to get IAS application with clientID '%s' and tenantID '%s' for UCL App ID '%s': %w",
@@ -188,6 +214,35 @@ func (s TenantMappingsService) getIASApps(ctx context.Context, triggerOperation 
 		iasApps = append(iasApps, iasApp)
 	}
 	return iasApps, nil
+}
+
+func (s TenantMappingsService) createIfNotExistsIASApp(ctx context.Context, tenantMapping types.TenantMapping) (string, error) {
+	iasHost := tenantMapping.ReceiverTenant.ApplicationURL
+	s4Certificate := tenantMapping.AssignedTenant.Configuration.Credentials.InboundCommunicationCredentials.OAuth2mTLSAuthentication.Certificate
+	if s4Certificate == "" {
+		return "", errors.S4CertificateNotFound
+	}
+
+	s4AppName := string(types.S4ApplicationNamespace) + "-" + tenantMapping.AssignedTenant.LocalTenantID
+	existingS4App, err := s.IASService.GetApplicationByName(ctx, iasHost, s4AppName)
+	if err == nil {
+		logger.FromContext(ctx).Info().Msgf("Found existing IAS application with name: %s", s4AppName)
+		return existingS4App.ID, nil
+	}
+	if !errors.Is(err, errors.IASApplicationNotFound) {
+		return "", err
+	}
+
+	s4App := types.Application{
+		Name: s4AppName,
+		Authentication: types.ApplicationAuthentication{
+			APICertificates: []types.ApiCertificateData{
+				{Base64Certificate: s4Certificate},
+			},
+		},
+	}
+
+	return s.IASService.CreateApplication(ctx, iasHost, &s4App)
 }
 
 func abs(x int) int {

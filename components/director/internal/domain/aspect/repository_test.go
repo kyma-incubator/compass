@@ -96,7 +96,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 
 	selectQueryForAspects := `^\(SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$1\)\) AND app_id = \$2 ORDER BY integration_dependency_id ASC, app_id ASC LIMIT \$3 OFFSET \$4\) UNION \(SELECT id, app_id, app_template_version_id, integration_dependency_id, title, description, mandatory, support_multiple_providers, api_resources, ready, created_at, updated_at, deleted_at, error FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$5\)\) AND app_id = \$6 ORDER BY integration_dependency_id ASC, app_id ASC LIMIT \$7 OFFSET \$8\)`
 
-	countQueryForAspects := `SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$1\)\) GROUP BY app_id ORDER BY app_id ASC`
+	countQueryForAspects := `SELECT app_id AS id, COUNT\(\*\) AS total_count FROM public.aspects WHERE \(id IN \(SELECT id FROM aspects_tenants WHERE tenant_id = \$1\)\) AND app_id IN \(\$2, \$3\) GROUP BY app_id ORDER BY app_id ASC`
 
 	t.Run("success when everything is returned for aspects", func(t *testing.T) {
 		ExpectedLimit := 1
@@ -117,7 +117,7 @@ func TestPgRepository_ListByApplicationIDs(t *testing.T) {
 			WillReturnRows(rows)
 
 		sqlMock.ExpectQuery(countQueryForAspects).
-			WithArgs(tenantID).
+			WithArgs(tenantID, firstAppID, secondAppID).
 			WillReturnRows(sqlmock.NewRows([]string{"id", "total_count"}).
 				AddRow(firstAppID, totalCountForFirstAspect).
 				AddRow(secondAppID, totalCountForSecondAspect))

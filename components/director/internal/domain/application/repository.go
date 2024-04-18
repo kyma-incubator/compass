@@ -27,9 +27,9 @@ const (
 )
 
 var (
-	applicationColumns    = []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels", "tenant_business_type_id"}
+	applicationColumns    = []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels"}
 	updatableColumns      = []string{"name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels", "system_number", "local_tenant_id"}
-	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url", "local_tenant_id", "application_namespace", "labels", "tenant_business_type_id"}
+	upsertableColumns     = []string{"name", "description", "status_condition", "system_status", "provider_name", "base_url", "local_tenant_id", "application_namespace", "labels"}
 	matchingSystemColumns = []string{"system_number"}
 )
 
@@ -170,6 +170,44 @@ func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumb
 	appModel := r.conv.FromEntity(&appEnt)
 
 	return appModel, nil
+}
+
+// ListByLocalTenantID returns applications with matching local tenant id and optionally - a filter
+func (r *pgRepository) ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+	conditions := repo.Conditions{repo.NewEqualCondition("local_tenant_id", localTenantID)}
+
+	tenantID, err := uuid.Parse(tenant)
+	if err != nil {
+		return nil, errors.Wrap(err, "while parsing tenant as UUID")
+	}
+
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query")
+	}
+
+	if filterSubquery != "" {
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
+
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(appsCollection))
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
 }
 
 // GetByLocalTenantIDAndAppTemplateID returns the application with matching local tenant id and app template id from the Compass DB

@@ -76,6 +76,8 @@ spec:
               value: /config/config.yaml
             - name: APP_REVOCATION_CONFIG_MAP_NAME
               value: "{{ tpl .Values.global.connector.revocation.configmap.namespace . }}/{{ .Values.global.connector.revocation.configmap.name }}"
+            - name: APP_INITIAL_SUBDOMAINS_FOR_AUTHENTICATORS
+              value: "{{ .Values.global.hydrator.initialSubdomainsForAuthenticators }}"
             - name: APP_METRICS_ADDRESS
               value: "0.0.0.0:{{ .Values.global.hydrator.metrics.port }}"
             - name: APP_METRICS_ENABLE_CLIENT_ID_INSTRUMENTATION
@@ -91,6 +93,14 @@ spec:
             - name: APP_{{ $authenMappingServiceName }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
               value: {{ $config.authenticator.checkSuffix | quote }}
             {{- end }}
+            {{- end }}
+            {{- if eq .Values.global.director.formationMappingAsyncStatusApi.authentication.hydratorAuthenticator.enabled true }}
+            - name: APP_{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.hydratorAuthenticator.name }}_AUTHENTICATOR_TRUSTED_ISSUERS
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.authentication.trusted_issuers | quote }}
+            - name: APP_{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.hydratorAuthenticator.name }}_AUTHENTICATOR_ATTRIBUTES
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.authentication.attributes | quote }}
+            - name: APP_{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.hydratorAuthenticator.name }}_AUTHENTICATOR_CHECK_CLIENT_ID_SUFFIX
+              value: {{ .Values.global.director.formationMappingAsyncStatusApi.authentication.checkSuffix | quote }}
             {{- end }}
             - name: APP_CSR_SUBJECT_COUNTRY
               value: {{ .Values.deployment.args.csrSubject.country | quote }}

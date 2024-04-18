@@ -73,8 +73,8 @@ function cleanup_trap(){
 
 # Copy the identity provider configuration from the Compass chart; the Compass values are changed by the `run.sh`
 VALUES_FILE_COMPASS="${ROOT_PATH}"/chart/compass/values.yaml
-IDP_HOST=$(yq ".global.cockpit.auth.idpHost" $VALUES_FILE_COMPASS)
-AUTH_PATH=$(yq ".global.cockpit.auth.path" $VALUES_FILE_COMPASS)
+IDP_HOST=$(yq ".global.oathkeeper.auth.idpHost" $VALUES_FILE_COMPASS)
+AUTH_PATH=$(yq ".global.oathkeeper.auth.path" $VALUES_FILE_COMPASS)
 
 # If IDP has been configured override the default values in the ORY chart values
 if [ ! -z "$IDP_HOST" ]; then

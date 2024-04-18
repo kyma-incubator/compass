@@ -1,4 +1,4 @@
-# Compass installation and testing
+# Compass Installation and Testing
 
 ## Overview
 

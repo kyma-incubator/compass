@@ -4,6 +4,7 @@ package graphql
 type Formation struct {
 	ID                            string         `json:"id"`
 	Name                          string         `json:"name"`
+	TenantID                      string         `json:"tenantID"`
 	FormationTemplateID           string         `json:"formationTemplateId"`
 	State                         string         `json:"state"`
 	Error                         FormationError `json:"error"`

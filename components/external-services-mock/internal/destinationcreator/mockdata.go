@@ -126,3 +126,34 @@ var FindAPIOAuth2ClientCredsDestResponseTemplate = `
     }
   ]
 }`
+
+var FindAPIOAuth2mTLSDestResponseTemplate = `
+{
+    "owner": {
+        "SubaccountId": "%s",
+        "InstanceId": "%s"
+    },
+    "destinationConfiguration": {
+        "Name": "%s",
+        "Type": "%s",
+        "URL": "%s",
+        "Authentication": "%s",
+        "ProxyType": "%s",
+        "tokenServiceURLType": "%s",
+        "clientId": "%s",
+        "tokenServiceURL": "%s",
+        "tokenService.KeyStoreLocation": "%s"
+    },
+    "authTokens": [
+        {
+            "type": "bearer",
+            "value": "eyJhbGc",
+            "http_header": {
+                "key": "Authorization",
+                "value": "Bearer eyJhbGc"
+            },
+            "expires_in": "43199",
+            "scope": "test.scope"
+        }
+    ]
+}`

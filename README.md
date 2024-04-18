@@ -1,3 +1,6 @@
+## :warning: This repository has been deprecated and will be archived soon. :warning:
+
+
 <p align="center">
  <img src="https://raw.githubusercontent.com/kyma-incubator/compass/main/logo.png" width="235">
 </p>
@@ -20,14 +23,14 @@ For more information about the Compass architecture, technical details, and comp
 
 - [Docker](https://www.docker.com/get-started)
 - [k3d](https://github.com/k3d-io/k3d) v5.2.2+
-- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.23.0+
-- [Kyma CLI](https://github.com/kyma-project/cli) 2.9.3
+- [kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/) 1.25.0+
+- [Kyma CLI](https://github.com/kyma-project/cli) 2.13.2
 - [helm](https://github.com/helm/helm) v3.8.0+
 - [yq](https://github.com/mikefarah/yq) v4+
 
 ## Installation
 
-Install Compass locally or on a cluster. See the [installation document](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md) for details.
+Install Compass locally or on a cluster. See the [Installation](https://github.com/kyma-incubator/compass/blob/main/docs/compass/04-01-installation.md) document for details.
 
 ### Dependencies
 

@@ -24,6 +24,10 @@ const (
 	LicenseTypeLabelKey = "licensetype"
 	// CustomerIDLabelKey is the key of the SAP-managed customer subaccounts
 	CustomerIDLabelKey = "customerId"
+	// CostObjectIDLabelKey is the key for cost object tenant ID
+	CostObjectIDLabelKey = "costObjectId"
+	// CostObjectTypeLabelKey is the key for cost object tenant type
+	CostObjectTypeLabelKey = "costObjectType"
 )
 
 // TenantMappingRepository is responsible for the repo-layer tenant operations.
@@ -270,6 +274,25 @@ func (s *service) DeleteTenantAccessForResourceRecursively(ctx context.Context, 
 		return errors.Wrapf(err, "while deleting tenant acccess for resource type %q with ID %q for tenant %q", string(resourceType), ta.ResourceID, ta.TenantID)
 	}
 
+	btm, err := s.tenantMappingRepo.GetByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+	if err != nil {
+		return err
+	}
+
+	if IsAtomTenant(btm.Type) {
+		rootTenants, err := s.tenantMappingRepo.GetParentsRecursivelyByExternalTenant(ctx, tenantAccess.ExternalTenantID)
+		if err != nil {
+			return err
+		}
+
+		rootTenantIDs := make([]string, 0, len(rootTenants))
+		for _, rootTenant := range rootTenants {
+			rootTenantIDs = append(rootTenantIDs, rootTenant.ID)
+		}
+
+		return repo.DeleteTenantAccessFromDirective(ctx, m2mTable, []string{tenantAccess.ResourceID}, rootTenantIDs)
+	}
+
 	return nil
 }
 
@@ -358,13 +381,13 @@ func (s *service) getTenantFromContext(ctx context.Context) (string, error) {
 
 // CreateManyIfNotExists creates all provided tenants if they do not exist.
 // It creates or updates the subdomain, region, and customerId labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
+func (s *labeledService) CreateManyIfNotExists(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error) {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.UnsafeCreate)
 }
 
 // UpsertMany creates all provided tenants if they do not exist. If they do exist, they are internally updated.
 // It creates or updates the subdomain, region, and customerId labels of the provided tenants, no matter if they are pre-existing or not.
-func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) ([]string, error) {
+func (s *labeledService) UpsertMany(ctx context.Context, tenantInputs ...model.BusinessTenantMappingInput) (map[string]tenantpkg.Type, error) {
 	return s.upsertTenants(ctx, tenantInputs, s.tenantMappingRepo.Upsert)
 }
 
@@ -390,9 +413,14 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	tenantList := []model.BusinessTenantMappingInput{tenantInput}
 	subdomains, regions := tenantLocality(tenantList)
 	customerIDs := tenantCustomerIDs(tenantList)
+	costObjectIDs := tenantCostObjectIDs(tenantList)
+	costObjectTypes := tenantCostObjectTypes(tenantList)
+
 	subdomain := ""
 	region := ""
 	customerID := ""
+	costObjectID := ""
+	costObjectType := ""
 
 	if s, ok := subdomains[tenant.ExternalTenant]; ok {
 		subdomain = s
@@ -403,8 +431,14 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	if id, ok := customerIDs[tenant.ExternalTenant]; ok {
 		customerID = id
 	}
+	if id, ok := costObjectIDs[tenant.ExternalTenant]; ok {
+		costObjectID = id
+	}
+	if t, ok := costObjectTypes[tenant.ExternalTenant]; ok {
+		costObjectType = t
+	}
 
-	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, upsertFunc)
+	tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, costObjectID, costObjectType, upsertFunc)
 	if err != nil {
 		return "", errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 	}
@@ -412,7 +446,7 @@ func (s *labeledService) upsertTenant(ctx context.Context, tenantInput model.Bus
 	return tenantID, nil
 }
 
-func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) ([]string, error) {
+func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model.BusinessTenantMappingInput, upsertFunc func(context.Context, model.BusinessTenantMapping) (string, error)) (map[string]tenantpkg.Type, error) {
 	tenants, err := s.MultipleToTenantMapping(ctx, tenantInputs)
 	if err != nil {
 		return nil, err
@@ -420,13 +454,17 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 
 	subdomains, regions := tenantLocality(tenantInputs)
 	customerIDs := tenantCustomerIDs(tenantInputs)
+	costObjectIDs := tenantCostObjectIDs(tenantInputs)
+	costObjectTypes := tenantCostObjectTypes(tenantInputs)
 
-	tenantIDs := make([]string, 0, len(tenants))
+	tenantsMap := make(map[string]tenantpkg.Type)
 
 	for tenantIdx, tenant := range tenants {
 		subdomain := ""
 		region := ""
 		customerID := ""
+		costObjectID := ""
+		costObjectType := ""
 		if s, ok := subdomains[tenant.ExternalTenant]; ok {
 			subdomain = s
 		}
@@ -436,14 +474,20 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		if id, ok := customerIDs[tenant.ExternalTenant]; ok {
 			customerID = id
 		}
+		if id, ok := costObjectIDs[tenant.ExternalTenant]; ok {
+			costObjectID = id
+		}
+		if t, ok := costObjectTypes[tenant.ExternalTenant]; ok {
+			costObjectType = t
+		}
 
-		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, upsertFunc)
+		tenantID, err := s.createIfNotExists(ctx, tenant, subdomain, region, customerID, costObjectID, costObjectType, upsertFunc)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while creating tenant with external ID %s", tenant.ExternalTenant)
 		}
 
 		// the tenant already exists in our DB with a different ID, and we should update all child resources to use the correct internal ID
-		tenantIDs = append(tenantIDs, tenantID)
+		tenantsMap[tenantID] = tenant.Type
 		if tenantID != tenant.ID {
 			for i := tenantIdx; i < len(tenants); i++ {
 				if slices.Contains(tenants[i].Parents, tenant.ID) {
@@ -457,24 +501,26 @@ func (s *labeledService) upsertTenants(ctx context.Context, tenantInputs []model
 		}
 	}
 
-	return tenantIDs, nil
+	return tenantsMap, nil
 }
 
-func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
+func (s *labeledService) createIfNotExists(ctx context.Context, tenant model.BusinessTenantMapping, subdomain, region, customerID, costObjectID, costObjectType string, action func(context.Context, model.BusinessTenantMapping) (string, error)) (string, error) {
 	internalID, err := action(ctx, tenant)
 	if err != nil {
 		return "", err
 	}
 
-	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID)
+	return internalID, s.upsertLabels(ctx, internalID, subdomain, region, str.PtrStrToStr(tenant.LicenseType), customerID, costObjectID, costObjectType)
 }
 
-func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID string) error {
+func (s *labeledService) upsertLabels(ctx context.Context, tenantID, subdomain, region, licenseType, customerID, costObjectID, costObjectType string) error {
 	labelKeyValueMappings := map[string]string{
-		SubdomainLabelKey:   subdomain,
-		RegionLabelKey:      region,
-		LicenseTypeLabelKey: licenseType,
-		CustomerIDLabelKey:  customerID,
+		SubdomainLabelKey:      subdomain,
+		RegionLabelKey:         region,
+		LicenseTypeLabelKey:    licenseType,
+		CustomerIDLabelKey:     customerID,
+		CostObjectIDLabelKey:   costObjectID,
+		CostObjectTypeLabelKey: costObjectType,
 	}
 
 	for labelKey, labelValue := range labelKeyValueMappings {
@@ -514,6 +560,28 @@ func tenantCustomerIDs(tenants []model.BusinessTenantMappingInput) map[string]st
 	return customerIDs
 }
 
+func tenantCostObjectIDs(tenants []model.BusinessTenantMappingInput) map[string]string {
+	costObjectIDs := make(map[string]string)
+	for _, t := range tenants {
+		if t.CostObjectID != nil {
+			costObjectIDs[t.ExternalTenant] = str.PtrStrToStr(t.CostObjectID)
+		}
+	}
+
+	return costObjectIDs
+}
+
+func tenantCostObjectTypes(tenants []model.BusinessTenantMappingInput) map[string]string {
+	costObjectTypes := make(map[string]string)
+	for _, t := range tenants {
+		if t.CostObjectType != nil {
+			costObjectTypes[t.ExternalTenant] = str.PtrStrToStr(t.CostObjectType)
+		}
+	}
+
+	return costObjectTypes
+}
+
 // DeleteMany removes all tenants with the provided external tenant ids from the Compass storage.
 func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) error {
 	for _, externalTenantID := range externalTenantIDs {
@@ -530,7 +598,7 @@ func (s *service) DeleteMany(ctx context.Context, externalTenantIDs []string) er
 // That excludes labels of other resource types in the context of the given tenant, for example labels of an application in the given tenant - those labels are not returned.
 func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[string]*model.Label, error) {
 	log.C(ctx).Infof("getting labels for tenant with ID %s", tenantID)
-	if err := s.ensureTenantExists(ctx, tenantID); err != nil {
+	if err := s.Exists(ctx, tenantID); err != nil {
 		return nil, err
 	}
 
@@ -543,7 +611,7 @@ func (s *labeledService) ListLabels(ctx context.Context, tenantID string) (map[s
 }
 
 // UpsertLabel upserts label that is directly linked to the provided tenant
-func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key, value string) error {
+func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key string, value interface{}) error {
 	label := &model.LabelInput{
 		Key:        key,
 		Value:      value,
@@ -553,7 +621,8 @@ func (s *labeledService) UpsertLabel(ctx context.Context, tenantID, key, value s
 	return s.labelUpsertSvc.UpsertLabel(ctx, tenantID, label)
 }
 
-func (s *service) ensureTenantExists(ctx context.Context, id string) error {
+// Exists checks if tenant with the provided internal ID exists in the Compass storage.
+func (s *service) Exists(ctx context.Context, id string) error {
 	exists, err := s.tenantMappingRepo.Exists(ctx, id)
 	if err != nil {
 		return errors.Wrapf(err, "while checking if tenant with ID %s exists", id)
@@ -561,6 +630,20 @@ func (s *service) ensureTenantExists(ctx context.Context, id string) error {
 
 	if !exists {
 		return apperrors.NewNotFoundError(resource.Tenant, id)
+	}
+
+	return nil
+}
+
+// ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
+func (s *service) ExistsByExternalTenant(ctx context.Context, externalTenant string) error {
+	exists, err := s.tenantMappingRepo.ExistsByExternalTenant(ctx, externalTenant)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if tenant with External Tenant %s exists", externalTenant)
+	}
+
+	if !exists {
+		return apperrors.NewNotFoundError(resource.Tenant, externalTenant)
 	}
 
 	return nil
@@ -598,4 +681,13 @@ func MoveBeforeIfShould(tenants []model.BusinessTenantMapping, parentTenantID, c
 		newTenants = append(newTenants, tenants[i])
 	}
 	return newTenants, true
+}
+
+// IsAtomTenant checks whether the tenant comes from atom
+func IsAtomTenant(tenantType tenantpkg.Type) bool {
+	if tenantType == tenantpkg.ResourceGroup || tenantType == tenantpkg.Folder || tenantType == tenantpkg.Organization {
+		return true
+	}
+
+	return false
 }

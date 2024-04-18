@@ -510,6 +510,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 
 	jobCfg := resync.JobConfig{
 		TenantProvider: resync.TenantOnDemandProvider,
+		RegionPrefix:   "cf-",
 	}
 
 	newSubaccountTenant := model.BusinessTenantMappingInput{ExternalTenant: newTenantID, Parents: []string{parentTenantID}, Region: region, Type: string(tenant.Subaccount)}
@@ -539,7 +540,8 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithExistingParent := newSubaccountTenant
 				tenantWithExistingParent.Parents = []string{parentTenantID}
-				svc.On("FetchTenant", ctx, newTenantID).Return(&newSubaccountTenant, nil)
+				tenantWithExistingParent.Region = jobCfg.RegionPrefix + tenantWithExistingParent.Region
+				svc.On("FetchTenants", ctx, newTenantID).Return([]model.BusinessTenantMappingInput{newSubaccountTenant}, nil)
 				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{tenantWithExistingParent}).Return(nil)
 				return svc
 			},
@@ -563,7 +565,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 					Type:           string(tenant.Subaccount),
 					Provider:       "lazily-tenant-fetcher",
 				}
-				svc.On("FetchTenant", ctx, newTenantID).Return(nil, nil)
+				svc.On("FetchTenants", ctx, newTenantID).Return(nil, nil)
 				svc.On("CreateTenants", ctx, []model.BusinessTenantMappingInput{lazilyStoredTnt}).Return(nil)
 				return svc
 			},
@@ -594,7 +596,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithoutParent := newSubaccountTenant
 				tenantWithoutParent.Parents = []string{}
-				svc.On("FetchTenant", ctx, newTenantID).Return(nil, nil)
+				svc.On("FetchTenants", ctx, newTenantID).Return(nil, nil)
 				return svc
 			},
 			ExpectedErrMsg: fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", newTenantID),
@@ -613,7 +615,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithoutParent := newSubaccountTenant
 				tenantWithoutParent.Parents = []string{}
-				svc.On("FetchTenant", ctx, newTenantID).Return(&tenantWithoutParent, nil)
+				svc.On("FetchTenants", ctx, newTenantID).Return([]model.BusinessTenantMappingInput{tenantWithoutParent}, nil)
 				return svc
 			},
 			ExpectedErrMsg: fmt.Sprintf("parent tenant not found of tenant with ID %s", newTenantID),
@@ -646,7 +648,7 @@ func TestTenantsSynchronizer_SynchronizeTenant(t *testing.T) {
 				svc := &automock.TenantCreator{}
 				tenantWithExistingParent := newSubaccountTenant
 				tenantWithExistingParent.Parents = []string{internalParentTenantID}
-				svc.On("FetchTenant", ctx, newTenantID).Return(nil, errors.New(failedToFetchNewTenantsErrMsg))
+				svc.On("FetchTenants", ctx, newTenantID).Return(nil, errors.New(failedToFetchNewTenantsErrMsg))
 				return svc
 			},
 			ExpectedErrMsg: failedToFetchNewTenantsErrMsg,

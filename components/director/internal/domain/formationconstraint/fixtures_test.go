@@ -370,6 +370,10 @@ func UnusedFormationConstraintConverter() *automock.FormationConstraintConverter
 	return &automock.FormationConstraintConverter{}
 }
 
+func UnusedFormationTemplateConstraintReferenceRepository() *automock.FormationTemplateConstraintReferenceRepository {
+	return &automock.FormationTemplateConstraintReferenceRepository{}
+}
+
 func fixColumns() []string {
 	return []string{"id", "name", "description", "constraint_type", "target_operation", "operator", "resource_type", "resource_subtype", "input_template", "constraint_scope", "priority", "created_at"}
 }

@@ -6,15 +6,15 @@ require (
 	github.com/coreos/go-oidc/v3 v3.1.0
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/lestrrat-go/iter v1.0.2
-	github.com/lestrrat-go/jwx v1.2.26
+	github.com/lestrrat-go/jwx v1.2.29
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/pkg/errors v0.9.1
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tidwall/gjson v1.17.0
 	github.com/vrischmann/envconfig v1.3.0
 	k8s.io/api v0.26.9
@@ -23,14 +23,14 @@ require (
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20240116150905-cdc03fbdf9fc
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240116150905-cdc03fbdf9fc
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20240311150451-fb47652e9f70
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240312193954-fd717b97efd9
 	github.com/prometheus/client_golang v1.17.0
 	golang.org/x/oauth2 v0.11.0
 )
 
 require (
-	github.com/99designs/gqlgen v0.11.3 // indirect
+	github.com/99designs/gqlgen v0.17.44 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver/v3 v3.2.0 // indirect
 	github.com/Masterminds/sprig/v3 v3.2.3 // indirect
@@ -59,9 +59,9 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240116150905-cdc03fbdf9fc // indirect
+	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240311150451-fb47652e9f70 // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
-	github.com/lestrrat-go/blackmagic v1.0.1 // indirect
+	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
 	github.com/lestrrat-go/option v1.0.1 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
@@ -78,24 +78,25 @@ require (
 	github.com/prometheus/common v0.44.0 // indirect
 	github.com/prometheus/procfs v0.11.1 // indirect
 	github.com/shopspring/decimal v1.2.0 // indirect
+	github.com/sosodev/duration v1.2.0 // indirect
 	github.com/spf13/cast v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
 	github.com/tidwall/sjson v1.2.5 // indirect
-	github.com/vektah/gqlparser/v2 v2.1.0 // indirect
+	github.com/vektah/gqlparser/v2 v2.5.11 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
-	golang.org/x/crypto v0.17.0 // indirect
-	golang.org/x/net v0.17.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.3.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/protobuf v1.31.0 // indirect
+	google.golang.org/protobuf v1.33.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.5.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect

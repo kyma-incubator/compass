@@ -560,7 +560,10 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 	tenantModelsWithLicense := []model.BusinessTenantMapping{*newModelBusinessTenantMappingWithLicense(testID, "test1", str.Ptr(testLicenseType)),
 		newModelBusinessTenantMappingWithLicense(testID, "test2", str.Ptr(testLicenseType)).WithExternalTenant("external2")}
 
-	expectedResult := []string{testID, testID}
+	expectedResult := map[string]tenantEntity.Type{
+		testID: tenantEntity.Account,
+	}
+
 	uidSvcFn := func() *automock.UIDService {
 		uidSvc := &automock.UIDService{}
 		uidSvc.On("Generate").Return(testID)
@@ -581,7 +584,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 		LabelUpsertSvcFn    func() *automock.LabelUpsertService
 		UIDSvcFn            func() *automock.UIDService
 		ExpectedError       error
-		ExpectedResult      []string
+		ExpectedResult      map[string]tenantEntity.Type
 	}
 
 	testCases := []testCase{
@@ -619,7 +622,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedError:    nil,
-			ExpectedResult:   []string{testInternalParentID, testID},
+			ExpectedResult:   map[string]tenantEntity.Type{testInternalParentID: tenantEntity.Customer, testID: tenantEntity.Account},
 		},
 		{
 			Name:         "Success when parent tenant organization exists with another ID",
@@ -643,7 +646,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 			LabelRepoFn:      noopLabelRepo,
 			LabelUpsertSvcFn: noopLabelUpsertSvc,
 			ExpectedError:    nil,
-			ExpectedResult:   []string{testInternalParentID, testID},
+			ExpectedResult:   map[string]tenantEntity.Type{testInternalParentID: tenantEntity.Folder, testID: tenantEntity.Organization},
 		},
 		{
 			Name:         "Success when subdomain should be added",
@@ -731,7 +734,7 @@ func TestService_CreateManyIfNotExists(t *testing.T) {
 				return svc
 			},
 			ExpectedError:  nil,
-			ExpectedResult: expectedResult,
+			ExpectedResult: map[string]tenantEntity.Type{testID: tenantEntity.Subaccount},
 		},
 		{
 			Name:         "Error when subdomain label setting fails",
@@ -1596,11 +1599,12 @@ func TestService_CreateTenantAccessForResourceRecursively(t *testing.T) {
 
 func TestService_DeleteTenantAccessForResource(t *testing.T) {
 	testCases := []struct {
-		Name             string
-		ConverterFn      func() *automock.BusinessTenantMappingConverter
-		PersistenceFn    func() (*sqlx.DB, testdb.DBMock)
-		Input            *model.TenantAccess
-		ExpectedErrorMsg string
+		Name                string
+		ConverterFn         func() *automock.BusinessTenantMappingConverter
+		TenantMappingRepoFn func() *automock.TenantMappingRepository
+		PersistenceFn       func() (*sqlx.DB, testdb.DBMock)
+		Input               *model.TenantAccess
+		ExpectedErrorMsg    string
 	}{
 		{
 			Name: "Success",
@@ -1609,27 +1613,115 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
 				return conv
 			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(testRootParents, nil).Once()
+				return repo
+			},
 			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
 				db, dbMock := testdb.MockDatabase(t)
-				dbMock.ExpectExec(regexp.QuoteMeta(`WITH RECURSIVE parents AS
-                   (SELECT t1.id, t1.type, tp1.parent_id, 0 AS depth, CAST($1 AS uuid) AS child_id
-                    FROM business_tenant_mappings t1 LEFT JOIN tenant_parents tp1 on t1.id = tp1.tenant_id
-                    WHERE id = $2
-                    UNION ALL
-                    SELECT t2.id, t2.type, tp2.parent_id, p.depth+ 1, p.id AS child_id
-                    FROM business_tenant_mappings t2 LEFT JOIN tenant_parents tp2 on t2.id = tp2.tenant_id
-                                                     INNER JOIN parents p on p.parent_id = t2.id)
-			DELETE FROM tenant_applications WHERE id IN ($3) AND EXISTS (SELECT id FROM parents where tenant_id = parents.id AND source = parents.child_id)`)).
-					WithArgs(testInternal, testInternal, testID).
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				dbMock.ExpectExec(fixDeleteTenantAccessesFromDirective()).
+					WithArgs(testID, testParentID, testParentID2).
 					WillReturnResult(sqlmock.NewResult(1, 1))
 				return db, dbMock
 			},
 			Input: tenantAccessModel,
 		},
 		{
-			Name:             "Error when resource does not have access table",
-			Input:            invalidTenantAccessModel,
-			ExpectedErrorMsg: fmt.Sprintf("entity %q does not have access table", invalidResourceType),
+			Name: "Success when removing tenant access for tenant without parents",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, nil).Once()
+				return repo
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
+			Name: "Success when tenant is not from atom - no directive tenant access records",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantGAModel, nil).Once()
+				return repo
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input: tenantAccessModel,
+		},
+		{
+			Name: "Error while deleting tenant access from directive",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(testRootParents, nil).Once()
+				return repo
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				dbMock.ExpectExec(fixDeleteTenantAccessesFromDirective()).
+					WithArgs(testID, testParentID, testParentID2).
+					WillReturnError(testError)
+				return db, dbMock
+			},
+			Input:            tenantAccessModel,
+			ExpectedErrorMsg: "Unexpected error while executing SQL query",
+		},
+		{
+			Name: "Error while listing root parents",
+			ConverterFn: func() *automock.BusinessTenantMappingConverter {
+				conv := &automock.BusinessTenantMappingConverter{}
+				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
+				return conv
+			},
+			TenantMappingRepoFn: func() *automock.TenantMappingRepository {
+				repo := &automock.TenantMappingRepository{}
+				repo.On("GetByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(tenantFolderModel, nil).Once()
+				repo.On("GetParentsRecursivelyByExternalTenant", mock.Anything, tenantAccessModel.ExternalTenantID).Return(nil, testError).Once()
+				return repo
+			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnResult(sqlmock.NewResult(1, 1))
+				return db, dbMock
+			},
+			Input:            tenantAccessModel,
+			ExpectedErrorMsg: testError.Error(),
 		},
 		{
 			Name: "Error while deleting tenant access",
@@ -1638,8 +1730,20 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 				conv.On("TenantAccessToEntity", tenantAccessModel).Return(tenantAccessEntity).Once()
 				return conv
 			},
+			PersistenceFn: func() (*sqlx.DB, testdb.DBMock) {
+				db, dbMock := testdb.MockDatabase(t)
+				dbMock.ExpectExec(fixDeleteTenantAccessesQuery()).
+					WithArgs(testInternal, testInternal, testID, testID).
+					WillReturnError(testError)
+				return db, dbMock
+			},
 			Input:            tenantAccessModel,
 			ExpectedErrorMsg: fmt.Sprintf("while deleting tenant acccess for resource type %q with ID %q for tenant %q", tenantAccessModel.ResourceType, tenantAccessModel.ResourceID, tenantAccessModel.InternalTenantID),
+		},
+		{
+			Name:             "Error when resource does not have access table",
+			Input:            invalidTenantAccessModel,
+			ExpectedErrorMsg: fmt.Sprintf("entity %q does not have access table", invalidResourceType),
 		},
 	}
 
@@ -1650,13 +1754,17 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 			if testCase.ConverterFn != nil {
 				converter = testCase.ConverterFn()
 			}
+			tenantMappingRepo := unusedTenantMappingRepo()
+			if testCase.TenantMappingRepoFn != nil {
+				tenantMappingRepo = testCase.TenantMappingRepoFn()
+			}
 			db, dbMock := unusedDBMock(t)
 			if testCase.PersistenceFn != nil {
 				db, dbMock = testCase.PersistenceFn()
 			}
 			ctx = persistence.SaveToContext(ctx, db)
 
-			svc := tenant.NewService(nil, nil, converter)
+			svc := tenant.NewService(tenantMappingRepo, nil, converter)
 
 			// WHEN
 			err := svc.DeleteTenantAccessForResourceRecursively(ctx, testCase.Input)
@@ -1668,12 +1776,87 @@ func TestService_DeleteTenantAccessForResource(t *testing.T) {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, converter)
+			mock.AssertExpectationsForObjects(t, converter, tenantMappingRepo)
 			dbMock.AssertExpectations(t)
 		})
 	}
 }
 
+func Test_Exists(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("Exists", ctx, testID).Return(true, nil)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.Exists(ctx, testID)
+
+		// THEN
+		assert.NoError(t, err)
+	})
+	t.Run("Returns error when retrieval from DB fails", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("Exists", ctx, testID).Return(false, testError)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.Exists(ctx, testID)
+
+		// THEN
+		assert.Error(t, err)
+		require.Contains(t, err.Error(), testError.Error())
+	})
+}
+
+func Test_ExistsByExternalTenant(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("ExistsByExternalTenant", ctx, testID).Return(true, nil)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.ExistsByExternalTenant(ctx, testID)
+
+		// THEN
+		assert.NoError(t, err)
+	})
+	t.Run("Returns error when retrieval from DB fails", func(t *testing.T) {
+		// GIVEN
+		ctx := context.TODO()
+
+		tenantRepo := &automock.TenantMappingRepository{}
+		tenantRepo.On("ExistsByExternalTenant", ctx, testID).Return(false, testError)
+
+		defer mock.AssertExpectationsForObjects(t, tenantRepo)
+
+		svc := tenant.NewService(tenantRepo, nil, nil)
+
+		// WHEN
+		err := svc.ExistsByExternalTenant(ctx, testID)
+
+		// THEN
+		assert.Error(t, err)
+		require.Contains(t, err.Error(), testError.Error())
+	})
+}
 func TestService_GetTenantAccessForResource(t *testing.T) {
 	testCases := []struct {
 		Name             string

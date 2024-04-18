@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
@@ -984,6 +986,169 @@ func TestResolver_ApplicationBySystemNumber(t *testing.T) {
 	}
 }
 
+func TestResolver_ApplicationsByLocalTenantID(t *testing.T) {
+	// GIVEN
+	localTenantID := "local-tenant-id"
+	filter := []*graphql.LabelFilter{{Key: "key", Query: str.Ptr("query")}}
+	first := 200
+	cursor := graphql.PageCursor("cursor")
+
+	modelApplications := fixApplicationPage([]*model.Application{fixModelApplication("foo", "tenant-foo", appName, "Bar")})
+	gqlApplications := []*graphql.Application{fixGQLApplication("foo", appName, "Bar")}
+	testErr := errors.New("Test error")
+
+	testCases := []struct {
+		Name                 string
+		PersistenceFn        func() *persistenceautomock.PersistenceTx
+		TransactionerFn      func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
+		ServiceFn            func() *automock.ApplicationService
+		ConverterFn          func() *automock.ApplicationConverter
+		LocalTenantID        string
+		Filter               []*graphql.LabelFilter
+		First                *int
+		Cursor               *graphql.PageCursor
+		ExpectedApplications *graphql.ApplicationPage
+		ExpectedErr          error
+	}{
+		{
+			Name:          "Returns error when starting transaction failed",
+			PersistenceFn: txtest.PersistenceContextThatExpectsCommit,
+			ServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				return appSvc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "MultipleToGraphQL")
+				return conv
+			},
+			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(nil, testErr).Once()
+				return transact
+			},
+			LocalTenantID:        localTenantID,
+			Filter:               filter,
+			First:                &first,
+			Cursor:               &cursor,
+			ExpectedApplications: nil,
+			ExpectedErr:          testErr,
+		},
+		{
+			Name:          "Returns error when paging argument first is nil",
+			PersistenceFn: txtest.PersistenceContextThatExpectsCommit,
+			ServiceFn: func() *automock.ApplicationService {
+				appSvc := &automock.ApplicationService{}
+				return appSvc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "MultipleToGraphQL")
+				return conv
+			},
+			TransactionerFn:      txtest.TransactionerThatSucceeds,
+			LocalTenantID:        localTenantID,
+			Filter:               filter,
+			First:                nil,
+			Cursor:               &cursor,
+			ExpectedApplications: nil,
+			ExpectedErr:          apperrors.NewInvalidDataError("missing required parameter 'first'"),
+		},
+		{
+			Name:            "ListByLocalTenantID returns error",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListByLocalTenantID", contextParam, localTenantID, labelfilter.MultipleFromGraphQL(filter), first, string(cursor)).Return(nil, testErr).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "MultipleToGraphQL")
+				return conv
+			},
+			LocalTenantID: localTenantID,
+			Filter:        filter,
+			First:         &first,
+			Cursor:        &cursor,
+			ExpectedErr:   testErr,
+		},
+		{
+			Name: "Returns error when transaction commit failed",
+			PersistenceFn: func() *persistenceautomock.PersistenceTx {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(testErr).Once()
+				return persistTx
+			},
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListByLocalTenantID", contextParam, localTenantID, labelfilter.MultipleFromGraphQL(filter), first, string(cursor)).Return(nil, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.AssertNotCalled(t, "MultipleToGraphQL")
+				return conv
+			},
+			TransactionerFn:      txtest.TransactionerThatSucceeds,
+			LocalTenantID:        localTenantID,
+			Filter:               filter,
+			First:                &first,
+			Cursor:               &cursor,
+			ExpectedApplications: nil,
+			ExpectedErr:          testErr,
+		},
+		{
+			Name:            "Success",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListByLocalTenantID", contextParam, localTenantID, labelfilter.MultipleFromGraphQL(filter), first, string(cursor)).Return(modelApplications, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.ApplicationConverter {
+				conv := &automock.ApplicationConverter{}
+				conv.On("MultipleToGraphQL", modelApplications.Data).Return(gqlApplications).Once()
+				return conv
+			},
+			LocalTenantID:        localTenantID,
+			Filter:               filter,
+			First:                &first,
+			Cursor:               &cursor,
+			ExpectedApplications: fixGQLApplicationPage(gqlApplications),
+			ExpectedErr:          nil,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persistTx := testCase.PersistenceFn()
+			transact := testCase.TransactionerFn(persistTx)
+			svc := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
+			resolver.SetConverter(converter)
+
+			// WHEN
+			result, err := resolver.ApplicationsByLocalTenantID(context.TODO(), testCase.LocalTenantID, testCase.Filter, testCase.First, testCase.Cursor)
+
+			// then
+			assert.Equal(t, testCase.ExpectedApplications, result)
+			if testCase.ExpectedErr != nil {
+				assert.Error(t, testCase.ExpectedErr, err)
+			} else {
+				require.Nil(t, err)
+			}
+
+			svc.AssertExpectations(t)
+			converter.AssertExpectations(t)
+		})
+	}
+}
+
 func TestResolver_ApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	// GIVEN
 	modelApplication := fixModelApplication("foo", "tenant-foo", appName, "Bar")
@@ -1345,7 +1510,7 @@ func TestResolver_Applications_DoubleAuthFlow(t *testing.T) {
 
 	certConsumer := consumer.Consumer{
 		ConsumerID:    consumerID,
-		ConsumerType:  consumer.ExternalCertificate,
+		Type:          consumer.ExternalCertificate,
 		Flow:          oathkeeper.CertificateFlow,
 		OnBehalfOf:    onBehalfOf,
 		Region:        region,
@@ -2505,6 +2670,163 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 	})
 }
 
+func TestResolver_Operations(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+	now := time.Now()
+
+	operations := []*model.Operation{
+		{
+			ID:        "operation-id",
+			OpType:    model.OperationTypeOrdAggregation,
+			Status:    model.OperationStatusScheduled,
+			Error:     nil,
+			CreatedAt: &now,
+			UpdatedAt: &now,
+		},
+	}
+	gqlOperations := []*graphql.Operation{
+		{
+			ID:            "operation-id",
+			OperationType: graphql.ScheduledOperationTypeOrdAggregation,
+			Status:        graphql.OperationStatusScheduled,
+			Error:         nil,
+			CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(&now),
+			UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(&now),
+		},
+	}
+	gqlApp := fixGQLApplication("application-id", "bar", "baz")
+	gqlAppWithAppTemplateID := fixGQLApplication("application-id", "bar", "baz")
+	gqlAppWithAppTemplateID.ApplicationTemplateID = str.Ptr("app-template-id")
+
+	converterMock := func() *automock.OperationConverter {
+		converter := &automock.OperationConverter{}
+		converter.On("MultipleToGraphQL", operations).Return(gqlOperations, nil).Once()
+		return converter
+	}
+	applicationTemplateID := ""
+
+	testErr := errors.New("this is a test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name            string
+		TransactionerFn func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		OperationSvcFn  func() *automock.OperationService
+		OperationConvFn func() *automock.OperationConverter
+		Input           *graphql.Application
+		ExpectedOutput  []*graphql.Operation
+		ExpectedError   error
+	}{
+		{
+			Name:            "Success",
+			TransactionerFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
+				return operationSvc
+			},
+			OperationConvFn: converterMock,
+			Input:           gqlApp,
+			ExpectedOutput:  gqlOperations,
+			ExpectedError:   nil,
+		},
+		{
+			Name:            "Success - with application template id",
+			TransactionerFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlAppWithAppTemplateID.ID, *gqlAppWithAppTemplateID.ApplicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
+				return operationSvc
+			},
+			OperationConvFn: converterMock,
+			Input:           gqlAppWithAppTemplateID,
+			ExpectedOutput:  gqlOperations,
+			ExpectedError:   nil,
+		},
+		{
+			Name:            "Get operation by data and type returns error",
+			TransactionerFn: txGen.ThatDoesntExpectCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(nil, testErr).Once()
+				return operationSvc
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			Input:          gqlApp,
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Fail while beginning transaction",
+			TransactionerFn: txGen.ThatFailsOnBegin,
+			OperationSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			Input:          gqlApp,
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Fail while committing transaction",
+			TransactionerFn: txGen.ThatFailsOnCommit,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
+				return operationSvc
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			Input:          gqlApp,
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+		{
+			Name:            "Fail when application is nil",
+			TransactionerFn: txGen.ThatDoesntStartTransaction,
+			OperationSvcFn: func() *automock.OperationService {
+				return &automock.OperationService{}
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				return &automock.OperationConverter{}
+			},
+			Input:          nil,
+			ExpectedOutput: nil,
+			ExpectedError:  errors.New("Application cannot be empty"),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TransactionerFn()
+			operationSvc := testCase.OperationSvcFn()
+			operationConv := testCase.OperationConvFn()
+
+			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, operationSvc, operationConv, "", "")
+
+			// WHEN
+			result, err := resolver.Operations(ctx, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, operationSvc, transact, persist, operationConv)
+		})
+	}
+}
+
 func TestResolver_Bundles(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("test error")
@@ -3396,175 +3718,6 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, "", "")
 			// WHEN
 			result, err := resolver.ApplicationTemplate(context.TODO(), testCase.Application)
-
-			// then
-			assert.Equal(t, testCase.ExpectedResult, result)
-			if testCase.ExpectedErr != nil {
-				assert.EqualError(t, testCase.ExpectedErr, err.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-
-			svc.AssertExpectations(t)
-			converter.AssertExpectations(t)
-			transact.AssertExpectations(t)
-			persistTx.AssertExpectations(t)
-		})
-	}
-}
-
-func TestResolver_TenantBusinessType(t *testing.T) {
-	// GIVEN
-
-	id := "foo"
-	//appTemplateName := "app-template"
-
-	gqlApp := fixGQLApplication(id, "name", "desc")
-	gqlAppWithTbt := fixGQLApplicationWithTenantBusinessType(id, "name", "desc")
-	gqlTbt := fixGQLTenantBusinessType(id, "test-code", "test-name")
-	modelTbt := fixModelTenantBusinessType(tbtID, "test-code", "test-name")
-	//gqlAppTemplate := fixGQLApplicationTemplate(appTemplateID, appTemplateName)
-
-	testErr := errors.New("Test error")
-
-	testCases := []struct {
-		Name            string
-		PersistenceFn   func() *persistenceautomock.PersistenceTx
-		TransactionerFn func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner
-		ServiceFn       func() *automock.TenantBusinessTypeService
-		ConverterFn     func() *automock.TenantBusinessTypeConverter
-		Application     *graphql.Application
-		ExpectedResult  *graphql.TenantBusinessType
-		ExpectedErr     error
-	}{
-		{
-			Name:            "Success",
-			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
-			TransactionerFn: txtest.TransactionerThatSucceeds,
-			ServiceFn: func() *automock.TenantBusinessTypeService {
-				svc := &automock.TenantBusinessTypeService{}
-				svc.On("GetByID", contextParam, tbtID).Return(modelTbt, nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.TenantBusinessTypeConverter {
-				conv := &automock.TenantBusinessTypeConverter{}
-				conv.On("ToGraphQL", modelTbt).Return(gqlTbt, nil).Once()
-				return conv
-			},
-			Application:    gqlAppWithTbt,
-			ExpectedResult: gqlTbt,
-			ExpectedErr:    nil,
-		},
-		{
-			Name:            "Success when application does not contain tenant business type",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.NoopTransactioner,
-			ServiceFn: func() *automock.TenantBusinessTypeService {
-				svc := &automock.TenantBusinessTypeService{}
-				svc.AssertNotCalled(t, "GetByID", contextParam, tbtID)
-				return svc
-			},
-			ConverterFn: func() *automock.TenantBusinessTypeConverter {
-				conv := &automock.TenantBusinessTypeConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL", modelTbt)
-				return conv
-			},
-			Application:    gqlApp,
-			ExpectedResult: nil,
-			ExpectedErr:    nil,
-		},
-		{
-			Name:            "Returns error when application is empty",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.NoopTransactioner,
-			ServiceFn: func() *automock.TenantBusinessTypeService {
-				svc := &automock.TenantBusinessTypeService{}
-				svc.AssertNotCalled(t, "GetByID", contextParam, tbtID)
-				return svc
-			},
-			ConverterFn: func() *automock.TenantBusinessTypeConverter {
-				conv := &automock.TenantBusinessTypeConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL", modelTbt)
-				return conv
-			},
-			Application:    nil,
-			ExpectedResult: nil,
-			ExpectedErr:    apperrors.NewInternalError("Application cannot be empty"),
-		},
-		{
-			Name:          "Returns error when transaction begin fails",
-			PersistenceFn: txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: func(persistTx *persistenceautomock.PersistenceTx) *persistenceautomock.Transactioner {
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, testErr).Once()
-				return transact
-			},
-			ServiceFn: func() *automock.TenantBusinessTypeService {
-				svc := &automock.TenantBusinessTypeService{}
-				svc.AssertNotCalled(t, "GetByID", contextParam, tbtID)
-				return svc
-			},
-			ConverterFn: func() *automock.TenantBusinessTypeConverter {
-				conv := &automock.TenantBusinessTypeConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL", modelTbt)
-				return conv
-			},
-			Application:    gqlAppWithTbt,
-			ExpectedResult: nil,
-			ExpectedErr:    testErr,
-		},
-		{
-			Name: "Returns error when transaction commit fails",
-			PersistenceFn: func() *persistenceautomock.PersistenceTx {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(testErr).Once()
-				return persistTx
-			},
-			TransactionerFn: txtest.TransactionerThatSucceeds,
-			ServiceFn: func() *automock.TenantBusinessTypeService {
-				svc := &automock.TenantBusinessTypeService{}
-				svc.On("GetByID", contextParam, tbtID).Return(modelTbt, nil).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.TenantBusinessTypeConverter {
-				conv := &automock.TenantBusinessTypeConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL", modelTbt)
-				return conv
-			},
-			Application:    gqlAppWithTbt,
-			ExpectedResult: nil,
-			ExpectedErr:    testErr,
-		},
-		{
-			Name:            "Returns error when tenant business type is not found",
-			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
-			TransactionerFn: txtest.TransactionerThatDoesARollback,
-			ServiceFn: func() *automock.TenantBusinessTypeService {
-				svc := &automock.TenantBusinessTypeService{}
-				svc.On("GetByID", contextParam, tbtID).Return(nil, testErr).Once()
-				return svc
-			},
-			ConverterFn: func() *automock.TenantBusinessTypeConverter {
-				conv := &automock.TenantBusinessTypeConverter{}
-				conv.AssertNotCalled(t, "ToGraphQL", modelTbt)
-				return conv
-			},
-			Application:    gqlAppWithTbt,
-			ExpectedResult: nil,
-			ExpectedErr:    errors.Wrapf(testErr, "no tenant business type found with id %s", tbtID),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			svc := testCase.ServiceFn()
-			converter := testCase.ConverterFn()
-			persistTx := testCase.PersistenceFn()
-			transact := testCase.TransactionerFn(persistTx)
-
-			resolver := application.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, "", "")
-			// WHEN
-			result, err := resolver.TenantBusinessType(context.TODO(), testCase.Application)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)

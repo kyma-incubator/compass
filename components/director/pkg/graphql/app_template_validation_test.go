@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation/inputvalidationtest"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -18,21 +20,34 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 	testPlaceholderName := "test"
 
 	testCases := []struct {
-		Name  string
-		Value []*graphql.PlaceholderDefinitionInput
-		Valid bool
+		Name                             string
+		Value                            []*graphql.PlaceholderDefinitionInput
+		ApplicationTemplateInputProvider func() graphql.ApplicationTemplateInput
+		Error                            error
 	}{
 		{
 			Name: "Valid",
 			Value: []*graphql.PlaceholderDefinitionInput{
 				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr("displayName")},
 			},
-			Valid: true,
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Error:                            nil,
 		},
 		{
-			Name:  "Valid - no placeholders",
+			Name:                             "Invalid - no placeholders defined",
+			Value:                            []*graphql.PlaceholderDefinitionInput{},
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Error:                            errors.New(`Placeholder [name=test] is used in the application input but it is not defined in the Placeholders array.`),
+		},
+		{
+			Name:  "Invalid - empty placeholder in app input",
 			Value: []*graphql.PlaceholderDefinitionInput{},
-			Valid: true,
+			ApplicationTemplateInputProvider: func() graphql.ApplicationTemplateInput {
+				at := fixValidApplicationTemplateInput()
+				at.ApplicationInput.Description = str.Ptr("{{}}")
+				return at
+			},
+			Error: errors.New("Empty placeholder [name=] provided in the Application Input."),
 		},
 		{
 			Name: "Invalid - not unique",
@@ -40,30 +55,31 @@ func TestApplicationTemplateInput_Validate_Rule_ValidPlaceholders(t *testing.T) 
 				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr("displayName")},
 				{Name: testPlaceholderName, Description: str.Ptr("Different description"), JSONPath: str.Ptr("displayName2")},
 			},
-			Valid: false,
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Error:                            errors.New("placeholder [name=test] not unique."),
 		},
 		{
 			Name: "Invalid - not used",
 			Value: []*graphql.PlaceholderDefinitionInput{
 				{Name: "notused", Description: str.Ptr("Test description"), JSONPath: str.Ptr("displayName")},
 			},
-			Valid: false,
-		},
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Error:                            errors.New("application input does not use provided placeholder [name=notused].")},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidApplicationTemplateInput()
-			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
-			sut.Placeholders = testCase.Value
+			applicationTemplate := testCase.ApplicationTemplateInputProvider()
+			applicationTemplate.Placeholders = testCase.Value
 			// WHEN
-			err := sut.Validate()
+
+			err := applicationTemplate.Validate()
 			// THEN
-			if testCase.Valid {
+			if testCase.Error == nil {
 				require.NoError(t, err)
 			} else {
-				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.Error.Error())
 			}
 		})
 	}
@@ -212,25 +228,43 @@ func TestApplicationTemplateInput_Validate_ApplicationNamespace(t *testing.T) {
 func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 	testPlaceholderName := "test"
 	testCases := []struct {
-		Name  string
-		Value []*graphql.PlaceholderDefinitionInput
-		Valid bool
+		Name                             string
+		Value                            []*graphql.PlaceholderDefinitionInput
+		ApplicationTemplateInputProvider func() graphql.ApplicationTemplateInput
+		Valid                            bool
 	}{
 		{
 			Name: "Valid",
 			Value: []*graphql.PlaceholderDefinitionInput{
 				{Name: testPlaceholderName, Description: str.Ptr("Test description"), JSONPath: str.Ptr("displayName")},
 			},
-			Valid: true,
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Valid:                            true,
 		},
 		{
 			Name:  "Valid - Empty",
 			Value: []*graphql.PlaceholderDefinitionInput{},
+			ApplicationTemplateInputProvider: func() graphql.ApplicationTemplateInput {
+				at := fixValidApplicationTemplateInput()
+				at.ApplicationInput.Description = str.Ptr(testPlaceholderName)
+				return at
+			},
 			Valid: true,
+		},
+		{
+			Name:                             "Invalid - Empty placeholders array but placeholders are used in input",
+			Value:                            []*graphql.PlaceholderDefinitionInput{},
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Valid:                            false,
 		},
 		{
 			Name:  "Valid - Nil",
 			Value: nil,
+			ApplicationTemplateInputProvider: func() graphql.ApplicationTemplateInput {
+				at := fixValidApplicationTemplateInput()
+				at.ApplicationInput.Description = str.Ptr(testPlaceholderName)
+				return at
+			},
 			Valid: true,
 		},
 		{
@@ -238,25 +272,26 @@ func TestApplicationTemplateInput_Validate_Placeholders(t *testing.T) {
 			Value: []*graphql.PlaceholderDefinitionInput{
 				nil,
 			},
-			Valid: false,
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Valid:                            false,
 		},
 		{
 			Name: "Invalid - Nested validation error",
 			Value: []*graphql.PlaceholderDefinitionInput{
 				{},
 			},
-			Valid: false,
+			ApplicationTemplateInputProvider: applicationTemplateWithPlaceholderProvider(testPlaceholderName),
+			Valid:                            false,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidApplicationTemplateInput()
-			sut.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
-			sut.Placeholders = testCase.Value
+			appTemplate := testCase.ApplicationTemplateInputProvider()
+			appTemplate.Placeholders = testCase.Value
 			// WHEN
-			err := sut.Validate()
+			err := appTemplate.Validate()
 			// THEN
 			if testCase.Valid {
 				require.NoError(t, err)
@@ -380,9 +415,9 @@ func TestApplicationTemplateUpdateInput_Validate_Rule_ValidPlaceholders(t *testi
 			Valid: true,
 		},
 		{
-			Name:  "Valid - no placeholders",
+			Name:  "Invalid - no placeholders",
 			Value: []*graphql.PlaceholderDefinitionInput{},
-			Valid: true,
+			Valid: false,
 		},
 		{
 			Name: "Invalid - not unique",
@@ -529,14 +564,14 @@ func TestApplicationTemplateUpdateInput_Validate_Placeholders(t *testing.T) {
 			Valid: true,
 		},
 		{
-			Name:  "Valid - Empty",
+			Name:  "Invalid - Empty",
 			Value: []*graphql.PlaceholderDefinitionInput{},
-			Valid: true,
+			Valid: false,
 		},
 		{
-			Name:  "Valid - Nil",
+			Name:  "Invalid - Nil",
 			Value: nil,
-			Valid: true,
+			Valid: false,
 		},
 		{
 			Name: "Invalid - Nil in slice",
@@ -1040,6 +1075,13 @@ func fixValidApplicationTemplateInput() graphql.ApplicationTemplateInput {
 		Name: "valid",
 		ApplicationInput: &graphql.ApplicationJSONInput{
 			Name: "valid",
+			Webhooks: []*graphql.WebhookInput{
+				{
+					URL:           stringPtr("http://localhost.com"),
+					Type:          graphql.WebhookTypeConfigurationChanged,
+					InputTemplate: stringPtr(`{"context":{ {{ if .CustomerTenantContext.AccountID }}"btp": {"uclFormationId":"{{.FormationID}}","globalAccountId":"{{.CustomerTenantContext.AccountID}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ else }}"atom": {"uclFormationId":"{{.FormationID}}","path":"{{.CustomerTenantContext.Path}}","crmId":"{{.CustomerTenantContext.CustomerID}}"} {{ end }} },"items": [ {"uclAssignmentId":"{{ .Assignment.ID }}","operation":"{{.Operation}}","deploymentRegion":"{{if .Application.Labels.region }}{{.Application.Labels.region}}{{ else }}{{.ApplicationTemplate.Labels.region}}{{end }}","applicationNamespace":"{{ if .Application.ApplicationNamespace }}{{.Application.ApplicationNamespace}}{{else }}{{.ApplicationTemplate.ApplicationNamespace}}{{ end }}","applicationTenantId":"{{.Application.LocalTenantID}}","uclSystemTenantId":"{{.Application.ID}}",{{ if .ApplicationTemplate.Labels.parameters }}"parameters": {{.ApplicationTemplate.Labels.parameters}},{{ end }}"configuration": {{.ReverseAssignment.Value}} } ] }`),
+				},
+			},
 		},
 		AccessLevel: graphql.ApplicationTemplateAccessLevelGlobal,
 		Webhooks:    []*graphql.WebhookInput{},
@@ -1071,5 +1113,13 @@ func fixValidTemplateValueInput() graphql.TemplateValueInput {
 	return graphql.TemplateValueInput{
 		Placeholder: "test",
 		Value:       "",
+	}
+}
+
+func applicationTemplateWithPlaceholderProvider(testPlaceholderName string) func() graphql.ApplicationTemplateInput {
+	return func() graphql.ApplicationTemplateInput {
+		at := fixValidApplicationTemplateInput()
+		at.ApplicationInput.Description = str.Ptr(fmt.Sprintf("{{%s}}", testPlaceholderName))
+		return at
 	}
 }

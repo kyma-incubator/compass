@@ -217,6 +217,8 @@ spec:
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_NAME_PATH
               value: {{ .Values.global.director.selfRegister.saasAppNamePath }}
+            - name: APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH
+              value: {{ .Values.global.director.selfRegister.saasRegistryURLPath }}
             - name: APP_SELF_REGISTER_PATH
               value: {{ .Values.global.director.selfRegister.path }}
             - name: APP_SELF_REGISTER_NAME_QUERY_PARAM
@@ -243,14 +245,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET_NAME
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
             - name: APP_FETCH_TENANT_URL
               value: {{ tpl .Values.global.director.fetchTenantEndpoint $ | quote }}
             - name: APP_HTTP_CLIENT_SKIP_SSL_VALIDATION
@@ -324,6 +318,12 @@ spec:
             - name: APP_ORD_AGGREGATOR_CLIENT_TIMEOUT
               value: {{ .Values.global.ordAggregator.client.timeout }}
             - name: APP_ORD_AGGREGATOR_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_SYSTEM_FETCHER_SYNC_API
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.systemFetcher.prefix }}{{ .Values.global.systemFetcher.syncEndpoint }}"
+            - name: APP_SYSTEM_FETCHER_CLIENT_TIMEOUT
+              value: {{ .Values.global.systemFetcher.client.timeout }}
+            - name: APP_SYSTEM_FETCHER_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
           livenessProbe:
             httpGet:

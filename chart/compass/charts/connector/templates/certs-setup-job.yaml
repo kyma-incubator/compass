@@ -15,8 +15,9 @@ spec:
     metadata:
       name: {{ .Chart.Name }}-certs-setup-job
       namespace: {{ .Release.Namespace }}
+      labels:
+        sidecar.istio.io/inject: "false"
       annotations:
-        sidecar.istio.io/inject: “false”
         cluster-autoscaler.kubernetes.io/safe-to-evict: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-certs-setup-job

@@ -8,6 +8,19 @@ import (
 	gcli "github.com/machinebox/graphql"
 )
 
+func FixGetFormationsForObjectRequest(objectID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`query{
+				  result: formationsForObject(objectID: "%s"){
+					%s
+					formationAssignments(first:%d, after:"") {
+						%s
+					}
+					status {%s}
+				  }
+				}`, objectID, testctx.Tc.GQLFieldsProvider.ForFormation(), 200, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationAssignment()), testctx.Tc.GQLFieldsProvider.ForFormationStatus()))
+}
+
 func FixGetFormationRequest(formationID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`query{
@@ -89,10 +102,32 @@ func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Req
 			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
+func FixUnassignFormationGlobalRequest(objID, objType, formationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			result: unassignFormationGlobal(objectID:"%s", objectType: %s, formation: "%s"){
+					%s
+					formationAssignments(first:%d, after:"") {
+						%s
+					}
+					status {%s}
+				}
+			}`, objID, objType, formationID, testctx.Tc.GQLFieldsProvider.ForFormation(), 200, testctx.Tc.GQLFieldsProvider.Page(testctx.Tc.GQLFieldsProvider.ForFormationAssignment()), testctx.Tc.GQLFieldsProvider.ForFormationStatus()))
+}
+
 func FixResynchronizeFormationNotificationsRequest(formationID string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
 			  result: resynchronizeFormationNotifications(formationID:"%s"){
+				%s
+			  }
+			}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
+func FixFinalizeDraftFormationRequest(formationID string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: finalizeDraftFormation(formationID:"%s"){
 				%s
 			  }
 			}`, formationID, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
@@ -111,5 +146,13 @@ func FixFormationInput(formationName string, formationTemplateName *string) grap
 	return graphql.FormationInput{
 		Name:         formationName,
 		TemplateName: formationTemplateName,
+	}
+}
+
+func FixFormationInputWithState(formationName string, formationTemplateName, formationState *string) graphql.FormationInput {
+	return graphql.FormationInput{
+		Name:         formationName,
+		TemplateName: formationTemplateName,
+		State:        formationState,
 	}
 }

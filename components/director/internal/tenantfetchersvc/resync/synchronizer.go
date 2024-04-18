@@ -40,7 +40,7 @@ type TenantStorageService interface {
 //
 //go:generate mockery --name=TenantCreator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantCreator interface {
-	FetchTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMappingInput, error)
+	FetchTenants(ctx context.Context, externalTenantID string) ([]model.BusinessTenantMappingInput, error)
 	TenantsToCreate(ctx context.Context, region, fromTimestamp string) ([]model.BusinessTenantMappingInput, error)
 	CreateTenants(ctx context.Context, eventsTenants []model.BusinessTenantMappingInput) error
 }
@@ -220,16 +220,16 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		return nil
 	}
 
-	fetchedTenant, err := ts.creator.FetchTenant(ctx, tenantID)
+	fetchedTenants, err := ts.creator.FetchTenants(ctx, tenantID)
 	if err != nil {
 		return err
 	}
 
-	if fetchedTenant == nil && parentTenantID == "" {
+	if len(fetchedTenants) == 0 && parentTenantID == "" {
 		log.C(ctx).Infof("Tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID)
 		return apperrors.NewEmptyParentIDErrorWithMessage(fmt.Sprintf("tenant with ID %s was not found. Cannot store the tenant lazily, parent is empty", tenantID))
 	}
-	if fetchedTenant == nil {
+	if len(fetchedTenants) == 0 {
 		log.C(ctx).Infof("Tenant with ID %s was not found, it will be stored lazily", tenantID)
 		fetchedTenant := model.BusinessTenantMappingInput{
 			Name:           tenantID,
@@ -242,15 +242,19 @@ func (ts *TenantsSynchronizer) SynchronizeTenant(ctx context.Context, parentTena
 		}
 		return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{fetchedTenant})
 	}
-	if fetchedTenant.Region != "" {
-		fetchedTenant.Region = ts.config.RegionPrefix + fetchedTenant.Region
+
+	for idx := range fetchedTenants {
+		fetchedTenant := fetchedTenants[idx]
+		if fetchedTenant.Region != "" {
+			fetchedTenants[idx].Region = ts.config.RegionPrefix + fetchedTenant.Region
+		}
+
+		if len(fetchedTenant.Parents) == 0 && fetchedTenant.Type != string(tenant.CostObject) {
+			return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
+		}
 	}
 
-	if len(fetchedTenant.Parents) == 0 {
-		return fmt.Errorf("parent tenant not found of tenant with ID %s", tenantID)
-	}
-
-	return ts.creator.CreateTenants(ctx, []model.BusinessTenantMappingInput{*fetchedTenant})
+	return ts.creator.CreateTenants(ctx, fetchedTenants)
 }
 
 func (ts *TenantsSynchronizer) fetchFromDirector(ctx context.Context, tenantID string) (*model.BusinessTenantMapping, error) {

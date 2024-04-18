@@ -8,7 +8,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/stretchr/testify/require"
@@ -75,6 +78,7 @@ const (
 
 	// Formation constants
 	testFormationName       = "test-formation-name"
+	testFormationName2      = "test-formation-name-2"
 	initialFormationState   = string(model.InitialFormationState)
 	readyFormationState     = string(model.ReadyFormationState)
 	testFormationEmptyError = "{}"
@@ -110,13 +114,22 @@ var (
 	runtimeTypeDisplayName = str.Ptr("display name")
 	defaultTime            = time.Time{}
 
-	testErr = errors.New("Test error")
+	emptyCtx          = context.Background()
+	testErr           = errors.New("Test error")
+	unauthorizedError = apperrors.NewUnauthorizedError(apperrors.ShouldBeOwnerMsg)
+	notFoundError     = apperrors.NewNotFoundError(resource.FormationAssignment, FormationAssignmentID)
 
 	formationModelWithoutError = fixFormationModelWithoutError()
 	modelFormation             = model.Formation{
 		ID:                  FormationID,
 		FormationTemplateID: FormationTemplateID,
 		Name:                testFormationName,
+	}
+	modelFormationWithTenant = model.Formation{
+		ID:                  FormationID,
+		FormationTemplateID: FormationTemplateID,
+		Name:                testFormationName,
+		TenantID:            TntInternalID,
 	}
 	graphqlFormation = graphql.Formation{
 		ID:                  FormationID,
@@ -140,7 +153,8 @@ var (
 	)
 	TestConfigValueStr = "{\"configKey\":\"configValue\"}"
 
-	emptyFormationAssignment = &webhook.FormationAssignment{}
+	emptyFormationAssignment  = &webhook.FormationAssignment{}
+	emptyFormationAssignments = make([]*model.FormationAssignment, 0)
 
 	// Formation assignment notification variables
 	runtimeCtxNotificationWithAppTemplate = &webhookclient.FormationAssignmentNotificationRequest{
@@ -586,7 +600,9 @@ var (
 		FormationType: testFormationTemplateName,
 	}
 
-	formationWithInitialState              = fixFormationModelWithState(model.InitialFormationState)
+	formationWithInitialState = fixFormationModelWithState(model.InitialFormationState)
+	formationWithDraftState   = fixFormationModelWithState(model.DraftFormationState)
+
 	formationNotificationSyncDeleteRequest = &webhookclient.FormationNotificationRequest{
 		Request: &webhookclient.Request{
 			Webhook:       fixFormationLifecycleWebhookGQLModel(FormationLifecycleWebhookID, FormationTemplateID, graphql.WebhookModeSync),
@@ -856,6 +872,23 @@ var (
 	thirdFormationStatusParams  = dataloader.ParamFormationStatus{ID: FormationID + "3", State: string(model.ReadyFormationState)}
 	fourthPageFormations        = dataloader.ParamFormationStatus{ID: FormationID + "4", State: string(model.ReadyFormationState)}
 
+	formationAssignments = []*model.FormationAssignment{
+		{ID: FormationAssignmentID, FormationID: FormationID},
+		{ID: FormationAssignmentID2, FormationID: FormationID2},
+	}
+
+	modelFormations = []*model.Formation{
+		{
+			ID:                  FormationID,
+			FormationTemplateID: FormationTemplateID,
+			Name:                testFormationName,
+		},
+		{
+			ID:                  FormationID2,
+			FormationTemplateID: FormationTemplateID,
+			Name:                testFormationName2,
+		},
+	}
 	customerParentTenantResponse   = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.Customer)}
 	costObjectParentTenantResponse = []*model.BusinessTenantMapping{fixParentTenant(TntParentID, TntParentIDExternal, tnt.CostObject)}
 )
@@ -915,18 +948,6 @@ func unusedDataInputBuilder() *databuilderautomock.DataInputBuilder {
 	return &databuilderautomock.DataInputBuilder{}
 }
 
-func expectEmptySliceRuntimeContextRepo() *automock.RuntimeContextRepository {
-	rtmCtxRepo := &automock.RuntimeContextRepository{}
-	rtmCtxRepo.On("ListByIDs", mock.Anything, TntInternalID, []string{}).Return(nil, nil).Once()
-	return rtmCtxRepo
-}
-
-func expectEmptySliceApplicationRepo() *automock.ApplicationRepository {
-	appRepo := &automock.ApplicationRepository{}
-	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
-	return appRepo
-}
-
 func expectEmptySliceApplicationAndReadyApplicationRepo() *automock.ApplicationRepository {
 	appRepo := &automock.ApplicationRepository{}
 	app := &model.Application{
@@ -936,7 +957,6 @@ func expectEmptySliceApplicationAndReadyApplicationRepo() *automock.ApplicationR
 		},
 	}
 	appRepo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(app, nil).Once()
-	appRepo.On("ListAllByIDs", mock.Anything, TntInternalID, []string{}).Return([]*model.Application{}, nil).Once()
 	return appRepo
 }
 
@@ -1027,12 +1047,12 @@ func fixCtxWithTenant() context.Context {
 	return ctx
 }
 
-func fixModel(scenarioName string) model.AutomaticScenarioAssignment {
+func fixModel(scenarioName string) *model.AutomaticScenarioAssignment {
 	return fixModelWithScenarioName(scenarioName)
 }
 
-func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+func fixModelWithScenarioName(scenario string) *model.AutomaticScenarioAssignment {
+	return &model.AutomaticScenarioAssignment{
 		ScenarioName:   scenario,
 		Tenant:         tenantID.String(),
 		TargetTenantID: TargetTenantID,
@@ -1383,6 +1403,7 @@ func fixFormationEntity() *formation.Entity {
 func fixGqlFormation() *graphql.Formation {
 	return &graphql.Formation{
 		ID:                            FormationID,
+		TenantID:                      TntInternalID,
 		Name:                          testFormationName,
 		FormationTemplateID:           FormationTemplateID,
 		State:                         string(model.InitialFormationState),
@@ -1429,7 +1450,7 @@ func fixFormationAssignmentModel(state string, configValue json.RawMessage) *mod
 	}
 }
 
-func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationState) *model.FormationAssignment {
+func fixFormationAssignmentModelWithParameters(id, formationID, source, target string, sourceType, targetType model.FormationAssignmentType, state model.FormationAssignmentState) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:                            id,
 		FormationID:                   formationID,

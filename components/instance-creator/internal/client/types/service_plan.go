@@ -38,6 +38,11 @@ func (s *ServicePlan) GetResourceURLPath() string {
 	return paths.ServicePlansPath
 }
 
+// GetResourceName gets the ServicePlan Name
+func (s *ServicePlan) GetResourceName() string {
+	return s.Name
+}
+
 // ServicePlans represents a collection of Service Plan
 type ServicePlans struct {
 	NumItems int            `json:"num_items"`
@@ -52,6 +57,15 @@ func (sp *ServicePlans) GetType() string {
 // GetURLPath gets the URL Path of the ServicePlan
 func (sp *ServicePlans) GetURLPath() string {
 	return paths.ServicePlansPath
+}
+
+// GetIDs gets the IDs of all ServicePlans
+func (sps *ServicePlans) GetIDs() []string {
+	ids := make([]string, 0, sps.NumItems)
+	for _, sp := range sps.Items {
+		ids = append(ids, sp.ID)
+	}
+	return ids
 }
 
 // ServicePlanMatchParameters holds all the necessary fields that are used when matching ServicePlans

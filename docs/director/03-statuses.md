@@ -1,4 +1,4 @@
-# Application and Runtime status
+# Application and Runtime Status
 
 Applications and Runtimes in the Director use the `Status` field to inform the user about their condition. The possible conditions are:
 
@@ -7,7 +7,7 @@ Applications and Runtimes in the Director use the `Status` field to inform the u
 - `CONNECTED` - used for connected Applications and Runtimes
 - `FAILED` - used for Applications and Runtimes whose attempt to connect with the Director failed
 
-## Automatic status update
+## Automatic Status Update
 
 When a given Application or Runtime communicates with the Director API for the first time, the Director automatically sets the entity's status to `CONNECTED`.
 

@@ -84,9 +84,11 @@ type ClientCertificateAuthDestRequestBody struct {
 // OAuth2ClientCredsDestRequestBody contains the necessary fields for the destination request body with authentication type OAuth2ClientCredentials
 type OAuth2ClientCredsDestRequestBody struct {
 	BaseDestinationRequestBody
-	TokenServiceURL string `json:"tokenServiceURL"`
-	ClientID        string `json:"clientId"`
-	ClientSecret    string `json:"clientSecret"`
+	TokenServiceURL     string `json:"tokenServiceURL"`
+	TokenServiceURLType string `json:"tokenServiceURLType"`
+	ClientID            string `json:"clientId"`
+	KeyStoreLocation    string `json:"tokenServiceKeystoreLocation"`
+	ClientSecret        string `json:"clientSecret"`
 }
 
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
@@ -233,11 +235,28 @@ func (b *OAuth2ClientCredsDestRequestBody) Validate() error {
 		validation.Field(&b.AuthenticationType, validation.In(destinationcreatorpkg.AuthTypeOAuth2ClientCredentials)),
 		validation.Field(&b.TokenServiceURL, validation.Required),
 		validation.Field(&b.ClientID, validation.Required),
-		validation.Field(&b.ClientSecret, validation.Required),
+		validation.Field(&b.KeyStoreLocation, validation.When(b.ClientSecret != "", validation.Empty).Else(validation.Required)),
+		validation.Field(&b.ClientSecret, validation.When(b.KeyStoreLocation != "", validation.Empty).Else(validation.Required)),
 	)
 }
 
 func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.Destination {
+	if b.KeyStoreLocation != "" {
+		return &destinationcreator.OAuth2mTLSDestination{
+			NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
+				Name:           b.Name,
+				Type:           b.Type,
+				URL:            b.URL,
+				Authentication: b.AuthenticationType,
+				ProxyType:      b.ProxyType,
+			},
+			TokenServiceURL:     b.TokenServiceURL,
+			TokenServiceURLType: b.TokenServiceURLType,
+			ClientID:            b.ClientID,
+			KeyStoreLocation:    b.KeyStoreLocation,
+		}
+	}
+
 	return &destinationcreator.OAuth2ClientCredentialsDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
 			Name:           b.Name,
@@ -253,7 +272,11 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 }
 
 func (b *OAuth2ClientCredsDestRequestBody) GetDestinationType() string {
-	return destinationcreator.OAuth2ClientCredentialsType
+	if b.KeyStoreLocation != "" {
+		return destinationcreator.OAuth2mTLSType
+	} else {
+		return destinationcreator.OAuth2ClientCredentialsType
+	}
 }
 
 // Validate validates that the SAML assertion certificate request body contains the required fields, and they are valid

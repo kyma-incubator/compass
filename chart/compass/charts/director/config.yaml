@@ -6,6 +6,7 @@ graphql:
     applications: ["application:read"]
     application: ["application:read"]
     applicationBySystemNumber: ["application:read"]
+    applicationsByLocalTenantID: ["application:read"]
     applicationByLocalTenantIDAndAppTemplateID: ["application:read"]
     applicationsForRuntime: ["application:read"]
     applicationTemplates: ["application_template:read"]
@@ -30,6 +31,7 @@ graphql:
     formation: ["formation:read"]
     formationByName: ["formation:read"]
     formations: ["formation:read"]
+    formationsForObject: ["formation:global_read"]
     formationTemplate: [ "formation_template:read" ]
     formationTemplates: [ "formation_template:read" ]
     formationTemplatesByName: [ "formation_template:read" ]
@@ -84,7 +86,9 @@ graphql:
     deleteFormation: ["formation:write"]
     assignFormation: [ "formation:write" ]
     unassignFormation: [ "formation:write" ]
+    unassignFormationGlobal: [ "formation:global_write" ]
     resynchronizeFormationNotifications: [ "formation:write" ]
+    finalizeDraftFormation: [ "formation:write" ]
     createLabelDefinition: ["label_definition:write"]
     updateLabelDefinition: ["label_definition:write"]
     setApplicationLabel: ["application:write"]
@@ -113,6 +117,7 @@ graphql:
     writeTenants: ["tenant:write"]
     deleteTenants: ["tenant:write"]
     updateTenant: ["tenant:write"]
+    setTenantLabel: ["tenant:write"]
     subscribeTenant: ["tenant_subscription:write"]
     unsubscribeTenant: ["tenant_subscription:write"]
     updateSystemAuth: [ "ory_internal" ]
@@ -159,6 +164,8 @@ graphql:
       webhooks: ["formation_template.webhooks:read"]
     integration_system:
       auths: ["integration_system.auths:read"]
+    formation:
+      tenant_id: ["formation:global_read"]
 
   input:
     application:

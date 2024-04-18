@@ -329,8 +329,8 @@ func TestRepository_ListByFormationIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT formation_id AS id, COUNT(*) AS total_count FROM public.formation_assignments WHERE tenant_id = $1 GROUP BY formation_id ORDER BY formation_id ASC`),
-				Args:     []driver.Value{TestTenantID},
+				Query:    regexp.QuoteMeta(`SELECT formation_id AS id, COUNT(*) AS total_count FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id IN ($2, $3, $4) GROUP BY formation_id ORDER BY formation_id ASC`),
+				Args:     []driver.Value{TestTenantID, emptyPageFormationID, onePageFormationID, multiplePageFormationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"id", "total_count"}).AddRow(emptyPageFormationID, 0).AddRow(onePageFormationID, 1).AddRow(multiplePageFormationID, 2)}
@@ -414,6 +414,36 @@ func TestRepository_ListAllForObject(t *testing.T) {
 		ExpectedDBEntities:        []interface{}{faEntityWithConfigAndError},
 		RepoConstructorFunc:       formationassignment.NewRepository,
 		MethodArgs:                []interface{}{TestTenantID, TestFormationID, TestSource},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_ListAllForObjectGlobal(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List All Formations Assignments for object globally",
+		MethodName: "ListAllForObjectGlobal",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE (source = $1 OR target = $2)`),
+				Args:     []driver.Value{TestSource, TestSource},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedModelEntities:     []interface{}{faModelWithConfigAndError},
+		ExpectedDBEntities:        []interface{}{faEntityWithConfigAndError},
+		RepoConstructorFunc:       formationassignment.NewRepository,
+		MethodArgs:                []interface{}{TestSource},
 		DisableConverterErrorTest: true,
 	}
 
@@ -524,10 +554,10 @@ func TestRepository_Update(t *testing.T) {
 	t.Run("Success when the formation assignment state is changed and timestamp is updated", func(t *testing.T) {
 		// GIVEN
 		faModelWithReadyState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
-		faModelWithReadyState.State = TestReadyState
+		faModelWithReadyState.State = readyAssignmentState
 
 		faEntityWithReadyState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
-		faEntityWithReadyState.State = TestReadyState
+		faEntityWithReadyState.State = readyAssignmentState
 
 		slqxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
@@ -538,17 +568,50 @@ func TestRepository_Update(t *testing.T) {
 			WithArgs(TestID).WillReturnRows(rows)
 
 		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
-			WithArgs(TestReadyState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
+			WithArgs(readyAssignmentState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		mockConverter := &automock.EntityConverter{}
 		defer mockConverter.AssertExpectations(t)
 		mockConverter.On("ToEntity", faModelWithReadyState).Return(faEntityWithReadyState)
 
-		repo := formationassignment.NewRepository(mockConverter)
+		r := formationassignment.NewRepository(mockConverter)
 
 		// WHEN
-		err := repo.Update(ctx, faModelWithReadyState)
+		err := r.Update(ctx, faModelWithReadyState)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Success when the formation assignment state is CONFIG_PENDING but the configuration is changed, last state change timestamp should be updated", func(t *testing.T) {
+		// GIVEN
+		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithConfigPendingState.State = configPendingAssignmentState
+
+		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithConfigPendingState.State = configPendingAssignmentState
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		rows := sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, configPendingAssignmentState, TestNewConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`)).
+			WithArgs(TestID).WillReturnRows(rows)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
+			WithArgs(configPendingAssignmentState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", faModelWithConfigPendingState).Return(faEntityWithConfigPendingState)
+
+		r := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := r.Update(ctx, faModelWithConfigPendingState)
 
 		// THEN
 		require.NoError(t, err)
@@ -746,7 +809,7 @@ func TestRepository_GetAssignmentsForFormationWithStates(t *testing.T) {
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:    regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE tenant_id = $1 AND formation_id = $2 AND state IN ($3, $4)`),
-				Args:     []driver.Value{TestTenantID, TestFormationID, TestStateInitial, TestReadyState},
+				Args:     []driver.Value{TestTenantID, TestFormationID, TestStateInitial, readyAssignmentState},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)}
@@ -762,7 +825,7 @@ func TestRepository_GetAssignmentsForFormationWithStates(t *testing.T) {
 		ExpectedModelEntities:     []interface{}{faModelWithConfigAndError},
 		ExpectedDBEntities:        []interface{}{faEntityWithConfigAndError},
 		RepoConstructorFunc:       formationassignment.NewRepository,
-		MethodArgs:                []interface{}{TestTenantID, TestFormationID, []string{TestStateInitial, TestReadyState}},
+		MethodArgs:                []interface{}{TestTenantID, TestFormationID, []string{TestStateInitial, readyAssignmentState}},
 		MethodName:                "GetAssignmentsForFormationWithStates",
 		DisableConverterErrorTest: true,
 	}

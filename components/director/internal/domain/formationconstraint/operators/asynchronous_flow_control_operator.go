@@ -6,6 +6,7 @@ import (
 	"runtime/debug"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -70,7 +71,7 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 			return false, err
 		}
 		if ri.Operation == model.AssignFormation {
-			if statusReport.State == string(model.ReadyAssignmentState) {
+			if statusReport.State == string(model.ReadyAssignmentState) && !isNotificationStatusReportConfigEmpty(statusReport) {
 				var assignmentConfig Configuration
 				if err = json.Unmarshal(statusReport.Configuration, &assignmentConfig); err != nil {
 					return false, errors.Wrapf(err, "while unmarshalling tenant mapping response configuration for assignment with ID: %q", formationAssignment.ID)
@@ -83,6 +84,20 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 		}
 		if ri.Operation == model.UnassignFormation {
 			if formationAssignment.State == string(model.DeletingAssignmentState) && statusReport.State == string(model.ReadyAssignmentState) {
+				consumerInfo, err := consumer.LoadFromContext(ctx)
+				if err != nil {
+					return false, errors.Wrap(err, "while fetching consumer info from context")
+				}
+
+				// This handles the case when there is the following race condition:
+				// 1. First unassign sends a notification to the participant, the participant responds with READY and the assignment is in INSTANCE_CREATOR_DELETING
+				// 2. The second is started after the first and unassign sees the assignment as READY initially, but upon update it sees INSTANCE_CREATOR_DELETING and reverts it back to DELETING.
+				// Theoretically the instance creator won't respond unless it has been notified.
+				if consumerInfo.Type == consumer.InstanceCreator {
+					log.C(ctx).Infof("Instance creator reported %q, proceeding with deletion of formation assignment with ID %q", statusReport.State, formationAssignment.ID)
+					return true, nil
+				}
+
 				reverseAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.ReverseFAMemoryAddress)
 				if err != nil {
 					log.C(ctx).Warnf(errors.Wrapf(err, "Reverse assignment not found").Error())

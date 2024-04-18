@@ -8,6 +8,11 @@ gateway:
       authMode: "oauth-mtls"
       enabled: true
 global:
+  kubernetes:
+    # Enable ClusterRoleBinding needed for local installation but unsafe on GKE
+    # It allows anonymous users to retrieve the JWKS of the K8S server used to create SA tokens
+    # Whenever this is running on GKE, there is a JWKS URL given by Google and is unneeded and unsafe
+    local: true
   isForTesting: true
   auditlog:
     skipSSLValidation: true
@@ -23,6 +28,10 @@ global:
       manage: true
   domainName: "local.kyma.dev"
   director:
+    formationMappingAsyncStatusApi:
+      authentication:
+        hydratorAuthenticator:
+          enabled: true
     subscription:
       subscriptionProviderLabelKey: "subscriptionProviderId"
     ordWebhookMappings: '[{ "OrdUrlPath": "/.well-known/open-resource-discovery", "Type": "SAP temp1", "PpmsProductVersions": ["12345"], "SubdomainSuffix": "" }, { "ProxyURL": "http://compass-external-services-mock.compass-system.svc.cluster.local:8090", "ProxyHeaderTemplate": "{\"target_host\": [\"{{.Application.BaseURL}}\"] }", "OrdUrlPath": "/proxy", "SubdomainSuffix": "-api", "Type": "SAP Proxy Template" }]'
@@ -32,9 +41,9 @@ global:
         manage: true
       publicPrivateKeysSecret:
         manage: true
-  extSvcCertConfiguration:
+  instanceCreatorCertConfiguration:
     secrets:
-      extSvcCertSvcSecret:
+      instanceCreatorSvcSecret:
         manage: true
   externalServicesMock:
     auditlog:
@@ -149,6 +158,9 @@ global:
           discriminatorValue: ""
           entityTypeField: "type"
           idField: "guid"
+          costObjectIDField: "costObject"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
           nameField: "displayName"
           tenantEventsField: "events"
           totalPagesField: "totalPages"
@@ -182,6 +194,7 @@ global:
       enabled: true
       api:
         regionName: "central"
+        regionPrefix: "cf-"
         authConfigSecretKey: "central"
         endpoints:
           subaccountCreated: "http://compass-external-services-mock.compass-system.svc.cluster.local:8080/tenant-fetcher/subaccount-create"
@@ -200,6 +213,9 @@ global:
           totalPagesField: "totalPages"
           totalResultsField: "totalResults"
           labelsField: "labels"
+          subaccountCostObjectIDField: "costObjectId"
+          subaccountCostObjectTypeField: "costObjectType"
+          regionField: "region"
       kubernetes:
         configMapNamespace: "compass-system"
         pollInterval: "2s"

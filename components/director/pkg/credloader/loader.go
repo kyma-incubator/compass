@@ -25,11 +25,14 @@ import (
 
 const certsListLoaderCorrelationID = "creds-loader-id"
 
-type credentialType string
+// CredentialType determines if the loader is for Keys or for Certificates
+type CredentialType string
 
 const (
-	keysCredential        credentialType = "KeysCredentials"
-	certificateCredential credentialType = "CertificateCredentials"
+	// KeysCredential is a constant for Keys
+	KeysCredential CredentialType = "KeysCredentials"
+	// CertificateCredential is a constant for Certificates
+	CertificateCredential CredentialType = "CertificateCredentials"
 )
 
 // Loader provide mechanism to load credential data into in-memory storage
@@ -50,13 +53,13 @@ type loader struct {
 	certCache         *certificateCache
 	keyCache          *KeyCache
 	secretManagers    map[string]Manager
-	secretNamesTypes  map[string]credentialType
+	secretNamesTypes  map[string]CredentialType
 	reconnectInterval time.Duration
 }
 
 // NewCertificateLoader creates new certificate loader which is responsible to watch a secret containing client certificate
 // and update in-memory cache with that certificate if there is any change
-func NewCertificateLoader(config CertConfig, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]credentialType, reconnectInterval time.Duration) Loader {
+func NewCertificateLoader(config CertConfig, certCache *certificateCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
 	return &loader{
 		config:            config,
 		certCache:         certCache,
@@ -68,7 +71,7 @@ func NewCertificateLoader(config CertConfig, certCache *certificateCache, secret
 
 // NewKeyLoader creates new certificate loader which is responsible to watch a secret containing public/private keys
 // and update in-memory cache with that keys if there is any change
-func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]credentialType, reconnectInterval time.Duration) Loader {
+func NewKeyLoader(keysConfig KeysConfig, keysCache *KeyCache, secretManagers map[string]Manager, secretNames map[string]CredentialType, reconnectInterval time.Duration) Loader {
 	return &loader{
 		keysConfig:        keysConfig,
 		keyCache:          keysCache,
@@ -85,11 +88,6 @@ func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCach
 		return nil, err
 	}
 
-	parsedExtSvcCertSecret, err := namespacedname.Parse(certLoaderConfig.ExtSvcClientCertSecret)
-	if err != nil {
-		return nil, err
-	}
-
 	kubeConfig := kubernetes.Config{}
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, kubeConfig.PollInterval, kubeConfig.PollTimeout, kubeConfig.Timeout)
 	if err != nil {
@@ -98,12 +96,10 @@ func StartCertLoader(ctx context.Context, certLoaderConfig CertConfig) (CertCach
 
 	certCache := NewCertificateCache()
 	secretManagers := map[string]Manager{
-		parsedCertSecret.Name:       k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
-		parsedExtSvcCertSecret.Name: k8sClientSet.CoreV1().Secrets(parsedExtSvcCertSecret.Namespace),
+		parsedCertSecret.Name: k8sClientSet.CoreV1().Secrets(parsedCertSecret.Namespace),
 	}
-	secretNames := map[string]credentialType{
-		parsedCertSecret.Name:       certificateCredential,
-		parsedExtSvcCertSecret.Name: certificateCredential,
+	secretNames := map[string]CredentialType{
+		parsedCertSecret.Name: CertificateCredential,
 	}
 
 	certLoader := NewCertificateLoader(certLoaderConfig, certCache, secretManagers, secretNames, time.Second)
@@ -129,8 +125,8 @@ func StartKeyLoader(ctx context.Context, keysLoaderConfig KeysConfig) (KeysCache
 	secretManagers := map[string]Manager{
 		parsedKeysSecret.Name: k8sClientSet.CoreV1().Secrets(parsedKeysSecret.Namespace),
 	}
-	secretNames := map[string]credentialType{
-		parsedKeysSecret.Name: keysCredential,
+	secretNames := map[string]CredentialType{
+		parsedKeysSecret.Name: KeysCredential,
 	}
 
 	keyLoader := NewKeyLoader(keysLoaderConfig, keysCache, secretManagers, secretNames, time.Second)
@@ -177,8 +173,8 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 				}
 				log.C(ctx).Infof("Waiting for secret %s events...", name)
 
-				credentialType := cl.secretNamesTypes[name]
-				cl.processEvents(ctx, watcher.ResultChan(), name, credentialType)
+				CredentialType := cl.secretNamesTypes[name]
+				cl.processEvents(ctx, watcher.ResultChan(), name, CredentialType)
 
 				// Cleanup any allocated resources
 				watcher.Stop()
@@ -190,7 +186,7 @@ func (cl *loader) startKubeWatch(ctx context.Context) {
 	}
 }
 
-func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType credentialType) {
+func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, secretName string, credentialType CredentialType) {
 	for {
 		select {
 		case <-ctx.Done():
@@ -209,14 +205,14 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 					log.C(ctx).Error("Unexpected error: object is not secret. Try again")
 					continue
 				}
-				if credentialType == certificateCredential {
-					tlsCert, err := parseCertificate(ctx, secret.Data, cl.config)
+				if credentialType == CertificateCredential {
+					tlsCert, err := ParseCertificate(ctx, secret.Data, cl.config)
 					if err != nil {
 						log.C(ctx).WithError(err).Error("Fail during certificate parsing")
 					}
 					cl.certCache.put(secretName, tlsCert)
 				} else {
-					keys, err := parseKeys(ctx, secret.Data, cl.keysConfig)
+					keys, err := ParseKeys(ctx, secret.Data, cl.keysConfig)
 					if err != nil {
 						log.C(ctx).WithError(err).Error("Fail during keys parsing")
 					}
@@ -225,7 +221,7 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 			case watch.Deleted:
 				log.C(ctx).Infof("Removing %s secret data from cache...", credentialType)
 
-				if credentialType == certificateCredential {
+				if credentialType == CertificateCredential {
 					cl.certCache.put(secretName, nil)
 				} else {
 					cl.keyCache.put(secretName, nil)
@@ -238,7 +234,8 @@ func (cl *loader) processEvents(ctx context.Context, events <-chan watch.Event, 
 	}
 }
 
-func parseCertificate(ctx context.Context, secretData map[string][]byte, config CertConfig) (*tls.Certificate, error) {
+// ParseCertificate parses a certificate by secret data map
+func ParseCertificate(ctx context.Context, secretData map[string][]byte, config CertConfig) (*tls.Certificate, error) {
 	log.C(ctx).Info("Parsing provided certificate data...")
 	certChainBytes, existsCertKey := secretData[config.ExternalClientCertCertKey]
 	privateKeyBytes, existsKeyKey := secretData[config.ExternalClientCertKeyKey]
@@ -247,17 +244,11 @@ func parseCertificate(ctx context.Context, secretData map[string][]byte, config 
 		return cert.ParseCertificateBytes(certChainBytes, privateKeyBytes)
 	}
 
-	extSvcCertChainBytes, existsExtSvcCertKey := secretData[config.ExtSvcClientCertCertKey]
-	extSvcPrivateKeyBytes, existsExtSvcKeyKey := secretData[config.ExtSvcClientCertKeyKey]
-
-	if existsExtSvcCertKey && existsExtSvcKeyKey {
-		return cert.ParseCertificateBytes(extSvcCertChainBytes, extSvcPrivateKeyBytes)
-	}
-
 	return nil, errors.New("There is no certificate data provided")
 }
 
-func parseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
+// ParseKeys parses keys by secret data map
+func ParseKeys(ctx context.Context, secretData map[string][]byte, config KeysConfig) (*KeyStore, error) {
 	log.C(ctx).Info("Parsing provided keys data...")
 	dataBytes, exists := secretData[config.KeysData]
 

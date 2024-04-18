@@ -24,10 +24,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
@@ -77,10 +79,8 @@ func TestSelfRegisterFlow(t *testing.T) {
 	executeGQLRequest(t, ctx, createFormationReq, formationName, accountTenantID)
 	t.Logf("Successfully created formation: %s", formationName)
 
-	t.Logf("Assign application to formation %s", formationName)
 	assignToFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
 	defer unassignFromFormation(t, ctx, app.ID, string(graphql.FormationObjectTypeApplication), formationName, accountTenantID)
-	t.Logf("Successfully assigned application to formation %s", formationName)
 
 	// Self register runtime
 	runtimeInput := graphql.RuntimeRegisterInput{
@@ -239,15 +239,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
-		stdT.Logf("Assign application to formation %s", consumerFormationName)
-		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -256,15 +252,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
 		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
 
-		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -338,6 +330,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		require.Len(t, rtmExt.RuntimeContexts.Data, 1)
+		require.NotEmpty(t, rtmExt.RuntimeContexts.Data[0].ID)
+		rtCtx := rtmExt.RuntimeContexts.Data[0]
+
 		// Create destination that matches to the created bundle
 		region := conf.SubscriptionConfig.SelfRegRegion
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
@@ -366,16 +362,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Get(respBody, "value.0"), formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+			params := url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
 			if appsLen != 1 {
@@ -419,8 +422,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
-			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?", headers, params)
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
@@ -429,15 +436,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.ElementsMatch(stdT, []string{destination.Name, destinationSecond.Name}, []string{destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String(), destinationsFromResponse[1].Get("sensitiveData.destinationConfiguration.Name").String()})
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
+		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -539,10 +551,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
-		stdT.Logf("Assign application to formation %s", consumerFormationName)
-		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -551,10 +561,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
 		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
 
-		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		httpClient := &http.Client{
 			Timeout: 10 * time.Second,
@@ -621,15 +629,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		}
 
 		// Assign the provider application to the formation
-		stdT.Logf("Assign provider application with id %q to formation %s", providerApp.ID, consumerFormationName)
-		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
-		stdT.Logf("Assign provider application with id %q to formation %s", providerApp.ID, noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, providerApp.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, providerApp.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		// After successful subscription from above we call the director component with "double authentication(token + certificate)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
@@ -674,15 +678,22 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", consumerApp.ID), headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, providerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Result{Raw: respBody}, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json", consumerApp.ID), headers)
+			params := url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 
 			appName := gjson.Get(respBody, "title").String()
 			if appName != consumerApp.Name {
@@ -719,7 +730,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer client.DeleteDestination(stdT, destinationSecond.Name)
 
 		// With destinations - reload
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", consumerApp.ID), headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "consumptionBundles.0.destinations").Raw)
 		destinationsFromResponse := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
@@ -732,12 +747,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -841,15 +858,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 		stdT.Logf("Successfully created formation: %s", consumerFormationName)
 
-		stdT.Logf("Assign application to formation %s", consumerFormationName)
-		assignToFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, consumerApp.ID, "APPLICATION", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", consumerFormationName)
+		assignToFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, consumerFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, consumerFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -858,15 +871,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(t, noDiscoveryConsumptionFormation.ID)
 		stdT.Logf("Successfully created formation: %s", noDiscoveryConsumptionFormationName)
 
-		stdT.Logf("Assign application to formation %s", noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, "APPLICATION", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned application to formation %s", noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
-		stdT.Logf("Assign tenant %s to formation %s...", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
-		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", noDiscoveryConsumptionFormationName, secondaryTenant)
-		stdT.Logf("Successfully assigned tenant %s to formation %s", subscriptionConsumerSubaccountID, noDiscoveryConsumptionFormationName)
+		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -944,6 +953,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.Equal(stdT, runtimeInput.Name, rtmExt.Name)
 		stdT.Log("Director claims validation was successful")
 
+		require.Len(t, rtmExt.RuntimeContexts.Data, 1)
+		require.NotEmpty(t, rtmExt.RuntimeContexts.Data[0].ID)
+		rtCtx := rtmExt.RuntimeContexts.Data[0]
+
 		// Create destination that matches to the created bundle
 		region := conf.SubscriptionConfig.SelfRegRegion
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
@@ -972,16 +985,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
+		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
+		verifyFormationDetails(stdT, gjson.Get(respBody, "value.0"), formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 		stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
 
 		// Make a request to the ORD service expanding bundles and destinations.
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+			params = url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
 			if appsLen != 1 {
@@ -1025,8 +1045,12 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
-			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?", headers, params)
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
@@ -1035,15 +1059,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.ElementsMatch(stdT, []string{destination.Name, destinationSecond.Name}, []string{destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String(), destinationsFromResponse[1].Get("sensitiveData.destinationConfiguration.Name").String()})
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
+		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -1056,14 +1085,26 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 }
 
 func assignToFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
+	t.Logf("Assigning %s with ID: %s to formation: %s", objectType, objectID, formationName)
 	assignReq := fixtures.FixAssignFormationRequest(objectID, objectType, formationName)
 	executeGQLRequest(t, ctx, assignReq, formationName, tenantID)
+	t.Logf("Successfully assigned %s with ID: %s to formation: %s", objectType, objectID, formationName)
 }
 
 func unassignFromFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
 	t.Logf("Unassign object with type %s and id %s from formation %s", objectType, objectID, formationName)
 	unassignReq := fixtures.FixUnassignFormationRequest(objectID, objectType, formationName)
 	executeGQLRequest(t, ctx, unassignReq, formationName, tenantID)
+	t.Logf("Successfully unassigned object with type %s and id %s from formation %s", objectType, objectID, formationName)
+}
+
+func cleanupFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
+	t.Logf("Unassign object with type %s and id %s from formation %s", objectType, objectID, formationName)
+	unassignReq := fixtures.FixUnassignFormationRequest(objectID, objectType, formationName)
+
+	var formation graphql.Formation
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 	t.Logf("Successfully unassigned object with type %s and id %s from formation %s", objectType, objectID, formationName)
 }
 
@@ -1080,4 +1121,26 @@ func fixAppTemplateInputWithDefaultDistinguishLabelAndSubdomainRegion(name strin
 	input.ApplicationInput.BaseURL = str.Ptr(fmt.Sprintf(baseURLTemplate, "{{subdomain}}", "{{region}}"))
 	input.Placeholders = append(input.Placeholders, &graphql.PlaceholderDefinitionInput{Name: "subdomain"}, &graphql.PlaceholderDefinitionInput{Name: "region"})
 	return input
+}
+
+func getExpectedFormationDetailsAssignmentID(t require.TestingT, ctx context.Context, tenantID, sourceID, targetID, formationID string) string {
+	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
+	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
+	assignments := assignmentsPage.Data
+	require.NotEmpty(t, assignments)
+	expectedFormationDetailsAssignmentID := ""
+	for _, assignment := range assignments {
+		if assignment.Source == sourceID && assignment.Target == targetID {
+			expectedFormationDetailsAssignmentID = assignment.ID
+			break
+		}
+	}
+	require.NotEmpty(t, expectedFormationDetailsAssignmentID)
+	return expectedFormationDetailsAssignmentID
+}
+
+func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expectedFormationID, expectedFormationAssignmentID, expectedFormationTemplateID string) {
+	require.Equal(stdT, expectedFormationID, systemInstance.Get("formationDetails.formationId").String())
+	require.Equal(stdT, expectedFormationAssignmentID, systemInstance.Get("formationDetails.assignmentId").String())
+	require.Equal(stdT, expectedFormationTemplateID, systemInstance.Get("formationDetails.formationTypeId").String())
 }

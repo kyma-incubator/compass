@@ -15,10 +15,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -47,6 +47,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL
+              value: "https://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
@@ -73,12 +75,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
@@ -160,6 +156,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -377,10 +375,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -409,6 +407,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL
+              value: "https://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
@@ -435,12 +435,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
@@ -522,6 +516,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -739,10 +735,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -771,6 +767,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL
+              value: "https://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
@@ -797,12 +795,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
@@ -884,6 +876,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -1101,10 +1095,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -1133,6 +1127,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL
+              value: "https://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
@@ -1159,12 +1155,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
@@ -1246,6 +1236,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID
@@ -1463,10 +1455,10 @@ spec:
   template:
     metadata:
       annotations:
-        sidecar.istio.io/inject: "true"
         cluster-autoscaler.kubernetes.io/safe-to-evict: "false"
       labels:
         app: {{ .Chart.Name }}-director-tests-app
+        sidecar.istio.io/inject: "true"
     spec:
       serviceAccountName: {{ .Chart.Name }}-e2e-director
     {{ if eq .Values.global.portieris.isEnabled true }}
@@ -1495,6 +1487,8 @@ spec:
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.prefix }}/graphql"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
+            - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_STATUS_EXTERNAL_TOKEN_URL
+              value: "https://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASSIGNMENT_ASYNC_RESET_STATUS_URL
               value: "https://{{ .Values.global.gateway.mtls.external.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}{{ .Values.global.director.formationMappingAsyncStatusApi.formationAssignmentResetPath }}"
             - name: APP_DIRECTOR_EXTERNAL_CERT_FORMATION_ASYNC_STATUS_URL
@@ -1521,12 +1515,6 @@ spec:
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.keyKey }}"
             - name: APP_EXTERNAL_CLIENT_CERT_SECRET_NAME
               value: "{{ .Values.global.externalCertConfiguration.secrets.externalClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_SECRET
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.namespace }}/{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.name }}"
-            - name: APP_EXT_SVC_CLIENT_CERT_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.certKey }}"
-            - name: APP_EXT_SVC_CLIENT_KEY_KEY
-              value: "{{ .Values.global.extSvcCertConfiguration.secrets.extSvcClientCertSecret.keyKey }}"
             - name: APP_SELF_REG_DISTINGUISH_LABEL_KEY
               value: {{ .Values.global.director.subscription.subscriptionProviderLabelKey }}
             - name: APP_SELF_REG_DISTINGUISH_LABEL_VALUE
@@ -1608,6 +1596,8 @@ spec:
               value: {{ .Values.global.tests.subscription.consumerSubdomain }}
             - name: APP_SUBSCRIPTION_CONFIG_PROPAGATED_PROVIDER_SUBACCOUNT_HEADER
               value: {{ .Values.global.tests.subscription.propagatedProviderSubaccountHeader }}
+            - name: APP_TEST_COST_OBJECT_ID
+              value: {{ .Values.global.tests.subscription.tenants.costObjectID }}
             - name: APP_TEST_PROVIDER_ACCOUNT_ID
               value: {{ .Values.global.tests.subscription.tenants.providerAccountID }}
             - name: APP_TEST_PROVIDER_SUBACCOUNT_ID

@@ -52,7 +52,7 @@ func TestCreateFormation(t *testing.T) {
 		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		actual, err := sut.CreateFormation(ctx, formationInputWithTemplateName)
@@ -75,7 +75,7 @@ func TestCreateFormation(t *testing.T) {
 		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		actual, err := sut.CreateFormation(ctx, formationInput)
@@ -90,7 +90,7 @@ func TestCreateFormation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.CreateFormation(ctx, formationInput)
@@ -105,7 +105,7 @@ func TestCreateFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.CreateFormation(ctx, formationInput)
@@ -127,7 +127,7 @@ func TestCreateFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.CreateFormation(ctx, formationInput)
@@ -149,7 +149,7 @@ func TestCreateFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		actual, err := sut.CreateFormation(ctx, formationInput)
@@ -184,7 +184,7 @@ func TestDeleteFormation(t *testing.T) {
 		mockConverter.On("ToGraphQL", &model.Formation{Name: testFormation}).Return(&graphql.Formation{Name: testFormation}, nil)
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		actual, err := sut.DeleteFormation(ctx, formationInput)
@@ -198,7 +198,7 @@ func TestDeleteFormation(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteFormation(ctx, formationInput)
@@ -211,7 +211,7 @@ func TestDeleteFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteFormation(ctx, formationInput)
@@ -232,7 +232,7 @@ func TestDeleteFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.DeleteFormation(ctx, formationInput)
@@ -253,7 +253,7 @@ func TestDeleteFormation(t *testing.T) {
 		mockConverter.On("FromGraphQL", formationInput).Return(model.Formation{Name: testFormation})
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, nil)
 
 		// WHEN
 		actual, err := sut.DeleteFormation(ctx, formationInput)
@@ -272,6 +272,7 @@ func TestAssignFormation(t *testing.T) {
 	}
 	tnt := "tenant"
 	externalTnt := "external-tenant"
+	tenantMapping := &model.BusinessTenantMapping{ExternalTenant: externalTnt}
 	testObjectType := graphql.FormationObjectTypeTenant
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
@@ -283,15 +284,18 @@ func TestAssignFormation(t *testing.T) {
 		mockService := &automock.Service{}
 		mockConverter := &automock.Converter{}
 		fetcherSvc := &automock.TenantFetcher{}
+		tenantSvc := &automock.TenantSvc{}
 		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
-		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", tnt).Return(nil)
+		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", externalTnt).Return(nil)
+
+		tenantSvc.On("GetTenantByID", contextThatHasTenant(tnt), tnt).Return(tenantMapping, nil).Once()
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
 		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -299,20 +303,21 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		assert.Equal(t, testFormationName, actual.Name)
-		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc, tenantSvc)
 	})
-	t.Run("returns error when objectType is tenant and cannot fetch its details", func(t *testing.T) {
+	t.Run("returns error when can't get tenant by ID", func(t *testing.T) {
 		// GIVEN
-		persist, transact := txGen.ThatDoesntStartTransaction()
+		persist, transact := txGen.ThatDoesntExpectCommit()
 
 		mockService := &automock.Service{}
 		mockConverter := &automock.Converter{}
-		fetcherSvc := &automock.TenantFetcher{}
+		tenantSvc := &automock.TenantSvc{}
 
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
-		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(testErr)
 
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
+		tenantSvc.On("GetTenantByID", contextThatHasTenant(tnt), tnt).Return(nil, testErr).Once()
+
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, tenantSvc)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -320,13 +325,37 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, tenantSvc)
+	})
+	t.Run("returns error when objectType is tenant and cannot fetch its details", func(t *testing.T) {
+		// GIVEN
+		persist, transact := txGen.ThatDoesntExpectCommit()
+
+		mockService := &automock.Service{}
+		mockConverter := &automock.Converter{}
+		fetcherSvc := &automock.TenantFetcher{}
+		tenantSvc := &automock.TenantSvc{}
+
+		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
+		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", externalTnt).Return(testErr)
+
+		tenantSvc.On("GetTenantByID", contextThatHasTenant(tnt), tnt).Return(tenantMapping, nil).Once()
+
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
+
+		// WHEN
+		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+
+		// THEN
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), testErr.Error())
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc, tenantSvc)
 	})
 	t.Run("returns error when can not load tenant from context", func(t *testing.T) {
 		// GIVEN
 		ctx := context.Background()
 
-		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -340,10 +369,7 @@ func TestAssignFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnBegin()
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 
-		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(nil)
-
-		sut := formation.NewResolver(transact, nil, nil, nil, nil, fetcherSvc)
+		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -351,7 +377,7 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		mock.AssertExpectationsForObjects(t, persist, transact, fetcherSvc)
+		mock.AssertExpectationsForObjects(t, persist, transact)
 	})
 	t.Run("returns error when commit fails", func(t *testing.T) {
 		// GIVEN
@@ -366,9 +392,12 @@ func TestAssignFormation(t *testing.T) {
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(nil)
+		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", externalTnt).Return(nil)
 
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
+		tenantSvc := &automock.TenantSvc{}
+		tenantSvc.On("GetTenantByID", contextThatHasTenant(tnt), tnt).Return(tenantMapping, nil).Once()
+
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
 		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -376,7 +405,7 @@ func TestAssignFormation(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
-		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc, tenantSvc)
 	})
 	t.Run("returns error when assign formation fails", func(t *testing.T) {
 		// GIVEN
@@ -391,9 +420,12 @@ func TestAssignFormation(t *testing.T) {
 		ctx := tenant.SaveToContext(context.TODO(), tnt, externalTnt)
 
 		fetcherSvc := &automock.TenantFetcher{}
-		fetcherSvc.On("FetchOnDemand", ctx, "", tnt).Return(nil)
+		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", externalTnt).Return(nil)
 
-		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc)
+		tenantSvc := &automock.TenantSvc{}
+		tenantSvc.On("GetTenantByID", contextThatHasTenant(tnt), tnt).Return(tenantMapping, nil).Once()
+
+		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
 		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
@@ -402,7 +434,7 @@ func TestAssignFormation(t *testing.T) {
 		require.Error(t, err)
 		assert.Contains(t, err.Error(), testErr.Error())
 		require.Nil(t, actual)
-		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc)
+		mock.AssertExpectationsForObjects(t, persist, transact, mockService, mockConverter, fetcherSvc, tenantSvc)
 	})
 }
 
@@ -515,10 +547,117 @@ func TestUnassignFormation(t *testing.T) {
 				formationAssignmentSvc = testCase.FormationAssignmentSvcFn()
 			}
 
-			resolver := formation.NewResolver(transact, service, converter, formationAssignmentSvc, nil, nil)
+			resolver := formation.NewResolver(transact, service, converter, formationAssignmentSvc, nil, nil, nil)
 
 			// WHEN
 			f, err := resolver.UnassignFormation(testCase.Context, testCase.InputID, testCase.ObjectType, formationInput)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedFormation, f)
+
+			mock.AssertExpectationsForObjects(t, persist, service, converter, formationAssignmentSvc)
+		})
+	}
+}
+
+func TestUnassignFormationGlobal(t *testing.T) {
+	testErr := errors.New("test error")
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+	testCases := []struct {
+		Name                     string
+		TxFn                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn                func() *automock.Service
+		ConverterFn              func() *automock.Converter
+		FormationAssignmentSvcFn func() *automock.FormationAssignmentService
+		ExpectedFormation        *graphql.Formation
+		ExpectedError            error
+	}{
+		{
+			Name: "successfully unassigned formation",
+			TxFn: txGen.ThatSucceeds,
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormationWithTenant).Return(&graphqlFormation, nil)
+				return conv
+			},
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(&modelFormationWithTenant, nil)
+				return svc
+			},
+			ExpectedFormation: &graphqlFormation,
+		},
+		{
+			Name:          "fails when transaction fails to open",
+			TxFn:          txGen.ThatFailsOnBegin,
+			ConverterFn:   unusedConverter,
+			ServiceFn:     unusedService,
+			ExpectedError: testErr,
+		},
+		{
+			Name:          "returns error when can not start db transaction",
+			TxFn:          txGen.ThatFailsOnBegin,
+			ConverterFn:   unusedConverter,
+			ServiceFn:     unusedService,
+			ExpectedError: testErr,
+		}, {
+			Name:        "returns error when commit fails",
+			TxFn:        txGen.ThatFailsOnCommit,
+			ConverterFn: unusedConverter,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(&modelFormationWithTenant, nil)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:        "returns error when unassign formation fails",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			ConverterFn: unusedConverter,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:        "returns error when get formation fails",
+			TxFn:        txGen.ThatDoesntExpectCommit,
+			ConverterFn: unusedConverter,
+			ServiceFn: func() *automock.Service {
+				svc := &automock.Service{}
+				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := testCase.TxFn()
+			service := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+			formationAssignmentSvc := &automock.FormationAssignmentService{}
+			if testCase.FormationAssignmentSvcFn != nil {
+				formationAssignmentSvc = testCase.FormationAssignmentSvcFn()
+			}
+
+			resolver := formation.NewResolver(transact, service, converter, formationAssignmentSvc, nil, nil, nil)
+
+			// WHEN
+			f, err := resolver.UnassignFormationGlobal(emptyCtx, ApplicationID, graphql.FormationObjectTypeApplication, FormationID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -611,7 +750,7 @@ func TestFormation(t *testing.T) {
 			service := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
+			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil, nil)
 
 			// WHEN
 			f, err := resolver.Formation(ctx, testCase.InputID)
@@ -726,7 +865,7 @@ func TestFormationByName(t *testing.T) {
 			service := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
+			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil, nil)
 
 			// WHEN
 			f, err := resolver.FormationByName(testCtx, testCase.InputName)
@@ -866,7 +1005,7 @@ func TestFormations(t *testing.T) {
 			service := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil)
+			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil, nil)
 
 			// WHEN
 			f, err := resolver.Formations(ctx, &first, &after)
@@ -885,7 +1024,7 @@ func TestFormations(t *testing.T) {
 	}
 
 	t.Run("Returns error when 'first' is nil", func(t *testing.T) {
-		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		f, err := resolver.Formations(ctx, nil, &after)
@@ -894,6 +1033,120 @@ func TestFormations(t *testing.T) {
 		require.Error(t, err)
 		require.Nil(t, f)
 	})
+}
+
+func TestFormationsForObject(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	ctx := context.TODO()
+
+	modelFormations := []*model.Formation{&modelFormation}
+
+	graphqlFormations := []*graphql.Formation{&graphqlFormation}
+
+	testCases := []struct {
+		Name               string
+		TxFn               func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		ServiceFn          func() *automock.Service
+		ConverterFn        func() *automock.Converter
+		InputID            string
+		ExpectedFormations []*graphql.Formation
+		ExpectedError      error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				return service
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("MultipleToGraphQL", modelFormations).Return(graphqlFormations, nil).Once()
+				return conv
+			},
+			InputID:            ApplicationID,
+			ExpectedFormations: graphqlFormations,
+			ExpectedError:      nil,
+		},
+		{
+			Name: "Returns error when listing formations fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(nil, testErr).Once()
+				return service
+			},
+			ConverterFn:        unusedConverter,
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name: "Returns error when converting formations to graphql fails",
+			TxFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				return service
+			},
+			ConverterFn: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("MultipleToGraphQL", modelFormations).Return(nil, testErr).Once()
+				return conv
+			},
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name:               "Returns error when can't start transaction",
+			TxFn:               txGen.ThatFailsOnBegin,
+			ServiceFn:          unusedService,
+			ConverterFn:        unusedConverter,
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+		{
+			Name: "Returns error when can't commit transaction",
+			TxFn: txGen.ThatFailsOnCommit,
+			ServiceFn: func() *automock.Service {
+				service := &automock.Service{}
+				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				return service
+			},
+			ConverterFn:        unusedConverter,
+			InputID:            ApplicationID,
+			ExpectedFormations: nil,
+			ExpectedError:      testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			persist, transact := testCase.TxFn()
+			service := testCase.ServiceFn()
+			converter := testCase.ConverterFn()
+
+			resolver := formation.NewResolver(transact, service, converter, nil, nil, nil, nil)
+
+			// WHEN
+			f, err := resolver.FormationsForObject(ctx, testCase.InputID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedFormations, f)
+
+			mock.AssertExpectationsForObjects(t, persist, service, converter)
+		})
+	}
 }
 
 func TestResolver_FormationAssignment(t *testing.T) {
@@ -1022,7 +1275,7 @@ func TestResolver_FormationAssignment(t *testing.T) {
 				faConv = testCase.ConverterFn()
 			}
 
-			resolver := formation.NewResolver(transact, nil, nil, faSvc, faConv, nil)
+			resolver := formation.NewResolver(transact, nil, nil, faSvc, faConv, nil, nil)
 
 			// WHEN
 			fa, err := resolver.FormationAssignment(ctx, testCase.Formation, testCase.FormationAssignmentID)
@@ -1169,7 +1422,7 @@ func TestResolver_FormationAssignments(t *testing.T) {
 				faConv = testCase.ConverterFn()
 			}
 
-			resolver := formation.NewResolver(transact, nil, nil, faSvc, faConv, nil)
+			resolver := formation.NewResolver(transact, nil, nil, faSvc, faConv, nil, nil)
 			firstFormationAssignmentParams := dataloader.ParamFormationAssignment{ID: FormationID, Ctx: ctx, First: &first, After: &gqlAfter}
 			secondFormationAssignmentParams := dataloader.ParamFormationAssignment{ID: FormationID + "2", Ctx: ctx, First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamFormationAssignment{firstFormationAssignmentParams, secondFormationAssignmentParams}
@@ -1186,7 +1439,7 @@ func TestResolver_FormationAssignments(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no formations IDs", func(t *testing.T) {
-		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, errs := resolver.FormationAssignmentsDataLoader([]dataloader.ParamFormationAssignment{})
@@ -1200,7 +1453,7 @@ func TestResolver_FormationAssignments(t *testing.T) {
 		firstFormationAssignmentParams := dataloader.ParamFormationAssignment{ID: FormationID, Ctx: ctx, First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamFormationAssignment{firstFormationAssignmentParams}
 
-		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, errs := resolver.FormationAssignmentsDataLoader(keys)
@@ -1236,7 +1489,7 @@ func TestResolver_Status(t *testing.T) {
 
 	fasUnmarshallable := []*model.FormationAssignment{fixFormationAssignmentModelWithSuffix(string(model.DeleteErrorAssignmentState), nil, json.RawMessage(`unmarshallable structure`), "-4")}
 
-	faPagesWithUnmarshallableError := [][]*model.FormationAssignment{fasUnmarshallable}
+	faPagesWithUnmarshallableError := [][]*model.FormationAssignment{fasUnmarshallable, fasReady, fasInProgress, fasError}
 
 	// Formation Assignments GraphQL fixtures
 
@@ -1366,7 +1619,7 @@ func TestResolver_Status(t *testing.T) {
 				faSvc = testCase.ServiceFn()
 			}
 
-			resolver := formation.NewResolver(transact, nil, nil, faSvc, nil, nil)
+			resolver := formation.NewResolver(transact, nil, nil, faSvc, nil, nil, nil)
 
 			params := make([]dataloader.ParamFormationStatus, 0, len(testCase.Params))
 			for _, param := range testCase.Params {
@@ -1388,7 +1641,7 @@ func TestResolver_Status(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no formations IDs", func(t *testing.T) {
-		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil)
+		resolver := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		_, errs := resolver.StatusDataLoader([]dataloader.ParamFormationStatus{})
@@ -1511,10 +1764,102 @@ func TestResynchronizeFormationNotifications(t *testing.T) {
 			}
 			persist, transact := testCase.TxFn()
 
-			resolver := formation.NewResolver(transact, formationService, conv, nil, nil, nil)
+			resolver := formation.NewResolver(transact, formationService, conv, nil, nil, nil, nil)
 
 			// WHEN
 			resultFormationModel, err := resolver.ResynchronizeFormationNotifications(ctx, FormationID, testCase.ShouldReset)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+				require.Nil(t, resultFormationModel)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedFormation, resultFormationModel)
+			}
+			mock.AssertExpectationsForObjects(t, conv, formationService, persist, transact)
+		})
+	}
+}
+
+func TestFinalizeFormationNotifications(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	ctx := tenant.SaveToContext(context.TODO(), TntInternalID, TntExternalID)
+
+	testCases := []struct {
+		Name              string
+		Context           context.Context
+		ShouldReset       *bool
+		TxFn              func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		FormationService  func() *automock.Service
+		Converter         func() *automock.Converter
+		ExpectedFormation *graphql.Formation
+		ExpectedErrorMsg  string
+	}{
+		{
+			Name: "successfully finalized formation",
+			TxFn: txGen.ThatSucceeds,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("FinalizeDraftFormation", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
+
+				return svc
+			},
+			Converter: func() *automock.Converter {
+				conv := &automock.Converter{}
+				conv.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil).Once()
+				return conv
+			},
+			ExpectedFormation: &graphqlFormation,
+		},
+		{
+			Name: "failed during finalizing",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("FinalizeDraftFormation", contextThatHasTenant(TntInternalID), FormationID).Return(nil, testErr)
+
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name: "failed to commit after finalizing",
+			TxFn: txGen.ThatFailsOnCommit,
+			FormationService: func() *automock.Service {
+				svc := &automock.Service{}
+
+				svc.On("FinalizeDraftFormation", contextThatHasTenant(TntInternalID), FormationID).Return(&modelFormation, nil).Once()
+
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:             "returns error when can not start db transaction",
+			TxFn:             txGen.ThatFailsOnBegin,
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			conv := unusedConverter()
+			if testCase.Converter != nil {
+				conv = testCase.Converter()
+			}
+			formationService := unusedService()
+			if testCase.FormationService != nil {
+				formationService = testCase.FormationService()
+			}
+			persist, transact := testCase.TxFn()
+
+			resolver := formation.NewResolver(transact, formationService, conv, nil, nil, nil, nil)
+
+			// WHEN
+			resultFormationModel, err := resolver.FinalizeDraftFormation(ctx, FormationID)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

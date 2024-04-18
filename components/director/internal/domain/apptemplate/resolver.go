@@ -8,6 +8,10 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
+
+	"github.com/tidwall/gjson"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
@@ -85,7 +89,7 @@ type ApplicationConverter interface {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error)
-	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error)
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
@@ -105,6 +109,13 @@ type WebhookConverter interface {
 	MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error)
 }
 
+// LabelService is responsible for Label operations
+//
+//go:generate mockery --name=LabelService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type LabelService interface {
+	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+}
+
 // SelfRegisterManager missing godoc
 //
 //go:generate mockery --name=SelfRegisterManager --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -115,38 +126,50 @@ type SelfRegisterManager interface {
 	GetSelfRegDistinguishingLabelKey() string
 }
 
+// SystemFieldDiscoveryEngine is responsible for system field discovery operations
+//
+//go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SystemFieldDiscoveryEngine interface {
+	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subaccountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
+	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc                  ApplicationService
-	appConverter            ApplicationConverter
-	appTemplateSvc          ApplicationTemplateService
-	appTemplateConverter    ApplicationTemplateConverter
-	webhookSvc              WebhookService
-	webhookConverter        WebhookConverter
-	selfRegManager          SelfRegisterManager
-	uidService              UIDService
-	appTemplateProductLabel string
-	certSubjectMappingSvc   CertSubjectMappingService
-	ordClient               *apiclient.ORDClient
+	appSvc                     ApplicationService
+	appConverter               ApplicationConverter
+	appTemplateSvc             ApplicationTemplateService
+	appTemplateConverter       ApplicationTemplateConverter
+	webhookSvc                 WebhookService
+	webhookConverter           WebhookConverter
+	labelSvc                   LabelService
+	selfRegManager             SelfRegisterManager
+	uidService                 UIDService
+	systemFieldDiscoveryEngine SystemFieldDiscoveryEngine
+	appTemplateProductLabel    string
+	certSubjectMappingSvc      CertSubjectMappingService
+	ordClient                  *apiclient.ORDClient
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, selfRegisterManager SelfRegisterManager, uidService UIDService, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
 	return &Resolver{
-		transact:                transact,
-		appSvc:                  appSvc,
-		appConverter:            appConverter,
-		appTemplateSvc:          appTemplateSvc,
-		appTemplateConverter:    appTemplateConverter,
-		webhookSvc:              webhookService,
-		webhookConverter:        webhookConverter,
-		selfRegManager:          selfRegisterManager,
-		uidService:              uidService,
-		appTemplateProductLabel: appTemplateProductLabel,
-		certSubjectMappingSvc:   certSubjectMappingSvc,
-		ordClient:               apiclient.NewORDClient(ordAggregatorClientConfig),
+		transact:                   transact,
+		appSvc:                     appSvc,
+		appConverter:               appConverter,
+		appTemplateSvc:             appTemplateSvc,
+		appTemplateConverter:       appTemplateConverter,
+		webhookSvc:                 webhookService,
+		webhookConverter:           webhookConverter,
+		labelSvc:                   labelSvc,
+		selfRegManager:             selfRegisterManager,
+		uidService:                 uidService,
+		systemFieldDiscoveryEngine: systemFieldDiscoveryEngine,
+		appTemplateProductLabel:    appTemplateProductLabel,
+		certSubjectMappingSvc:      certSubjectMappingSvc,
+		ordClient:                  apiclient.NewORDClient(ordAggregatorClientConfig),
 	}
 }
 
@@ -263,7 +286,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 
 	labels := convertedIn.Labels
 	if _, err := tenant.LoadFromContext(ctx); err == nil && consumerInfo.Flow.IsCertFlow() {
-		isSelfReg, selfRegFlowErr := r.isSelfRegFlow(labels)
+		isSelfReg, selfRegFlowErr := r.selfRegManager.IsSelfRegistrationFlow(ctx, labels)
 		if selfRegFlowErr != nil {
 			return nil, selfRegFlowErr
 		}
@@ -310,8 +333,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	}()
 
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	if err := r.checkProviderAppTemplateExistence(ctx, labels); err != nil {
+	if err := r.checkProviderAppTemplateExistence(ctx, labels, convertedIn); err != nil {
 		return nil, err
 	}
 
@@ -456,12 +478,29 @@ func (r *Resolver) RegisterApplicationFromTemplate(ctx context.Context, in graph
 	if err != nil {
 		return nil, err
 	}
+
+	region, subaccountID, systemFieldDiscovery, err := r.areSystemFieldDiscoveryPrerequisitesAvailable(ctx, appTemplate.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	systemFieldDiscoveryLabelIsTrue := false
+	if systemFieldDiscovery {
+		appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = r.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplate.Name, applicationName)
+	}
+
 	log.C(ctx).Infof("Creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
-	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID)
+	id, err := r.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", applicationName, in.TemplateName)
 	}
 	log.C(ctx).Infof("Application with name %s and id %s successfully created from Application Template with name %s", applicationName, id, in.TemplateName)
+
+	if systemFieldDiscoveryLabelIsTrue {
+		if err := r.systemFieldDiscoveryEngine.CreateLabelForApplicationWebhook(ctx, id); err != nil {
+			return nil, err
+		}
+	}
 
 	app, err := r.appSvc.Get(ctx, id)
 	if err != nil {
@@ -763,65 +802,225 @@ func validateAppTemplateNameBasedOnProvider(name string, appInput *graphql.Appli
 	return nil
 }
 
-func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels map[string]interface{}) error {
-	selfRegisterDistinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
-	regionLabelKey := selfregmanager.RegionLabel
-	region, regionExists := labels[regionLabelKey]
-
-	distinguishLabelKeys := []string{selfRegisterDistinguishLabelKey, r.appTemplateProductLabel}
-	appTemplateDistinguishLabels := make(map[string]interface{}, len(distinguishLabelKeys))
-
-	for _, key := range distinguishLabelKeys {
-		if value, exists := labels[key]; exists {
-			appTemplateDistinguishLabels[key] = value
-		}
+func (r *Resolver) checkProviderAppTemplateExistence(ctx context.Context, labels map[string]interface{}, convertedIn model.ApplicationTemplateInput) error {
+	if err := r.checkAppTemplateExistenceByDistinguishLabel(ctx, labels); err != nil {
+		return err
 	}
 
-	for labelKey, labelValue := range appTemplateDistinguishLabels {
-		msg := fmt.Sprintf("%q: %q", labelKey, labelValue)
-
-		filters := []*labelfilter.LabelFilter{
-			labelfilter.NewForKeyWithQuery(labelKey, fmt.Sprintf("\"%s\"", labelValue)),
-		}
-
-		if regionExists {
-			if _, ok := region.(string); !ok {
-				return errors.Errorf("%s label should be string", regionLabelKey)
-			}
-			filters = append(filters, labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", region)))
-			msg += fmt.Sprintf(" and %q: %q", regionLabelKey, region)
-		}
-
-		log.C(ctx).Infof("Getting application template for labels %s", msg)
-		appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
-		if err != nil && !apperrors.IsNotFoundError(err) {
-			return errors.Wrap(err, fmt.Sprintf("Failed to get application template for labels %s", msg))
-		}
-
-		if appTemplate != nil {
-			errMsg := fmt.Sprintf("Cannot have more than one application template with labels %s", msg)
-			log.C(ctx).Error(errMsg)
-			return errors.New(errMsg)
-		}
+	if err := r.checkAppTemplateExistenceByProductLabel(ctx, labels, convertedIn); err != nil {
+		return err
 	}
+
 	return nil
 }
 
-func (r *Resolver) isSelfRegFlow(labels map[string]interface{}) (bool, error) {
-	selfRegLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
-	_, distinguishLabelExists := labels[selfRegLabelKey]
-	_, productLabelExists := labels[r.appTemplateProductLabel]
-	if !distinguishLabelExists && !productLabelExists {
-		return false, errors.Errorf("missing %q or %q label", selfRegLabelKey, r.appTemplateProductLabel)
+func (r *Resolver) checkAppTemplateExistenceByProductLabel(ctx context.Context, labels map[string]interface{}, appTemplateInput model.ApplicationTemplateInput) error {
+	log.C(ctx).Infof("Checking Application Template existence by %q label", r.appTemplateProductLabel)
+
+	regionLabelKey := selfregmanager.RegionLabel
+	appTemplateRegion, isRegionalAppTemplate := labels[regionLabelKey]
+	productLabel, productLabelExists := labels[r.appTemplateProductLabel]
+	if !productLabelExists {
+		log.C(ctx).Infof("%q label does not exist. Skipping the check.", r.appTemplateProductLabel)
+		return nil
 	}
 
-	if distinguishLabelExists && productLabelExists {
-		return false, errors.Errorf("should provide either %q or %q label - providing both at the same time is not allowed", selfRegLabelKey, r.appTemplateProductLabel)
+	labelsKeyRegionLabel := fmt.Sprintf("%s.%s", labelsKey, regionLabelKey)
+	hasRegionLabelInAppInputJSON := gjson.Get(appTemplateInput.ApplicationInputJSON, labelsKeyRegionLabel).Exists()
+
+	if isRegionalAppTemplate {
+		if !hasRegionLabelInAppInputJSON {
+			return errors.Errorf("App Template with %q label has a missing %q label in the applicationInput", regionLabelKey, regionLabelKey)
+		}
+
+		if _, err := extractRegionPlaceholder(appTemplateInput.Placeholders); err != nil {
+			return errors.Wrapf(err, "for regional Application Template input")
+		}
 	}
 
-	if distinguishLabelExists {
-		return true, nil
+	productLabelArr, ok := productLabel.([]interface{})
+	if !ok {
+		return errors.Errorf("could not parse %q label for application template - it must be a string array", r.appTemplateProductLabel)
 	}
 
-	return false, nil
+	log.C(ctx).Infof("Getting application template for labels %q: %q", r.appTemplateProductLabel, productLabel)
+	appTemplates, err := r.appTemplateSvc.ListByFilters(ctx, r.buildProductLabelFilter(productLabelArr))
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("There are no application templates for the filter. Proceeding.")
+			return nil
+		}
+		return errors.Wrapf(err, "while getting Application Template for labels %q: %q", r.appTemplateProductLabel, productLabel)
+	}
+
+	existingRegions := make([]string, 0)
+	for _, appTemplate := range appTemplates {
+		regionLabel, err := r.labelSvc.GetByKey(ctx, "", model.AppTemplateLabelableObject, appTemplate.ID, regionLabelKey)
+		if err != nil {
+			if apperrors.IsNotFoundError(err) {
+				continue
+			}
+			return errors.Wrapf(err, "while getting %q label for Application Template", regionLabelKey)
+		}
+
+		existingRegions = append(existingRegions, regionLabel.Value.(string))
+	}
+
+	if len(appTemplates) > 0 {
+		if len(existingRegions) == 0 {
+			return errors.Errorf("Application Template with %q label is global and already exists", r.appTemplateProductLabel)
+		}
+
+		if len(existingRegions) > 0 && !isRegionalAppTemplate {
+			return errors.Errorf("Existing application template with %q label is regional. The input application template should contain a %q label", r.appTemplateProductLabel, regionLabelKey)
+		}
+
+		if isRegionalAppTemplate {
+			for _, existingRegion := range existingRegions {
+				if existingRegion == appTemplateRegion.(string) {
+					return errors.Errorf("Regional Application Template with %q label and %q: %q already exists", r.appTemplateProductLabel, regionLabelKey, existingRegion)
+				}
+			}
+
+			isPlaceholderEqual, err := isRegionPlaceholderEqualToExistingPlaceholder(appTemplateInput.Placeholders, appTemplates[0].Placeholders)
+			if err != nil {
+				return err
+			}
+
+			if !isPlaceholderEqual {
+				return errors.Errorf("Regional Application Template input with %q label has a different %q placeholder from the other Application Templates with the same label", r.appTemplateProductLabel, regionLabelKey)
+			}
+		}
+	}
+
+	return nil
+}
+
+func (r *Resolver) checkAppTemplateExistenceByDistinguishLabel(ctx context.Context, labels map[string]interface{}) error {
+	selfRegisterDistinguishLabelKey := r.selfRegManager.GetSelfRegDistinguishingLabelKey()
+
+	log.C(ctx).Infof("Checking Application Template existence by %q label", selfRegisterDistinguishLabelKey)
+
+	regionLabelKey := selfregmanager.RegionLabel
+	appTemplateRegion, regionExists := labels[regionLabelKey]
+	appTemplateDistinguishLabel, exists := labels[selfRegisterDistinguishLabelKey]
+	if !exists {
+		log.C(ctx).Infof("%q label does not exist. Skipping the check.", selfRegisterDistinguishLabelKey)
+		return nil
+	}
+
+	msg := fmt.Sprintf("%q: %q", selfRegisterDistinguishLabelKey, appTemplateDistinguishLabel)
+
+	filters := []*labelfilter.LabelFilter{
+		labelfilter.NewForKeyWithQuery(selfRegisterDistinguishLabelKey, fmt.Sprintf("\"%s\"", appTemplateDistinguishLabel)),
+	}
+
+	if regionExists {
+		if _, ok := appTemplateRegion.(string); !ok {
+			return errors.Errorf("%s label should be string", regionLabelKey)
+		}
+		filters = append(filters, labelfilter.NewForKeyWithQuery(regionLabelKey, fmt.Sprintf("\"%s\"", appTemplateRegion)))
+		msg += fmt.Sprintf(" and %q: %q", regionLabelKey, appTemplateRegion)
+	}
+
+	log.C(ctx).Infof("Getting application template for labels %s", msg)
+	appTemplate, err := r.appTemplateSvc.GetByFilters(ctx, filters)
+	if err != nil && !apperrors.IsNotFoundError(err) {
+		return errors.Wrap(err, fmt.Sprintf("Failed to get application template for labels %s", msg))
+	}
+
+	if appTemplate != nil {
+		errMsg := fmt.Sprintf("Cannot have more than one application template with labels %s", msg)
+		log.C(ctx).Error(errMsg)
+		return errors.New(errMsg)
+	}
+
+	return nil
+}
+
+func (r *Resolver) buildProductLabelFilter(productLabelArr []interface{}) []*labelfilter.LabelFilter {
+	filters := make([]*labelfilter.LabelFilter, 0, len(productLabelArr))
+	for _, productLabelValue := range productLabelArr {
+		productLabelStr, _ := productLabelValue.(string)
+		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, productLabelStr)
+		filters = append(filters, labelfilter.NewForKeyWithQuery(r.appTemplateProductLabel, query))
+	}
+
+	return filters
+}
+
+func isRegionPlaceholderEqualToExistingPlaceholder(inputPlaceholders, existingPlaceholders []model.ApplicationTemplatePlaceholder) (bool, error) {
+	inputRegionPlaceholder, err := extractRegionPlaceholder(inputPlaceholders)
+	if err != nil {
+		return false, errors.Wrapf(err, "for Application Template input")
+	}
+	existingRegionPlaceholder, err := extractRegionPlaceholder(existingPlaceholders)
+	if err != nil {
+		return false, errors.Wrapf(err, "for existing Application Template")
+	}
+	return inputRegionPlaceholder == existingRegionPlaceholder, nil
+}
+
+func extractRegionPlaceholder(placeholders []model.ApplicationTemplatePlaceholder) (string, error) {
+	regionKey := selfregmanager.RegionLabel
+
+	regionPlaceholder := ""
+	for _, placeholder := range placeholders {
+		if placeholder.Name == regionKey {
+			regionPlaceholder = str.PtrStrToStr(placeholder.JSONPath)
+			break
+		}
+	}
+
+	if regionPlaceholder == "" {
+		return "", errors.Errorf("%q placeholder should be present for regional Application Templates", regionKey)
+	}
+
+	return regionPlaceholder, nil
+}
+
+// region, global_subaccount_id and systemFieldDiscovery labels for app template must exist
+func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Context, appTemplateID string) (string, string, bool, error) {
+	var regionValue, subaccountIDValue string
+	var systemFieldDiscoveryValue, ok bool
+
+	appTemplateLabels, err := r.appTemplateSvc.ListLabels(ctx, appTemplateID)
+	if err != nil {
+		return "", "", false, errors.Errorf("error while listing labels for Application Template with ID %s", appTemplateID)
+	}
+
+	if regionLabel, exists := appTemplateLabels[selfregmanager.RegionLabel]; exists {
+		regionValue, ok = regionLabel.Value.(string)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplateID)
+			return "", "", false, nil
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", selfregmanager.RegionLabel, appTemplateID)
+		return "", "", false, nil
+	}
+
+	if subaccountIDLabel, exists := appTemplateLabels[globalSubaccountIDLabelKey]; exists {
+		subaccountIDValue, ok = subaccountIDLabel.Value.(string)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a string", globalSubaccountIDLabelKey, appTemplateID)
+			return "", "", false, nil
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", globalSubaccountIDLabelKey, appTemplateID)
+		return "", "", false, nil
+	}
+
+	if systemFieldDiscoveryLabel, exists := appTemplateLabels[webhookprocessor.SystemFieldDiscoveryLabelKey]; exists {
+		systemFieldDiscoveryValue, ok = systemFieldDiscoveryLabel.Value.(bool)
+		if !ok {
+			log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplateID)
+			return "", "", false, nil
+		}
+	} else {
+		log.C(ctx).Infof("%s label for Application Template with ID %s is missing", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplateID)
+		return "", "", false, nil
+	}
+
+	return regionValue, subaccountIDValue, systemFieldDiscoveryValue, nil
 }

@@ -22,7 +22,7 @@ const (
 	errMsg                 = "some error"
 )
 
-func fixModel() model.AutomaticScenarioAssignment {
+func fixModel() *model.AutomaticScenarioAssignment {
 	return fixModelWithScenarioName(scenarioName)
 }
 
@@ -32,8 +32,8 @@ func fixGQL() graphql.AutomaticScenarioAssignment {
 
 var testTableColumns = []string{"scenario", "tenant_id", "target_tenant_id"}
 
-func fixModelWithScenarioName(scenario string) model.AutomaticScenarioAssignment {
-	return model.AutomaticScenarioAssignment{
+func fixModelWithScenarioName(scenario string) *model.AutomaticScenarioAssignment {
+	return &model.AutomaticScenarioAssignment{
 		ScenarioName:   scenario,
 		Tenant:         tenantID,
 		TargetTenantID: targetTenantID,

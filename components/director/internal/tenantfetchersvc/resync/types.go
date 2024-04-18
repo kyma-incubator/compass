@@ -4,19 +4,22 @@ package resync
 type TenantFieldMapping struct {
 	EventsField string `envconfig:"TENANT_EVENTS_FIELD" default:"events"`
 
-	NameField              string `envconfig:"MAPPING_FIELD_NAME" default:"name"`
-	IDField                string `envconfig:"MAPPING_FIELD_ID" default:"id"`
-	GlobalAccountGUIDField string `envconfig:"MAPPING_FIELD_GLOBAL_ACCOUNT_GUID" default:"globalAccountGUID"`
-	SubaccountIDField      string `envconfig:"MAPPING_FIELD_SUBACCOUNT_ID" default:"subaccountId"`
-	CustomerIDField        string `envconfig:"MAPPING_FIELD_CUSTOMER_ID" default:"customerId"`
-	SubdomainField         string `envconfig:"MAPPING_FIELD_SUBDOMAIN" default:"subdomain"`
-	DetailsField           string `envconfig:"MAPPING_FIELD_DETAILS" default:"details"`
-	LabelsField            string `envconfig:"MAPPING_FIELD_LABELS" default:"labels"`
+	NameField                     string `envconfig:"MAPPING_FIELD_NAME" default:"name"`
+	IDField                       string `envconfig:"MAPPING_FIELD_ID" default:"id"`
+	GlobalAccountGUIDField        string `envconfig:"MAPPING_FIELD_GLOBAL_ACCOUNT_GUID" default:"globalAccountGUID"`
+	SubaccountIDField             string `envconfig:"MAPPING_FIELD_SUBACCOUNT_ID" default:"subaccountId"`
+	CustomerIDField               string `envconfig:"MAPPING_FIELD_CUSTOMER_ID" default:"customerId"`
+	SubdomainField                string `envconfig:"MAPPING_FIELD_SUBDOMAIN" default:"subdomain"`
+	CostObjectIDField             string `envconfig:"MAPPING_FIELD_COST_OBJECT_ID" default:"costObject"`
+	DetailsField                  string `envconfig:"MAPPING_FIELD_DETAILS" default:"details"`
+	LabelsField                   string `envconfig:"MAPPING_FIELD_LABELS" default:"labels"`
+	SubaccountCostObjectIDField   string `envconfig:"MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_ID" default:"costObjectId"`
+	SubaccountCostObjectTypeField string `envconfig:"MAPPING_FIELD_SUBACCOUNT_COST_OBJECT_TYPE" default:"costObjectType"`
 
 	DiscriminatorField string `envconfig:"MAPPING_FIELD_DISCRIMINATOR"`
 	DiscriminatorValue string `envconfig:"MAPPING_VALUE_DISCRIMINATOR"`
 
-	RegionField      string `envconfig:"MAPPING_FIELD_REGION" default:"APP_MAPPING_FIELD_REGION"`
+	RegionField      string `envconfig:"MAPPING_FIELD_REGION" default:"region"`
 	EntityIDField    string `envconfig:"MAPPING_FIELD_ENTITY_ID" default:"entityId"`
 	EntityTypeField  string `envconfig:"MAPPING_FIELD_ENTITY_TYPE" default:"entityType"`
 	LicenseTypeField string `envconfig:"MAPPING_FIELD_LICENSE_TYPE" default:"licenseType"`

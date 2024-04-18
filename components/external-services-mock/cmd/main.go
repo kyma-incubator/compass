@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	service_manager "github.com/kyma-incubator/compass/components/external-services-mock/internal/service-manager"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	panicrecovery "github.com/kyma-incubator/compass/components/director/pkg/panic_recovery"
 
@@ -75,10 +77,13 @@ type config struct {
 	DestinationServiceConfig  DestinationServiceConfig
 	ORDServers                ORDServers
 	SelfRegConfig             selfreg.Config
+	ServiceManagerConfig      service_manager.Config
 	DefaultTenant             string `envconfig:"APP_DEFAULT_TENANT"`
 	DefaultCustomerTenant     string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
 	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
+	TrustedNewGA              string `envconfig:"APP_TRUSTED_NEW_GA"`
 	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
+	TenantRegion              string `envconfig:"APP_TENANT_REGION"`
 
 	KeyLoaderConfig credloader.KeysConfig
 
@@ -225,12 +230,20 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	jwksHanlder := oauth.NewJWKSHandler(&key.PublicKey)
 	router.HandleFunc(cfg.JWKSPath, jwksHanlder.Handle)
 
+	// This endpoint is for getting a token for calling saas registry subscriptions api in system field discovery engine flow on local env.
+	router.HandleFunc("/discovery/cert/token", tokenHandler.Generate).Methods(http.MethodPost)
+
 	// Subscription handlers that mock subscription manager API's. On real environment we use the same path but with different(real) host
 	jobID := "818cbe72-8dea-4e01-850d-bc1b54b00e78" // randomly chosen UUID
 	subHandler := subscription.NewHandler(httpClient, cfg.TenantConfig, cfg.TenantProviderConfig, jobID)
 	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Subscribe).Methods(http.MethodPost)
 	router.HandleFunc("/saas-manager/v1/applications/{app_name}/subscription", subHandler.Unsubscribe).Methods(http.MethodDelete)
 	router.HandleFunc(fmt.Sprintf("/api/v1/jobs/%s", jobID), subHandler.JobStatus).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("/api/v1/configure/tenant-type-id"), subHandler.ConfigureTenantTypeAndID).Methods(http.MethodPut)
+	router.HandleFunc(fmt.Sprintf("/api/v1/configure/tenant-type-id"), subHandler.ResetTenantTypeAndID).Methods(http.MethodDelete)
+
+	// This endpoint is used only for local env. On real env an external service is called with same path, but different host.
+	router.HandleFunc("/saas-manager/v1/service/subscriptions", subHandler.GetSubscriptions).Methods(http.MethodGet)
 
 	// Both handlers below are part of the provider setup. On real environment when someone is subscribed to provider tenant we want to mock OnSubscription and GetDependency callbacks
 	// and return expected results. CMP will be returned as dependency and will execute its subscription logic.
@@ -287,12 +300,12 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	systemsRouter.Use(oauthMiddlewareMultiple([]MiddlewareArgs{
 		{
 			key:            &key.PublicKey,
-			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant}),
+			validateClaims: getClaimsValidator([]string{cfg.DefaultTenant, cfg.TrustedTenant, cfg.TrustedNewGA}),
 			ClaimGetter:    func() jwt.Claims { return &oauth.Claims{} },
 		},
 		{
 			key:            keyCache.Get()[cfg.KeyLoaderConfig.KeysSecretName].PublicKey,
-			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant}),
+			validateClaims: getClaimsValidator([]string{cfg.DefaultCustomerTenant, cfg.TrustedTenant, cfg.TrustedNewGA}),
 			ClaimGetter:    func() jwt.Claims { return &modelJwt.Claims{} },
 		},
 	}))
@@ -300,7 +313,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 
 	// Tenant fetcher handlers
 	allowedSubaccounts := []string{cfg.OnDemandTenant, cfg.TenantConfig.TestTenantOnDemandID}
-	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant)
+	tenantFetcherHandler := tenantfetcher.NewHandler(allowedSubaccounts, cfg.DefaultTenant, cfg.DefaultCustomerTenant, cfg.TenantRegion)
 
 	router.Methods(http.MethodPost).PathPrefix("/tenant-fetcher/global-account-create/configure").HandlerFunc(tenantFetcherHandler.HandleConfigure(tenantfetcher.AccountCreationEventType))
 	router.Methods(http.MethodDelete).PathPrefix("/tenant-fetcher/global-account-create/reset").HandlerFunc(tenantFetcherHandler.HandleReset(tenantfetcher.AccountCreationEventType))
@@ -356,6 +369,23 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	selfRegRouter.HandleFunc("", selfRegisterHandler.HandleSelfRegPrep).Methods(http.MethodPost)
 	selfRegRouter.HandleFunc(fmt.Sprintf("/{%s}", selfreg.NamePath), selfRegisterHandler.HandleSelfRegCleanup).Methods(http.MethodDelete)
 
+	// Service Manager handlers
+	serviceManagerHandler := service_manager.NewServiceManagerHandler(cfg.ServiceManagerConfig)
+	// Service Offerings
+	router.HandleFunc(service_manager.ServiceOfferingsPath, serviceManagerHandler.HandleServiceOfferingsList).Methods(http.MethodGet)
+	// Service Plans
+	router.HandleFunc(service_manager.ServicePlansPath, serviceManagerHandler.HandleServicePlansList).Methods(http.MethodGet)
+	// Service Instances
+	router.HandleFunc(service_manager.ServiceInstancesPath, serviceManagerHandler.HandleServiceInstancesList).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceInstancesPath, service_manager.ServiceInstanceIDPath), serviceManagerHandler.HandleServiceInstanceGet).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceInstancesPath, service_manager.ServiceInstanceIDPath), serviceManagerHandler.HandleServiceInstanceDelete).Methods(http.MethodDelete)
+	router.HandleFunc(service_manager.ServiceInstancesPath, serviceManagerHandler.HandleServiceInstanceCreate).Methods(http.MethodPost)
+	// Service Bindings
+	router.HandleFunc(service_manager.ServiceBindingsPath, serviceManagerHandler.HandleServiceBindingsList).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceBindingsPath, service_manager.ServiceBindingIDPath), serviceManagerHandler.HandleServiceBindingGet).Methods(http.MethodGet)
+	router.HandleFunc(fmt.Sprintf("%s/{%s}", service_manager.ServiceBindingsPath, service_manager.ServiceBindingIDPath), serviceManagerHandler.HandleServiceBindingDelete).Methods(http.MethodDelete)
+	router.HandleFunc(service_manager.ServiceBindingsPath, serviceManagerHandler.HandleServiceBindingCreate).Methods(http.MethodPost)
+
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.Port),
 		Handler: router,
@@ -380,7 +410,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationGetHTTPHandler()).Methods(http.MethodGet)
 	router.HandleFunc(webhook.OperationPath, webhook.NewWebHookOperationPostHTTPHandler()).Methods(http.MethodPost)
 
-	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig)
+	// using "/cert/token" for client ID for oauth2mTLS destinations as this is the path for getting token with cert from external services mock and cfg.OAuthConfig.ClientID for client ID as this is the client ID the token endpoint expects
+	notificationHandler := formationnotification.NewHandler(cfg.NotificationConfig, cfg.ProviderDestinationConfig, buildUrl(cfg.ExternalURL, "/cert/token"), cfg.OAuthConfig.ClientID)
 	// formation assignment notifications sync handlers
 	router.HandleFunc("/formation-callback/{tenantId}", notificationHandler.Patch).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/{tenantId}/{applicationId}", notificationHandler.Delete).Methods(http.MethodDelete)
@@ -410,6 +441,8 @@ func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims 
 	router.HandleFunc("/formation-callback/async-no-config/{tenantId}", notificationHandler.AsyncNoConfig).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}", notificationHandler.AsyncNoResponseAssign).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-no-response/{tenantId}/{applicationId}", notificationHandler.AsyncNoResponseUnassign).Methods(http.MethodDelete)
+	router.HandleFunc("/formation-callback/sync-create-ready/{tenantId}", notificationHandler.PatchWithCreateReadyState).Methods(http.MethodPatch)
+	router.HandleFunc("/formation-callback/sync-delete-ready/{tenantId}/{applicationId}", notificationHandler.DeleteWithDeleteReadyState).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-create-ready/{tenantId}", notificationHandler.AsyncNoConfigWithCreateReady).Methods(http.MethodPatch)
 	router.HandleFunc("/formation-callback/async-delete-ready/{tenantId}/{applicationId}", notificationHandler.AsyncNoConfigWithDeleteReady).Methods(http.MethodDelete)
 	router.HandleFunc("/formation-callback/async-fail-once/{tenantId}", notificationHandler.AsyncFailOnce).Methods(http.MethodPatch)
@@ -812,4 +845,8 @@ func getClaimsTenant(claims jwt.Claims) string {
 	default:
 		return ""
 	}
+}
+
+func buildUrl(host, path string) string {
+	return "https://" + host + ":443" + path
 }

@@ -37,7 +37,6 @@ const (
 	TestTarget              = "1c22035a-72e4-4a78-9025-bbcb1f87760b"
 	TestTargetType          = "runtimeContext"
 	TestStateInitial        = "INITIAL"
-	TestReadyState          = "READY"
 	TestWebhookID           = "eca98d44-aac0-4e44-898b-c394beab2e94"
 	TestReverseWebhookID    = "aecec253-b4d8-416a-be5c-a27677ee5157"
 	TntParentID             = "2d11035a-72e4-4a78-9025-bbcb1f87760b"
@@ -53,6 +52,7 @@ var (
 	TestErrorValueRawJSON         = json.RawMessage(`{"error":"error message"}`)
 	TestEmptyErrorValueRawJSON    = json.RawMessage(`\"\"`)
 	TestConfigValueStr            = "{\"configKey\":\"configValue\"}"
+	TestNewConfigValueStr         = "{\"newConfigKey\":\"newConfigValue\"}"
 	TestErrorValueStr             = "{\"error\":\"error message\"}"
 	defaultTime                   = time.Time{}
 
@@ -237,32 +237,6 @@ func fixFormationAssignmentModelInput(configValue json.RawMessage) *model.Format
 		State:       TestStateInitial,
 		Value:       configValue,
 		Error:       nil,
-	}
-}
-
-func fixFormationAssignmentModelInputWithError(errorValue json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: TestFormationID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       nil,
-		Error:       errorValue,
-	}
-}
-
-func fixFormationAssignmentModelInputWithConfigurationAndError(configValue, errorValue json.RawMessage) *model.FormationAssignmentInput {
-	return &model.FormationAssignmentInput{
-		FormationID: TestFormationID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       TestStateInitial,
-		Value:       configValue,
-		Error:       errorValue,
 	}
 }
 
@@ -790,9 +764,9 @@ func fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(objectType model.Form
 	}
 }
 
-func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.FormationAssignmentNotificationRequest, *automock.TemplateInput, *automock.TemplateInput) {
-	var request *webhookclient.FormationAssignmentNotificationRequest
-	var requestReverse *webhookclient.FormationAssignmentNotificationRequest
+func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, *automock.TemplateInput, *automock.TemplateInput) {
+	var request *webhookclient.FormationAssignmentNotificationRequestTargetMapping
+	var requestReverse *webhookclient.FormationAssignmentNotificationRequestTargetMapping
 
 	templateInput := &automock.TemplateInput{}
 	templateInputReverse := &automock.TemplateInput{}
@@ -810,7 +784,12 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 	templateInput.Mock.On("SetAssignment", assignment).Times(2)
 	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
 
-	request = &webhookclient.FormationAssignmentNotificationRequest{Webhook: &webhook, Object: templateInput}
+	request = &webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+		FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
+			Webhook: &webhook, Object: templateInput,
+		},
+		Target: objectID,
+	}
 
 	if hasReverseWebhook {
 		switch reverseWebhookType {
@@ -824,12 +803,17 @@ func fixNotificationRequestAndReverseRequest(objectID, object2ID string, partici
 		templateInputReverse.Mock.On("SetAssignment", assignmentReverse).Times(2)
 		templateInputReverse.Mock.On("SetReverseAssignment", assignment).Times(2)
 
-		requestReverse = &webhookclient.FormationAssignmentNotificationRequest{Webhook: &webhookReverse, Object: templateInputReverse}
+		requestReverse = &webhookclient.FormationAssignmentNotificationRequestTargetMapping{
+			FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
+				Webhook: &webhookReverse, Object: templateInputReverse,
+			},
+			Target: object2ID,
+		}
 	} else {
 		requestReverse = nil
 	}
 
-	return []*webhookclient.FormationAssignmentNotificationRequest{request, requestReverse}, templateInput, templateInputReverse
+	return []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{request, requestReverse}, templateInput, templateInputReverse
 }
 
 func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
@@ -907,7 +891,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 }
 
 func fixNotificationStatusReport() *statusreport.NotificationStatusReport {
-	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyState, "")
+	return statusreport.NewNotificationStatusReport(TestConfigValueRawJSON, readyAssignmentState, "")
 }
 
 func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage, state string) *statusreport.NotificationStatusReport {

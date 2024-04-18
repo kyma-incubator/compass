@@ -404,7 +404,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 			testHTTPClient := NewTestClient(test.RoundTripFunc)
 
 			certCache := credloader.NewCertificateCache()
-			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName, extSvcClientCertSecretName)
+			var executorProviderMock accessstrategy.ExecutorProvider = accessstrategy.NewDefaultExecutorProvider(certCache, externalClientCertSecretName)
 			if test.ExecutorProviderFunc != nil {
 				executorProviderMock = test.ExecutorProviderFunc()
 			}
@@ -439,7 +439,7 @@ func TestClient_FetchOpenResourceDiscoveryDocuments(t *testing.T) {
 				testWebhook.Auth.AccessStrategy = &test.AccessStrategy
 			}
 
-			docs, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testResource, testWebhook, ordMappings, requestObject)
+			docs, _, actualBaseURL, err := client.FetchOpenResourceDiscoveryDocuments(context.TODO(), testResource, testWebhook, ordMappings, requestObject)
 
 			if test.ExpectedErr != nil {
 				require.Error(t, err)

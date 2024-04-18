@@ -56,7 +56,7 @@ spec:
   authenticators:
   - handler: jwt
     config:
-      trusted_issuers: ["{{ .Values.global.cockpit.auth.idpHost }}"]
+      trusted_issuers: ["{{ .Values.global.oathkeeper.auth.idpHost }}"]
   authorizer:
     handler: allow
   mutators:
@@ -472,6 +472,35 @@ spec:
 {{ toYaml .Values.global.oathkeeper.mutators.certificateResolverService | indent 4 }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.authenticationMappingServices.subscriber.cfg | indent 4 }}
+  - handler: hydrator
+{{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
+  - handler: id_token
+    config:
+      claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
+---
+apiVersion: oathkeeper.ory.sh/v1alpha1
+kind: Rule
+metadata:
+  name: compass-async-formation-mapping-{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.name }}
+spec:
+  # Configuration of oathkeeper for endpoint secured with token
+  upstream:
+    url: "http://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.upstreamComponent }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.director.graphql.external.port }}"
+  match:
+    methods: ["PATCH"]
+    url: <http|https>://{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.gatewayHost }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.director.formationMappingAsyncStatusApi.pathPrefix }}/<.*>
+  authenticators:
+    - handler: noop
+  authorizer:
+    handler: allow
+  mutators:
+  - handler: hydrator
+    config:
+      api:
+        url: "http://{{ $.Values.global.hydrator.host }}:{{ $.Values.global.hydrator.port }}{{ $.Values.global.hydrator.prefix}}/authn-mapping/{{ .Values.global.director.formationMappingAsyncStatusApi.authentication.hydratorAuthenticator.name }}"
+        retry:
+          give_up_after: {{ default "6s" .Values.global.director.formationMappingAsyncStatusApi.authentication.retry.give_up_after }}
+          max_delay: {{ default "2000ms" .Values.global.director.formationMappingAsyncStatusApi.authentication.retry.max_delay }}
   - handler: hydrator
 {{ toYaml .Values.global.oathkeeper.mutators.tenantMappingService | indent 4 }}
   - handler: id_token

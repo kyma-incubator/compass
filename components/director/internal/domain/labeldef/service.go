@@ -138,9 +138,9 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 	if len(formationNames) == 0 && len(existingLabels) != 0 {
 		labelInfo := make([]string, 0, len(existingLabels))
 		for _, label := range existingLabels {
-			labelInfo = append(labelInfo, fmt.Sprintf("key=%q and value=%q", label.Key, label.Value))
+			labelInfo = append(labelInfo, fmt.Sprintf("key='%s' and value='%s' for object ID='%s' and object type='%s'", label.Key, label.Value, label.ObjectID, label.ObjectType))
 		}
-		return apperrors.NewInvalidDataError(fmt.Sprintf(`labels: %s are not valid against empty schema`, strings.Join(labelInfo, ",")))
+		return apperrors.NewInvalidDataError(fmt.Sprintf(`labels with the following data: %s are not valid against empty schema`, strings.Join(labelInfo, ",")))
 	}
 
 	validator, err := jsonschema.NewValidatorFromRawSchema(schema)
@@ -155,7 +155,7 @@ func (s *service) ValidateExistingLabelsAgainstSchema(ctx context.Context, schem
 		}
 
 		if !result.Valid {
-			return apperrors.NewInvalidDataError(fmt.Sprintf(`label with key="%s" and value="%s" is not valid against new schema for %s with ID="%s": %s`, label.Key, label.Value, label.ObjectType, label.ObjectID, result.Error))
+			return apperrors.NewInvalidDataError(fmt.Sprintf(`label with key='%s' and value='%s' for object ID='%s' and object type='%s' is not valid against new schema: %s`, label.Key, label.Value, label.ObjectID, label.ObjectType, result.Error))
 		}
 	}
 	return nil

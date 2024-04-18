@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -29,13 +31,13 @@ type webhookClient interface {
 
 //go:generate mockery --exported --name=notificationsGenerator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type notificationsGenerator interface {
-	GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
-	GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx context.Context, tenant string, appID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx context.Context, tenant, runtimeCtxID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx context.Context, tenant, runtimeID string, formation *model.Formation, operation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
 	GenerateFormationLifecycleNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation, customerTenantContext *webhookdir.CustomerTenantContext) ([]*webhookclient.FormationNotificationRequest, error)
 }
 
@@ -84,7 +86,7 @@ func NewNotificationService(
 }
 
 // GenerateFormationAssignmentNotifications generates formation assignment notifications for all listening resources about the execution of `operation` for formation `formation` and object `objectID` of type `objectType`
-func (ns *notificationsService) GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (ns *notificationsService) GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	customerTenantContext, err := ns.extractCustomerTenantContext(ctx, formation.TenantID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while extracting customer tenant context for tenant with internal ID %s", formation.TenantID)
@@ -256,16 +258,25 @@ func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.
 	if fa == nil && f != nil {
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation with ID: %s", f.ID)
 		f.SetLastNotificationSentTimestamp(time.Now())
-		if updateErr := ns.formationRepo.Update(ctx, f); updateErr != nil {
-			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation with ID: %s", f.ID)
+		if err := ns.formationRepo.Update(ctx, f); err != nil {
+			if webhookNotificationReq.GetOperation() == model.DeleteFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
+				return nil
+			}
+			return errors.Wrapf(err, "while updating last notification sent timestamp for formation with ID: %s", f.ID)
 		}
 	}
 
 	if fa != nil {
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation assignment with ID: %s", fa.ID)
 		fa.SetLastNotificationSentTimestamp(time.Now())
-		if updateErr := ns.formationAssignmentRepo.Update(ctx, fa); updateErr != nil {
-			return errors.Wrapf(updateErr, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)
+		if err := ns.formationAssignmentRepo.Update(ctx, fa); err != nil {
+			// That covers the case when we send two unassign notifications to one participant
+			// and the response of the first notification is returned and processed, which deletes the formation assignment,
+			// while the second notification still hasn't been sent.
+			if webhookNotificationReq.GetOperation() == model.UnassignFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
+				return nil
+			}
+			return errors.Wrapf(err, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)
 		}
 	}
 

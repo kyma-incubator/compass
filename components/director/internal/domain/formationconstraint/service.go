@@ -14,7 +14,6 @@ type formationConstraintRepository interface {
 	Create(ctx context.Context, item *model.FormationConstraint) error
 	Get(ctx context.Context, id string) (*model.FormationConstraint, error)
 	ListAll(ctx context.Context) ([]*model.FormationConstraint, error)
-	ListByIDs(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error)
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, model *model.FormationConstraint) error
 	ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)
@@ -25,6 +24,7 @@ type formationConstraintRepository interface {
 type formationTemplateConstraintReferenceRepository interface {
 	ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error)
 	ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([]*model.FormationTemplateConstraintReference, error)
+	ListByConstraintID(ctx context.Context, constraintID string) ([]*model.FormationTemplateConstraintReference, error)
 }
 
 //go:generate mockery --exported --name=uidService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -94,7 +94,7 @@ func (s *service) ListByFormationTemplateID(ctx context.Context, formationTempla
 		formationConstraintIDs = append(formationConstraintIDs, cr.ConstraintID)
 	}
 
-	formationConstraints, err := s.repo.ListByIDs(ctx, formationConstraintIDs)
+	formationConstraints, err := s.repo.ListByIDsAndGlobal(ctx, formationConstraintIDs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing Formation Constraints for FormationTemplate with ID: %s", formationTemplateID)
 	}
@@ -151,6 +151,20 @@ func (s *service) ListByFormationTemplateIDs(ctx context.Context, formationTempl
 
 // Delete deletes formation constraint by id
 func (s *service) Delete(ctx context.Context, id string) error {
+	formationTemplateConstraintReferences, err := s.formationTemplateConstraintReferenceRepo.ListByConstraintID(ctx, id)
+	if err != nil {
+		return errors.Wrapf(err, "while listing Formation Template Constraint References for Constraint with ID %s", id)
+	}
+
+	formationTemplateIDs := make([]string, 0, len(formationTemplateConstraintReferences))
+	for _, reference := range formationTemplateConstraintReferences {
+		formationTemplateIDs = append(formationTemplateIDs, reference.FormationTemplateID)
+	}
+
+	if len(formationTemplateConstraintReferences) > 0 {
+		return errors.Errorf("cannot delete Formation Constraint with ID %s because it is used by Formation Templates with IDs %v", id, formationTemplateIDs)
+	}
+
 	if err := s.repo.Delete(ctx, id); err != nil {
 		return errors.Wrapf(err, "while deleting Formation Constraint with ID %s", id)
 	}
