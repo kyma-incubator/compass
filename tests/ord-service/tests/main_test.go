@@ -48,7 +48,6 @@ type config struct {
 	CertLoaderConfig   credloader.CertConfig
 	SubscriptionConfig subscription.Config
 	certprovider.ExternalCertProviderConfig
-	GatewayOauth                        string
 	ExternalServicesMockBaseURL         string
 	DirectorExternalCertSecuredURL      string
 	ORDServiceURL                       string
