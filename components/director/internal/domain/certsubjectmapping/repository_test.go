@@ -193,6 +193,34 @@ func TestRepository_List(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListAll(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List all certificate subject mappings",
+		MethodName: "ListAll",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ExpectedModelEntities: []interface{}{CertSubjectMappingModel},
+		ExpectedDBEntities:    []interface{}{CertSubjectMappingEntity},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       certsubjectmapping.NewRepository,
+		DisableConverterErrorTest: false,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_ListByConsumerID(t *testing.T) {
 	consumerID := "consumer-id"
 
