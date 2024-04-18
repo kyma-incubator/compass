@@ -30,6 +30,7 @@ type Config struct {
 	CertLoaderConfig             credloader.CertConfig
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 
-	Log        log.Config
+	Log log.Config
+
 	TenantInfo TenantInfo
 }
