@@ -261,7 +261,7 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
 					len(bundles), tenant, destination.Name, destination.XCorrelationID)
 
-				if err = d.upsertBundles(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
+				if err = d.upsertDestinationsWithBundleID(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
 					return err
 				}
 
@@ -278,7 +278,7 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 
 			log.C(ctxWithTransact).Infof("Found %d bundles for system '%s', url '%s', correlation id '%s'", len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 
-			if err = d.upsertBundles(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
+			if err = d.upsertDestinationsWithBundleID(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
 				return err
 			}
 		}
@@ -310,7 +310,7 @@ func (d *DestinationService) walkthroughPages(
 	return nil
 }
 
-func (d *DestinationService) upsertBundles(ctx context.Context, bundles []*model.Bundle, destination model.DestinationInput, tenant, revision string) error {
+func (d *DestinationService) upsertDestinationsWithBundleID(ctx context.Context, bundles []*model.Bundle, destination model.DestinationInput, tenant, revision string) error {
 	for _, bundle := range bundles {
 		id := d.UUIDSvc.Generate()
 		if err := d.DestinationRepo.Upsert(ctx, destination, id, tenant, bundle.ID, revision); err != nil {
