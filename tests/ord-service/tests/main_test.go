@@ -82,6 +82,7 @@ type config struct {
 	GlobalSubaccountIDLabelKey          string        `envconfig:"APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY"`
 	CertSubjectMappingResyncInterval    time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 	ApplicationTemplateProductLabel     string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
+	GatewayOauth                        string        `envconfig:"APP_GATEWAY_OAUTH"`
 }
 
 var conf config

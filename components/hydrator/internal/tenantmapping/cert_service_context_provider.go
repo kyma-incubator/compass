@@ -64,7 +64,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 			// tenant not in DB yet, might be because we have not imported all subaccounts yet
 			log.C(ctx).Warningf("Could not find tenant with external ID: %s, error: %s", externalTenantID, err.Error())
 			log.C(ctx).Infof("Returning tenant context with empty internal tenant ID and external ID %s", externalTenantID)
-			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, p.tenantKeys, scopes, mergeWithOtherScopes, "", "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider), nil
+			return NewObjectContext(&graphql.Tenant{ID: externalTenantID}, p.tenantKeys, scopes, mergeWithOtherScopes, "", "", authDetails.AuthID, authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject), nil
 		}
 		return ObjectContext{}, errors.Wrapf(err, "while getting external tenant mapping [ExternalTenantID=%s]", externalTenantID)
 	}
@@ -72,7 +72,7 @@ func (p *certServiceContextProvider) GetObjectContext(ctx context.Context, reqDa
 	authDetails.Region = region
 
 	objCtx := NewObjectContext(tenantMapping, p.tenantKeys, scopes, mergeWithOtherScopes,
-		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider)
+		authDetails.Region, "", getConsumerID(reqData, authDetails), authDetails.AuthFlow, consumer.Type(consumerType), tenantmapping.CertServiceObjectContextProvider, authDetails.Subject)
 	log.C(ctx).Infof("Successfully got object context: %+v", RedactConsumerIDForLogging(objCtx))
 	return objCtx, nil
 }
@@ -88,9 +88,10 @@ func (p *certServiceContextProvider) Match(_ context.Context, data oathkeeper.Re
 
 	idVal := data.Body.Header.Get(oathkeeper.ClientIDCertKey)
 	certIssuer := data.Body.Header.Get(oathkeeper.ClientIDCertIssuer)
+	subject := data.Body.Header.Get(oathkeeper.CertificateSubjectHeader)
 
 	if idVal != "" && certIssuer == oathkeeper.ExternalIssuer {
-		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer}, nil
+		return true, &oathkeeper.AuthDetails{AuthID: idVal, AuthFlow: oathkeeper.CertificateFlow, CertIssuer: certIssuer, Subject: subject}, nil
 	}
 
 	return false, nil, nil

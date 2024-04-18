@@ -86,6 +86,7 @@ func (vh *validationHydrator) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 
 	authSession.Header.Add(oathkeeper.ClientIdFromCertificateHeader, certData.ClientID)
 	authSession.Header.Add(oathkeeper.ClientCertificateHashHeader, certData.CertificateHash)
+	authSession.Header.Add(oathkeeper.SubjectHeader, certData.Subject)
 	authSession.Header.Add(oathkeeper.ClientCertificateIssuerHeader, issuer)
 
 	authSession.Extra = appendExtra(authSession.Extra, certData.AuthSessionExtra)

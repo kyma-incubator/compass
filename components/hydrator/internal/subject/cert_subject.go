@@ -2,7 +2,6 @@ package subject
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 
@@ -86,7 +85,7 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 
 		for _, m := range mappings {
 			log.C(ctx).Infof("Trying to match the consumer subject DN with certificate subject mappings DN: %q", m.Subject)
-			if subjectsMatch(subject, m.Subject) {
+			if cert.SubjectsMatch(subject, m.Subject) {
 				log.C(ctx).Infof("Subject's DNs matched!")
 				return cert.GetAuthSessionExtra(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
 			}
@@ -119,37 +118,10 @@ func (p *processor) authIDFromMappings() func(subject string) string {
 	return func(subject string) string {
 		mappings := p.certSubjectMappingCache.Get()
 		for _, m := range mappings {
-			if subjectsMatch(subject, m.Subject) {
+			if cert.SubjectsMatch(subject, m.Subject) {
 				return m.InternalConsumerID
 			}
 		}
 		return ""
 	}
-}
-
-func subjectsMatch(actualSubject, expectedSubject string) bool {
-	return cert.GetCommonName(expectedSubject) == cert.GetCommonName(actualSubject) &&
-		cert.GetCountry(expectedSubject) == cert.GetCountry(actualSubject) &&
-		cert.GetLocality(expectedSubject) == cert.GetLocality(actualSubject) &&
-		cert.GetOrganization(expectedSubject) == cert.GetOrganization(actualSubject) &&
-		matchOrganizationalUnits(cert.GetAllOrganizationalUnits(actualSubject), cert.GetAllOrganizationalUnits(expectedSubject))
-}
-
-func matchOrganizationalUnits(actualOrgUnits, expectedOrgUnits []string) bool {
-	if len(expectedOrgUnits) != len(actualOrgUnits) {
-		return false
-	}
-
-	expectedOrgUnitsMap := make(map[string]struct{}, len(expectedOrgUnits))
-	for _, expectedOrgUnit := range expectedOrgUnits {
-		expectedOrgUnitsMap[strings.TrimSpace(expectedOrgUnit)] = struct{}{}
-	}
-
-	for _, actualOrgUnit := range actualOrgUnits {
-		if _, exist := expectedOrgUnitsMap[strings.TrimSpace(actualOrgUnit)]; !exist {
-			return false
-		}
-	}
-
-	return true
 }
