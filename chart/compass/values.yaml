@@ -178,24 +178,24 @@ global:
       version: "PR-3814"
       name: compass-director
     hydrator:
-      dir: dev/incubator/
-      version: "PR-3717"
+      dir: prod/incubator/
+      version: "v20240318-fbc94dc7"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
       version: "PR-3815"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: dev/incubator/
-      version: "PR-3719"
+      dir: prod/incubator/
+      version: "v20240319-276abee6"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
       version: "PR-3792"
       name: compass-instance-creator
     default_tenant_mapping_handler:
-      dir: dev/incubator/
-      version: "PR-3713"
+      dir: prod/incubator/
+      version: "v20240318-14e6aa90"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: prod/incubator/
