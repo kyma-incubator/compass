@@ -29,6 +29,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
@@ -36,8 +38,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/tidwall/sjson"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -133,19 +133,13 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-subscription-cn", -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
+	externalTechnicalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-technical-cn", -1))
+	externalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-consumer-provider-cn", -1))
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerTechnicalClientKey, providerTechnicalRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalTechnicalCertProviderConfig, true)
+	directorTechnicalCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerTechnicalClientKey, providerTechnicalRawCertChain, conf.SkipSSLValidation)
+
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
@@ -468,8 +462,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, directorTechnicalCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, directorTechnicalCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])

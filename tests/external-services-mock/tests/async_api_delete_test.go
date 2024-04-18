@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
+
 	testingx "github.com/kyma-incubator/compass/tests/pkg/testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -127,14 +130,31 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
 		}
 
+		t.Log("Create integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "int-system-ord-service-consumption")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.GatewayOauth)
+
 		t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 		appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 		require.NoError(t, err)
 
 		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 		appTemplate := graphql.ApplicationTemplate{}
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, registerTemplateRequest, &appTemplate)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTemplate)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, registerTemplateRequest, &appTemplate)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 		require.NoError(t, err)
 
 		require.Len(t, appTemplate.Webhooks, 1)
@@ -158,14 +178,14 @@ func TestAsyncAPIDeleteApplicationWithAppTemplateWebhook(stdT *testing.T) {
 
 		registerAppRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTemplateInputGQL)
 		app := graphql.ApplicationExt{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, registerAppRequest, &app)
+		defer fixtures.CleanupApplication(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
 		require.Equal(t, app.Status.Condition, graphql.ApplicationStatusConditionInitial)
 		nearCreationTime := time.Now().Add(-1 * time.Second)
 
-		triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, certSecuredGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, appTemplate.Webhooks[0].ID, oauthGraphQLClient)
 	})
 }
 
@@ -203,14 +223,31 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 			Webhooks:    []*graphql.WebhookInput{testPkg.BuildMockedWebhook(testConfig.ExternalServicesMockBaseURL, graphql.WebhookTypeUnregisterApplication)},
 		}
 
+		t.Log("Create integration system")
+		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "int-system-async-api")
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
+		require.NoError(t, err)
+		require.NotEmpty(t, intSys.ID)
+
+		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+		require.NotEmpty(t, intSysAuth)
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+		require.True(t, ok)
+
+		t.Log("Issue a Hydra token with Client Credentials")
+		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, testConfig.GatewayOauth)
+
 		t.Log(fmt.Sprintf("Registering application template: %s", appTemplateName))
 		appTemplateInputGQL, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInput)
 		require.NoError(t, err)
 
 		registerTemplateRequest := fixtures.FixCreateApplicationTemplateRequest(appTemplateInputGQL)
 		appTemplate := graphql.ApplicationTemplate{}
-		err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, registerTemplateRequest, &appTemplate)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, "", appTemplate)
+		err = testctx.Tc.RunOperationWithoutTenant(ctx, oauthGraphQLClient, registerTemplateRequest, &appTemplate)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 		require.NoError(t, err)
 
 		require.Len(t, appTemplate.Webhooks, 1)
@@ -248,10 +285,10 @@ func TestAsyncAPIDeleteApplicationPrioritizationWithBothAppTemplateAndAppWebhook
 
 		registerAppWebhookRequest := fixtures.FixAddWebhookToApplicationRequest(app.ID, appWebhookInputGQL)
 		webhookResult := graphql.Webhook{}
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, registerAppWebhookRequest, &webhookResult)
 		require.NoError(t, err)
 
-		triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, certSecuredGraphQLClient)
+		triggerAsyncDeletion(t, ctx, app, nearCreationTime, webhookResult.ID, oauthGraphQLClient)
 	})
 }
 

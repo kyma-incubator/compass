@@ -82,6 +82,16 @@ func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClie
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 
+func CleanupApplicationTemplateWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, appTemplate graphql.ApplicationTemplate) {
+	if appTemplate.ID == "" {
+		return
+	}
+	req := FixDeleteApplicationTemplateRequest(appTemplate.ID)
+
+	err := testctx.Tc.RunOperationNoTenant(ctx, gqlClient, req, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+}
+
 func CleanupApplicationTemplateWithApplication(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, applicationTemplate graphql.ApplicationTemplate, application *graphql.ApplicationExt) {
 	CleanupApplication(t, ctx, gqlClient, tenant, application)
 	CleanupApplicationTemplate(t, ctx, gqlClient, tenant, applicationTemplate)

@@ -8,6 +8,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -32,6 +35,8 @@ const (
 	testConsumerID     = "consumer-id"
 	testLabelInputKey  = "applicationType"
 	region             = "region-1"
+	certSubject        = "C=DE, L=local, O=SAP SE, OU=us10, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=non-compass"
+	similarCertSubject = "CN=non-compass, C=DE, L=local, OU=us10, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, O=SAP SE"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
@@ -62,6 +67,7 @@ var (
 	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
 	newTestLabels                  = map[string]interface{}{"label1": "test"}
 	timestamp                      = time.Now()
+	envConsumerSubjects            = []string{"C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}
 )
 
 func fixModelApplicationTemplate(id, name string, webhooks []*model.Webhook) *model.ApplicationTemplate {
@@ -898,5 +904,15 @@ func fixLabelInput(key string, value string, objectID string, objectType model.L
 		Value:      value,
 		ObjectID:   objectID,
 		ObjectType: objectType,
+	}
+}
+
+func fixCertSubjectMappingModel(appTemplateID string) *model.CertSubjectMapping {
+	return &model.CertSubjectMapping{
+		ID:                 testUUID,
+		Subject:            certSubject,
+		ConsumerType:       string(consumer.ApplicationProvider),
+		InternalConsumerID: &appTemplateID,
+		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel},
 	}
 }

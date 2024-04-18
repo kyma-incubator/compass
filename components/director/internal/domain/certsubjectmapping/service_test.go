@@ -292,6 +292,60 @@ func TestService_Exists(t *testing.T) {
 	}
 }
 
+func TestService_ListAll(t *testing.T) {
+	certSubjectMappings := []*model.CertSubjectMapping{CertSubjectMappingModel}
+
+	testCases := []struct {
+		Name           string
+		Repo           func() *automock.CertMappingRepository
+		ExpectedOutput []*model.CertSubjectMapping
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ListAll", emptyCtx).Return(certSubjectMappings, nil).Once()
+				return repo
+			},
+			ExpectedOutput: certSubjectMappings,
+		},
+		{
+			Name: "Error when listing certificate subject mappings fail",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ListAll", emptyCtx).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.Repo()
+
+			svc := certsubjectmapping.NewService(repo)
+
+			// WHEN
+			result, err := svc.ListAll(emptyCtx)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_List(t *testing.T) {
 	pageSize := 100
 	invalidPageSize := -100
