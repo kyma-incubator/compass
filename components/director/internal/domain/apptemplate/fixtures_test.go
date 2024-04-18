@@ -56,18 +56,18 @@ const (
 )
 
 var (
-	testUUID                       = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
-	testDescription                = "Lorem ipsum"
-	testJSONPath                   = "$.test"
-	testDifferentJSONPath          = "$.invalid.differentPath"
-	testDescriptionWithPlaceholder = "Lorem ipsum {{test}}"
-	testProviderName               = "provider-display-name"
-	testURL                        = "http://valid.url"
-	testError                      = errors.New("test error")
-	testTableColumns               = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
-	newTestLabels                  = map[string]interface{}{"label1": "test"}
-	timestamp                      = time.Now()
-	envConsumerSubjects            = []string{"C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}
+	testUUID                                  = "b3ea1977-582e-4d61-ae12-b3a837a3858e"
+	testDescription                           = "Lorem ipsum"
+	testJSONPath                              = "$.test"
+	testDifferentJSONPath                     = "$.invalid.differentPath"
+	testDescriptionWithPlaceholder            = "Lorem ipsum {{test}}"
+	testProviderName                          = "provider-display-name"
+	testURL                                   = "http://valid.url"
+	testError                                 = errors.New("test error")
+	testTableColumns                          = []string{"id", "name", "description", "application_namespace", "application_input", "placeholders", "access_level", "created_at", "updated_at"}
+	newTestLabels                             = map[string]interface{}{"label1": "test"}
+	timestamp                                 = time.Now()
+	envConsumerSubjects                       = []string{"C=DE, L=local, O=SAP SE, OU=Region, OU=SAP Cloud Platform Clients, OU=f8075207-1478-4a80-bd26-24a4785a2bfd, CN=compass"}
 	defaultValueForProductLabelWithSlisFilter = []interface{}{
 		map[string]interface{}{
 			"key":       "$.additionalAttributes.managedBy",
