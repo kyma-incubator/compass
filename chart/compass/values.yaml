@@ -162,20 +162,20 @@ global:
     containerRegistry:
       path: europe-docker.pkg.dev/kyma-project
     connector:
-      dir: prod/incubator/
-      version: "v20240318-8734b35c"
+      dir: dev/incubator/
+      version: "PR-3681"
       name: compass-connector
     connectivity_adapter:
       dir: prod/incubator/
       version: "v20240320-ceeacd33"
       name: compass-connectivity-adapter
     pairing_adapter:
-      dir: prod/incubator/
-      version: "v20240320-5c6016ea"
+      dir: dev/incubator/
+      version: "PR-3681"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3814"
+      version: "PR-3681"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -198,8 +198,8 @@ global:
       version: "v20240318-14e6aa90"
       name: compass-default-tenant-mapping-handler
     gateway:
-      dir: prod/incubator/
-      version: "v20240314-5adad565"
+      dir: dev/incubator/
+      version: "PR-3681"
       name: compass-gateway
     operations_controller:
       dir: prod/incubator/
@@ -223,12 +223,12 @@ global:
       dir:
       version: "0a651695"
     external_services_mock:
-      dir: prod/incubator/
-      version: "v20240327-9ddb4979"
+      dir: dev/incubator/
+      version: "PR-3681"
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3778"
+      version: "PR-3681"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -548,6 +548,7 @@ global:
         remove:
           - "Client-Id-From-Token"
           - "Client-Id-From-Certificate"
+          - "Subject-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
   hydrator:
@@ -755,7 +756,7 @@ global:
       idpHost: ""
       path: "/oauth2/certs"
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}", "subject": "{{ print .Extra.subject }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync system_fetcher:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
       authenticationMappingServices:
@@ -1340,7 +1341,6 @@ global:
       region: "eu-1"
     destination:
       consumerSubdomain: "compass-external-services-mock"
-      consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
       instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
       claims:
         subaccountIDKey: "subaccountid"
@@ -1486,6 +1486,10 @@ global:
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
         - "certificate_subject_mapping:read"
+      application_provider:
+        - "application_template:read"
+        - "application_template:write"
+        - "application_template.webhooks:read"
       managed_application_consumer: []
       formation_viewer:
         - "formation:read"

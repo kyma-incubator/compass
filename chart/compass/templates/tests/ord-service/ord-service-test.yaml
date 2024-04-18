@@ -32,6 +32,8 @@ spec:
           command: ["/bin/sh"]
           args: ["-c", "./ord-service.test -test.v; exit_code=$?; curl -XPOST http://127.0.0.1:15020/quitquitquit; sleep 4; exit $exit_code;"]
           env:
+            - name: GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
             - name: EXTERNAL_SERVICES_MOCK_BASE_URL
               value: "{{ .Values.global.tests.externalServicesMockFQDN }}:8080"
             - name: ORD_SERVICE_URL
@@ -145,8 +147,8 @@ spec:
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantDestinationCertificatesEndpoint }}"
             - name: APP_ENDPOINT_TENANT_INSTANCE_LEVEL_DESTINATION_CERTIFICATES
               value: "{{ .Values.global.destinationFetcher.prefix }}{{ .Values.global.destinationFetcher.server.tenantInstanceLevelDestinationCertificatesEndpoint }}"
-            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
-              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
+              value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
             - name: TEST_EXTERNAL_CERT_CN
               value: {{ .Values.global.externalCertConfiguration.commonName }}
             - name: TEST_EXTERNAL_CERT_SUBJECT
@@ -205,8 +207,43 @@ spec:
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL
               value: {{ .Values.global.tests.hydrator.certSubjectMappingResyncInterval | quote }}
+            - name: APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY
+              value: {{ .Values.global.director.globalSubaccountIDLabelKey }}
+            - name: APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL
+              value: "https://{{ .Values.global.externalServicesMock.certSecuredHost }}.{{.Values.global.ingress.domainName}}:443"
+            - name: TEST_CONSUMER_TENANT_ID
+              value: {{ .Values.global.tests.subscription.tenants.consumerTenantID }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientIdKey }}
+            - name: APP_PROVIDER_DESTINATION_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.clientSecretKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_TOKEN_PATH
+              value: {{ .Values.global.tests.subscription.destinationOauthSecret.oauthTokenPath }}
+            - name: APP_PROVIDER_DESTINATION_SERVICE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.serviceUrlKey }}
+            - name: APP_PROVIDER_DESTINATION_DEPENDENCY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.global.tests.subscription.destinationOauthSecret.name }}
+                  key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
             - name: APP_APPLICATION_TEMPLATE_PRODUCT_LABEL
               value: {{ .Values.global.systemFetcher.appTemplatesProductLabel }}
+            - name: APP_GATEWAY_OAUTH
+              value: "https://{{ .Values.global.gateway.tls.secure.oauth.host }}.{{ .Values.global.ingress.domainName }}/director/graphql"
           volumeMounts:
             - name: dest-svc-instances
               mountPath: {{ .Values.global.destinationFetcher.dependenciesConfig.path }}

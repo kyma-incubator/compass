@@ -325,6 +325,8 @@ spec:
               value: {{ .Values.global.systemFetcher.client.timeout }}
             - name: APP_SYSTEM_FETCHER_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
+              value: {{ .Values.global.hydrator.subjectConsumerMappingConfig | quote }}
           livenessProbe:
             httpGet:
               port: {{ .Values.global.director.graphql.external.port }}
