@@ -19,7 +19,7 @@ require (
 	github.com/form3tech-oss/jwt-go v3.2.5+incompatible // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/huandu/xstrings v1.4.0 // indirect
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240314124741-0167d9da3002 // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240418141740-4db3d23428fc // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
@@ -60,7 +60,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240418123645-614d7dff225c
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240418141740-4db3d23428fc
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect

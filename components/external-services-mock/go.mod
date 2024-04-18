@@ -31,8 +31,8 @@ require (
 
 require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240418123645-614d7dff225c
-	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240313130948-c1a00dbcc8b4
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240418141740-4db3d23428fc
+	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240418141740-4db3d23428fc
 	github.com/tidwall/sjson v1.2.5
 	k8s.io/apimachinery v0.26.9
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
