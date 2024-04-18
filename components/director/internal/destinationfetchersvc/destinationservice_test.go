@@ -13,6 +13,7 @@ import (
 )
 
 const (
+	destination1Name    = "mys4_1"
 	exampleDestination1 = `{
         "Name": "mys4_1",
         "Type": "HTTP",
@@ -39,6 +40,18 @@ const (
         "Password": "SecretPassword",
 		"x-system-id": "system-id",
 		"x-system-type": "mysystem"
+    }`
+	exampleDestinationWithoutIdentifiers = `{
+        "Name": "mys4_1",
+        "Type": "HTTP",
+        "Authentication": "BasicAuthentication",
+        "ProxyType": "Internet",
+        "XFSystemName": "Test S4HANA system",
+        "HTML5.DynamicDestination": "true",
+        "User": "SOME_USER",
+        "product.name": "SAP S/4HANA Cloud",
+        "WebIDEEnabled": "true",
+		"x-correlation-id": "sap.s4:communicationScenario:SAP_COM_0108"
     }`
 )
 

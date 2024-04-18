@@ -1,4 +1,4 @@
-package destinationcreator
+package destinationsvc
 
 var FindAPINoAuthDestResponseTemplate = `
 {
@@ -10,7 +10,8 @@ var FindAPINoAuthDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s"
   }
 }`
@@ -25,7 +26,8 @@ var FindAPIBasicDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "User": "%s",
     "Password": "%s"
@@ -52,7 +54,8 @@ var FindAPISAMLAssertionDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "audience": "%s",
     "KeyStoreLocation": "%s"
@@ -85,7 +88,8 @@ var FindAPIClientCertDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "KeyStoreLocation": "%s"
   },
@@ -107,7 +111,8 @@ var FindAPIOAuth2ClientCredsDestResponseTemplate = `
     "Name": "%s",
     "Type": "%s",
     "URL": "%s",
-    "Authentication": "%s",
+    "AuthenticationType": "%s",
+	"Authentication": "%s",
     "ProxyType": "%s",
     "clientId": "%s",
     "clientSecret": "%s",
@@ -137,7 +142,8 @@ var FindAPIOAuth2mTLSDestResponseTemplate = `
         "Name": "%s",
         "Type": "%s",
         "URL": "%s",
-        "Authentication": "%s",
+        "AuthenticationType": "%s",
+		"Authentication": "%s",
         "ProxyType": "%s",
         "tokenServiceURLType": "%s",
         "clientId": "%s",

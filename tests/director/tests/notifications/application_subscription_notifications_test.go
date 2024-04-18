@@ -3,13 +3,18 @@ package notifications
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	urlpkg "net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/request"
+	"github.com/tidwall/sjson"
 
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
@@ -540,7 +545,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			region := conf.SubscriptionConfig.SelfRegRegion
 			instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 			require.True(t, ok)
-			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
+			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
 			require.NoError(t, err)
 
 			consumerTokenURL, err := buildConsumerTokenURL(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain)
@@ -560,6 +565,69 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertOAuth2ClientCredsDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2ClientCredsDestinationName, oauth2ClientCredsDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			t.Log("Destinations and destination certificates have been successfully created")
+
+			t.Run("Create a destination associated with a bundle using existing destinations created from destination creator", func(t *testing.T) {
+				const correlationID = "e2e-client-cert-auth-correlation-ids" // the client cert dest has that correlationID as well
+				bndlInput := graphql.BundleCreateInput{
+					Name:           "test-bundle",
+					CorrelationIDs: []string{correlationID},
+				}
+				bundle := fixtures.CreateBundleWithInput(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID, bndlInput)
+				require.NotEmpty(stdT, bundle.ID)
+
+				stdT.Log("Getting consumer application using both provider and consumer credentials...")
+
+				consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
+				consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+				consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+				require.NoError(stdT, err)
+				headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
+
+				// HTTP client configured with certificate with patched subject, issued from cert-rotation job
+				certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+				// Make a request to the ORD service with http client.
+				params := urlpkg.Values{}
+				params.Add("$format", "json")
+				ordURLForSystems := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURLForSystems = ordURLForSystems + params.Encode()
+
+				respBody := makeRequestWithHeaders(stdT, certHttpClient, ordURLForSystems, headers)
+
+				require.Equal(stdT, app1.Name, gjson.Get(respBody, "title").String())
+				stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+				// Make a request to the ORD service expanding bundles and destinations.
+				// With destinations - waiting for the synchronization job
+				stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
+
+				params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+				params.Add("reload", "true")
+				ordURLForSystemsWithBundlesAndDests := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURLForSystemsWithBundlesAndDests = ordURLForSystemsWithBundlesAndDests + params.Encode()
+
+				require.Eventually(stdT, func() bool {
+					respBody = makeRequestWithHeaders(stdT, certHttpClient, ordURLForSystemsWithBundlesAndDests, headers)
+					appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
+					if appDestinationsRaw == "" {
+						return false
+					}
+					require.NotEmpty(stdT, appDestinationsRaw)
+
+					appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
+					if len(appDestinations) != 1 {
+						return false
+					}
+					require.Len(stdT, appDestinations, 1)
+
+					expectedDestinationName := "e2e-client-cert-auth-destination-name"
+					appDestinationName := gjson.Get(respBody, "consumptionBundles.0.destinations.0.name").String()
+					require.Equal(t, expectedDestinationName, appDestinationName)
+
+					return true
+				}, time.Second*30, time.Second)
+				stdT.Log("Successfully fetched system with bundles and destinations while waiting for the synchronization job")
+			})
 
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
@@ -632,4 +700,27 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 		})
 	})
+}
+
+// CreateHttpClientWithCert returns http client configured with provided client certificate and key
+func CreateHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+	return &http.Client{
+		Timeout: 20 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: rawCertChain,
+						PrivateKey:  clientKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: skipSSLValidation,
+			},
+		},
+	}
+}
+
+func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }
