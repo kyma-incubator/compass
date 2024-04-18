@@ -221,6 +221,7 @@ func ParseCertificateBytes(cert []byte, key []byte) (*tls.Certificate, error) {
 	return &tlsCert, nil
 }
 
+// SubjectsMatch checks if the subject properties (CN, O, L, OU, C) match
 func SubjectsMatch(actualSubject, expectedSubject string) bool {
 	return GetCommonName(expectedSubject) == GetCommonName(actualSubject) &&
 		GetCountry(expectedSubject) == GetCountry(actualSubject) &&
