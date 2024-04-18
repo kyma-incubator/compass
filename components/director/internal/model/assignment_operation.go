@@ -25,6 +25,8 @@ const (
 	UnassignObject OperationTrigger = "UNASSIGN_OBJECT"
 	// ResetAssignment denotes the operation was triggered by resetting formation assignment
 	ResetAssignment OperationTrigger = "RESET"
+	// ResyncAssignment denotes the operation was triggered by resynchronizing formation assignment
+	ResyncAssignment OperationTrigger = "RESYNC" // todo::: double check if it's needed
 )
 
 // AssignmentOperation represent structure for AssignmentOperation

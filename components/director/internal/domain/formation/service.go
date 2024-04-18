@@ -161,6 +161,13 @@ type asaEngine interface {
 	IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error)
 }
 
+//go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type assignmentOperationService interface {
+	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
+	Finish(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType) error
+	List(ctx context.Context, assignmentID string) (*model.AssignmentOperationPage, error)
+}
+
 type service struct {
 	applicationRepository                  applicationRepository
 	labelDefRepository                     labelDefRepository
@@ -176,6 +183,7 @@ type service struct {
 	runtimeRepo                            runtimeRepository
 	runtimeContextRepo                     runtimeContextRepository
 	formationAssignmentService             formationAssignmentService
+	assignmentOperationService             assignmentOperationService
 	formationAssignmentNotificationService FormationAssignmentNotificationsService
 	notificationsService                   NotificationsService
 	constraintEngine                       constraintEngine
@@ -203,6 +211,7 @@ func NewService(
 	tenantSvc tenantService, runtimeRepo runtimeRepository,
 	runtimeContextRepo runtimeContextRepository,
 	formationAssignmentService formationAssignmentService,
+	assignmentOperationService assignmentOperationService,
 	formationAssignmentNotificationService FormationAssignmentNotificationsService,
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
@@ -226,6 +235,7 @@ func NewService(
 		runtimeContextRepo:                     runtimeContextRepo,
 		formationAssignmentNotificationService: formationAssignmentNotificationService,
 		formationAssignmentService:             formationAssignmentService,
+		assignmentOperationService:             assignmentOperationService,
 		notificationsService:                   notificationsService,
 		constraintEngine:                       constraintEngine,
 		runtimeTypeLabelKey:                    runtimeTypeLabelKey,
@@ -600,6 +610,24 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			assignments, terr = s.formationAssignmentService.PersistAssignments(ctxWithTransact, tnt, assignmentInputs)
 			if terr != nil {
 				return terr
+			}
+
+			return nil
+		}); terr != nil {
+			return nil, terr
+		}
+
+		// todo::: delete/update below comments
+		// create operations in a transaction similar to the FAs above (using terr as well)
+		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
+		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+			for _, a := range assignments {
+				_, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+					Type:                  model.Assign,
+					FormationAssignmentID: a.ID,
+					FormationID:           a.FormationID,
+					TriggeredBy:           model.AssignObject,
+				})
 			}
 
 			return nil

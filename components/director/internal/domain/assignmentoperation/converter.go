@@ -1,4 +1,4 @@
-package formationassignment
+package assignmentOperation
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
