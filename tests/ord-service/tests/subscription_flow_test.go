@@ -150,7 +150,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-	destinationProviderToken := token.GetClientCredentialsToken(stdT, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationProviderClaimKey)
+	consumerTokenURL, err := token.ChangeSubdomain(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain, conf.ProviderDestinationConfig.TokenPath)
+	require.NoError(t, err)
+
+	destinationConsumerToken := token.GetClientCredentialsToken(stdT, ctx, consumerTokenURL, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
 
 	t.Run("ConsumerProvider flow with runtime as provider", func(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
@@ -357,8 +360,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		client.CreateDestinationInDestService(stdT, destination, destinationProviderToken)
-		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationProviderToken)
+		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -421,8 +424,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestinationInDestService(stdT, destinationSecond, destinationProviderToken)
-		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationProviderToken)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
@@ -682,8 +685,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		client.CreateDestinationInDestService(stdT, destination, destinationProviderToken)
-		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationProviderToken)
+		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -758,8 +761,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestinationInDestService(stdT, destinationSecond, destinationProviderToken)
-		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationProviderToken)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
 
 		// With destinations - reload
 		params = url.Values{}
@@ -1009,8 +1012,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			},
 		}
 
-		client.CreateDestinationInDestService(stdT, destination, destinationProviderToken)
-		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationProviderToken)
+		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -1073,8 +1076,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestinationInDestService(stdT, destinationSecond, destinationProviderToken)
-		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationProviderToken)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")

@@ -75,7 +75,7 @@ type config struct {
 	SaaSAppNameLabelKey                 string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	DestinationAPIConfig                clients.DestinationServiceAPIConfig
 	DestinationsConfig                  cfg.DestinationsConfig
-	DestinationConsumerSubdomainMtls    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
+	DestinationConsumerSubdomain        string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 	ExternalClientCertSecretName        string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 	ProviderDestinationConfig           testconfig.ProviderDestinationConfig
 	ExternalServicesMockMtlsSecuredURL  string        `envconfig:"APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
