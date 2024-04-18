@@ -873,13 +873,14 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateConv.On("ToGraphQL", modelAppTemplateWithProductLabelAndCustomSlisFilter).Return(gqlAppTemplateWithProductLabelAndCustomSlisFilter, nil).Once()
 				return appTemplateConv
 			},
-			WebhookConvFn:    UnusedWebhookConv,
-			WebhookSvcFn:     SuccessfulWebhookSvc(gqlAppTemplateInputWithProductLabelAndSlisFilter.Webhooks, gqlAppTemplateInputWithProductLabelAndSlisFilter.Webhooks),
-			SelfRegManagerFn: apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
-			LabelSvcFn:       UnusedLabelService,
-			Ctx:              ctxWithTokenConsumer,
-			Input:            gqlAppTemplateInputWithProductLabelAndSlisFilter,
-			ExpectedOutput:   gqlAppTemplateWithProductLabelAndCustomSlisFilter,
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithProductLabelAndSlisFilter.Webhooks, gqlAppTemplateInputWithProductLabelAndSlisFilter.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
+			CertSubjectMappingSvcFn: UnusedCertSubjMappingSvc,
+			LabelSvcFn:              UnusedLabelService,
+			Ctx:                     ctxWithTokenConsumer,
+			Input:                   gqlAppTemplateInputWithProductLabelAndSlisFilter,
+			ExpectedOutput:          gqlAppTemplateWithProductLabelAndCustomSlisFilter,
 		},
 		{
 			Name: "Error when self registered app template already exists for the given self reg labels",
