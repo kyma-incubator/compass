@@ -46,6 +46,17 @@ type AssignmentOperationInput struct {
 	TriggeredBy           OperationTrigger        `json:"triggered_by"`
 }
 
+// ToModel converts AssignmentOperationInput to AssignmentOperation model object with provided id
+func (a AssignmentOperationInput) ToModel(id string) *AssignmentOperation {
+	return &AssignmentOperation{
+		ID:                    id,
+		Type:                  a.Type,
+		FormationAssignmentID: a.FormationAssignmentID,
+		FormationID:           a.FormationID,
+		TriggeredBy:           a.TriggeredBy,
+	}
+}
+
 // AssignmentOperationPage missing godoc
 type AssignmentOperationPage struct {
 	Data       []*AssignmentOperation
