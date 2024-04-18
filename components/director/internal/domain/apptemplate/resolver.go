@@ -8,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 
 	"github.com/tidwall/gjson"
@@ -347,6 +349,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	log.C(ctx).Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
 
 	if consumerInfo.Flow.IsCertFlow() && consumerInfo.Subject != "" {
+		log.C(ctx).Infof("Flow is cert. Preparing to create a certificate subject mapping.")
 		if err = r.prepareCertSubjectMapping(ctx, id, consumerInfo.Subject); err != nil {
 			return nil, err
 		}
@@ -1035,20 +1038,22 @@ func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Con
 
 func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID, subject string) error {
 	for _, consumerSubject := range r.envConsumerSubjects {
-		if subject == consumerSubject {
-			log.C(ctx).Debug("Subject matches with a known environment consumer subject. Skipping certificate subject mapping creation.")
+		if cert.SubjectsMatch(subject, consumerSubject) {
+			log.C(ctx).Info("Subject matches with a known environment consumer subject. Skipping certificate subject mapping creation.")
 			return nil
 		}
 	}
 
-	exists, err := r.certSubjectMappingSvc.ExistsBySubject(ctx, subject)
+	certSubjMappings, err := r.certSubjectMappingSvc.ListAll(ctx)
 	if err != nil {
 		return errors.Wrapf(err, "while checking if a certificate subject mapping exists with a subject: %s", subject)
 	}
 
-	if exists {
-		log.C(ctx).Debug("Subject is already allow-listed. Skipping certificate subject mapping creation.")
-		return nil
+	for _, csm := range certSubjMappings {
+		if cert.SubjectsMatch(subject, csm.Subject) {
+			log.C(ctx).Info("Subject is already allow-listed. Skipping certificate subject mapping creation.")
+			return nil
+		}
 	}
 
 	id := r.uidService.Generate()

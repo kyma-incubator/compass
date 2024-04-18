@@ -292,30 +292,32 @@ func TestService_Exists(t *testing.T) {
 	}
 }
 
-func TestService_ExistsBySubject(t *testing.T) {
+func TestService_ListAll(t *testing.T) {
+	certSubjectMappings := []*model.CertSubjectMapping{CertSubjectMappingModel}
+
 	testCases := []struct {
 		Name           string
 		Repo           func() *automock.CertMappingRepository
-		ExpectedOutput bool
+		ExpectedOutput []*model.CertSubjectMapping
 		ExpectedError  error
 	}{
 		{
 			Name: "Success",
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
-				repo.On("ExistsBySubject", emptyCtx, TestSubject).Return(true, nil).Once()
+				repo.On("ListAll", emptyCtx).Return(certSubjectMappings, nil).Once()
 				return repo
 			},
-			ExpectedOutput: true,
+			ExpectedOutput: certSubjectMappings,
 		},
 		{
-			Name: "Error when checking for existence of certificate subject mapping fails",
+			Name: "Error when listing certificate subject mappings fail",
 			Repo: func() *automock.CertMappingRepository {
 				repo := &automock.CertMappingRepository{}
-				repo.On("ExistsBySubject", emptyCtx, TestSubject).Return(false, testErr).Once()
+				repo.On("ListAll", emptyCtx).Return(nil, testErr).Once()
 				return repo
 			},
-			ExpectedOutput: false,
+			ExpectedOutput: nil,
 			ExpectedError:  testErr,
 		},
 	}
@@ -327,7 +329,7 @@ func TestService_ExistsBySubject(t *testing.T) {
 			svc := certsubjectmapping.NewService(repo)
 
 			// WHEN
-			result, err := svc.ExistsBySubject(emptyCtx, TestSubject)
+			result, err := svc.ListAll(emptyCtx)
 
 			// THEN
 			if testCase.ExpectedError != nil {

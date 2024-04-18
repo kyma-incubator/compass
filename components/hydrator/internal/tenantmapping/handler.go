@@ -360,7 +360,6 @@ func getCertServiceObjectContextProviderConsumer(objectContexts []ObjectContext)
 			c.ConsumerID = objCtx.ConsumerID
 			c.Type = objCtx.ConsumerType
 			c.Flow = objCtx.AuthFlow
-			//c.Subject = objCtx.Subject
 		}
 	}
 	return c

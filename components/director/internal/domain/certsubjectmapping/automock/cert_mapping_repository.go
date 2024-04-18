@@ -80,30 +80,6 @@ func (_m *CertMappingRepository) Exists(ctx context.Context, id string) (bool, e
 	return r0, r1
 }
 
-// ExistsBySubject provides a mock function with given fields: ctx, subject
-func (_m *CertMappingRepository) ExistsBySubject(ctx context.Context, subject string) (bool, error) {
-	ret := _m.Called(ctx, subject)
-
-	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
-		return rf(ctx, subject)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
-		r0 = rf(ctx, subject)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, subject)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Get provides a mock function with given fields: ctx, id
 func (_m *CertMappingRepository) Get(ctx context.Context, id string) (*model.CertSubjectMapping, error) {
 	ret := _m.Called(ctx, id)
@@ -149,6 +125,32 @@ func (_m *CertMappingRepository) List(ctx context.Context, pageSize int, cursor 
 
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListAll provides a mock function with given fields: ctx
+func (_m *CertMappingRepository) ListAll(ctx context.Context) ([]*model.CertSubjectMapping, error) {
+	ret := _m.Called(ctx)
+
+	var r0 []*model.CertSubjectMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.CertSubjectMapping, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.CertSubjectMapping); ok {
+		r0 = rf(ctx)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.CertSubjectMapping)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

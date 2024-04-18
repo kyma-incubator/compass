@@ -20,8 +20,8 @@ type CertMappingRepository interface {
 	Delete(ctx context.Context, id string) error
 	DeleteByConsumerID(ctx context.Context, consumerID string) error
 	Exists(ctx context.Context, id string) (bool, error)
-	ExistsBySubject(ctx context.Context, subject string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
+	ListAll(ctx context.Context) ([]*model.CertSubjectMapping, error)
 }
 
 type service struct {
@@ -92,16 +92,6 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 	return exists, nil
 }
 
-// ExistsBySubject check if a certificate subject mapping with a given subject exists
-func (s *service) ExistsBySubject(ctx context.Context, subj string) (bool, error) {
-	log.C(ctx).Infof("Checking certificate subject mapping existence for subject: %s", subj)
-	exists, err := s.repo.ExistsBySubject(ctx, subj)
-	if err != nil {
-		return false, errors.Wrapf(err, "while checking certificate subject mapping existence for Subject: %s", subj)
-	}
-	return exists, nil
-}
-
 // List retrieves certificate subject mappings with pagination based on `pageSize` and `cursor`
 func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error) {
 	log.C(ctx).Info("Listing certificate subject mappings")
@@ -115,6 +105,18 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	}
 
 	return csmPage, nil
+}
+
+// ListAll retrieves certificate subject mappings
+func (s *service) ListAll(ctx context.Context) ([]*model.CertSubjectMapping, error) {
+	log.C(ctx).Info("Listing certificate subject mappings")
+
+	certSubjectMappings, err := s.repo.ListAll(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing certificate subject mappings")
+	}
+
+	return certSubjectMappings, nil
 }
 
 // DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id

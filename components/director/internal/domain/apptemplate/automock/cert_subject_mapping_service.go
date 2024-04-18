@@ -52,23 +52,25 @@ func (_m *CertSubjectMappingService) DeleteByConsumerID(ctx context.Context, con
 	return r0
 }
 
-// ExistsBySubject provides a mock function with given fields: ctx, subj
-func (_m *CertSubjectMappingService) ExistsBySubject(ctx context.Context, subj string) (bool, error) {
-	ret := _m.Called(ctx, subj)
+// ListAll provides a mock function with given fields: ctx
+func (_m *CertSubjectMappingService) ListAll(ctx context.Context) ([]*model.CertSubjectMapping, error) {
+	ret := _m.Called(ctx)
 
-	var r0 bool
+	var r0 []*model.CertSubjectMapping
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
-		return rf(ctx, subj)
+	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.CertSubjectMapping, error)); ok {
+		return rf(ctx)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
-		r0 = rf(ctx, subj)
+	if rf, ok := ret.Get(0).(func(context.Context) []*model.CertSubjectMapping); ok {
+		r0 = rf(ctx)
 	} else {
-		r0 = ret.Get(0).(bool)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.CertSubjectMapping)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, subj)
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
 	} else {
 		r1 = ret.Error(1)
 	}

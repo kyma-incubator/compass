@@ -584,6 +584,8 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	}
 
 	csm := fixCertSubjectMappingModel(testID)
+	csmWithDisorderedSubject := fixCertSubjectMappingModel(testID)
+	csmWithDisorderedSubject.Subject = similarCertSubject
 
 	testCases := []struct {
 		Name                    string
@@ -766,7 +768,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				srm := apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labelsContainingSelfRegistration, modelAppTemplateInputWithSelRegLabels.Labels)()
 				return srm
 			},
-			CertSubjectMappingSvcFn: SuccessfulSkipCertSubjectMappingCreation(csm),
+			CertSubjectMappingSvcFn: SuccessfulSkipCertSubjectMappingCreation(csmWithDisorderedSubject),
 			LabelSvcFn:              UnusedLabelService,
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
@@ -838,7 +840,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
 			SelfRegManagerFn:        apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration, modelAppTemplateInputWithSelRegLabels.Labels),
 			LabelSvcFn:              UnusedLabelService,
-			CertSubjectMappingSvcFn: FailedCertSubjMappingExists(csm),
+			CertSubjectMappingSvcFn: FailedCertSubjMappingList(),
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
 			ExpectedError:           errors.New(`while checking if a certificate subject mapping exists with a subject`),
@@ -3310,7 +3312,7 @@ func SuccessfulWebhookSvc(webhooksInput, enriched []*graphql.WebhookInput) func(
 func SuccessfulCertSubjMappingCreate(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
 	return func() *automock.CertSubjectMappingService {
 		svc := &automock.CertSubjectMappingService{}
-		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(false, nil)
+		svc.On("ListAll", txtest.CtxWithDBMatcher()).Return([]*model.CertSubjectMapping{}, nil)
 		svc.On("Create", txtest.CtxWithDBMatcher(), csm).Return(testUUID, nil)
 		return svc
 	}
@@ -3319,16 +3321,16 @@ func SuccessfulCertSubjMappingCreate(csm *model.CertSubjectMapping) func() *auto
 func FailedCertSubjMappingCreate(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
 	return func() *automock.CertSubjectMappingService {
 		svc := &automock.CertSubjectMappingService{}
-		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(false, nil)
+		svc.On("ListAll", txtest.CtxWithDBMatcher()).Return([]*model.CertSubjectMapping{}, nil)
 		svc.On("Create", txtest.CtxWithDBMatcher(), csm).Return("", testError)
 		return svc
 	}
 }
 
-func FailedCertSubjMappingExists(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
+func FailedCertSubjMappingList() func() *automock.CertSubjectMappingService {
 	return func() *automock.CertSubjectMappingService {
 		svc := &automock.CertSubjectMappingService{}
-		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(false, testError)
+		svc.On("ListAll", txtest.CtxWithDBMatcher()).Return(nil, testError)
 		return svc
 	}
 }
@@ -3336,7 +3338,7 @@ func FailedCertSubjMappingExists(csm *model.CertSubjectMapping) func() *automock
 func SuccessfulSkipCertSubjectMappingCreation(csm *model.CertSubjectMapping) func() *automock.CertSubjectMappingService {
 	return func() *automock.CertSubjectMappingService {
 		svc := &automock.CertSubjectMappingService{}
-		svc.On("ExistsBySubject", txtest.CtxWithDBMatcher(), csm.Subject).Return(true, nil)
+		svc.On("ListAll", txtest.CtxWithDBMatcher()).Return([]*model.CertSubjectMapping{csm}, nil)
 		return svc
 	}
 }

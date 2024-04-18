@@ -144,35 +144,6 @@ func TestRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestRepository_ExistsBySubject(t *testing.T) {
-	suite := testdb.RepoExistTestSuite{
-		Name: "Exists certificate subject mapping by ID",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.cert_subject_mapping WHERE subject = $1`),
-				Args:     []driver.Value{TestSubject},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
-				},
-			},
-		},
-		RepoConstructorFunc: certsubjectmapping.NewRepository,
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		TargetID:   TestID,
-		IsGlobal:   true,
-		MethodName: "ExistsBySubject",
-		MethodArgs: []interface{}{TestSubject},
-	}
-
-	suite.Run(t)
-}
-
 func TestRepository_List(t *testing.T) {
 	suite := testdb.RepoListPageableTestSuite{
 		Name:       "List certificate subject mappings with paging",
@@ -216,6 +187,34 @@ func TestRepository_List(t *testing.T) {
 		},
 		RepoConstructorFunc:       certsubjectmapping.NewRepository,
 		MethodArgs:                []interface{}{3, ""},
+		DisableConverterErrorTest: false,
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_ListAll(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List all certificate subject mappings",
+		MethodName: "ListAll",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ExpectedModelEntities: []interface{}{CertSubjectMappingModel},
+		ExpectedDBEntities:    []interface{}{CertSubjectMappingEntity},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       certsubjectmapping.NewRepository,
 		DisableConverterErrorTest: false,
 	}
 

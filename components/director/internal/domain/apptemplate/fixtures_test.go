@@ -36,6 +36,7 @@ const (
 	testLabelInputKey  = "applicationType"
 	region             = "region-1"
 	certSubject        = "C=DE, L=local, O=SAP SE, OU=us10, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, CN=non-compass"
+	similarCertSubject = "CN=non-compass, C=DE, L=local, OU=us10, OU=SAP Cloud Platform Clients, OU=1f538f34-30bf-4d3d-aeaa-02e69eef84ae, O=SAP SE"
 
 	testWebhookID                               = "webhook-id-1"
 	testName                                    = "bar"
