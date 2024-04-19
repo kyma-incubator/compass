@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationsvc"
+
 	service_manager "github.com/kyma-incubator/compass/components/external-services-mock/internal/service-manager"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
@@ -21,12 +23,10 @@ import (
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationcreator"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/formationnotification"
 
 	"github.com/form3tech-oss/jwt-go"
 
-	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationfetcher"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/ias"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/provider"
 
@@ -73,7 +73,7 @@ type config struct {
 	BasicCredentialsConfig
 	ProviderDestinationConfig formationnotification.ProviderDestinationConfig
 	NotificationConfig        formationnotification.Configuration
-	DestinationCreatorConfig  *destinationcreator.Config
+	DestinationCreatorConfig  *destinationsvc.Config
 	DestinationServiceConfig  DestinationServiceConfig
 	ORDServers                ORDServers
 	SelfRegConfig             selfreg.Config
@@ -102,10 +102,11 @@ type DestinationServiceConfig struct {
 	TenantDestinationCertificateSubaccountLevelEndpoint string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_SUBACCOUNT_LEVEL_ENDPOINT,default=/destination-configuration/v1/subaccountCertificates"`
 	TenantDestinationCertificateInstanceLevelEndpoint   string `envconfig:"APP_DESTINATION_CERTIFICATE_TENANT_INSTANCE_LEVEL_ENDPOINT,default=/destination-configuration/v1/instanceCertificates"`
 	TenantDestinationFindAPIEndpoint                    string `envconfig:"APP_DESTINATION_SERVICE_FIND_API_ENDPOINT,default=/destination-configuration/local/v1/destinations"`
-	SensitiveDataEndpoint                               string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
-	SubaccountIDClaimKey                                string `envconfig:"APP_DESTINATION_SUBACCOUNT_CLAIM_KEY"`
-	ServiceInstanceClaimKey                             string `envconfig:"APP_DESTINATION_SERVICE_INSTANCE_CLAIM_KEY"`
-	TestDestinationInstanceID                           string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
+
+	SensitiveDataEndpoint     string `envconfig:"APP_DESTINATION_SENSITIVE_DATA_ENDPOINT,default=/destination-configuration/v1/destinations"`
+	SubaccountIDClaimKey      string `envconfig:"APP_DESTINATION_SUBACCOUNT_CLAIM_KEY"`
+	ServiceInstanceClaimKey   string `envconfig:"APP_DESTINATION_SERVICE_INSTANCE_CLAIM_KEY"`
+	TestDestinationInstanceID string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -195,10 +196,10 @@ func main() {
 		},
 	}
 
-	destinationCreatorHandler := destinationcreator.NewHandler(cfg.DestinationCreatorConfig)
+	destinationSvcHandler := destinationsvc.NewHandler(cfg.DestinationCreatorConfig)
 
-	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationCreatorHandler), wg)
-	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationCreatorHandler), wg)
+	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationSvcHandler), wg)
+	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationSvcHandler), wg)
 
 	for _, server := range ordServers {
 		wg.Add(1)
@@ -215,7 +216,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
+func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationHandler *destinationsvc.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
@@ -270,9 +271,9 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	configurationchange.InitConfigurationChangeHandler(configChangeRouter, configChangeHandler)
 
 	// Destination Service handler
-	destinationHandler := destinationfetcher.NewHandler()
 	tenantDestinationEndpoint := cfg.DestinationServiceConfig.TenantDestinationsSubaccountLevelEndpoint
 	sensitiveDataEndpoint := cfg.DestinationServiceConfig.SensitiveDataEndpoint + "/{name}"
+
 	router.HandleFunc(tenantDestinationEndpoint,
 		destinationHandler.GetSubaccountDestinationsPage).Methods(http.MethodGet)
 	router.HandleFunc(tenantDestinationEndpoint, destinationHandler.PostDestination).Methods(http.MethodPost)
@@ -280,10 +281,10 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	router.HandleFunc(sensitiveDataEndpoint, destinationHandler.GetSensitiveData).Methods(http.MethodGet)
 
 	// destination service handlers but the destination creator handler is used due to shared mappings
-	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationFindAPIEndpoint+"/{name}", destinationCreatorHandler.FindDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationFindAPIEndpoint+"/{name}", destinationHandler.FindDestinationByNameFromDestinationSvc).Methods(http.MethodGet)
 
-	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
-	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationCreatorHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)
@@ -392,7 +393,7 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	}
 }
 
-func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, destinationCreatorHandler *destinationcreator.Handler) *http.Server {
+func initDefaultCertServer(cfg config, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, destinationCreatorHandler *destinationsvc.Handler) *http.Server {
 	router := mux.NewRouter()
 	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
 

@@ -5,10 +5,11 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	tenantEntity "github.com/kyma-incubator/compass/components/director/pkg/tenant"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping/automock"
 	"github.com/stretchr/testify/mock"
 
@@ -47,11 +48,11 @@ var (
 	validCertSubjectMappingsWithoutRegion        = fixCertSubjectMappings(validSubjectWithoutRegion, validConsumerType, validInternalConsumerID, validTntAccessLevels)
 	certSubjectMappingsWithoutInternalConsumerID = fixCertSubjectMappings(validSubject, validConsumerType, "", validTntAccessLevels)
 	certSubjectMappingWithNotMatchingSubject     = fixCertSubjectMappings(invalidSubject, validConsumerType, validInternalConsumerID, validTntAccessLevels)
-	emptyMappings                                []certsubjectmapping.SubjectConsumerTypeMapping
+	emptyMappings                                []certsubjmapping.SubjectConsumerTypeMapping
 )
 
 func TestNewProcessor(t *testing.T) {
-	certSubjectMappingWithMissingSubject := []certsubjectmapping.SubjectConsumerTypeMapping{{}}
+	certSubjectMappingWithMissingSubject := []certsubjmapping.SubjectConsumerTypeMapping{{}}
 	certSubjectMappingWithInvalidConsumerType := fixCertSubjectMappings(validSubject, invalidConsumerType, validInternalConsumerID, []string{})
 	certSubjectMappingWithInvalidTenantAccessLevels := fixCertSubjectMappings(validSubject, validConsumerType, validInternalConsumerID, invalidTntAccessLevels)
 
@@ -257,8 +258,8 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 	}
 }
 
-func fixCertSubjectMappings(subject, consumerType, internalConsumerID string, tenantAccessLevels []string) []certsubjectmapping.SubjectConsumerTypeMapping {
-	return []certsubjectmapping.SubjectConsumerTypeMapping{
+func fixCertSubjectMappings(subject, consumerType, internalConsumerID string, tenantAccessLevels []string) []certsubjmapping.SubjectConsumerTypeMapping {
+	return []certsubjmapping.SubjectConsumerTypeMapping{
 		{
 			Subject:            subject,
 			ConsumerType:       consumerType,

@@ -220,3 +220,31 @@ func ParseCertificateBytes(cert []byte, key []byte) (*tls.Certificate, error) {
 
 	return &tlsCert, nil
 }
+
+// SubjectsMatch checks if the subject properties (CN, O, L, OU, C) match
+func SubjectsMatch(actualSubject, expectedSubject string) bool {
+	return GetCommonName(expectedSubject) == GetCommonName(actualSubject) &&
+		GetCountry(expectedSubject) == GetCountry(actualSubject) &&
+		GetLocality(expectedSubject) == GetLocality(actualSubject) &&
+		GetOrganization(expectedSubject) == GetOrganization(actualSubject) &&
+		matchOrganizationalUnits(GetAllOrganizationalUnits(actualSubject), GetAllOrganizationalUnits(expectedSubject))
+}
+
+func matchOrganizationalUnits(actualOrgUnits, expectedOrgUnits []string) bool {
+	if len(expectedOrgUnits) != len(actualOrgUnits) {
+		return false
+	}
+
+	expectedOrgUnitsMap := make(map[string]struct{}, len(expectedOrgUnits))
+	for _, expectedOrgUnit := range expectedOrgUnits {
+		expectedOrgUnitsMap[strings.TrimSpace(expectedOrgUnit)] = struct{}{}
+	}
+
+	for _, actualOrgUnit := range actualOrgUnits {
+		if _, exist := expectedOrgUnitsMap[strings.TrimSpace(actualOrgUnit)]; !exist {
+			return false
+		}
+	}
+
+	return true
+}
