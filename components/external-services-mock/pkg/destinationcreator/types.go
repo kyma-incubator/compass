@@ -17,11 +17,15 @@ type Destination interface {
 
 // NoAuthenticationDestination is a structure representing a no authentication destination entity and its data from the remote destination service
 type NoAuthenticationDestination struct {
-	Name           string                          `json:"name"`
-	URL            string                          `json:"url"`
-	Type           destinationcreatorpkg.Type      `json:"type"`
-	ProxyType      destinationcreatorpkg.ProxyType `json:"proxyType"`
-	Authentication destinationcreatorpkg.AuthType  `json:"authentication"`
+	Name              string                          `json:"name"`
+	URL               string                          `json:"url"`
+	Type              destinationcreatorpkg.Type      `json:"type"`
+	ProxyType         destinationcreatorpkg.ProxyType `json:"proxyType"`
+	Authentication    destinationcreatorpkg.AuthType  `json:"authentication"`
+	XCorrelationID    string                          `json:"x-correlation-id"`
+	XSystemTenantID   string                          `json:"x-system-id"`
+	XSystemTenantName string                          `json:"x-system-name"`
+	XSystemType       string                          `json:"x-system-type"`
 }
 
 func (n *NoAuthenticationDestination) GetType() string {

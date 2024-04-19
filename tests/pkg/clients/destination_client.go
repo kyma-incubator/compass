@@ -19,7 +19,6 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/clientcredentials"
 )
 
 type DestinationServiceAPIConfig struct {
@@ -32,15 +31,19 @@ type DestinationServiceAPIConfig struct {
 	OAuthTokenPath                                       string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
+type DestinationAdditionalProperties struct {
+	XCorrelationID    string `json:"correlationIds"` // from bundle // x-correlation-id"
+	XSystemTenantID   string `json:"x-system-id"`    // local tenant id
+	XSystemTenantName string `json:"x-system-name"`  // random or application name
+	XSystemType       string `json:"x-system-type"`  // application type
+}
+
 type Destination struct {
-	Name              string `json:"Name"`
-	Type              string `json:"Type"`
-	URL               string `json:"URL"`
-	Authentication    string `json:"Authentication"`
-	XCorrelationID    string `json:"x-correlation-id"` // from bundle
-	XSystemTenantID   string `json:"x-system-id"`      // local tenant id
-	XSystemTenantName string `json:"x-system-name"`    // random or application name
-	XSystemType       string `json:"x-system-type"`    // application type
+	Name                 string                          `json:"Name"`
+	Type                 string                          `json:"Type"`
+	URL                  string                          `json:"URL"`
+	Authentication       string                          `json:"Authentication"`
+	AdditionalProperties DestinationAdditionalProperties `json:"additionalProperties"`
 }
 
 type DestinationClient struct {
@@ -49,8 +52,7 @@ type DestinationClient struct {
 	apiURL     string
 }
 
-func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig,
-	subdomain string) (*DestinationClient, error) {
+func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig DestinationServiceAPIConfig) (*DestinationClient, error) {
 	ctx := context.Background()
 
 	baseTokenURL, err := url.Parse(instanceConfig.TokenURL)
@@ -61,14 +63,7 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 	if len(parts) < 2 {
 		return nil, errors.Errorf("auth url '%s' should have a subdomain", instanceConfig.TokenURL)
 	}
-	originalSubdomain := parts[0]
 
-	tokenURL := strings.Replace(instanceConfig.TokenURL, originalSubdomain, subdomain, 1) + apiConfig.OAuthTokenPath
-	cfg := clientcredentials.Config{
-		ClientID:  instanceConfig.ClientID,
-		TokenURL:  tokenURL,
-		AuthStyle: oauth2.AuthStyleInParams,
-	}
 	cert, err := tls.X509KeyPair([]byte(instanceConfig.Cert), []byte(instanceConfig.Key))
 	if err != nil {
 		return nil, errors.Errorf("failed to create destinations client x509 pair: %v", err)
@@ -88,7 +83,12 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 
 	ctx = context.WithValue(ctx, oauth2.HTTPClient, mtlsClient)
 
-	httpClient := cfg.Client(ctx)
+	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: apiConfig.SkipSSLVerify,
+		},
+	}
 	httpClient.Timeout = apiConfig.Timeout
 
 	return &DestinationClient{
@@ -98,7 +98,7 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 	}, nil
 }
 
-func (c *DestinationClient) CreateDestination(t *testing.T, destination Destination) {
+func (c *DestinationClient) CreateDestinationInDestService(t *testing.T, destination Destination, token string) {
 	destinationBytes, err := json.Marshal(destination)
 	require.NoError(t, err)
 
@@ -106,18 +106,42 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(destinationBytes))
 	require.NoError(t, err)
 
+	request.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
 
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 }
 
-func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName string) {
+func (c *DestinationClient) DeleteDestinationFromDestService(t *testing.T, destinationName, token string) {
 	url := c.apiURL + c.apiConfig.EndpointTenantSubaccountLevelDestinations + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
-	resp, err := c.httpClient.Do(request)
+	request.Header.Add(util.AuthorizationHeader, fmt.Sprintf("Bearer %s", token))
+
+	httpClient := &http.Client{}
+	httpClient.Transport = &http.Transport{
+		TLSClientConfig: &tls.Config{
+			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
+		},
+	}
+	httpClient.Timeout = c.apiConfig.Timeout
+
+	resp, err := httpClient.Do(request)
+	require.NoError(t, err)
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Logf("Could not close response body %s", err)
+		}
+	}()
+
 	require.NoError(t, err)
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
@@ -132,15 +156,7 @@ func (c *DestinationClient) FindDestinationByName(t *testing.T, serviceURL, dest
 		request.Header.Set(util.UserTokenHeader, userTokenHeader)
 	}
 
-	httpClient := &http.Client{}
-	httpClient.Transport = &http.Transport{
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: c.apiConfig.SkipSSLVerify,
-		},
-	}
-	httpClient.Timeout = c.apiConfig.Timeout
-
-	resp, err := httpClient.Do(request)
+	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
 	defer func() {
 		if err := resp.Body.Close(); err != nil {
