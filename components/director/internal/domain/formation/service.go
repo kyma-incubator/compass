@@ -622,12 +622,14 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
 		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 			for _, a := range assignments {
-				_, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+				if _, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
 					Type:                  model.Assign,
 					FormationAssignmentID: a.ID,
 					FormationID:           a.FormationID,
 					TriggeredBy:           model.AssignObject,
-				})
+				}); terr != nil {
+					return errors.Wrapf(terr, "while creating %s Operation for Assignment with id: %s", model.Assign, a.ID)
+				}
 			}
 
 			return nil
