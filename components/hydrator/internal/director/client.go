@@ -177,18 +177,6 @@ func (c *client) InvalidateSystemAuthOneTimeToken(ctx context.Context, authID st
 	return nil
 }
 
-func (c *client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error) {
-	query := RuntimeByTokenIssuerQuery(issuer)
-	var response RuntimeResponse
-
-	err := c.execute(ctx, c.gqlClient, query, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return response.Result, nil
-}
-
 func (c *client) ListCertificateSubjectMappings(ctx context.Context, after string) (*schema.CertificateSubjectMappingPage, error) {
 	query := ListCertificateSubjectMappingsQuery(300, after)
 	var response CertSubjectMappingResponse
