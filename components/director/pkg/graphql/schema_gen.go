@@ -47795,13 +47795,6 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._APIDefinitionPage(ctx, sel, obj)
-	case ApplicationWithTenantsPage:
-		return ec._ApplicationWithTenantsPage(ctx, sel, &obj)
-	case *ApplicationWithTenantsPage:
-		if obj == nil {
-			return graphql.Null
-		}
-		return ec._ApplicationWithTenantsPage(ctx, sel, obj)
 	case ApplicationPage:
 		return ec._ApplicationPage(ctx, sel, &obj)
 	case *ApplicationPage:
@@ -47816,6 +47809,13 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._ApplicationTemplatePage(ctx, sel, obj)
+	case ApplicationWithTenantsPage:
+		return ec._ApplicationWithTenantsPage(ctx, sel, &obj)
+	case *ApplicationWithTenantsPage:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ApplicationWithTenantsPage(ctx, sel, obj)
 	case AutomaticScenarioAssignmentPage:
 		return ec._AutomaticScenarioAssignmentPage(ctx, sel, &obj)
 	case *AutomaticScenarioAssignmentPage:

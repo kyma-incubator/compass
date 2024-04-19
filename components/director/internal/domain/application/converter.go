@@ -3,8 +3,6 @@ package application
 import (
 	"context"
 	"encoding/json"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -146,52 +144,6 @@ func (c *converter) MultipleToGraphQL(in []*model.Application) []*graphql.Applic
 	}
 
 	return applications
-}
-
-func (c *converter) btmToGql(in *model.BusinessTenantMapping) *graphql.Tenant {
-	if in == nil {
-		return nil
-	}
-
-	return &graphql.Tenant{
-		ID:          in.ExternalTenant,
-		InternalID:  in.ID,
-		Name:        str.Ptr(in.Name),
-		Type:        tenant.TypeToStr(in.Type),
-		Parents:     in.Parents,
-		Initialized: in.Initialized,
-		Provider:    in.Provider,
-	}
-}
-
-func (c *converter) btmConv(in []*model.BusinessTenantMapping) []*graphql.Tenant {
-	tenants := make([]*graphql.Tenant, 0, len(in))
-	for _, r := range in {
-		if r == nil {
-			continue
-		}
-
-		tenants = append(tenants, c.btmToGql(r))
-	}
-
-	return tenants
-}
-
-func (c *converter) MultipleToGraphQLTest(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants {
-	applicationWithTenants := make([]*graphql.ApplicationWithTenants, 0, len(in))
-	for _, r := range in {
-		if r == nil {
-			continue
-		}
-
-		appWithTenants := &graphql.ApplicationWithTenants{
-			Application: c.ToGraphQL(&r.Application),
-			Tenants:     c.btmConv(r.Tenants),
-		}
-		applicationWithTenants = append(applicationWithTenants, appWithTenants)
-	}
-
-	return applicationWithTenants
 }
 
 // CreateInputFromGraphQL missing godoc
@@ -346,4 +298,32 @@ func (c *converter) statusGraphQLToModel(in *graphql.ApplicationStatus) *model.A
 		Condition: model.ApplicationStatusCondition(in.Condition),
 		Timestamp: time.Time(in.Timestamp),
 	}
+}
+
+type appWithTenantsConverter struct {
+	appConv    ApplicationConverter
+	tenantConv TenantConverter
+}
+
+// NewAppWithTenantsConverter creates new application with tenant converter
+func NewAppWithTenantsConverter(appConv ApplicationConverter, tenantConv TenantConverter) *appWithTenantsConverter {
+	return &appWithTenantsConverter{appConv: appConv, tenantConv: tenantConv}
+}
+
+// MultipleToGraphQL converts multiple model objects to graphql objects
+func (c *appWithTenantsConverter) MultipleToGraphQL(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants {
+	applicationWithTenants := make([]*graphql.ApplicationWithTenants, 0, len(in))
+	for _, r := range in {
+		if r == nil {
+			continue
+		}
+
+		appWithTenants := &graphql.ApplicationWithTenants{
+			Application: c.appConv.ToGraphQL(&r.Application),
+			Tenants:     c.tenantConv.MultipleToGraphQL(r.Tenants),
+		}
+		applicationWithTenants = append(applicationWithTenants, appWithTenants)
+	}
+
+	return applicationWithTenants
 }

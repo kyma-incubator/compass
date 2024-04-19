@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
@@ -67,7 +68,13 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
-	MultipleToGraphQLTest(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants
+}
+
+// ApplicationWithTenantsConverter is responsible for converting between graphql and model objects
+//
+//go:generate mockery --name=ApplicationWithTenantsConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationWithTenantsConverter interface {
+	MultipleToGraphQL(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants
 }
 
 // EventingService missing godoc
@@ -220,6 +227,14 @@ type OperationConverter interface {
 	MultipleToGraphQL(in []*model.Operation) ([]*graphql.Operation, error)
 }
 
+// TenantConverter is responsible for converting between graphql and model objects
+//
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantConverter interface {
+	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
+	FromEntity(in *tnt.Entity) *model.BusinessTenantMapping
+}
+
 // OneTimeTokenService missing godoc
 //
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -246,8 +261,9 @@ type ApplicationTemplateConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc       ApplicationService
-	appConverter ApplicationConverter
+	appSvc                  ApplicationService
+	appConverter            ApplicationConverter
+	appWithTenantsConverter ApplicationWithTenantsConverter
 
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
@@ -288,6 +304,7 @@ func NewResolver(transact persistence.Transactioner,
 	oAuth20Svc OAuth20Service,
 	sysAuthSvc SystemAuthService,
 	appConverter ApplicationConverter,
+	appWithTenantsConverter ApplicationWithTenantsConverter,
 	webhookConverter WebhookConverter,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
@@ -314,6 +331,7 @@ func NewResolver(transact persistence.Transactioner,
 		oAuth20Svc:                      oAuth20Svc,
 		sysAuthSvc:                      sysAuthSvc,
 		appConverter:                    appConverter,
+		appWithTenantsConverter:         appWithTenantsConverter,
 		webhookConverter:                webhookConverter,
 		sysAuthConv:                     sysAuthConv,
 		eventingSvc:                     eventingSvc,
@@ -411,6 +429,8 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 	}, nil
 }
 
+// ApplicationsGlobal retrieves a page of applications with their associated tenants filtered by the provided filters.
+// Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
 func (r *Resolver) ApplicationsGlobal(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationWithTenantsPage, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -430,24 +450,23 @@ func (r *Resolver) ApplicationsGlobal(ctx context.Context, filter []*graphql.Lab
 		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
 	}
 
-	applicationWithTenansPage, err := r.appSvc.ListAllGlobalByFilter(ctx, labelFilter, *first, cursor)
+	applicationWithTenantsPage, err := r.appSvc.ListAllGlobalByFilter(ctx, labelFilter, *first, cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	err = tx.Commit()
-	if err != nil {
+	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
 
-	gqlAppWithTnt := r.appConverter.MultipleToGraphQLTest(applicationWithTenansPage.Data)
+	gqlApplicationsWithTenants := r.appWithTenantsConverter.MultipleToGraphQL(applicationWithTenantsPage.Data)
 	return &graphql.ApplicationWithTenantsPage{
-		Data:       gqlAppWithTnt,
-		TotalCount: applicationWithTenansPage.TotalCount,
+		Data:       gqlApplicationsWithTenants,
+		TotalCount: applicationWithTenantsPage.TotalCount,
 		PageInfo: &graphql.PageInfo{
-			StartCursor: graphql.PageCursor(applicationWithTenansPage.PageInfo.StartCursor),
-			EndCursor:   graphql.PageCursor(applicationWithTenansPage.PageInfo.EndCursor),
-			HasNextPage: applicationWithTenansPage.PageInfo.HasNextPage,
+			StartCursor: graphql.PageCursor(applicationWithTenantsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(applicationWithTenantsPage.PageInfo.EndCursor),
+			HasNextPage: applicationWithTenantsPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }

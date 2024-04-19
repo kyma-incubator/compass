@@ -232,6 +232,8 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 	return s.appRepo.ListGlobal(ctx, pageSize, cursor)
 }
 
+// ListAllGlobalByFilter lists a page of applications with their associated tenants filtered by the provided filters.
+// Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
 func (s *service) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")

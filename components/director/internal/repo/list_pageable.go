@@ -3,7 +3,6 @@ package repo
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -132,7 +131,6 @@ func (g *universalPageableQuerier) list(ctx context.Context, resourceType resour
 		stmtWithPagination = fmt.Sprintf("%s %s", query, paginationSQL)
 	}
 
-	log.C(ctx).Infof("Kalo Stmt with pagination: %s", stmtWithPagination)
 	err = persist.SelectContext(ctx, dest, stmtWithPagination, args...)
 	if err != nil {
 		return nil, -1, persistence.MapSQLError(ctx, err, resourceType, resource.List, "while fetching list page of objects from '%s' table", g.tableName)

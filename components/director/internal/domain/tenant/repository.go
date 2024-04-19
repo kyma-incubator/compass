@@ -30,16 +30,17 @@ import (
 )
 
 const (
-	tableName                 string = `public.business_tenant_mappings`
+	TableName            string = `public.business_tenant_mappings`
+	IDColumn             string = "id"
+	ExternalNameColumn   string = "external_name"
+	ExternalTenantColumn string = "external_tenant"
+	TypeColumn           string = "type"
+	ProviderNameColumn   string = "provider_name"
+	StatusColumn         string = "status"
+
 	labelDefinitionsTableName string = `public.label_definitions`
 	tenantIDColumn            string = `tenant_id`
-	idColumn                  string = "id"
 	idColumnCasted            string = "id::text"
-	externalNameColumn        string = "external_name"
-	externalTenantColumn      string = "external_tenant"
-	typeColumn                string = "type"
-	providerNameColumn        string = "provider_name"
-	statusColumn              string = "status"
 	initializedComputedColumn string = "initialized"
 	tenantRuntimeContextTable string = "tenant_runtime_contexts"
 	labelsTable               string = "labels"
@@ -53,10 +54,10 @@ const (
 )
 
 var (
-	insertColumns      = []string{idColumn, externalNameColumn, externalTenantColumn, typeColumn, providerNameColumn, statusColumn}
-	conflictingColumns = []string{externalTenantColumn}
-	updateColumns      = []string{externalNameColumn}
-	searchColumns      = []string{idColumnCasted, externalNameColumn, externalTenantColumn}
+	insertColumns      = []string{IDColumn, ExternalNameColumn, ExternalTenantColumn, TypeColumn, ProviderNameColumn, StatusColumn}
+	conflictingColumns = []string{ExternalTenantColumn}
+	updateColumns      = []string{ExternalNameColumn}
+	searchColumns      = []string{idColumnCasted, ExternalNameColumn, ExternalTenantColumn}
 
 	tenantRuntimeContextSelectedColumns = []string{tenantIDColumn}
 	labelsSelectedColumns               = []string{"app_template_id"}
@@ -96,16 +97,16 @@ type pgRepository struct {
 // NewRepository returns a new entity responsible for repo-layer tenant operations. All of its methods require persistence.PersistenceOp it the provided context.
 func NewRepository(conv Converter) *pgRepository {
 	return &pgRepository{
-		upserter:                            repo.NewUpserterGlobal(resource.Tenant, tableName, insertColumns, conflictingColumns, updateColumns),
-		unsafeCreator:                       repo.NewUnsafeCreator(resource.Tenant, tableName, insertColumns, conflictingColumns),
-		existQuerierGlobal:                  repo.NewExistQuerierGlobal(resource.Tenant, tableName),
-		existQuerierGlobalWithConditionTree: repo.NewExistsQuerierGlobalWithConditionTree(resource.Tenant, tableName),
-		singleGetterGlobal:                  repo.NewSingleGetterGlobal(resource.Tenant, tableName, insertColumns),
-		pageableQuerierGlobal:               repo.NewPageableQuerierGlobal(resource.Tenant, tableName, insertColumns),
-		listerGlobal:                        repo.NewListerGlobal(resource.Tenant, tableName, insertColumns),
-		conditionTreeLister:                 repo.NewConditionTreeListerGlobal(tableName, insertColumns),
-		updaterGlobal:                       repo.NewUpdaterGlobal(resource.Tenant, tableName, []string{externalNameColumn, externalTenantColumn, typeColumn, providerNameColumn, statusColumn}, []string{idColumn}),
-		deleterGlobal:                       repo.NewDeleterGlobal(resource.Tenant, tableName),
+		upserter:                            repo.NewUpserterGlobal(resource.Tenant, TableName, insertColumns, conflictingColumns, updateColumns),
+		unsafeCreator:                       repo.NewUnsafeCreator(resource.Tenant, TableName, insertColumns, conflictingColumns),
+		existQuerierGlobal:                  repo.NewExistQuerierGlobal(resource.Tenant, TableName),
+		existQuerierGlobalWithConditionTree: repo.NewExistsQuerierGlobalWithConditionTree(resource.Tenant, TableName),
+		singleGetterGlobal:                  repo.NewSingleGetterGlobal(resource.Tenant, TableName, insertColumns),
+		pageableQuerierGlobal:               repo.NewPageableQuerierGlobal(resource.Tenant, TableName, insertColumns),
+		listerGlobal:                        repo.NewListerGlobal(resource.Tenant, TableName, insertColumns),
+		conditionTreeLister:                 repo.NewConditionTreeListerGlobal(TableName, insertColumns),
+		updaterGlobal:                       repo.NewUpdaterGlobal(resource.Tenant, TableName, []string{ExternalNameColumn, ExternalTenantColumn, TypeColumn, ProviderNameColumn, StatusColumn}, []string{IDColumn}),
+		deleterGlobal:                       repo.NewDeleterGlobal(resource.Tenant, TableName),
 		tenantRuntimeContextQueryBuilder:    repo.NewQueryBuilderGlobal(resource.RuntimeContext, tenantRuntimeContextTable, tenantRuntimeContextSelectedColumns),
 		labelsQueryBuilder:                  repo.NewQueryBuilderGlobal(resource.Label, labelsTable, labelsSelectedColumns),
 		applicationQueryBuilder:             repo.NewQueryBuilderGlobal(resource.Application, applicationTable, applicationsSelectedColumns),
@@ -144,8 +145,8 @@ func (r *pgRepository) Upsert(ctx context.Context, item model.BusinessTenantMapp
 func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(idColumn, id),
-		repo.NewNotEqualCondition(statusColumn, string(tenant.Inactive))}
+		repo.NewEqualCondition(IDColumn, id),
+		repo.NewNotEqualCondition(StatusColumn, string(tenant.Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, errors.Wrapf(err, "while getting tenant with id %s", id)
 	}
@@ -158,8 +159,8 @@ func (r *pgRepository) Get(ctx context.Context, id string) (*model.BusinessTenan
 func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenantID string) (*model.BusinessTenantMapping, error) {
 	var entity tenant.Entity
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(externalTenantColumn, externalTenantID),
-		repo.NewNotEqualCondition(statusColumn, string(tenant.Inactive))}
+		repo.NewEqualCondition(ExternalTenantColumn, externalTenantID),
+		repo.NewNotEqualCondition(StatusColumn, string(tenant.Inactive))}
 	if err := r.singleGetterGlobal.GetGlobal(ctx, conditions, repo.NoOrderBy, &entity); err != nil {
 		return nil, errors.Wrapf(err, "while getting tenant with external id %s", externalTenantID)
 	}
@@ -170,17 +171,17 @@ func (r *pgRepository) GetByExternalTenant(ctx context.Context, externalTenantID
 
 // Exists checks if tenant with the provided internal ID exists in the Compass storage.
 func (r *pgRepository) Exists(ctx context.Context, id string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(IDColumn, id)})
 }
 
 // ExistsByExternalTenant checks if tenant with the provided external ID exists in the Compass storage.
 func (r *pgRepository) ExistsByExternalTenant(ctx context.Context, externalTenant string) (bool, error) {
-	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(externalTenantColumn, externalTenant)})
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(ExternalTenantColumn, externalTenant)})
 }
 
 // ExistsSubscribed checks if tenant is subscribed
 func (r *pgRepository) ExistsSubscribed(ctx context.Context, id, selfDistinguishLabel string) (bool, error) {
-	subaccountConditions := repo.Conditions{repo.NewEqualCondition(typeColumn, tenant.Subaccount)}
+	subaccountConditions := repo.Conditions{repo.NewEqualCondition(TypeColumn, tenant.Subaccount)}
 
 	tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs, err := r.tenantRuntimeContextQueryBuilder.BuildQueryGlobal(false, repo.Conditions{}...)
 	if err != nil {
@@ -197,14 +198,14 @@ func (r *pgRepository) ExistsSubscribed(ctx context.Context, id, selfDistinguish
 		return false, errors.Wrap(err, "while building query that fetches application id from application table")
 	}
 
-	tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs, err := r.tenantApplicationsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(idColumn, applicationSubquery, applicationArgs)}...)
+	tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs, err := r.tenantApplicationsQueryBuilder.BuildQueryGlobal(false, repo.Conditions{repo.NewInConditionForSubQuery(IDColumn, applicationSubquery, applicationArgs)}...)
 	if err != nil {
 		return false, errors.Wrap(err, "while building query that fetches tenant id from tenant_applications table")
 	}
 
 	subscriptionConditions := repo.Conditions{
-		repo.NewInConditionForSubQuery(idColumn, tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs),
-		repo.NewInConditionForSubQuery(idColumn, tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs),
+		repo.NewInConditionForSubQuery(IDColumn, tenantFromTenantRuntimeContextsSubquery, tenantFromTenantRuntimeContextsArgs),
+		repo.NewInConditionForSubQuery(IDColumn, tenantFromTenantApplicationsSubquery, tenantFromTenantApplicationsArgs),
 	}
 
 	conditions := repo.And(
@@ -213,7 +214,7 @@ func (r *pgRepository) ExistsSubscribed(ctx context.Context, id, selfDistinguish
 				repo.ConditionTreesFromConditions(subaccountConditions),
 				repo.Or(repo.ConditionTreesFromConditions(subscriptionConditions)...),
 			),
-			&repo.ConditionTree{Operand: repo.NewEqualCondition(idColumn, id)})...,
+			&repo.ConditionTree{Operand: repo.NewEqualCondition(IDColumn, id)})...,
 	)
 	return r.existQuerierGlobalWithConditionTree.ExistsGlobalWithConditionTree(ctx, conditions)
 }
@@ -231,7 +232,7 @@ func (r *pgRepository) List(ctx context.Context) ([]*model.BusinessTenantMapping
 	query := fmt.Sprintf(`SELECT DISTINCT %s, ld.%s IS NOT NULL AS %s
 			FROM %s t LEFT JOIN %s ld ON t.%s=ld.%s
 			WHERE t.%s = $1
-			ORDER BY %s DESC, t.%s ASC`, prefixedFields, tenantIDColumn, initializedComputedColumn, tableName, labelDefinitionsTableName, idColumn, tenantIDColumn, statusColumn, initializedComputedColumn, externalNameColumn)
+			ORDER BY %s DESC, t.%s ASC`, prefixedFields, tenantIDColumn, initializedComputedColumn, TableName, labelDefinitionsTableName, IDColumn, tenantIDColumn, StatusColumn, initializedComputedColumn, ExternalNameColumn)
 
 	err = persist.SelectContext(ctx, &entityCollection, query, tenant.Active)
 	if err != nil {
@@ -252,10 +253,10 @@ func (r *pgRepository) ListPageBySearchTerm(ctx context.Context, searchTerm stri
 	}
 
 	conditions := repo.And(
-		&repo.ConditionTree{Operand: repo.NewEqualCondition(statusColumn, tenant.Active)},
+		&repo.ConditionTree{Operand: repo.NewEqualCondition(StatusColumn, tenant.Active)},
 		repo.Or(repo.ConditionTreesFromConditions(likeConditions)...))
 
-	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, externalNameColumn, &entityCollection, conditions)
+	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, ExternalNameColumn, &entityCollection, conditions)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing tenants from DB")
 	}
@@ -298,7 +299,7 @@ func (r *pgRepository) listByExternalTenantIDs(ctx context.Context, externalTena
 	}
 
 	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues(externalTenantColumn, externalTenant)}
+		repo.NewInConditionForStringValues(ExternalTenantColumn, externalTenant)}
 
 	var entityCollection tenant.EntityCollection
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
@@ -483,7 +484,7 @@ func (r *pgRepository) DeleteByExternalTenant(ctx context.Context, externalTenan
 	}
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(externalTenantColumn, externalTenant),
+		repo.NewEqualCondition(ExternalTenantColumn, externalTenant),
 	}
 
 	return r.deleterGlobal.DeleteManyGlobal(ctx, conditions)
@@ -500,7 +501,7 @@ func (r *pgRepository) deleteChildTenantsRecursively(ctx context.Context, parent
 		}
 
 		conditions := repo.Conditions{
-			repo.NewEqualCondition(idColumn, childTenant),
+			repo.NewEqualCondition(IDColumn, childTenant),
 		}
 		if err = r.deleterGlobal.DeleteOneGlobal(ctx, conditions); err != nil {
 			return errors.Wrapf(err, "while deleting tenant with ID %s", childTenant)
@@ -532,11 +533,11 @@ func (r *pgRepository) GetLowestOwnerForResource(ctx context.Context, resourceTy
 		"m2mTable":           m2mTable,
 		"m2mID":              repo.M2MResourceIDColumn,
 		"owner":              repo.M2MOwnerColumn,
-		"tenantsTable":       tableName,
+		"tenantsTable":       TableName,
 		"tenantParentsTable": "tenant_parents",
 		"parentID":           "parent_id",
 		"tenantID":           "tenant_id",
-		"id":                 idColumn,
+		"id":                 IDColumn,
 	}
 
 	res := new(bytes.Buffer)
@@ -619,8 +620,8 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 	}
 
 	data := map[string]string{
-		"tenantsTable":              tableName,
-		"tenantTypeColumn":          typeColumn,
+		"tenantsTable":              TableName,
+		"tenantTypeColumn":          TypeColumn,
 		"tenantRuntimeContextTable": tenantRuntimeContextTable,
 		"tenantIDColumn":            tenantIDColumn,
 		"tenantApplicationsTable":   tenantApplicationsTable,
@@ -628,7 +629,7 @@ func (r *pgRepository) ListBySubscribedRuntimesAndApplicationTemplates(ctx conte
 		"labelsTable":               labelsTable,
 		"appTemplateIDColumn":       appTemplateIDColumn,
 		"labelKeyColumn":            keyColumn,
-		"id":                        idColumn,
+		"id":                        IDColumn,
 	}
 
 	res := new(bytes.Buffer)
@@ -679,7 +680,7 @@ func (r *pgRepository) ListByIds(ctx context.Context, ids []string) ([]*model.Bu
 	var entityCollection tenant.EntityCollection
 
 	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues(idColumn, ids),
+		repo.NewInConditionForStringValues(IDColumn, ids),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
@@ -694,7 +695,7 @@ func (r *pgRepository) ListByType(ctx context.Context, tenantType tenant.Type) (
 	var entityCollection tenant.EntityCollection
 
 	conditions := repo.Conditions{
-		repo.NewEqualCondition(typeColumn, tenantType),
+		repo.NewEqualCondition(TypeColumn, tenantType),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
@@ -709,8 +710,8 @@ func (r *pgRepository) ListByIdsAndType(ctx context.Context, ids []string, tenan
 	var entityCollection tenant.EntityCollection
 
 	conditions := repo.Conditions{
-		repo.NewInConditionForStringValues(idColumn, ids),
-		repo.NewEqualCondition(typeColumn, tenantType),
+		repo.NewInConditionForStringValues(IDColumn, ids),
+		repo.NewEqualCondition(TypeColumn, tenantType),
 	}
 
 	if err := r.listerGlobal.ListGlobal(ctx, &entityCollection, conditions...); err != nil {
@@ -798,15 +799,15 @@ func (r *pgRepository) enrichManyWithParents(ctx context.Context, entityCollecti
 func buildTenantsByParentAndTypeQuery() string {
 	resultColumns := make([]string, 0, len(insertColumns))
 	for _, column := range insertColumns {
-		resultColumns = append(resultColumns, prefixWithTableName(tableName, column))
+		resultColumns = append(resultColumns, prefixWithTableName(TableName, column))
 	}
 
-	tenantTypeColumn := prefixWithTableName(tableName, typeColumn)
-	tenantsTableIDColumn := prefixWithTableName(tableName, idColumn)
+	tenantTypeColumn := prefixWithTableName(TableName, TypeColumn)
+	tenantsTableIDColumn := prefixWithTableName(TableName, IDColumn)
 	parentsTableTenantIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.TenantIDColumn)
 	parentsTableParentIDColumn := prefixWithTableName(tenantparentmapping.TenantParentsTable, tenantparentmapping.ParentIDColumn)
 
-	getTenantsByParentAndTypeStmt := fmt.Sprintf(getTenantsByParentAndType, strings.Join(resultColumns, ", "), tableName, tenantparentmapping.TenantParentsTable, tenantsTableIDColumn, parentsTableTenantIDColumn, parentsTableParentIDColumn, tenantTypeColumn)
+	getTenantsByParentAndTypeStmt := fmt.Sprintf(getTenantsByParentAndType, strings.Join(resultColumns, ", "), TableName, tenantparentmapping.TenantParentsTable, tenantsTableIDColumn, parentsTableTenantIDColumn, parentsTableParentIDColumn, tenantTypeColumn)
 	getTenantsByParentAndTypeStmt = sqlx.Rebind(sqlx.DOLLAR, getTenantsByParentAndTypeStmt)
 	return getTenantsByParentAndTypeStmt
 }
