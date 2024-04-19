@@ -131,7 +131,8 @@ const (
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -145,14 +146,15 @@ const (
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	}]`
 
-	nameLabelKey           = "displayName"
-	namePlaceholder        = "name"
-	displayNamePlaceholder = "display-name"
-	regionLabelKey         = "region"
-	dataCenterLabelKey     = "dataCenter"
+	nameLabelKey            = "displayName"
+	namePlaceholder         = "name"
+	displayNamePlaceholder  = "display-name"
+	regionLabelKey          = "region"
+	dataCenterLabelKey      = "dataCenter"
 	applicationTypeLabelKey = "applicationType"
 	slisFilterLabelKey      = "slisFilter"
 )
@@ -533,7 +535,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", ""),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -644,7 +646,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", ""),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -1807,7 +1809,7 @@ func getFixExpectedMockSystems(count int, templateID, templateName, intSysID, de
 				IntegrationSystemID:   &intSysID,
 				SystemNumber:          str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, templateName, intSysID, true, "", ""),
+			Labels: applicationLabels(systemName, templateName, intSysID, true, "", "XYZ"),
 		}
 	}
 	return result
