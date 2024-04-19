@@ -3,10 +3,11 @@ package runtime_test
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
