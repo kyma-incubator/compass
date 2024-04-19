@@ -25,6 +25,7 @@ type Config struct {
 	ServerTimeout             time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=110s"`
 	ClientTimeout             time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
 	AuthorizationHeaderKey    string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
+	
 	AllowJWTSigningNone       bool          `envconfig:"APP_ALLOW_JWT_SIGNING_NONE,default=false"`
 
 	CertLoaderConfig             credloader.CertConfig
