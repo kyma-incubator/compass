@@ -133,8 +133,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalTechnicalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-technical-cn", -1))
-	externalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-consumer-provider-cn", -1))
+	externalTechnicalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-technical-cn", -1), conf.CertSvcInstanceTestSecretName)
+	externalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-consumer-provider-cn", -1), conf.CertSvcInstanceTestSecretName)
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerTechnicalClientKey, providerTechnicalRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalTechnicalCertProviderConfig, true)
