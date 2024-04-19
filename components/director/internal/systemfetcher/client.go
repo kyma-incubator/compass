@@ -141,6 +141,7 @@ func (c *Client) getSystemsPagingFunc(ctx context.Context, systems *[]System, te
 			return 0, err
 		}
 
+		log.C(ctx).Infof("Fetching page of systems for URL %s", url)
 		var currentSystems []System
 		err = retry.Do(
 			func() error {
