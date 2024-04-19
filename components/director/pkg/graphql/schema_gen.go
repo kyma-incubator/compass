@@ -201,6 +201,22 @@ type ComplexityRoot struct {
 		EventType func(childComplexity int) int
 	}
 
+	AssignmentOperation struct {
+		FinishedAtTimestamp   func(childComplexity int) int
+		FormationAssignmentID func(childComplexity int) int
+		FormationID           func(childComplexity int) int
+		ID                    func(childComplexity int) int
+		OperationType         func(childComplexity int) int
+		StartedAtTimestamp    func(childComplexity int) int
+		TriggeredBy           func(childComplexity int) int
+	}
+
+	AssignmentOperationPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	Auth struct {
 		AccessStrategy                  func(childComplexity int) int
 		AdditionalHeaders               func(childComplexity int) int
@@ -388,6 +404,7 @@ type ComplexityRoot struct {
 	}
 
 	FormationAssignment struct {
+		AssignmentOperations          func(childComplexity int, first *int, after *PageCursor) int
 		Configuration                 func(childComplexity int) int
 		Error                         func(childComplexity int) int
 		ID                            func(childComplexity int) int
@@ -899,6 +916,8 @@ type FormationAssignmentResolver interface {
 	SourceEntity(ctx context.Context, obj *FormationAssignment) (FormationParticipant, error)
 
 	TargetEntity(ctx context.Context, obj *FormationAssignment) (FormationParticipant, error)
+
+	AssignmentOperations(ctx context.Context, obj *FormationAssignment, first *int, after *PageCursor) (*AssignmentOperationPage, error)
 }
 type FormationTemplateResolver interface {
 	Webhooks(ctx context.Context, obj *FormationTemplate) ([]*Webhook, error)
@@ -1753,6 +1772,76 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.AspectEventDefinitionSubset.EventType(childComplexity), true
+
+	case "AssignmentOperation.finishedAtTimestamp":
+		if e.complexity.AssignmentOperation.FinishedAtTimestamp == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.FinishedAtTimestamp(childComplexity), true
+
+	case "AssignmentOperation.formationAssignmentID":
+		if e.complexity.AssignmentOperation.FormationAssignmentID == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.FormationAssignmentID(childComplexity), true
+
+	case "AssignmentOperation.formationID":
+		if e.complexity.AssignmentOperation.FormationID == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.FormationID(childComplexity), true
+
+	case "AssignmentOperation.id":
+		if e.complexity.AssignmentOperation.ID == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.ID(childComplexity), true
+
+	case "AssignmentOperation.operationType":
+		if e.complexity.AssignmentOperation.OperationType == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.OperationType(childComplexity), true
+
+	case "AssignmentOperation.startedAtTimestamp":
+		if e.complexity.AssignmentOperation.StartedAtTimestamp == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.StartedAtTimestamp(childComplexity), true
+
+	case "AssignmentOperation.triggeredBy":
+		if e.complexity.AssignmentOperation.TriggeredBy == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperation.TriggeredBy(childComplexity), true
+
+	case "AssignmentOperationPage.data":
+		if e.complexity.AssignmentOperationPage.Data == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperationPage.Data(childComplexity), true
+
+	case "AssignmentOperationPage.pageInfo":
+		if e.complexity.AssignmentOperationPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperationPage.PageInfo(childComplexity), true
+
+	case "AssignmentOperationPage.totalCount":
+		if e.complexity.AssignmentOperationPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.AssignmentOperationPage.TotalCount(childComplexity), true
 
 	case "Auth.accessStrategy":
 		if e.complexity.Auth.AccessStrategy == nil {
@@ -2638,6 +2727,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Formation.TenantID(childComplexity), true
+
+	case "FormationAssignment.assignmentOperations":
+		if e.complexity.FormationAssignment.AssignmentOperations == nil {
+			break
+		}
+
+		args, err := ec.field_FormationAssignment_assignmentOperations_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.FormationAssignment.AssignmentOperations(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "FormationAssignment.configuration":
 		if e.complexity.FormationAssignment.Configuration == nil {
@@ -6212,6 +6313,30 @@ func (ec *executionContext) field_Bundle_instanceAuth_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_FormationAssignment_assignmentOperations_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg0
+	var arg1 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg1
 	return args, nil
 }
 
@@ -14238,6 +14363,464 @@ func (ec *executionContext) fieldContext_AspectEventDefinitionSubset_eventType(c
 	return fc, nil
 }
 
+func (ec *executionContext) _AssignmentOperation_id(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_id(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperation_operationType(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_operationType(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.OperationType, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(AssignmentOperationType)
+	fc.Result = res
+	return ec.marshalNAssignmentOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationType(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_operationType(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type AssignmentOperationType does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperation_formationAssignmentID(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_formationAssignmentID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FormationAssignmentID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_formationAssignmentID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperation_formationID(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_formationID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FormationID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNID2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_formationID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperation_triggeredBy(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_triggeredBy(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TriggeredBy, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OperationTrigger)
+	fc.Result = res
+	return ec.marshalNOperationTrigger2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationTrigger(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_triggeredBy(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OperationTrigger does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperation_startedAtTimestamp(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_startedAtTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.StartedAtTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_startedAtTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperation_finishedAtTimestamp(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperation_finishedAtTimestamp(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.FinishedAtTimestamp, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperation_finishedAtTimestamp(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperationPage_data(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperationPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperationPage_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*AssignmentOperation)
+	fc.Result = res
+	return ec.marshalNAssignmentOperation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperationPage_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperationPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_AssignmentOperation_id(ctx, field)
+			case "operationType":
+				return ec.fieldContext_AssignmentOperation_operationType(ctx, field)
+			case "formationAssignmentID":
+				return ec.fieldContext_AssignmentOperation_formationAssignmentID(ctx, field)
+			case "formationID":
+				return ec.fieldContext_AssignmentOperation_formationID(ctx, field)
+			case "triggeredBy":
+				return ec.fieldContext_AssignmentOperation_triggeredBy(ctx, field)
+			case "startedAtTimestamp":
+				return ec.fieldContext_AssignmentOperation_startedAtTimestamp(ctx, field)
+			case "finishedAtTimestamp":
+				return ec.fieldContext_AssignmentOperation_finishedAtTimestamp(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssignmentOperation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperationPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperationPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperationPage_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperationPage_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperationPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _AssignmentOperationPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *AssignmentOperationPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_AssignmentOperationPage_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_AssignmentOperationPage_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "AssignmentOperationPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Auth_credential(ctx context.Context, field graphql.CollectedField, obj *Auth) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Auth_credential(ctx, field)
 	if err != nil {
@@ -19857,6 +20440,8 @@ func (ec *executionContext) fieldContext_Formation_formationAssignment(ctx conte
 				return ec.fieldContext_FormationAssignment_lastStateChangeTimestamp(ctx, field)
 			case "lastNotificationSentTimestamp":
 				return ec.fieldContext_FormationAssignment_lastNotificationSentTimestamp(ctx, field)
+			case "assignmentOperations":
+				return ec.fieldContext_FormationAssignment_assignmentOperations(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationAssignment", field.Name)
 		},
@@ -20618,6 +21203,66 @@ func (ec *executionContext) fieldContext_FormationAssignment_lastNotificationSen
 	return fc, nil
 }
 
+func (ec *executionContext) _FormationAssignment_assignmentOperations(ctx context.Context, field graphql.CollectedField, obj *FormationAssignment) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FormationAssignment_assignmentOperations(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FormationAssignment().AssignmentOperations(rctx, obj, fc.Args["first"].(*int), fc.Args["after"].(*PageCursor))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*AssignmentOperationPage)
+	fc.Result = res
+	return ec.marshalOAssignmentOperationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FormationAssignment_assignmentOperations(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FormationAssignment",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "data":
+				return ec.fieldContext_AssignmentOperationPage_data(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_AssignmentOperationPage_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_AssignmentOperationPage_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type AssignmentOperationPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_FormationAssignment_assignmentOperations_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FormationAssignmentPage_data(ctx context.Context, field graphql.CollectedField, obj *FormationAssignmentPage) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FormationAssignmentPage_data(ctx, field)
 	if err != nil {
@@ -20683,6 +21328,8 @@ func (ec *executionContext) fieldContext_FormationAssignmentPage_data(ctx contex
 				return ec.fieldContext_FormationAssignment_lastStateChangeTimestamp(ctx, field)
 			case "lastNotificationSentTimestamp":
 				return ec.fieldContext_FormationAssignment_lastNotificationSentTimestamp(ctx, field)
+			case "assignmentOperations":
+				return ec.fieldContext_FormationAssignment_assignmentOperations(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationAssignment", field.Name)
 		},
@@ -47325,6 +47972,13 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._ApplicationTemplatePage(ctx, sel, obj)
+	case AssignmentOperationPage:
+		return ec._AssignmentOperationPage(ctx, sel, &obj)
+	case *AssignmentOperationPage:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._AssignmentOperationPage(ctx, sel, obj)
 	case AutomaticScenarioAssignmentPage:
 		return ec._AutomaticScenarioAssignmentPage(ctx, sel, &obj)
 	case *AutomaticScenarioAssignmentPage:
@@ -48659,6 +49313,118 @@ func (ec *executionContext) _AspectEventDefinitionSubset(ctx context.Context, se
 			out.Values[i] = graphql.MarshalString("AspectEventDefinitionSubset")
 		case "eventType":
 			out.Values[i] = ec._AspectEventDefinitionSubset_eventType(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var assignmentOperationImplementors = []string{"AssignmentOperation"}
+
+func (ec *executionContext) _AssignmentOperation(ctx context.Context, sel ast.SelectionSet, obj *AssignmentOperation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, assignmentOperationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AssignmentOperation")
+		case "id":
+			out.Values[i] = ec._AssignmentOperation_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "operationType":
+			out.Values[i] = ec._AssignmentOperation_operationType(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "formationAssignmentID":
+			out.Values[i] = ec._AssignmentOperation_formationAssignmentID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "formationID":
+			out.Values[i] = ec._AssignmentOperation_formationID(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "triggeredBy":
+			out.Values[i] = ec._AssignmentOperation_triggeredBy(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "startedAtTimestamp":
+			out.Values[i] = ec._AssignmentOperation_startedAtTimestamp(ctx, field, obj)
+		case "finishedAtTimestamp":
+			out.Values[i] = ec._AssignmentOperation_finishedAtTimestamp(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var assignmentOperationPageImplementors = []string{"AssignmentOperationPage", "Pageable"}
+
+func (ec *executionContext) _AssignmentOperationPage(ctx context.Context, sel ast.SelectionSet, obj *AssignmentOperationPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, assignmentOperationPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("AssignmentOperationPage")
+		case "data":
+			out.Values[i] = ec._AssignmentOperationPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._AssignmentOperationPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._AssignmentOperationPage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -50395,6 +51161,39 @@ func (ec *executionContext) _FormationAssignment(ctx context.Context, sel ast.Se
 			out.Values[i] = ec._FormationAssignment_lastStateChangeTimestamp(ctx, field, obj)
 		case "lastNotificationSentTimestamp":
 			out.Values[i] = ec._FormationAssignment_lastNotificationSentTimestamp(ctx, field, obj)
+		case "assignmentOperations":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FormationAssignment_assignmentOperations(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -55127,6 +55926,70 @@ func (ec *executionContext) unmarshalNAspectInput2ᚖgithubᚗcomᚋkymaᚑincub
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
+func (ec *executionContext) marshalNAssignmentOperation2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationᚄ(ctx context.Context, sel ast.SelectionSet, v []*AssignmentOperation) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNAssignmentOperation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperation(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNAssignmentOperation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperation(ctx context.Context, sel ast.SelectionSet, v *AssignmentOperation) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._AssignmentOperation(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNAssignmentOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationType(ctx context.Context, v interface{}) (AssignmentOperationType, error) {
+	var res AssignmentOperationType
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNAssignmentOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationType(ctx context.Context, sel ast.SelectionSet, v AssignmentOperationType) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNAuthInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuthInput(ctx context.Context, v interface{}) (AuthInput, error) {
 	res, err := ec.unmarshalInputAuthInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -56393,6 +57256,16 @@ func (ec *executionContext) marshalNOperationStatus2githubᚗcomᚋkymaᚑincuba
 	return v
 }
 
+func (ec *executionContext) unmarshalNOperationTrigger2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationTrigger(ctx context.Context, v interface{}) (OperationTrigger, error) {
+	var res OperationTrigger
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOperationTrigger2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationTrigger(ctx context.Context, sel ast.SelectionSet, v OperationTrigger) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNOperationType2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationType(ctx context.Context, v interface{}) (OperationType, error) {
 	var res OperationType
 	err := res.UnmarshalGQL(v)
@@ -57611,6 +58484,13 @@ func (ec *executionContext) unmarshalOAspectInput2ᚕᚖgithubᚗcomᚋkymaᚑin
 		}
 	}
 	return res, nil
+}
+
+func (ec *executionContext) marshalOAssignmentOperationPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAssignmentOperationPage(ctx context.Context, sel ast.SelectionSet, v *AssignmentOperationPage) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._AssignmentOperationPage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalOAuth2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAuth(ctx context.Context, sel ast.SelectionSet, v *Auth) graphql.Marshaler {

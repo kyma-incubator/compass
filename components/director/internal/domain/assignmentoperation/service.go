@@ -13,6 +13,9 @@ import (
 //go:generate mockery --name=AssignmentOperationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AssignmentOperationRepository interface {
 	Create(ctx context.Context, item *model.AssignmentOperation) error
+	Finish(ctx context.Context, m *model.AssignmentOperation) error
+	GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string, operationType model.AssignmentOperationType) (*model.AssignmentOperation, error)
+	ListForFormationAssignmentIDs(ctx context.Context, assignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 }
 
 // UIDService generates UUIDs for new entities
@@ -27,7 +30,7 @@ type service struct {
 	uidSvc UIDService
 }
 
-// NewService creates
+// NewService creates a service for managing Assignment Operations
 func NewService(repo AssignmentOperationRepository, uidSvc UIDService) *service {
 	return &service{
 		repo:   repo,
@@ -35,6 +38,7 @@ func NewService(repo AssignmentOperationRepository, uidSvc UIDService) *service 
 	}
 }
 
+// Create creates a new Assignment Operation
 func (s *service) Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error) {
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -52,10 +56,22 @@ func (s *service) Create(ctx context.Context, in *model.AssignmentOperationInput
 	return assignmentOperationID, nil
 }
 
+// Finish finishes the Assignment Operation
 func (s *service) Finish(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType) error {
+	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID, operationType)
+	if err != nil {
+		return err
+	}
+
+	err = s.repo.Finish(ctx, operation)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
-func (s *service) List(ctx context.Context, assignmentID string) (*model.AssignmentOperationPage, error) {
-	return nil, nil
+// ListByFormationAssignmentIDs fetches the Assignment Operations for the provided Formation Assignment IDs
+func (s *service) ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error) {
+	return s.repo.ListForFormationAssignmentIDs(ctx, formationAssignmentIDs, pageSize, cursor)
 }

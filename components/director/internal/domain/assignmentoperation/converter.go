@@ -2,6 +2,7 @@ package assignmentOperation
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
+	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
 // NewConverter creates a new assignment operation converter
@@ -42,4 +43,37 @@ func (c *converter) FromEntity(e *Entity) *model.AssignmentOperation {
 		StartedAtTimestamp:    e.StartedAtTimestamp,
 		FinishedAtTimestamp:   e.FinishedAtTimestamp,
 	}
+}
+
+// ToGraphQL converts from internal model to graphql model
+func (c *converter) ToGraphQL(in *model.AssignmentOperation) *gql.AssignmentOperation {
+	if in == nil {
+		return nil
+	}
+
+	return &gql.AssignmentOperation{
+		ID:                    in.ID,
+		OperationType:         gql.AssignmentOperationType(in.Type),
+		FormationAssignmentID: in.FormationAssignmentID,
+		FormationID:           in.FormationID,
+		TriggeredBy:           gql.OperationTrigger(in.TriggeredBy),
+		StartedAtTimestamp:    (*gql.Timestamp)(in.StartedAtTimestamp),
+		FinishedAtTimestamp:   (*gql.Timestamp)(in.FinishedAtTimestamp),
+	}
+}
+
+// MultipleToGraphQL converts multiple entities from internal models to graphql models
+func (c *converter) MultipleToGraphQL(in []*model.AssignmentOperation) []*gql.AssignmentOperation {
+	var assignmentOperations []*gql.AssignmentOperation
+	for _, r := range in {
+		if r == nil {
+			continue
+		}
+
+		ao := c.ToGraphQL(r)
+
+		assignmentOperations = append(assignmentOperations, ao)
+	}
+
+	return assignmentOperations
 }

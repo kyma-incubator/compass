@@ -215,6 +215,24 @@ type AspectInput struct {
 	EventResources []*AspectEventDefinitionInput `json:"eventResources,omitempty"`
 }
 
+type AssignmentOperation struct {
+	ID                    string                  `json:"id"`
+	OperationType         AssignmentOperationType `json:"operationType"`
+	FormationAssignmentID string                  `json:"formationAssignmentID"`
+	FormationID           string                  `json:"formationID"`
+	TriggeredBy           OperationTrigger        `json:"triggeredBy"`
+	StartedAtTimestamp    *Timestamp              `json:"startedAtTimestamp,omitempty"`
+	FinishedAtTimestamp   *Timestamp              `json:"finishedAtTimestamp,omitempty"`
+}
+
+type AssignmentOperationPage struct {
+	Data       []*AssignmentOperation `json:"data"`
+	PageInfo   *PageInfo              `json:"pageInfo"`
+	TotalCount int                    `json:"totalCount"`
+}
+
+func (AssignmentOperationPage) IsPageable() {}
+
 type Auth struct {
 	Credential                      CredentialData         `json:"credential,omitempty"`
 	AccessStrategy                  *string                `json:"accessStrategy,omitempty"`
@@ -1149,6 +1167,47 @@ func (e ArtifactType) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
+type AssignmentOperationType string
+
+const (
+	AssignmentOperationTypeAssign   AssignmentOperationType = "ASSIGN"
+	AssignmentOperationTypeUnassign AssignmentOperationType = "UNASSIGN"
+)
+
+var AllAssignmentOperationType = []AssignmentOperationType{
+	AssignmentOperationTypeAssign,
+	AssignmentOperationTypeUnassign,
+}
+
+func (e AssignmentOperationType) IsValid() bool {
+	switch e {
+	case AssignmentOperationTypeAssign, AssignmentOperationTypeUnassign:
+		return true
+	}
+	return false
+}
+
+func (e AssignmentOperationType) String() string {
+	return string(e)
+}
+
+func (e *AssignmentOperationType) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = AssignmentOperationType(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid AssignmentOperationType", str)
+	}
+	return nil
+}
+
+func (e AssignmentOperationType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
 type BundleInstanceAuthSetStatusConditionInput string
 
 const (
@@ -1865,6 +1924,51 @@ func (e *OperationStatus) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OperationStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OperationTrigger string
+
+const (
+	OperationTriggerAssignObject   OperationTrigger = "ASSIGN_OBJECT"
+	OperationTriggerUnassignObject OperationTrigger = "UNASSIGN_OBJECT"
+	OperationTriggerReset          OperationTrigger = "RESET"
+	OperationTriggerResync         OperationTrigger = "RESYNC"
+)
+
+var AllOperationTrigger = []OperationTrigger{
+	OperationTriggerAssignObject,
+	OperationTriggerUnassignObject,
+	OperationTriggerReset,
+	OperationTriggerResync,
+}
+
+func (e OperationTrigger) IsValid() bool {
+	switch e {
+	case OperationTriggerAssignObject, OperationTriggerUnassignObject, OperationTriggerReset, OperationTriggerResync:
+		return true
+	}
+	return false
+}
+
+func (e OperationTrigger) String() string {
+	return string(e)
+}
+
+func (e *OperationTrigger) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationTrigger(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationTrigger", str)
+	}
+	return nil
+}
+
+func (e OperationTrigger) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -15,13 +15,15 @@ import (
 
 // Resolver is a formation assignment resolver
 type Resolver struct {
-	transact                persistence.Transactioner
-	appRepo                 applicationRepo
-	appConverter            applicationConverter
-	runtimeRepo             runtimeRepo
-	runtimeConverter        runtimeConverter
-	runtimeContextRepo      runtimeContextRepo
-	runtimeContextConverter runtimeContextConverter
+	transact                     persistence.Transactioner
+	appRepo                      applicationRepo
+	appConverter                 applicationConverter
+	runtimeRepo                  runtimeRepo
+	runtimeConverter             runtimeConverter
+	runtimeContextRepo           runtimeContextRepo
+	runtimeContextConverter      runtimeContextConverter
+	assignmentOperationService   assignmentOperationService
+	assignmentOperationConverter assignmentOperationConverter
 }
 
 //go:generate mockery --name=applicationRepo --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
@@ -54,16 +56,26 @@ type runtimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
 }
 
+type assignmentOperationService interface {
+	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
+}
+
+type assignmentOperationConverter interface {
+	MultipleToGraphQL(in []*model.AssignmentOperation) []*graphql.AssignmentOperation
+}
+
 // NewResolver is a constructor for formation assignment resolver
-func NewResolver(transact persistence.Transactioner, appRepo applicationRepo, appConverter applicationConverter, runtimeRepo runtimeRepo, runtimeConverter runtimeConverter, runtimeContextRepo runtimeContextRepo, runtimeContextConverter runtimeContextConverter) *Resolver {
+func NewResolver(transact persistence.Transactioner, appRepo applicationRepo, appConverter applicationConverter, runtimeRepo runtimeRepo, runtimeConverter runtimeConverter, runtimeContextRepo runtimeContextRepo, runtimeContextConverter runtimeContextConverter, operationService assignmentOperationService, operationConverter assignmentOperationConverter) *Resolver {
 	return &Resolver{
-		transact:                transact,
-		appRepo:                 appRepo,
-		appConverter:            appConverter,
-		runtimeRepo:             runtimeRepo,
-		runtimeConverter:        runtimeConverter,
-		runtimeContextRepo:      runtimeContextRepo,
-		runtimeContextConverter: runtimeContextConverter,
+		transact:                     transact,
+		appRepo:                      appRepo,
+		appConverter:                 appConverter,
+		runtimeRepo:                  runtimeRepo,
+		runtimeConverter:             runtimeConverter,
+		runtimeContextRepo:           runtimeContextRepo,
+		runtimeContextConverter:      runtimeContextConverter,
+		assignmentOperationService:   operationService,
+		assignmentOperationConverter: operationConverter,
 	}
 }
 
@@ -156,4 +168,66 @@ func (r *Resolver) TargetEntity(ctx context.Context, obj *graphql.FormationAssig
 func (r *Resolver) SourceEntity(ctx context.Context, obj *graphql.FormationAssignment) (graphql.FormationParticipant, error) {
 	params := dataloader.ParamFormationParticipant{ID: obj.ID, ParticipantID: obj.Source, ParticipantType: string(obj.SourceType), Ctx: ctx}
 	return dataloader.ForSourceFormationParticipant(ctx).FormationParticipantDataloader.Load(params)
+}
+
+// AssignmentOperations retrieves a page of FormationAssignments for the specified Formation
+func (r *Resolver) AssignmentOperations(ctx context.Context, obj *graphql.FormationAssignment, first *int, after *graphql.PageCursor) (*graphql.AssignmentOperationPage, error) {
+	param := dataloader.ParamAssignmentOperation{ID: obj.ID, Ctx: ctx, First: first, After: after}
+	return dataloader.FormationAssignmentFor(ctx).AssignmentOperationByID.Load(param)
+}
+
+func (r *Resolver) AssignmentOperationsDataLoader(keys []dataloader.ParamAssignmentOperation) ([]*graphql.AssignmentOperationPage, []error) {
+	if len(keys) == 0 {
+		return nil, []error{apperrors.NewInternalError("No Formation Assignments found")}
+	}
+
+	ctx := keys[0].Ctx
+
+	formationAssignmentIDs := make(map[string]struct{}, len(keys))
+	for _, param := range keys {
+		if param.ID == "" {
+			return nil, []error{apperrors.NewInternalError("Cannot fetch Formation Assignment. ID is empty")}
+		}
+		formationAssignmentIDs[param.ID] = struct{}{}
+	}
+
+	var cursor string
+	if keys[0].After != nil {
+		cursor = string(*keys[0].After)
+	}
+
+	if keys[0].First == nil {
+		return nil, []error{apperrors.NewInvalidDataError("missing required parameter 'first'")}
+	}
+
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, []error{err}
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	assignmentOperationsPages, err := r.assignmentOperationService.ListByFormationAssignmentIDs(ctx, str.MapToSlice(formationAssignmentIDs), *keys[0].First, cursor)
+	if err != nil {
+		return nil, []error{errors.Wrapf(err, "while fetching assignment operations")}
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, []error{err}
+	}
+
+	result := make([]*graphql.AssignmentOperationPage, 0, len(assignmentOperationsPages))
+	for _, page := range assignmentOperationsPages {
+
+		operations := r.assignmentOperationConverter.MultipleToGraphQL(page.Data)
+
+		result = append(result, &graphql.AssignmentOperationPage{Data: operations, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(page.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(page.PageInfo.EndCursor),
+			HasNextPage: page.PageInfo.HasNextPage,
+		}})
+	}
+
+	return result, nil
 }
