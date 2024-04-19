@@ -25,7 +25,6 @@ type Client interface {
 	GetSystemAuthByToken(ctx context.Context, token string) (*model.SystemAuth, error)
 	UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAuth) (UpdateAuthResult, error)
 	InvalidateSystemAuthOneTimeToken(ctx context.Context, authID string) error
-	GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*schema.Runtime, error)
 	ListCertificateSubjectMappings(ctx context.Context, after string) (*schema.CertificateSubjectMappingPage, error)
 }
 
