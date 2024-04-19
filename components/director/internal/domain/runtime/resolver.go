@@ -863,6 +863,9 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 // if runtime doesn't have the scenarios label or is part of a scenario for which no scenario assignment exists => noop
 func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runtimeID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return err
+	}
 
 	tntMapping, err := r.tenantSvc.GetTenantByID(ctx, tnt)
 	if err != nil {
