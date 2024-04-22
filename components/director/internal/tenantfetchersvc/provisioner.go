@@ -79,7 +79,10 @@ func (p *provisioner) ProvisionMissingTenants(ctx context.Context, request *Tena
 	var newBusinessTenantMappings = []model.BusinessTenantMappingInput{}
 	requestedBusinessTenantMappingInputs := p.tenantsFromRequest(ctx, *request)
 	for _, currentBusinessTenantMappingInput := range requestedBusinessTenantMappingInputs {
+		log.C(ctx).Infof("ALEX ProvisionMissingTenants tenant %s", currentBusinessTenantMappingInput.ExternalTenant)
 		exists, err := p.gqlClient.ExistsTenantByExternalID(ctx, currentBusinessTenantMappingInput.ExternalTenant)
+		log.C(ctx).Infof("ALEX ProvisionMissingTenants %+v, %+v", exists, err)
+
 		if err != nil {
 			return err
 		}
@@ -89,6 +92,7 @@ func (p *provisioner) ProvisionMissingTenants(ctx context.Context, request *Tena
 	}
 
 	if len(newBusinessTenantMappings) > 0 {
+		log.C(ctx).Infof("ALEX ProvisionMissingTenants missing %d tenants %+v", len(newBusinessTenantMappings), newBusinessTenantMappings)
 		tenantsToCreateGQL := p.converter.MultipleInputToGraphQLInput(newBusinessTenantMappings)
 		return p.gqlClient.WriteTenants(ctx, tenantsToCreateGQL)
 	}
@@ -101,7 +105,7 @@ func (p *provisioner) tenantsFromRequest(ctx context.Context, request TenantSubs
 	accountID := request.AccountTenantID
 	costObjectID := request.CostObjectTenantID
 
-	log.C(ctx).Debugf("Tenants retrieved from the subscription request. Customer id %q,account id %q, cost-object id %q", customerID, accountID, costObjectID)
+	log.C(ctx).Infof("ALEX Tenants retrieved from the subscription request. Customer id %q,account id %q, cost-object id %q", customerID, accountID, costObjectID)
 	var licenseType *string
 
 	if len(request.SubscriptionLcenseType) > 0 {

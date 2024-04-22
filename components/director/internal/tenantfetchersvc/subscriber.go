@@ -2,6 +2,7 @@ package tenantfetchersvc
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 )
 
 // TenantProvisioner is used to create all related to the incoming request tenants, and build their hierarchy;
@@ -29,6 +30,7 @@ func NewSubscriber(directorClient DirectorGraphQLClient, provisioner TenantProvi
 // Subscribe subscribes tenant to appTemplate/runtime. If the tenant does not exist it will be created
 func (s *subscriber) Subscribe(ctx context.Context, tenantSubscriptionRequest *TenantSubscriptionRequest) error {
 	if err := s.provisioner.ProvisionMissingTenants(ctx, tenantSubscriptionRequest); err != nil {
+		log.C(ctx).Infof("ALEX Subscribe err %+v", err)
 		return err
 	}
 
@@ -48,5 +50,7 @@ func (s *subscriber) applySubscriptionChange(ctx context.Context, subscriptionPr
 	} else {
 		err = s.gqlClient.UnsubscribeTenant(ctx, subscriptionProviderID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionPayload)
 	}
+
+	log.C(ctx).Infof("ALEX applySubscriptionChange %+v", err)
 	return err
 }

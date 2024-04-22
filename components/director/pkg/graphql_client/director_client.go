@@ -3,6 +3,7 @@ package graphqlclient
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql/graphqlizer"
@@ -92,8 +93,10 @@ func (d *Director) UpdateTenant(ctx context.Context, id string, tenant graphql.B
 // SubscribeTenant makes graphql query tenant subscription
 func (d *Director) SubscribeTenant(ctx context.Context, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload string) error {
 	var res map[string]interface{}
-
 	subscriptionMutation := fmt.Sprintf(`mutation { subscribeTenant(providerID: "%s", subaccountID: "%s", providerSubaccountID: "%s", consumerTenantID: "%s", region: "%s", subscriptionAppName: "%s", subscriptionPayload: %q)}`, providerID, subaccountID, providerSubaccountID, consumerTenantID, region, subscriptionProviderAppName, subscriptionPayload)
+
+	log.C(ctx).Infof("ALEX SubscribeTenant %s", subscriptionMutation)
+
 	gRequest := gcli.NewRequest(subscriptionMutation)
 	if err := d.client.Run(ctx, gRequest, &res); err != nil {
 		return errors.Wrap(err, "while executing gql mutation")
