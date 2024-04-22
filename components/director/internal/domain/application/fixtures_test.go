@@ -3,6 +3,7 @@ package application_test
 import (
 	"database/sql"
 	"encoding/json"
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/url"
 	"testing"
 	"time"
@@ -51,6 +52,18 @@ func fixApplicationPage(applications []*model.Application) *model.ApplicationPag
 	}
 }
 
+func fixApplicationWithTenantsPage(applicationWithTenants []*model.ApplicationWithTenants) *model.ApplicationWithTenantsPage {
+	return &model.ApplicationWithTenantsPage{
+		Data: applicationWithTenants,
+		PageInfo: &pagination.Page{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(applicationWithTenants),
+	}
+}
+
 func fixGQLApplicationPage(applications []*graphql.Application) *graphql.ApplicationPage {
 	return &graphql.ApplicationPage{
 		Data: applications,
@@ -60,6 +73,18 @@ func fixGQLApplicationPage(applications []*graphql.Application) *graphql.Applica
 			HasNextPage: false,
 		},
 		TotalCount: len(applications),
+	}
+}
+
+func fixGQLApplicationWithTenantsPage(applicationWithTenants []*graphql.ApplicationWithTenants) *graphql.ApplicationWithTenantsPage {
+	return &graphql.ApplicationWithTenantsPage{
+		Data: applicationWithTenants,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: "start",
+			EndCursor:   "end",
+			HasNextPage: false,
+		},
+		TotalCount: len(applicationWithTenants),
 	}
 }
 
@@ -73,6 +98,16 @@ func fixModelApplication(id, tenant, name, description string) *model.Applicatio
 		BaseEntity:           &model.BaseEntity{ID: id},
 		ApplicationNamespace: &appNamespace,
 	}
+}
+
+func fixBusinessTenantMappingModel(id string, tntType tenantpkg.Type) *model.BusinessTenantMapping {
+	btm := &model.BusinessTenantMapping{
+		ID:             id,
+		ExternalTenant: id,
+		Type:           tntType,
+	}
+
+	return btm
 }
 
 func fixModelApplicationWithAllUpdatableFields(id, name, description, url string, baseURL *string, applicationNamespace *string, conditionStatus model.ApplicationStatusCondition, conditionTimestamp time.Time) *model.Application {
@@ -104,6 +139,14 @@ func fixGQLApplication(id, name, description string) *graphql.Application {
 		Name:                 name,
 		Description:          &description,
 		ApplicationNamespace: &appNamespace,
+	}
+}
+
+func fixGraphQLTenant(id, tntType string) *graphql.Tenant {
+	return &graphql.Tenant{
+		ID:   id,
+		Name: str.Ptr(id),
+		Type: tntType,
 	}
 }
 
@@ -584,6 +627,10 @@ func timeToTimestampPtr(time time.Time) *graphql.Timestamp {
 
 func fixAppColumns() []string {
 	return []string{"id", "app_template_id", "system_number", "local_tenant_id", "name", "description", "status_condition", "status_timestamp", "system_status", "healthcheck_url", "integration_system_id", "provider_name", "base_url", "application_namespace", "labels", "ready", "created_at", "updated_at", "deleted_at", "error", "correlation_ids", "tags", "documentation_labels"}
+}
+
+func fixAssociatedTenantsColumns() []string {
+	return []string{"app_id", "id", "external_name", "external_tenant", "type", "provider_name", "status"}
 }
 
 func fixApplicationLabels(appID, labelKey1, labelKey2 string, labelValue1 []interface{}, labelValue2 string) map[string]*model.Label {

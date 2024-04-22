@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"testing"
 	"time"
 
@@ -4058,6 +4059,82 @@ func TestService_ListAll(t *testing.T) {
 
 			// WHEN
 			app, err := svc.ListAll(testCase.Context)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
+	}
+}
+
+func TestService_ListAllGlobalByFilter(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Lorem Ipsum")
+	modelTenant := fixBusinessTenantMappingModel("customer", tnt.Customer)
+	modelApplicationsWithTenants := []*model.ApplicationWithTenants{
+		{
+			Application: *modelApplication,
+			Tenants: []*model.BusinessTenantMapping{
+				modelTenant,
+			},
+		},
+	}
+	applicationWithTenantsPage := fixApplicationWithTenantsPage(modelApplicationsWithTenants)
+
+	testErr := errors.New("test error")
+	pageSize := 2
+	cursor := ""
+	query := "foo"
+	labelFilter := []*labelfilter.LabelFilter{
+		{Key: "", Query: &query},
+	}
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.ApplicationRepository
+		ExpectedResult     *model.ApplicationWithTenantsPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllGlobalByFilter", ctx, labelFilter, pageSize, cursor).Return(applicationWithTenantsPage, nil).Once()
+				return repo
+			},
+
+			ExpectedResult:     applicationWithTenantsPage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when ListAllGlobalByFilter fail",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllGlobalByFilter", ctx, labelFilter, pageSize, cursor).Return(applicationWithTenantsPage, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			defer mock.AssertExpectationsForObjects(t, repo)
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			app, err := svc.ListAllGlobalByFilter(ctx, labelFilter, pageSize, cursor)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
