@@ -18,7 +18,7 @@ require (
 	github.com/tidwall/gjson v1.17.0
 	github.com/tidwall/sjson v1.2.5
 	github.com/vrischmann/envconfig v1.3.0
-	golang.org/x/net v0.21.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.11.0
 	k8s.io/api v0.26.9
 	k8s.io/apimachinery v0.26.9

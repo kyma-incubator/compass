@@ -182,8 +182,8 @@ global:
       version: "PR-3787"
       name: compass-hydrator
     ias_adapter:
-      dir: prod/incubator/
-      version: "v20240416-3b4707cf"
+      dir: dev/incubator/
+      version: "PR-3740"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -759,13 +759,6 @@ global:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}", "subject": "{{ print .Extra.subject }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync system_fetcher:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
-      runtimeMappingService:
-        config:
-          api:
-            url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/runtime-mapping
-            retry:
-              give_up_after: 6s
-              max_delay: 2000ms
       authenticationMappingServices:
         nsadapter:
           cfg:

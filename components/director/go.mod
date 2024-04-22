@@ -41,7 +41,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.11
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/net v0.21.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/sync v0.6.0
 	golang.org/x/text v0.14.0
