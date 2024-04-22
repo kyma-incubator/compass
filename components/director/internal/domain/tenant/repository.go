@@ -30,6 +30,7 @@ import (
 )
 
 const (
+	// TableName specifies the name of the business tenant mappings table
 	TableName            string = `public.business_tenant_mappings`
 	IDColumn             string = "id"
 	ExternalNameColumn   string = "external_name"

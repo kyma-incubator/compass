@@ -359,11 +359,7 @@ func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labe
 
 	appToTenantsMap := make(map[string][]*model.BusinessTenantMapping)
 	for _, e := range entityWithAppIDCollection {
-		if _, ok := appToTenantsMap[e.AppID]; ok {
-			appToTenantsMap[e.AppID] = append(appToTenantsMap[e.AppID], r.tenantConv.FromEntity(e.Entity))
-		} else {
-			appToTenantsMap[e.AppID] = []*model.BusinessTenantMapping{r.tenantConv.FromEntity(e.Entity)}
-		}
+		appToTenantsMap[e.AppID] = append(appToTenantsMap[e.AppID], r.tenantConv.FromEntity(e.Entity))
 	}
 
 	applicationWithTenantsData := make([]*model.ApplicationWithTenants, 0, len(filteredApplications))
