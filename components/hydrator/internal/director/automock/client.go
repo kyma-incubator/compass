@@ -18,67 +18,11 @@ type Client struct {
 	mock.Mock
 }
 
-// GetRootTenantByExternalID provides a mock function with given fields: ctx, tenantID
-func (_m *Client) GetRootTenantByExternalID(ctx context.Context, tenantID string) (*graphql.Tenant, error) {
-	ret := _m.Called(ctx, tenantID)
-
-	var r0 *graphql.Tenant
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.Tenant, error)); ok {
-		return rf(ctx, tenantID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.Tenant); ok {
-		r0 = rf(ctx, tenantID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.Tenant)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, tenantID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetRuntimeByTokenIssuer provides a mock function with given fields: ctx, issuer
-func (_m *Client) GetRuntimeByTokenIssuer(ctx context.Context, issuer string) (*graphql.Runtime, error) {
-	ret := _m.Called(ctx, issuer)
-
-	var r0 *graphql.Runtime
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.Runtime, error)); ok {
-		return rf(ctx, issuer)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.Runtime); ok {
-		r0 = rf(ctx, issuer)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*graphql.Runtime)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
-		r1 = rf(ctx, issuer)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // GetSystemAuthByID provides a mock function with given fields: ctx, authID
 func (_m *Client) GetSystemAuthByID(ctx context.Context, authID string) (*model.SystemAuth, error) {
 	ret := _m.Called(ctx, authID)
 
 	var r0 *model.SystemAuth
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.SystemAuth, error)); ok {
-		return rf(ctx, authID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, authID)
 	} else {
@@ -87,6 +31,7 @@ func (_m *Client) GetSystemAuthByID(ctx context.Context, authID string) (*model.
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, authID)
 	} else {
@@ -101,10 +46,6 @@ func (_m *Client) GetSystemAuthByToken(ctx context.Context, token string) (*mode
 	ret := _m.Called(ctx, token)
 
 	var r0 *model.SystemAuth
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.SystemAuth, error)); ok {
-		return rf(ctx, token)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.SystemAuth); ok {
 		r0 = rf(ctx, token)
 	} else {
@@ -113,6 +54,7 @@ func (_m *Client) GetSystemAuthByToken(ctx context.Context, token string) (*mode
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, token)
 	} else {
@@ -127,10 +69,6 @@ func (_m *Client) GetTenantByExternalID(ctx context.Context, tenantID string) (*
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 *graphql.Tenant
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.Tenant, error)); ok {
-		return rf(ctx, tenantID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.Tenant); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
@@ -139,6 +77,7 @@ func (_m *Client) GetTenantByExternalID(ctx context.Context, tenantID string) (*
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -153,10 +92,6 @@ func (_m *Client) GetTenantByInternalID(ctx context.Context, tenantID string) (*
 	ret := _m.Called(ctx, tenantID)
 
 	var r0 *graphql.Tenant
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.Tenant, error)); ok {
-		return rf(ctx, tenantID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.Tenant); ok {
 		r0 = rf(ctx, tenantID)
 	} else {
@@ -165,6 +100,7 @@ func (_m *Client) GetTenantByInternalID(ctx context.Context, tenantID string) (*
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, tenantID)
 	} else {
@@ -179,16 +115,13 @@ func (_m *Client) GetTenantByLowestOwnerForResource(ctx context.Context, resourc
 	ret := _m.Called(ctx, resourceID, resourceType)
 
 	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (string, error)); ok {
-		return rf(ctx, resourceID, resourceType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) string); ok {
 		r0 = rf(ctx, resourceID, resourceType)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, resourceID, resourceType)
 	} else {
@@ -217,10 +150,6 @@ func (_m *Client) ListCertificateSubjectMappings(ctx context.Context, after stri
 	ret := _m.Called(ctx, after)
 
 	var r0 *graphql.CertificateSubjectMappingPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (*graphql.CertificateSubjectMappingPage, error)); ok {
-		return rf(ctx, after)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *graphql.CertificateSubjectMappingPage); ok {
 		r0 = rf(ctx, after)
 	} else {
@@ -229,6 +158,7 @@ func (_m *Client) ListCertificateSubjectMappings(ctx context.Context, after stri
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, after)
 	} else {
@@ -243,16 +173,13 @@ func (_m *Client) UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAut
 	ret := _m.Called(ctx, sysAuth)
 
 	var r0 director.UpdateAuthResult
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.SystemAuth) (director.UpdateAuthResult, error)); ok {
-		return rf(ctx, sysAuth)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, *model.SystemAuth) director.UpdateAuthResult); ok {
 		r0 = rf(ctx, sysAuth)
 	} else {
 		r0 = ret.Get(0).(director.UpdateAuthResult)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, *model.SystemAuth) error); ok {
 		r1 = rf(ctx, sysAuth)
 	} else {
@@ -262,12 +189,13 @@ func (_m *Client) UpdateSystemAuth(ctx context.Context, sysAuth *model.SystemAut
 	return r0, r1
 }
 
-// NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewClient(t interface {
+type mockConstructorTestingTNewClient interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Client {
+}
+
+// NewClient creates a new instance of Client. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewClient(t mockConstructorTestingTNewClient) *Client {
 	mock := &Client{}
 	mock.Mock.Test(t)
 
