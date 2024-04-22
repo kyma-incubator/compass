@@ -194,8 +194,8 @@ global:
       version: "PR-3792"
       name: compass-instance-creator
     default_tenant_mapping_handler:
-      dir: prod/incubator/
-      version: "v20240318-14e6aa90"
+      dir: dev/incubator/
+      version: "PR-3838"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
