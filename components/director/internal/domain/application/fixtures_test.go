@@ -3,10 +3,11 @@ package application_test
 import (
 	"database/sql"
 	"encoding/json"
-	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"net/url"
 	"testing"
 	"time"
+
+	tenantpkg "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application/automock"
 

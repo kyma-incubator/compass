@@ -31,13 +31,19 @@ import (
 
 const (
 	// TableName specifies the name of the business tenant mappings table
-	TableName            string = `public.business_tenant_mappings`
-	IDColumn             string = "id"
-	ExternalNameColumn   string = "external_name"
+	TableName string = `public.business_tenant_mappings`
+	// IDColumn specifies the name of the id column in business tenant mappings table
+	IDColumn string = "id"
+	// ExternalNameColumn specifies the name of the external name column in business tenant mappings table
+	ExternalNameColumn string = "external_name"
+	// ExternalTenantColumn specifies the name of the external tenant column in business tenant mappings table
 	ExternalTenantColumn string = "external_tenant"
-	TypeColumn           string = "type"
-	ProviderNameColumn   string = "provider_name"
-	StatusColumn         string = "status"
+	// TypeColumn specifies the name of the type column in business tenant mappings table
+	TypeColumn string = "type"
+	// ProviderNameColumn specifies the name of the provider column in business tenant mappings table
+	ProviderNameColumn string = "provider_name"
+	// StatusColumn specifies the name of the status column in business tenant mappings table
+	StatusColumn string = "status"
 
 	labelDefinitionsTableName string = `public.label_definitions`
 	tenantIDColumn            string = `tenant_id`

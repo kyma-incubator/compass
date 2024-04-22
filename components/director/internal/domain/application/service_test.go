@@ -4,9 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"testing"
 	"time"
+
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 

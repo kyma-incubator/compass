@@ -3,9 +3,10 @@ package application_test
 import (
 	"context"
 	"fmt"
-	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"testing"
 	"time"
+
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 
