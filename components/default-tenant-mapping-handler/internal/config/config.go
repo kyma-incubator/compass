@@ -22,6 +22,7 @@ type Config struct {
 	Address                   string        `envconfig:"APP_ADDRESS,default=localhost:8080"`
 	SkipSSLValidation         bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 	JWKSEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
+	
 	ServerTimeout             time.Duration `envconfig:"APP_SERVER_TIMEOUT,default=110s"`
 	ClientTimeout             time.Duration `envconfig:"APP_CLIENT_TIMEOUT,default=105s"`
 	AuthorizationHeaderKey    string        `envconfig:"APP_AUTHORIZATION_HEADER_KEY,default=Authorization"`
