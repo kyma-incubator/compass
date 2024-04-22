@@ -179,7 +179,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3828"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
