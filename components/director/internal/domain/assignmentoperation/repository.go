@@ -2,11 +2,9 @@ package assignmentOperation
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
-	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -14,11 +12,11 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 )
 
-const tableName string = `public.formation_assignments`
+const tableName string = `public.assignment_operations`
 
 var (
 	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"finished_at_timestamp"}
+	updatableTableColumns = []string{"triggered_by", "started_at_timestamp", "finished_at_timestamp"}
 	tableColumns          = []string{"id", "type", "formation_assignment_id", "formation_id", "triggered_by", "started_at_timestamp", "finished_at_timestamp"}
 	startedAtColumn       = "started_at_timestamp"
 	assignmentIDColumn    = "formation_assignment_id"
@@ -39,10 +37,11 @@ type repository struct {
 	unionLister     repo.UnionListerGlobal
 	pageableQuerier repo.PageableQuerierGlobal
 	updater         repo.UpdaterGlobal
+	deleter         repo.DeleterGlobal
 	conv            EntityConverter
 }
 
-// NewRepository creates a new FormationAssignment repository
+// NewRepository creates a new AssignmentOperation repository
 func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:         repo.NewCreatorGlobal(resource.AssignmentOperation, tableName, tableColumns),
@@ -50,6 +49,7 @@ func NewRepository(conv EntityConverter) *repository {
 		unionLister:     repo.NewUnionListerGlobal(resource.AssignmentOperation, tableName, tableColumns),
 		pageableQuerier: repo.NewPageableQuerierGlobal(resource.AssignmentOperation, tableName, tableColumns),
 		updater:         repo.NewUpdaterGlobal(resource.AssignmentOperation, tableName, updatableTableColumns, idTableColumns),
+		deleter:         repo.NewDeleterGlobal(resource.AssignmentOperation, tableName),
 		conv:            conv,
 	}
 }
@@ -83,6 +83,9 @@ func (r *repository) GetLatestOperation(ctx context.Context, formationAssignment
 // ListForFormationAssignmentIDs fetches the Assignment Operations for the provided Formation Assignment IDs
 func (r *repository) ListForFormationAssignmentIDs(ctx context.Context, assignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error) {
 	var assignmentOperationsCollection EntityCollection
+	if len(assignmentIDs) == 0 {
+		return nil, nil
+	}
 
 	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy(assignmentIDColumn), repo.NewDescOrderBy(startedAtColumn), repo.NewDescOrderBy(idColumn)}
 
@@ -123,24 +126,21 @@ func (r *repository) ListForFormationAssignmentIDs(ctx context.Context, assignme
 	return aoPages, nil
 }
 
-// Finish updates the finished at timestamp for the Assignment Operation with the provided ID
-func (r *repository) Finish(ctx context.Context, m *model.AssignmentOperation) error {
+// Update updates the finished at timestamp for the Assignment Operation with the provided ID
+func (r *repository) Update(ctx context.Context, m *model.AssignmentOperation) error {
 	if m == nil {
 		return apperrors.NewInternalError("model can not be empty")
 	}
 	newEntity := r.conv.ToEntity(m)
 
-	log.C(ctx).Debugf("Updating the finished at timestamp for assignment operation with ID: %s", newEntity.ID)
-	now := time.Now()
-	newEntity.FinishedAtTimestamp = &now
-
 	return r.updater.UpdateSingleGlobal(ctx, newEntity)
 }
 
-func (r *repository) multipleFromEntities(entities EntityCollection) []*model.AssignmentOperation {
-	items := make([]*model.AssignmentOperation, 0, len(entities))
-	for _, ent := range entities {
-		items = append(items, r.conv.FromEntity(ent))
+// DeleteByIDs deletes Assignment Operations with the provided IDs
+func (r *repository) DeleteByIDs(ctx context.Context, ids []string) error {
+	if len(ids) == 0 {
+		return nil
 	}
-	return items
+
+	return r.deleter.DeleteManyGlobal(ctx, repo.Conditions{repo.NewInConditionForStringValues(idColumn, ids)})
 }
