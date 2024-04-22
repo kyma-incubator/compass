@@ -3,7 +3,6 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
@@ -94,6 +93,10 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http.Request, reset bool) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
+
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	var assignmentReqBody FormationAssignmentRequestBody
@@ -130,6 +133,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
 		return
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()
 	if err != nil {
@@ -287,7 +294,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	if shouldProcessNotifications {
 		// The formation assignment notifications processing is independent of the status update request handling.
 		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-		go h.processFormationAssignmentNotifications(fa, correlationID)
+		go h.processFormationAssignmentNotifications(fa, correlationID, traceID, spanID, parentSpanID)
 	}
 
 	httputils.Respond(w, http.StatusOK)
@@ -297,6 +304,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
+
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	var reqBody FormationRequestBody
@@ -327,6 +338,9 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
 		return
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()
 	if err != nil {
@@ -384,7 +398,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	if shouldResync {
 		// The formation notifications processing is independent of the status update request handling.
 		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-		go h.processFormationNotifications(f, correlationID)
+		go h.processFormationNotifications(f, correlationID, traceID, spanID, parentSpanID)
 	}
 
 	httputils.Respond(w, http.StatusOK)
@@ -571,16 +585,16 @@ func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, format
 	return true, nil
 }
 
-func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string) {
+func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID, traceID, spanID, parentSpanID string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
-
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
+	logger = logger.WithField(log.FieldFormationID, fa.FormationID)
+	logger = logger.WithField(log.FieldFormationAssignmentID, fa.ID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")
@@ -631,16 +645,15 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	log.C(ctx).Info("Finished formation assignment asynchronous notifications processing")
 }
 
-func (h *Handler) processFormationNotifications(f *model.Formation, correlationID string) {
+func (h *Handler) processFormationNotifications(f *model.Formation, correlationID, traceID, spanID, parentSpanID string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	ctx = tenant.SaveToContext(ctx, f.TenantID, "")
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
-
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
+	logger = logger.WithField(log.FieldFormationID, f.ID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()
