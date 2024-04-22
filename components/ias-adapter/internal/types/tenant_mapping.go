@@ -22,7 +22,7 @@ var (
 type TenantMapping struct {
 	Context        `json:"context"`
 	ReceiverTenant ReceiverTenant `json:"receiverTenant"`
-	AssignedTenant AssignedTenant `json:"assignedTenants"`
+	AssignedTenant AssignedTenant `json:"assignedTenant"`
 }
 
 type Context struct {
@@ -59,6 +59,20 @@ const (
 
 	S4ApplicationNamespace ApplicationNamespace = "sap.s4"
 )
+
+func ReadyState(operation Operation) State {
+	if operation == OperationAssign {
+		return StateCreateReady
+	}
+	return StateDeleteReady
+}
+
+func ErrorState(operation Operation) State {
+	if operation == OperationAssign {
+		return StateCreateError
+	}
+	return StateDeleteError
+}
 
 type AssignedTenant struct {
 	AppID                  string                      `json:"uclSystemTenantId"`
@@ -120,9 +134,6 @@ func (tm TenantMapping) Validate() error {
 	}
 	if tm.AssignedTenant.LocalTenantID == "" {
 		return errors.New("$.assignedTenant.applicationTenantId is required")
-	}
-	if tm.AssignedTenant.AppNamespace == "" {
-		return errors.New("$.assignedTenant.applicationNamespace is required")
 	}
 	// S/4 applications are created by the IAS adapter and therefore the tenant mapping does not contain its clientID
 	if tm.AssignedTenant.AppNamespace != S4ApplicationNamespace && tm.AssignedTenant.Parameters.ClientID == "" {

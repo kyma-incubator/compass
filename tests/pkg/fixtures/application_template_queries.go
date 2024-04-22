@@ -2,6 +2,7 @@ package fixtures
 
 import (
 	"context"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
@@ -78,6 +79,16 @@ func CleanupApplicationTemplate(t require.TestingT, ctx context.Context, gqlClie
 	req := FixDeleteApplicationTemplateRequest(appTemplate.ID)
 
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, nil)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
+}
+
+func CleanupApplicationTemplateWithoutTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, appTemplate graphql.ApplicationTemplate) {
+	if appTemplate.ID == "" {
+		return
+	}
+	req := FixDeleteApplicationTemplateRequest(appTemplate.ID)
+
+	err := testctx.Tc.RunOperationNoTenant(ctx, gqlClient, req, nil)
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
 

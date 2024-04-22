@@ -24,19 +24,21 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/tidwall/sjson"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -132,21 +134,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-subscription-cn", -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
+	externalTechnicalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-technical-cn", -1), conf.CertSvcInstanceTestSecretName)
+	externalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-consumer-provider-cn", -1), conf.CertSvcInstanceTestSecretName)
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerTechnicalClientKey, providerTechnicalRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalTechnicalCertProviderConfig, true)
+	directorTechnicalCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerTechnicalClientKey, providerTechnicalRawCertChain, conf.SkipSSLValidation)
+
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	consumerTokenURL, err := token.ChangeSubdomain(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain, conf.ProviderDestinationConfig.TokenPath)
+	require.NoError(t, err)
+
+	destinationConsumerToken := token.GetClientCredentialsToken(stdT, ctx, consumerTokenURL, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
 
 	t.Run("ConsumerProvider flow with runtime as provider", func(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
@@ -338,22 +339,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomainMtls
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
-			Type:            "HTTP",
-			URL:             "http://localhost",
-			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
-			XSystemTenantID: localTenantID,
-			XSystemType:     string(util.ApplicationTypeC4C),
+			Name:           "test",
+			Type:           "HTTP",
+			URL:            "http://localhost",
+			Authentication: "BasicAuthentication",
+			AdditionalProperties: clients.DestinationAdditionalProperties{
+				XCorrelationID:  correlationID,
+				XSystemTenantID: localTenantID,
+				XSystemType:     string(util.ApplicationTypeC4C),
+			},
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -361,7 +363,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
@@ -372,7 +376,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+			params := url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
 			if appsLen != 1 {
@@ -411,13 +418,17 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
-			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?", headers, params)
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
@@ -432,12 +443,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -456,8 +469,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, directorTechnicalCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, directorTechnicalCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -497,12 +510,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(stdT, consumerApp.Name)
 
 		const correlationID = "correlationID"
-		bndlInput := graphql.BundleCreateInput{
-			Name:           "test-bundle",
+		const correlationIDSecond = "correlationID-second"
+		bndlInput1 := graphql.BundleCreateInput{
+			Name:           "test-bundle-1",
 			CorrelationIDs: []string{correlationID},
 		}
-		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
-		require.NotEmpty(stdT, bundle.ID)
+		bndlInput2 := graphql.BundleCreateInput{
+			Name:           "test-bundle-2",
+			CorrelationIDs: []string{correlationIDSecond},
+		}
+
+		bundle1 := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput1)
+		require.NotEmpty(stdT, bundle1.ID)
+		bundle2 := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput2)
+		require.NotEmpty(stdT, bundle2.ID)
 
 		formationTmplName := "e2e-test-formation-template-name"
 		applicationType := util.ApplicationTypeC4C
@@ -643,22 +664,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomainMtls
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
-			Type:            "HTTP",
-			URL:             "http://localhost",
-			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
-			XSystemTenantID: localTenantID,
-			XSystemType:     string(util.ApplicationTypeC4C),
+			Name:           "test",
+			Type:           "HTTP",
+			URL:            "http://localhost",
+			Authentication: "BasicAuthentication",
+			AdditionalProperties: clients.DestinationAdditionalProperties{
+				XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
+				XSystemTenantID: localTenantID,
+				XSystemType:     string(util.ApplicationTypeC4C),
+			},
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -666,7 +688,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$format=json", consumerApp.ID), headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
 		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, providerApp.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
 		verifyFormationDetails(stdT, gjson.Result{Raw: respBody}, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
@@ -676,31 +700,53 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json", consumerApp.ID), headers)
+			params := url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 
 			appName := gjson.Get(respBody, "title").String()
+
 			if appName != consumerApp.Name {
 				return false
 			}
 			require.Equal(stdT, consumerApp.Name, appName)
 
-			appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
-			if appDestinationsRaw == "" {
+			appDestinations1Raw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
+			if appDestinations1Raw == "" {
 				return false
 			}
-			require.NotEmpty(stdT, appDestinationsRaw)
+			require.NotEmpty(stdT, appDestinations1Raw)
 
-			appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
-			if len(appDestinations) != 1 {
+			appDestinations2Raw := gjson.Get(respBody, "consumptionBundles.1.destinations").Raw
+			if appDestinations2Raw == "" {
 				return false
 			}
-			require.Len(stdT, appDestinations, 1)
+			require.NotEmpty(stdT, appDestinations2Raw)
 
-			appDestinationName := appDestinations[0].Get("sensitiveData.destinationConfiguration.Name").String()
-			if appDestinationName != destination.Name {
+			appDestinationsForBundle1 := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
+			if len(appDestinationsForBundle1) != 1 {
 				return false
 			}
-			require.Equal(stdT, destination.Name, appDestinationName)
+			require.Len(stdT, appDestinationsForBundle1, 1)
+
+			appDestinationsForBundle2 := gjson.Get(respBody, "consumptionBundles.1.destinations").Array()
+			if len(appDestinationsForBundle2) != 1 {
+				return false
+			}
+			require.Len(stdT, appDestinationsForBundle2, 1)
+
+			appDestination1Name := appDestinationsForBundle1[0].Get("sensitiveData.destinationConfiguration.Name").String()
+			if appDestination1Name != destination.Name {
+				return false
+			}
+			require.Equal(stdT, destination.Name, appDestination1Name)
+
+			appDestination2Name := appDestinationsForBundle2[0].Get("sensitiveData.destinationConfiguration.Name").String()
+			if appDestination2Name != destination.Name {
+				return false
+			}
+			require.Equal(stdT, destination.Name, appDestination2Name)
 
 			return true
 		}, time.Second*30, time.Second)
@@ -709,11 +755,15 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
 
 		// With destinations - reload
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", consumerApp.ID), headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "consumptionBundles.0.destinations").Raw)
 		destinationsFromResponse := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
@@ -726,12 +776,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, appTmpl.ID, appTmpl.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 
@@ -939,22 +991,23 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomainMtls
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
-			Type:            "HTTP",
-			URL:             "http://localhost",
-			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
-			XSystemTenantID: localTenantID,
-			XSystemType:     string(util.ApplicationTypeC4C),
+			Name:           "test",
+			Type:           "HTTP",
+			URL:            "http://localhost",
+			Authentication: "BasicAuthentication",
+			AdditionalProperties: clients.DestinationAdditionalProperties{
+				XCorrelationID:  correlationID,
+				XSystemTenantID: localTenantID,
+				XSystemType:     string(util.ApplicationTypeC4C),
+			},
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -962,7 +1015,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Make a request to the ORD service with http client containing certificate with provider information and token with the consumer data.
 		stdT.Log("Getting consumer application using both provider and consumer credentials...")
-		respBody := makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params := url.Values{}
+		params.Add("$format", "json")
+		respBody := makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Len(stdT, gjson.Get(respBody, "value").Array(), 1)
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(stdT, ctx, secondaryTenant, consumerApp.ID, rtCtx.ID, formation.ID) // find the assignment where the consumer app is source and the subscription is target
@@ -973,7 +1028,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// With destinations - waiting for the synchronization job
 		stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
 		require.Eventually(stdT, func() bool {
-			respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json", headers)
+			params = url.Values{}
+			params.Add("$format", "json")
+			params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 
 			appsLen := len(gjson.Get(respBody, "value").Array())
 			if appsLen != 1 {
@@ -1012,13 +1070,17 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// Create second destination
 		destinationSecond := destination
 		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
+		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
-			"/systemInstances?$expand=consumptionBundles($expand=destinations)&$format=json&reload=true", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+		params.Add("reload", "true")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+
+			"/systemInstances?", headers, params)
 		require.Equal(stdT, 1, len(gjson.Get(respBody, "value").Array()))
 		require.Equal(stdT, consumerApp.Name, gjson.Get(respBody, "value.0.title").String())
 		require.NotEmpty(stdT, gjson.Get(respBody, "value.0.consumptionBundles.0.destinations").Raw)
@@ -1033,12 +1095,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?$format=json", headers)
+		params = url.Values{}
+		params.Add("$format", "json")
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/systemInstances?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no application is returned after successful unsubscription request")
 
 		stdT.Log("Validating no destination is returned after successful unsubscription request...")
-		respBody = makeRequestWithHeaders(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?$format=json", headers)
+		respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+"/destinations?", headers, params)
 		require.Empty(stdT, gjson.Get(respBody, "value").Array())
 		stdT.Log("Successfully validated no destination is returned after successful unsubscription request")
 

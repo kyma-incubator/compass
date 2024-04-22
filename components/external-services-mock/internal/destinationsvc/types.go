@@ -1,9 +1,11 @@
-package destinationcreator
+package destinationsvc
 
 import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 
@@ -54,6 +56,7 @@ type BaseDestinationRequestBody struct {
 	ProxyType            destinationcreatorpkg.ProxyType `json:"proxyType"`
 	AuthenticationType   destinationcreatorpkg.AuthType  `json:"authenticationType"`
 	AdditionalProperties json.RawMessage                 `json:"additionalProperties,omitempty"`
+	XCorrelationID       string                          `json:"x-correlation-id"`
 }
 
 // DesignTimeDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth
@@ -123,11 +126,15 @@ func (n *DesignTimeDestRequestBody) Validate() error {
 
 func (n *DesignTimeDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.NoAuthenticationDestination{
-		Name:           n.Name,
-		URL:            n.URL,
-		Type:           n.Type,
-		ProxyType:      n.ProxyType,
-		Authentication: n.AuthenticationType,
+		Name:              n.Name,
+		URL:               n.URL,
+		Type:              n.Type,
+		ProxyType:         n.ProxyType,
+		Authentication:    n.AuthenticationType,
+		XCorrelationID:    gjson.GetBytes(n.AdditionalProperties, "correlationIds").String(),
+		XSystemTenantID:   gjson.GetBytes(n.AdditionalProperties, "x-system-id").String(),
+		XSystemType:       gjson.GetBytes(n.AdditionalProperties, "x-system-type").String(),
+		XSystemTenantName: gjson.GetBytes(n.AdditionalProperties, "x-system-name").String(),
 	}
 }
 
@@ -150,11 +157,15 @@ func (b *BasicDestRequestBody) Validate() error {
 func (b *BasicDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.BasicDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           b.Name,
-			Type:           b.Type,
-			URL:            b.URL,
-			Authentication: b.AuthenticationType,
-			ProxyType:      b.ProxyType,
+			Name:              b.Name,
+			Type:              b.Type,
+			URL:               b.URL,
+			Authentication:    b.AuthenticationType,
+			ProxyType:         b.ProxyType,
+			XCorrelationID:    gjson.GetBytes(b.AdditionalProperties, "correlationIds").String(),
+			XSystemTenantID:   gjson.GetBytes(b.AdditionalProperties, "x-system-id").String(),
+			XSystemType:       gjson.GetBytes(b.AdditionalProperties, "x-system-type").String(),
+			XSystemTenantName: gjson.GetBytes(b.AdditionalProperties, "x-system-name").String(),
 		},
 		User:     b.User,
 		Password: b.Password,
@@ -181,11 +192,15 @@ func (s *SAMLAssertionDestRequestBody) Validate() error {
 func (s *SAMLAssertionDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.SAMLAssertionDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           s.Name,
-			Type:           s.Type,
-			URL:            s.URL,
-			Authentication: s.AuthenticationType,
-			ProxyType:      s.ProxyType,
+			Name:              s.Name,
+			Type:              s.Type,
+			URL:               s.URL,
+			Authentication:    s.AuthenticationType,
+			ProxyType:         s.ProxyType,
+			XCorrelationID:    gjson.GetBytes(s.AdditionalProperties, "correlationIds").String(),
+			XSystemTenantID:   gjson.GetBytes(s.AdditionalProperties, "x-system-id").String(),
+			XSystemType:       gjson.GetBytes(s.AdditionalProperties, "x-system-type").String(),
+			XSystemTenantName: gjson.GetBytes(s.AdditionalProperties, "x-system-name").String(),
 		},
 		Audience:         s.Audience,
 		KeyStoreLocation: s.KeyStoreLocation,
@@ -211,11 +226,15 @@ func (s *ClientCertificateAuthDestRequestBody) Validate() error {
 func (s *ClientCertificateAuthDestRequestBody) ToDestination() destinationcreator.Destination {
 	return &destinationcreator.ClientCertificateAuthenticationDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           s.Name,
-			Type:           s.Type,
-			URL:            s.URL,
-			Authentication: s.AuthenticationType,
-			ProxyType:      s.ProxyType,
+			Name:              s.Name,
+			Type:              s.Type,
+			URL:               s.URL,
+			Authentication:    s.AuthenticationType,
+			ProxyType:         s.ProxyType,
+			XCorrelationID:    gjson.GetBytes(s.AdditionalProperties, "correlationIds").String(),
+			XSystemTenantID:   gjson.GetBytes(s.AdditionalProperties, "x-system-id").String(),
+			XSystemType:       gjson.GetBytes(s.AdditionalProperties, "x-system-type").String(),
+			XSystemTenantName: gjson.GetBytes(s.AdditionalProperties, "x-system-name").String(),
 		},
 		KeyStoreLocation: s.KeyStoreLocation,
 	}
@@ -244,11 +263,15 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 	if b.KeyStoreLocation != "" {
 		return &destinationcreator.OAuth2mTLSDestination{
 			NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-				Name:           b.Name,
-				Type:           b.Type,
-				URL:            b.URL,
-				Authentication: b.AuthenticationType,
-				ProxyType:      b.ProxyType,
+				Name:              b.Name,
+				Type:              b.Type,
+				URL:               b.URL,
+				Authentication:    b.AuthenticationType,
+				ProxyType:         b.ProxyType,
+				XCorrelationID:    gjson.GetBytes(b.AdditionalProperties, "correlationIds").String(),
+				XSystemTenantID:   gjson.GetBytes(b.AdditionalProperties, "x-system-id").String(),
+				XSystemType:       gjson.GetBytes(b.AdditionalProperties, "x-system-type").String(),
+				XSystemTenantName: gjson.GetBytes(b.AdditionalProperties, "x-system-name").String(),
 			},
 			TokenServiceURL:     b.TokenServiceURL,
 			TokenServiceURLType: b.TokenServiceURLType,
@@ -259,11 +282,15 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 
 	return &destinationcreator.OAuth2ClientCredentialsDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           b.Name,
-			Type:           b.Type,
-			URL:            b.URL,
-			Authentication: b.AuthenticationType,
-			ProxyType:      b.ProxyType,
+			Name:              b.Name,
+			Type:              b.Type,
+			URL:               b.URL,
+			Authentication:    b.AuthenticationType,
+			ProxyType:         b.ProxyType,
+			XCorrelationID:    gjson.GetBytes(b.AdditionalProperties, "correlationIds").String(),
+			XSystemTenantID:   gjson.GetBytes(b.AdditionalProperties, "x-system-id").String(),
+			XSystemType:       gjson.GetBytes(b.AdditionalProperties, "x-system-type").String(),
+			XSystemTenantName: gjson.GetBytes(b.AdditionalProperties, "x-system-name").String(),
 		},
 		TokenServiceURL: b.TokenServiceURL,
 		ClientID:        b.ClientID,
@@ -284,4 +311,25 @@ func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 	)
+}
+
+type PostResponse struct {
+	Name   string `json:"name"`
+	Status int    `json:"status"`
+	Cause  string `json:"cause,omitempty"`
+}
+
+func GetDestinationPrefixNameIdentifier(name string) string {
+	return fmt.Sprintf("name_%s", name)
+}
+
+type DeleteStatus struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+type DeleteResponse struct {
+	Count   int
+	Summary []DeleteStatus
 }

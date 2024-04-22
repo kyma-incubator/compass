@@ -11,6 +11,7 @@ import (
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/logger"
+	"github.com/kyma-incubator/compass/components/ias-adapter/internal/service/ucl"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/types"
 )
 
@@ -28,6 +29,7 @@ type TenantMappingsService interface {
 //go:generate mockery --name=AsyncProcessor --output=automock --outpkg=automock --case=underscore --disable-version-string
 type AsyncProcessor interface {
 	ProcessTMRequest(ctx context.Context, tenantMapping types.TenantMapping)
+	ReportStatus(ctx context.Context, statusReport ucl.StatusReport)
 }
 
 type TenantMappingsHandler struct {
@@ -36,6 +38,8 @@ type TenantMappingsHandler struct {
 }
 
 func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
+	ctx.Set(locationHeader, ctx.GetHeader(locationHeader))
+
 	var tenantMapping types.TenantMapping
 	if err := json.NewDecoder(ctx.Request.Body).Decode(&tenantMapping); err != nil {
 		err = errors.Newf("failed to decode tenant mapping body: %w", err)
@@ -60,9 +64,9 @@ func (h TenantMappingsHandler) Patch(ctx *gin.Context) {
 		tenantMapping.ReceiverTenant.ApplicationURL = "https://" + tenantMapping.ReceiverTenant.ApplicationURL
 	}
 
-	ctx.AbortWithStatus(http.StatusAccepted)
-	ctx.Set(locationHeader, ctx.GetHeader(locationHeader))
-	h.AsyncProcessor.ProcessTMRequest(ctx, tenantMapping)
+	h.processAsynchronously(ctx, func(asyncCtx context.Context) {
+		h.AsyncProcessor.ProcessTMRequest(asyncCtx, tenantMapping)
+	})
 }
 
 func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, tenantMapping *types.TenantMapping) {
@@ -94,7 +98,18 @@ func (h TenantMappingsHandler) handleValidateError(ctx *gin.Context, err error, 
 	}
 
 	logger.FromContext(ctx).Info().Msgf("%s. Responding OK as assignment is safe to remove", err.Error())
-	ctx.Status(http.StatusOK)
+	h.processAsynchronously(ctx, func(asyncCtx context.Context) {
+		h.AsyncProcessor.ReportStatus(asyncCtx, ucl.StatusReport{State: types.ReadyState(operation)})
+	})
+}
+
+func (h TenantMappingsHandler) processAsynchronously(ctx *gin.Context, processAsync func(asyncCtx context.Context)) {
+	go func() {
+		newCtx := ctx.Copy()
+		<-ctx.Request.Context().Done()
+		processAsync(newCtx)
+	}()
+	ctx.AbortWithStatus(http.StatusAccepted)
 }
 
 func logProcessing(ctx context.Context, tenantMapping types.TenantMapping) {

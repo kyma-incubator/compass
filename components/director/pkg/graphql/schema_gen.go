@@ -730,7 +730,6 @@ type ComplexityRoot struct {
 		LabelDefinitions                           func(childComplexity int) int
 		RootTenants                                func(childComplexity int, externalTenant string) int
 		Runtime                                    func(childComplexity int, id string) int
-		RuntimeByTokenIssuer                       func(childComplexity int, issuer string) int
 		Runtimes                                   func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		SystemAuth                                 func(childComplexity int, id string) int
 		SystemAuthByToken                          func(childComplexity int, token string) int
@@ -1035,7 +1034,6 @@ type QueryResolver interface {
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
-	RuntimeByTokenIssuer(ctx context.Context, issuer string) (*Runtime, error)
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
 	LabelDefinition(ctx context.Context, key string) (*LabelDefinition, error)
 	BundleByInstanceAuth(ctx context.Context, authID string) (*Bundle, error)
@@ -5098,18 +5096,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Runtime(childComplexity, args["id"].(string)), true
-
-	case "Query.runtimeByTokenIssuer":
-		if e.complexity.Query.RuntimeByTokenIssuer == nil {
-			break
-		}
-
-		args, err := ec.field_Query_runtimeByTokenIssuer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.RuntimeByTokenIssuer(childComplexity, args["issuer"].(string)), true
 
 	case "Query.runtimes":
 		if e.complexity.Query.Runtimes == nil {
@@ -9584,21 +9570,6 @@ func (ec *executionContext) field_Query_rootTenants_args(ctx context.Context, ra
 		}
 	}
 	args["externalTenant"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_runtimeByTokenIssuer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["issuer"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("issuer"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["issuer"] = arg0
 	return args, nil
 }
 
@@ -36759,84 +36730,6 @@ func (ec *executionContext) fieldContext_Query_runtime(ctx context.Context, fiel
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_runtimeByTokenIssuer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_runtimeByTokenIssuer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RuntimeByTokenIssuer(rctx, fc.Args["issuer"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Runtime)
-	fc.Result = res
-	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_runtimeByTokenIssuer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Runtime_id(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Runtime_metadata(ctx, field)
-			case "name":
-				return ec.fieldContext_Runtime_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Runtime_description(ctx, field)
-			case "labels":
-				return ec.fieldContext_Runtime_labels(ctx, field)
-			case "webhooks":
-				return ec.fieldContext_Runtime_webhooks(ctx, field)
-			case "status":
-				return ec.fieldContext_Runtime_status(ctx, field)
-			case "auths":
-				return ec.fieldContext_Runtime_auths(ctx, field)
-			case "eventingConfiguration":
-				return ec.fieldContext_Runtime_eventingConfiguration(ctx, field)
-			case "runtimeContext":
-				return ec.fieldContext_Runtime_runtimeContext(ctx, field)
-			case "runtimeContexts":
-				return ec.fieldContext_Runtime_runtimeContexts(ctx, field)
-			case "applicationNamespace":
-				return ec.fieldContext_Runtime_applicationNamespace(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Runtime", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_runtimeByTokenIssuer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Query_labelDefinitions(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_labelDefinitions(ctx, field)
 	if err != nil {
@@ -53363,25 +53256,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_runtime(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "runtimeByTokenIssuer":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_runtimeByTokenIssuer(ctx, field)
 				return res
 			}
 

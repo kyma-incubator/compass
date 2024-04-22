@@ -28,12 +28,6 @@ var _ = Describe("Tenant Mapping Handler", func() {
 			Expect(responseBody).To(ContainSubstring(url.QueryEscape(expectedMessage)))
 			Expect(w.Code).To(Equal(expectedCode))
 		}
-		expectSuccess = func(w *httptest.ResponseRecorder, expectedMessage string) {
-			responseBody, err := io.ReadAll(w.Body)
-			Expect(err).Error().ToNot(HaveOccurred())
-			Expect(responseBody).To(ContainSubstring(url.QueryEscape(expectedMessage)))
-			Expect(w.Code).To(Equal(http.StatusOK))
-		}
 	)
 
 	BeforeEach(func() {
@@ -121,13 +115,14 @@ var _ = Describe("Tenant Mapping Handler", func() {
 				expectError(w, http.StatusInternalServerError, errExpected.Error())
 			})
 
-			It("Should succeed if tenantMappings are less then 2", func() {
+			It("Should succeed if tenantMappings are less than 2", func() {
 				mockService.On("CanSafelyRemoveTenantMapping", mock.Anything, mock.Anything).Return(true, nil)
 				mockService.On("RemoveTenantMapping", mock.Anything, mock.Anything).Return(nil)
-
 				w, ctx := createTestRequest(tenantMapping)
+
 				handler.Patch(ctx)
-				expectSuccess(w, "")
+				Expect(w.Code).To(Equal(http.StatusAccepted))
+				Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ReportStatus", 0)).To(BeTrue())
 			})
 		})
 	})
@@ -138,12 +133,11 @@ var _ = Describe("Tenant Mapping Handler", func() {
 		})
 
 		It("Should return status 202 and handle the request asynchronously", func() {
-			mockAsyncProcessor.On("ProcessTMRequest", mock.Anything, mock.Anything).Return()
 			w, ctx := createTestRequest(tenantMapping)
 
 			handler.Patch(ctx)
 			Expect(w.Code).To(Equal(http.StatusAccepted))
-			Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ProcessTMRequest", 1)).To(BeTrue())
+			Expect(mockAsyncProcessor.AssertNumberOfCalls(test, "ProcessTMRequest", 0)).To(BeTrue())
 		})
 	})
 })

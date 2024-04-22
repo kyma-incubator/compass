@@ -17,6 +17,10 @@ type LabelDefService struct {
 func (_m *LabelDefService) CreateWithFormations(ctx context.Context, tnt string, formations []string) error {
 	ret := _m.Called(ctx, tnt, formations)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateWithFormations")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) error); ok {
 		r0 = rf(ctx, tnt, formations)
@@ -30,6 +34,10 @@ func (_m *LabelDefService) CreateWithFormations(ctx context.Context, tnt string,
 // GetAvailableScenarios provides a mock function with given fields: ctx, tenantID
 func (_m *LabelDefService) GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error) {
 	ret := _m.Called(ctx, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAvailableScenarios")
+	}
 
 	var r0 []string
 	var r1 error
@@ -57,6 +65,10 @@ func (_m *LabelDefService) GetAvailableScenarios(ctx context.Context, tenantID s
 func (_m *LabelDefService) ValidateAutomaticScenarioAssignmentAgainstSchema(ctx context.Context, schema interface{}, tenantID string, key string) error {
 	ret := _m.Called(ctx, schema, tenantID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ValidateAutomaticScenarioAssignmentAgainstSchema")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, interface{}, string, string) error); ok {
 		r0 = rf(ctx, schema, tenantID, key)
@@ -70,6 +82,10 @@ func (_m *LabelDefService) ValidateAutomaticScenarioAssignmentAgainstSchema(ctx 
 // ValidateExistingLabelsAgainstSchema provides a mock function with given fields: ctx, schema, tenant, key
 func (_m *LabelDefService) ValidateExistingLabelsAgainstSchema(ctx context.Context, schema interface{}, tenant string, key string) error {
 	ret := _m.Called(ctx, schema, tenant, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ValidateExistingLabelsAgainstSchema")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, interface{}, string, string) error); ok {

@@ -36,10 +36,10 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 	formationTmplName := "e2e-tests-app-only-formation-template-name"
 
-	certSubjcetMappingCN := "csm-async-callback-cn"
-	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
-	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
+	certSubjectMappingCN := "csm-async-old-format-callback-cn"
+	certSubjectMappingCNSecond := "csm-async-old-format-callback-cn-second"
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCN, -1)
+	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCNSecond, -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component
@@ -343,7 +343,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		// Create formation constraints for destination creator operator and attach them to a given formation template.
 		// So we can verify the destination creator will not fail if in the configuration there is no destination information
-		attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		defer func() {
+			for _, cleanup := range constraintCleanupFunctions {
+				cleanup()
+			}
+		}()
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)
@@ -634,7 +639,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		// Create formation constraints for destination creator operator and attach them to a given formation template.
 		// So we can verify the destination creator will not fail if in the configuration there is no destination information
-		attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		constraintCleanupFunctions := attachDestinationCreatorConstraints(t, ctx, ft, graphql.ResourceTypeApplication, graphql.ResourceTypeApplication)
+		defer func() {
+			for _, cleanup := range constraintCleanupFunctions {
+				cleanup()
+			}
+		}()
 
 		formationName := "app-to-app-formation-name"
 		t.Logf("Creating formation with name: %q from template with name: %q", formationName, formationTmplName)

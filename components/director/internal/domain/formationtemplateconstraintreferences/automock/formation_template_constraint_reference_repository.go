@@ -19,6 +19,10 @@ type FormationTemplateConstraintReferenceRepository struct {
 func (_m *FormationTemplateConstraintReferenceRepository) Create(ctx context.Context, item *model.FormationTemplateConstraintReference) error {
 	ret := _m.Called(ctx, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateConstraintReference) error); ok {
 		r0 = rf(ctx, item)
@@ -32,6 +36,10 @@ func (_m *FormationTemplateConstraintReferenceRepository) Create(ctx context.Con
 // Delete provides a mock function with given fields: ctx, formationTemplateID, constraintID
 func (_m *FormationTemplateConstraintReferenceRepository) Delete(ctx context.Context, formationTemplateID string, constraintID string) error {
 	ret := _m.Called(ctx, formationTemplateID, constraintID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
