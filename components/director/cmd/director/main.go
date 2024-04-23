@@ -1145,7 +1145,7 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
 	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
 
-	fmHandler := formationmapping.NewFormationMappingHandler(transact, formationAssignmentSvc, formationAssignmentStatusSvc, faNotificationSvc, formationSvc, formationStatusSvc)
+	fmHandler := formationmapping.NewFormationMappingHandler(transact, formationAssignmentSvc, formationAssignmentStatusSvc, faNotificationSvc, assignmentOperationSvc, formationSvc, formationStatusSvc)
 
 	return fmHandler
 }
