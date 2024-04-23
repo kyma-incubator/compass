@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"testing"
 	"time"
@@ -77,6 +78,7 @@ const (
 	FormationLifecycleWebhookID      = "517e0235-0d74-4166-a47c-5a577022d468"
 
 	// Formation constants
+	testFormationID         = "test-formation-id"
 	testFormationName       = "test-formation-name"
 	testFormationName2      = "test-formation-name-2"
 	initialFormationState   = string(model.InitialFormationState)
@@ -1584,4 +1586,31 @@ func fixDetailsForNotificationStatusReturned(formationType string, operation mod
 		Operation:       operation,
 		Formation:       formation,
 	}
+}
+
+func ctxWithTenantAndLoggerMatcher() interface{} {
+	return mock.MatchedBy(func(ctx context.Context) bool {
+		return tenantMatcher(ctx) && loggerMatcher(ctx)
+	})
+}
+
+func tenantMatcher(ctx context.Context) bool {
+	tenants, err := tenant.LoadTenantPairFromContext(ctx)
+	return err == nil && (tenants.ExternalID == TntExternalID && tenants.InternalID == TntInternalID)
+}
+
+func loggerMatcher(ctx context.Context) bool {
+	logEntry := log.C(ctx)
+	formationLogField := logEntry.Data[log.FieldFormationID]
+	formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
+	return logEntry != nil && (formationLogField != "" || formationAssignmentLogField != "")
+}
+
+func ctxWithLoggerMatcher() interface{} {
+	return mock.MatchedBy(func(ctx context.Context) bool {
+		logEntry := log.C(ctx)
+		formationLogField := logEntry.Data[log.FieldFormationID]
+		formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
+		return logEntry != nil && (formationLogField != "" || formationAssignmentLogField != "")
+	})
 }

@@ -2,7 +2,6 @@ package txtest
 
 import (
 	"context"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/stretchr/testify/mock"
