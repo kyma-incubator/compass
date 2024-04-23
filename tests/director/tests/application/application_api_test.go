@@ -2299,7 +2299,7 @@ func directorCertSecuredClientWithExternalCertSubaccount(t *testing.T, ctx conte
 		ExternalClientCertTestSecretNamespace: conf.ExternalClientCertTestSecretNamespace,
 		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertTestJobName,
+		ExternalCertTestJobName:               conf.CertSvcInstanceSecretName,
 		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
 		ExternalClientCertCertKey:             conf.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalClientCertKeyKey,
