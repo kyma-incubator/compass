@@ -935,6 +935,9 @@ func loggerMatcher(ctx context.Context) bool {
 	if logEntry == nil {
 		return false
 	}
+	if logEntry.Data == nil {
+		return false
+	}
 	formationLogField := logEntry.Data[log.FieldFormationID]
 	formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
 	return logEntry != nil && (formationLogField != "" || formationAssignmentLogField != "")
