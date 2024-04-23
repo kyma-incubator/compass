@@ -18,16 +18,7 @@ import (
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
-	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
-	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error)
 	ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error)
-}
-
-//go:generate mockery --exported --name=applicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type applicationTemplateRepository interface {
-	Get(ctx context.Context, id string) (*model.ApplicationTemplate, error)
-	ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error)
 }
 
 //go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -49,7 +40,6 @@ type notificationBuilder interface {
 // NotificationsGenerator is responsible for generation of notification requests
 type NotificationsGenerator struct {
 	applicationRepository         applicationRepository
-	applicationTemplateRepository applicationTemplateRepository
 	runtimeRepo                   runtimeRepository
 	runtimeContextRepo            runtimeContextRepository
 	labelRepository               labelRepository
@@ -61,7 +51,6 @@ type NotificationsGenerator struct {
 // NewNotificationsGenerator returns an instance of NotificationsGenerator
 func NewNotificationsGenerator(
 	applicationRepository applicationRepository,
-	applicationTemplateRepository applicationTemplateRepository,
 	runtimeRepo runtimeRepository,
 	runtimeContextRepo runtimeContextRepository,
 	labelRepository labelRepository,
@@ -70,7 +59,6 @@ func NewNotificationsGenerator(
 	notificationBuilder notificationBuilder) *NotificationsGenerator {
 	return &NotificationsGenerator{
 		applicationRepository:         applicationRepository,
-		applicationTemplateRepository: applicationTemplateRepository,
 		runtimeRepo:                   runtimeRepo,
 		runtimeContextRepo:            runtimeContextRepo,
 		labelRepository:               labelRepository,

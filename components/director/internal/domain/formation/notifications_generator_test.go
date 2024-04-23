@@ -337,7 +337,7 @@ func Test_GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationTha
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsAboutRuntimeAndRuntimeContextForTheApplicationThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -618,7 +618,7 @@ func Test_GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(t *te
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsForRuntimeAboutTheApplicationThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -1081,7 +1081,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsForApplicationsAboutTheApplicationThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -1501,7 +1501,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssign
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsForApplicationsAboutTheRuntimeContextThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -1903,7 +1903,7 @@ func Test_GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(t *t
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(applicationRepo, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsForApplicationsAboutTheRuntimeThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -2176,7 +2176,7 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssign
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(nil, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsAboutApplicationsForTheRuntimeContextThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -2436,7 +2436,7 @@ func Test_GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(t *t
 				notificationsBuilder = testCase.NotificationsBuilder()
 			}
 
-			notificationSvc := formation.NewNotificationsGenerator(nil, nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
+			notificationSvc := formation.NewNotificationsGenerator(nil, nil, nil, nil, webhookRepo, dataInputBuilder, notificationsBuilder)
 
 			// WHEN
 			actual, err := notificationSvc.GenerateNotificationsAboutApplicationsForTheRuntimeThatIsAssigned(ctx, TntInternalID, testCase.ObjectID, &testCase.InputFormation, testCase.OperationType, testCase.CustomerTenantContext)
@@ -2494,7 +2494,7 @@ func Test_GenerateFormationLifecycleNotifications(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, notificationsBuilder)
 
-			notificationGenerator := formation.NewNotificationsGenerator(nil, nil, nil, nil, nil, nil, nil, notificationsBuilder)
+			notificationGenerator := formation.NewNotificationsGenerator(nil, nil, nil, nil, nil, nil, notificationsBuilder)
 			formationNotificationReqs, err := notificationGenerator.GenerateFormationLifecycleNotifications(ctx, formationLifecycleSyncWebhooks, TntInternalID, formationInput, testFormationTemplateName, FormationTemplateID, model.CreateFormation, customerTenantContext)
 
 			if testCase.expectedErrMsg != "" {

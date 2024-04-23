@@ -21,6 +21,10 @@ type Service struct {
 func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
 
+	if len(ret) == 0 {
+		panic("no return value specified for AssignFormation")
+	}
+
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
@@ -47,6 +51,10 @@ func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID str
 func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Formation, templateName string) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, _a2, templateName)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateFormation")
+	}
+
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) (*model.Formation, error)); ok {
@@ -72,6 +80,10 @@ func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Fo
 // DeleteFormation provides a mock function with given fields: ctx, tnt, _a2
 func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteFormation")
+	}
 
 	var r0 *model.Formation
 	var r1 error
@@ -125,6 +137,10 @@ func (_m *Service) FinalizeDraftFormation(ctx context.Context, formationID strin
 func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
@@ -150,6 +166,10 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error)
 // GetFormationByName provides a mock function with given fields: ctx, formationName, tnt
 func (_m *Service) GetFormationByName(ctx context.Context, formationName string, tnt string) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationName, tnt)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetFormationByName")
+	}
 
 	var r0 *model.Formation
 	var r1 error
@@ -203,6 +223,10 @@ func (_m *Service) GetGlobalByID(ctx context.Context, id string) (*model.Formati
 func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
 	var r0 *model.FormationPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.FormationPage, error)); ok {
@@ -225,9 +249,13 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 	return r0, r1
 }
 
-// ListFormationsForObject provides a mock function with given fields: ctx, objectID
-func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+// ListFormationsForObjectGlobal provides a mock function with given fields: ctx, objectID
+func (_m *Service) ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListFormationsForObjectGlobal")
+	}
 
 	var r0 []*model.Formation
 	var r1 error
@@ -255,6 +283,10 @@ func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string)
 func (_m *Service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationID, reset)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ResynchronizeFormationNotifications")
+	}
+
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (*model.Formation, error)); ok {
@@ -280,6 +312,10 @@ func (_m *Service) ResynchronizeFormationNotifications(ctx context.Context, form
 // UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
 func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnassignFormation")
+	}
 
 	var r0 *model.Formation
 	var r1 error

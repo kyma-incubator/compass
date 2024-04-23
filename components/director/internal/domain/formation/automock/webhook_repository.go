@@ -19,6 +19,10 @@ type WebhookRepository struct {
 func (_m *WebhookRepository) GetByIDAndWebhookType(ctx context.Context, tenant string, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, objectID, objectType, webhookType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByIDAndWebhookType")
+	}
+
 	var r0 *model.Webhook
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType, model.WebhookType) (*model.Webhook, error)); ok {
@@ -44,6 +48,10 @@ func (_m *WebhookRepository) GetByIDAndWebhookType(ctx context.Context, tenant s
 // ListByReferenceObjectIDGlobal provides a mock function with given fields: ctx, objID, objType
 func (_m *WebhookRepository) ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, objID, objType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByReferenceObjectIDGlobal")
+	}
 
 	var r0 []*model.Webhook
 	var r1 error
@@ -71,6 +79,10 @@ func (_m *WebhookRepository) ListByReferenceObjectIDGlobal(ctx context.Context, 
 func (_m *WebhookRepository) ListByReferenceObjectTypeAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, whType, objType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByReferenceObjectTypeAndWebhookType")
+	}
+
 	var r0 []*model.Webhook
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType, model.WebhookReferenceObjectType) ([]*model.Webhook, error)); ok {
@@ -96,6 +108,10 @@ func (_m *WebhookRepository) ListByReferenceObjectTypeAndWebhookType(ctx context
 // ListByReferenceObjectTypesAndWebhookType provides a mock function with given fields: ctx, tenant, whType, objTypes
 func (_m *WebhookRepository) ListByReferenceObjectTypesAndWebhookType(ctx context.Context, tenant string, whType model.WebhookType, objTypes []model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, whType, objTypes)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByReferenceObjectTypesAndWebhookType")
+	}
 
 	var r0 []*model.Webhook
 	var r1 error

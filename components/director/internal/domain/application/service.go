@@ -120,6 +120,8 @@ type WebhookRepository interface {
 type FormationService interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormation(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 }
 
 // RuntimeRepository missing godoc

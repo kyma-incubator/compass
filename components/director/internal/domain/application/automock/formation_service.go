@@ -20,6 +20,10 @@ type FormationService struct {
 func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
 
+	if len(ret) == 0 {
+		panic("no return value specified for AssignFormation")
+	}
+
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
@@ -42,9 +46,73 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 	return r0, r1
 }
 
+// ListFormationsForObject provides a mock function with given fields: ctx, objectID
+func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	ret := _m.Called(ctx, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListFormationsForObject")
+	}
+
+	var r0 []*model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Formation, error)); ok {
+		return rf(ctx, objectID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
+		r0 = rf(ctx, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Formation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListObjectIDsOfTypeForFormation provides a mock function with given fields: ctx, tenantID, formationNames, objectType
+func (_m *FormationService) ListObjectIDsOfTypeForFormation(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	ret := _m.Called(ctx, tenantID, formationNames, objectType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListObjectIDsOfTypeForFormation")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.FormationAssignmentType) ([]string, error)); ok {
+		return rf(ctx, tenantID, formationNames, objectType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.FormationAssignmentType) []string); ok {
+		r0 = rf(ctx, tenantID, formationNames, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, model.FormationAssignmentType) error); ok {
+		r1 = rf(ctx, tenantID, formationNames, objectType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation
 func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UnassignFormation")
+	}
 
 	var r0 *model.Formation
 	var r1 error

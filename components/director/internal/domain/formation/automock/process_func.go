@@ -21,6 +21,10 @@ type ProcessFunc struct {
 func (_m *ProcessFunc) ProcessScenarioFunc(_a0 context.Context, _a1 string, _a2 string, _a3 graphql.FormationObjectType, _a4 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ProcessScenarioFunc")
+	}
+
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {

@@ -70,6 +70,8 @@ type FormationRepository interface {
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
+	ListByIDs(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
@@ -261,8 +263,16 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
 }
 
+// ListFormationsForObjectGlobal returns all Formations that `objectID` is part of
+func (s *service) ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	return s.listFormationsForObject(ctx, objectID, s.formationRepository.ListByIDsGlobal)
+}
+
 // ListFormationsForObject returns all Formations that `objectID` is part of
 func (s *service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	return s.listFormationsForObject(ctx, objectID, s.formationRepository.ListByIDs)
+}
+func (s *service) listFormationsForObject(ctx context.Context, objectID string, listFormations func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)) ([]*model.Formation, error) {
 	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", objectID)
@@ -282,7 +292,11 @@ func (s *service) ListFormationsForObject(ctx context.Context, objectID string) 
 		uniqueFormationIDs = append(uniqueFormationIDs, formationID)
 	}
 
-	return s.formationRepository.ListByIDsGlobal(ctx, uniqueFormationIDs)
+	return listFormations(ctx, uniqueFormationIDs)
+}
+
+func (s *service) ListObjectIDsOfTypeForFormation(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	return s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, objectType)
 }
 
 // Get returns the Formation by its id
