@@ -4,6 +4,7 @@ graphql:
     apisForApplication: ["application:read"]
     eventsForApplication: ["application:read"]
     applications: ["application:read"]
+    applicationsGlobal: ["application_global:read"]
     application: ["application:read"]
     applicationBySystemNumber: ["application:read"]
     applicationsByLocalTenantID: ["application:read"]

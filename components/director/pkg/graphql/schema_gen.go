@@ -35695,7 +35695,7 @@ func (ec *executionContext) _Query_applicationsGlobal(ctx context.Context, field
 			return ec.resolvers.Query().ApplicationsGlobal(rctx, fc.Args["filter"].([]*LabelFilter), fc.Args["first"].(*int), fc.Args["after"].(*PageCursor))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
-			path, err := ec.unmarshalNString2string(ctx, "graphql.query.applications")
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.applicationsGlobal")
 			if err != nil {
 				return nil, err
 			}

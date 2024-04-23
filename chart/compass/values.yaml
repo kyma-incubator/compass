@@ -1573,6 +1573,7 @@ global:
       super_admin:
         - "application:read"
         - "application:write"
+        - "application_global:read"
         - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
