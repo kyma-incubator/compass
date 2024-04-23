@@ -1601,16 +1601,10 @@ func tenantMatcher(ctx context.Context) bool {
 
 func loggerMatcher(ctx context.Context) bool {
 	logEntry := log.C(ctx)
+	if logEntry == nil {
+		return false
+	}
 	formationLogField := logEntry.Data[log.FieldFormationID]
 	formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
 	return logEntry != nil && (formationLogField != "" || formationAssignmentLogField != "")
-}
-
-func ctxWithLoggerMatcher() interface{} {
-	return mock.MatchedBy(func(ctx context.Context) bool {
-		logEntry := log.C(ctx)
-		formationLogField := logEntry.Data[log.FieldFormationID]
-		formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
-		return logEntry != nil && (formationLogField != "" || formationAssignmentLogField != "")
-	})
 }

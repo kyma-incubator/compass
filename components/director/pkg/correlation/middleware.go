@@ -65,6 +65,7 @@ func SpanIDForRequest(request *http.Request) string {
 	return HeadersForRequest(request)[SpanIDHeaderKey]
 }
 
+// ParentSpanIDForRequest returns the parent span ID for the current request
 func ParentSpanIDForRequest(request *http.Request) string {
 	return HeadersForRequest(request)[ParentSpanIDHeaderKey]
 }
