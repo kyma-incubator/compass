@@ -548,14 +548,15 @@ func (s *service) DeleteFormationEntityAndScenarios(ctx context.Context, tnt, fo
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
-	logger := log.C(ctx).WithField(log.FieldFormationID, formation.ID)
-	ctx = log.ContextWithLogger(ctx, logger)
 	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, ft.formation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	if !isObjectTypeSupported(ft.formationTemplate, objectType) {
 		return nil, errors.Errorf("Formation %q of type %q does not support resources of type %q", ft.formation.Name, ft.formationTemplate.Name, objectType)
@@ -885,8 +886,6 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
-	logger := log.C(ctx).WithField(log.FieldFormationID, formation.ID)
-	ctx = log.ContextWithLogger(ctx, logger)
 	log.C(ctx).Infof("Unassigning object with ID: %q of type: %q from formation %q", objectID, objectType, formation.Name)
 
 	if !isObjectTypeAllowed(objectType) {
@@ -898,6 +897,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	if err != nil {
 		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, ft.formation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	formationFromDB := ft.formation
 

@@ -4,10 +4,11 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/stretchr/testify/mock"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 

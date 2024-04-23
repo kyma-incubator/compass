@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"net/http"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -1602,6 +1603,9 @@ func tenantMatcher(ctx context.Context) bool {
 func loggerMatcher(ctx context.Context) bool {
 	logEntry := log.C(ctx)
 	if logEntry == nil {
+		return false
+	}
+	if logEntry.Data == nil {
 		return false
 	}
 	formationLogField := logEntry.Data[log.FieldFormationID]

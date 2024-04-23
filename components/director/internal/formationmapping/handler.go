@@ -3,6 +3,7 @@ package formationmapping
 import (
 	"context"
 	"encoding/json"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
