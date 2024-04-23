@@ -932,13 +932,10 @@ func tenantMatcher(ctx context.Context) bool {
 
 func loggerMatcher(ctx context.Context) bool {
 	logEntry := log.C(ctx)
-	if logEntry == nil {
-		return false
+	if logEntry != nil && logEntry.Data != nil {
+		formationLogField := logEntry.Data[log.FieldFormationID]
+		formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
+		return formationLogField != "" || formationAssignmentLogField != ""
 	}
-	if logEntry.Data == nil {
-		return false
-	}
-	formationLogField := logEntry.Data[log.FieldFormationID]
-	formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
-	return logEntry != nil && (formationLogField != "" || formationAssignmentLogField != "")
+	return false
 }
