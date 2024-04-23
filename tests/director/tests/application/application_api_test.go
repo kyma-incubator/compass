@@ -2297,9 +2297,9 @@ func directorCertSecuredClientWithExternalCertSubaccount(t *testing.T, ctx conte
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalClientCertTestSecretName,
 		ExternalClientCertTestSecretNamespace: conf.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.CertSvcInstanceSecretName,
+		ExternalCertTestJobName:               conf.ExternalCertTestJobName,
 		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
 		ExternalClientCertCertKey:             conf.ExternalClientCertCertKey,
 		ExternalClientCertKeyKey:              conf.ExternalClientCertKeyKey,
