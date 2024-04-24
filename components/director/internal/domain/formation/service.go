@@ -982,25 +982,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	// If we by any chance reach it from ERROR state, the formation should be empty, with no formation assignments in it, and the deletion shouldn't do anything.
 	if formationFromDB.State != model.ReadyFormationState {
 		log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for response on status API before sending notifications...", formationFromDB.ID, model.ReadyFormationState)
-
-		// `Unassign` operation is created so that in case the deletion below fails we have record of the unassign operation
-		// It's done in a separate transaction so that potential lock with the deletion below is avoided (deletion of the Operation via delete cascade on the Assignment)
-		if opErr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-			for _, ia := range initialAssignmentsData {
-				if _, err := s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
-					Type:                  model.Unassign,
-					FormationAssignmentID: ia.ID,
-					FormationID:           ia.FormationID,
-					TriggeredBy:           model.UnassignObject,
-				}); err != nil {
-					return errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.Unassign, ia.ID)
-				}
-			}
-			return nil
-		}); opErr != nil {
-			return nil, opErr
-		}
-
 		err = s.formationAssignmentService.DeleteAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
 		if err != nil {
 			return nil, errors.Wrapf(err, "while deleting formationAssignments for object with type %q and ID %q", objectType, objectID)
