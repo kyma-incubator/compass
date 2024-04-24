@@ -3,9 +3,10 @@ package application
 import (
 	"context"
 	"fmt"
-	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 	"strings"
 	"testing"
+
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	gcli "github.com/machinebox/graphql"
