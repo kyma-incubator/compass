@@ -56,13 +56,8 @@ type runtimeContextConverter interface {
 	ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext
 }
 
-//go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type assignmentOperationService interface {
-	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
-	Finish(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType) error
-	Update(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType, newTrigger model.OperationTrigger) error
 	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
-	DeleteByIDs(ctx context.Context, ids []string) error
 }
 
 type assignmentOperationConverter interface {

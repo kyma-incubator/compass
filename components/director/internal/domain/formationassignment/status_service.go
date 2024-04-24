@@ -19,19 +19,17 @@ import (
 
 // formationAssignmentStatusService service encapsulates all the specifics around persisting the state reported by notification receiver for a formation assignment
 type formationAssignmentStatusService struct {
-	repo                       FormationAssignmentRepository
-	constraintEngine           constraintEngine
-	faNotificationService      faNotificationService
-	assignmentOperationService assignmentOperationService
+	repo                  FormationAssignmentRepository
+	constraintEngine      constraintEngine
+	faNotificationService faNotificationService
 }
 
 // NewFormationAssignmentStatusService creates formation assignment status service
-func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, constraintEngine constraintEngine, faNotificationService faNotificationService, assignmentOperationService assignmentOperationService) *formationAssignmentStatusService {
+func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, constraintEngine constraintEngine, faNotificationService faNotificationService) *formationAssignmentStatusService {
 	return &formationAssignmentStatusService{
-		repo:                       repo,
-		constraintEngine:           constraintEngine,
-		faNotificationService:      faNotificationService,
-		assignmentOperationService: assignmentOperationService,
+		repo:                  repo,
+		constraintEngine:      constraintEngine,
+		faNotificationService: faNotificationService,
 	}
 }
 
@@ -84,13 +82,6 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 			return apperrors.NewNotFoundError(resource.FormationAssignment, id)
 		}
 		return errors.Wrapf(err, "while updating formation assignment with ID: %q", id)
-	}
-
-	// Finish the AssignmentOperation in the SYNC case
-	if fa.State == string(model.ReadyAssignmentState) {
-		if err = fau.assignmentOperationService.Finish(ctx, fa.ID, fa.FormationID, model.Assign); err != nil {
-			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s", model.Assign, fa.ID)
-		}
 	}
 
 	joinPointDetails.Location = formationconstraint.PostNotificationStatusReturned
