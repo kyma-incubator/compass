@@ -163,7 +163,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3839"
       name: compass-connector
     connectivity_adapter:
       dir: prod/incubator/
@@ -183,19 +183,19 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3740"
+      version: "PR-3831"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: prod/incubator/
-      version: "v20240319-276abee6"
+      dir: dev/incubator/
+      version: "PR-3830"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3792"
+      version: "PR-3832"
       name: compass-instance-creator
     default_tenant_mapping_handler:
-      dir: prod/incubator/
-      version: "v20240318-14e6aa90"
+      dir: dev/incubator/
+      version: "PR-3838"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
@@ -211,7 +211,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3785"
+      version: "PR-3843"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/

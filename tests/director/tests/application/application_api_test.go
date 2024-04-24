@@ -1916,8 +1916,11 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	formationTemplateName := "merge-applications-template"
 	nameJSONPath := "$.name-json-path"
 	displayNameJSONPath := "$.display-name-json-path"
-	appTechnicalProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-merge-technical-cn", conf.SkipSSLValidation)
-	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-merge-cn", conf.SkipSSLValidation)
+
+	// Make clients that use a certificate which has a OU value for subaccount the same as the OU in the certSecuredGraphQLClient
+	// in order to maintain the tenant isolation
+	appTechnicalProviderDirectorCertSecuredClient := directorCertSecuredClientWithExternalCertSubaccount(t, ctx, "app-template-merge-technical-cn")
+	appProviderDirectorCertSecuredClient := directorCertSecuredClientWithExternalCertSubaccount(t, ctx, "app-template-merge-cn")
 
 	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
@@ -2332,4 +2335,22 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	require.Equal(t, outputApp.Application.ID, newApp.Application.ID)
 	require.Equal(t, appTmpl.ID, *newApp.Application.ApplicationTemplateID)
 	require.Equal(t, localTenantID, *newApp.Application.LocalTenantID)
+}
+
+func directorCertSecuredClientWithExternalCertSubaccount(t *testing.T, ctx context.Context, cn string) *gcli.Client {
+	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.TestExternalCertCN, cn)
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertTestJobName,
+		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
+		ExternalClientCertCertKey:             conf.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 }
