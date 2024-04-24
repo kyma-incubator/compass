@@ -122,35 +122,37 @@ type faNotificationService interface {
 }
 
 type service struct {
-	repo                    FormationAssignmentRepository
-	uidSvc                  UIDService
-	applicationRepository   applicationRepository
-	runtimeRepo             runtimeRepository
-	runtimeContextRepo      runtimeContextRepository
-	notificationService     notificationService
-	faNotificationService   faNotificationService
-	labelService            labelService
-	formationRepository     formationRepository
-	statusService           statusService
-	runtimeTypeLabelKey     string
-	applicationTypeLabelKey string
+	repo                       FormationAssignmentRepository
+	uidSvc                     UIDService
+	applicationRepository      applicationRepository
+	runtimeRepo                runtimeRepository
+	runtimeContextRepo         runtimeContextRepository
+	notificationService        notificationService
+	faNotificationService      faNotificationService
+	assignmentOperationService assignmentOperationService
+	labelService               labelService
+	formationRepository        formationRepository
+	statusService              statusService
+	runtimeTypeLabelKey        string
+	applicationTypeLabelKey    string
 }
 
 // NewService creates a Formation Assignment service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, assignmentOperationService assignmentOperationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		repo:                    repo,
-		uidSvc:                  uidSvc,
-		applicationRepository:   applicationRepository,
-		runtimeRepo:             runtimeRepository,
-		runtimeContextRepo:      runtimeContextRepo,
-		notificationService:     notificationService,
-		faNotificationService:   faNotificationService,
-		labelService:            labelService,
-		formationRepository:     formationRepository,
-		statusService:           statusService,
-		runtimeTypeLabelKey:     runtimeTypeLabelKey,
-		applicationTypeLabelKey: applicationTypeLabelKey,
+		repo:                       repo,
+		uidSvc:                     uidSvc,
+		applicationRepository:      applicationRepository,
+		runtimeRepo:                runtimeRepository,
+		runtimeContextRepo:         runtimeContextRepo,
+		notificationService:        notificationService,
+		faNotificationService:      faNotificationService,
+		assignmentOperationService: assignmentOperationService,
+		labelService:               labelService,
+		formationRepository:        formationRepository,
+		statusService:              statusService,
+		runtimeTypeLabelKey:        runtimeTypeLabelKey,
+		applicationTypeLabelKey:    applicationTypeLabelKey,
 	}
 }
 
@@ -692,6 +694,12 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	if err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with constraints for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+	}
+
+	if assignment.State == string(model.ReadyAssignmentState) {
+		if err = s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID, model.Assign); err != nil {
+			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s during SYNC processing", model.Assign, assignment.ID)
+		}
 	}
 
 	// In case of an error state we should not proceed with processing the reverse notification
