@@ -2,6 +2,7 @@ package apptemplate_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"testing"
@@ -1995,7 +1996,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			WebhookSvcFn:               UnusedWebhookSvc,
 			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
 			ExpectedOutput:             nil,
-			ExpectedError:              errors.New("application template with name \"bar\" and consumer id \"consumer-id\" not found"),
+			ExpectedError:              errors.New(fmt.Sprintf("application template with name \"bar\" and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id")))),
 		},
 		{
 			Name:                 "Returns error when list application templates by name return more than one application template",
@@ -2334,7 +2335,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			WebhookConvFn:              UnusedWebhookConv,
 			WebhookSvcFn:               UnusedWebhookSvc,
 			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedError:              errors.New("application template with id customTemplateID and consumer id \"consumer-id\" not found"),
+			ExpectedError:              errors.New(fmt.Sprintf("application template with id customTemplateID and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id")))),
 		},
 	}
 
