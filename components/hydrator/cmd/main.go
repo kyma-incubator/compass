@@ -44,7 +44,6 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/connectortokenresolver"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	tenantmappingconst "github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -183,9 +182,6 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	internalGatewayClientProvider := director.NewClientProvider(cfg.Director.InternalGatewayURL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, internalDirectorClientProvider, cfg.JWKSSyncPeriod)
-
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(ctx, oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators, cfg.InitialSubdomainsForAuthenticators)
 
@@ -200,7 +196,6 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
 	connectorTokenResolverHandlerFunc := getTokenResolverHandler(internalDirectorClientProvider)
 
-	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.HandlerInstrumentation(runtimeMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.HandlerInstrumentation(authnMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, metricsCollector.HandlerInstrumentation(tenantMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.CertResolverEndpoint, metricsCollector.HandlerInstrumentation(certResolverHandlerFunc))
@@ -240,23 +235,6 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internal
 	reqDataParser := oathkeeper.NewReqDataParser()
 
 	return tenantmapping.NewHandler(reqDataParser, objectContextProviders, metricsCollector, internalDirectorClientProvider.Client(), tenantSubstitutionLabelKey), nil
-}
-
-func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.ClientProvider, cachePeriod time.Duration) *runtimemapping.Handler {
-	reqDataParser := oathkeeper.NewReqDataParser()
-
-	jwksFetch := runtimemapping.NewJWKsFetch()
-	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
-
-	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
-		jwksCache.Cleanup(ctx)
-	}).Run(ctx)
-
-	return runtimemapping.NewHandler(
-		reqDataParser,
-		clientProvider.Client(),
-		tokenVerifier)
 }
 
 func getCertificateResolverHandler(ctx context.Context, cfg config, internalDirectorClientProvider director.ClientProvider) (certresolver.ValidationHydrator, revocation.Loader, error) {

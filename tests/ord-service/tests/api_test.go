@@ -153,7 +153,7 @@ func TestORDService(t *testing.T) {
 
 	commonName := "anotherCommonName"
 	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, subTenantID, conf.TestExternalCertCN, commonName)
-	externalCertProviderConfig := createExternalConfigProvider(replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject))
+	externalCertProviderConfig := createExternalConfigProvider(replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceSecretName)
 
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
 	extIssuerCertHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
@@ -819,7 +819,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-svc-system-discovery", -1)
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := createExternalConfigProvider(certSubject)
+	externalCertProviderConfig := createExternalConfigProvider(certSubject, conf.CertSvcInstanceTestSecretName)
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, false)
@@ -955,14 +955,14 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	tenantID := tenant.TestTenants.GetDefaultTenantID()
 	cn := "ord-svc-system-with-csm-discovery"
 
-	technicalCertSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "csm-discovery-technical", -1)
-	technicalCertProvider := createExternalConfigProvider(technicalCertSubject)
+	technicalCertSubjectReplacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestOUSubaccount, conf.ExternalCertProviderConfig.TestExternalCertCN, "csm-discovery-technical")
+	technicalCertProvider := createExternalConfigProvider(technicalCertSubjectReplacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceSecretName)
 	technicalProviderClientKey, technicalProviderRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, technicalCertProvider, false)
 	technicalCertDirectorGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, technicalProviderClientKey, technicalProviderRawCertChain, conf.SkipSSLValidation)
 
-	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, cn, -1)
+	certSubjectReplacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestOUSubaccount, conf.ExternalCertProviderConfig.TestExternalCertCN, cn)
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := createExternalConfigProvider(certSubject)
+	externalCertProviderConfig := createExternalConfigProvider(certSubjectReplacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceSecretName)
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, false)
@@ -1249,11 +1249,11 @@ func CreateHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte
 	}
 }
 
-func createExternalConfigProvider(subject string) certprovider.ExternalCertProviderConfig {
+func createExternalConfigProvider(subject string, certSvcInstanceSecretName string) certprovider.ExternalCertProviderConfig {
 	return certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
 		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
+		CertSvcInstanceTestSecretName:         certSvcInstanceSecretName,
 		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
 		TestExternalCertSubject:               subject,

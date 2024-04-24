@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -133,8 +132,7 @@ func TestListFormationsForObjectGlobal(t *testing.T) {
 
 	formationTemplateName := "e2e-test-list-formations-for-object-global"
 
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, "landscape_resource_operator", -1)
-	LROCertSecuredGraphQLClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, certSubjectMappingCustomSubject, conf.SkipSSLValidation)
+	LROCertSecuredGraphQLClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "landscape_resource_operator", conf.SkipSSLValidation)
 
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "int-system-app-to-app-notifications")
