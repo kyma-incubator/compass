@@ -2,6 +2,7 @@ package scenarioassignment_test
 
 import (
 	"context"
+	"database/sql/driver"
 	"fmt"
 	"regexp"
 	"testing"
@@ -115,6 +116,43 @@ func TestRepository_GetByScenarioName(t *testing.T) {
 		// THEN
 		require.EqualError(t, err, "Internal Server Error: Unexpected error while executing SQL query")
 	})
+}
+
+func TestRepository_ListForScenarioNames(t *testing.T) {
+	scenarioNames := []string{"scenario-A", "scenario-B"}
+
+	rowsToReturn := fixSQLRows([]sqlRow{
+		{scenario: scenarioNames[0], tenantID: tenantID, targetTenantID: targetTenantID},
+		{scenario: scenarioNames[1], tenantID: tenantID, targetTenantID: targetTenantID},
+	})
+
+	suite := testdb.RepoListTestSuite{
+		Name:       "ListForScenarioNames Automation Scenario Assignments",
+		MethodName: "ListForScenarioNames",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT scenario, tenant_id, target_tenant_id FROM public.automatic_scenario_assignments WHERE (tenant_id = $1 AND (scenario = $2 OR scenario = $3))`),
+				Args:     []driver.Value{tenantID, scenarioNames[0], scenarioNames[1]},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{rowsToReturn}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(testTableColumns)}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		ExpectedModelEntities:     []interface{}{fixModelWithScenarioName(scenarioNames[0]), fixModelWithScenarioName(scenarioNames[1])},
+		ExpectedDBEntities:        []interface{}{fixEntityWithScenarioName(scenarioNames[0]), fixEntityWithScenarioName(scenarioNames[1])},
+		RepoConstructorFunc:       scenarioassignment.NewRepository,
+		MethodArgs:                []interface{}{tenantID, scenarioNames},
+		DisableConverterErrorTest: true,
+	}
+
+	suite.Run(t)
 }
 
 func TestRepository_ListAll(t *testing.T) {

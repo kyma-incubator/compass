@@ -18,10 +18,6 @@ type RuntimeContextConverter struct {
 func (_m *RuntimeContextConverter) MultipleToGraphQL(in []*model.RuntimeContext) []*graphql.RuntimeContext {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for MultipleToGraphQL")
-	}
-
 	var r0 []*graphql.RuntimeContext
 	if rf, ok := ret.Get(0).(func([]*model.RuntimeContext) []*graphql.RuntimeContext); ok {
 		r0 = rf(in)
@@ -37,10 +33,6 @@ func (_m *RuntimeContextConverter) MultipleToGraphQL(in []*model.RuntimeContext)
 // ToGraphQL provides a mock function with given fields: in
 func (_m *RuntimeContextConverter) ToGraphQL(in *model.RuntimeContext) *graphql.RuntimeContext {
 	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
 
 	var r0 *graphql.RuntimeContext
 	if rf, ok := ret.Get(0).(func(*model.RuntimeContext) *graphql.RuntimeContext); ok {

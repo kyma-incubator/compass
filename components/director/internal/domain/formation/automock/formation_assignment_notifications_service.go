@@ -21,10 +21,6 @@ type FormationAssignmentNotificationsService struct {
 func (_m *FormationAssignmentNotificationsService) GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, formationAssignment, operation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GenerateFormationAssignmentNotification")
-	}
-
 	var r0 *webhookclient.FormationAssignmentNotificationRequest
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)); ok {

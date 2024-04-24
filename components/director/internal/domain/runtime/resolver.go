@@ -65,6 +65,7 @@ type RuntimeService interface {
 //go:generate mockery --name=ScenarioAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ScenarioAssignmentService interface {
 	GetForScenarioName(ctx context.Context, scenarioName string) (*model.AutomaticScenarioAssignment, error)
+	ListForScenarioNames(ctx context.Context, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -72,7 +73,7 @@ type formationService interface {
 	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	DeleteAutomaticScenarioAssignment(ctx context.Context, in *model.AutomaticScenarioAssignment) error
+	RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 }
 
 // RuntimeConverter missing godoc
@@ -890,20 +891,17 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 			return err
 		}
 
-		for _, scenario := range scenarios {
-			scenarioAssignment, err := r.scenarioAssignmentService.GetForScenarioName(ctxWithParentTenant, scenario)
-			notFound := apperrors.IsNotFoundError(err)
-			if err != nil && !notFound {
-				return err
-			}
+		if len(scenarios) == 0 {
+			return nil
+		}
 
-			if notFound {
-				continue
-			}
+		assignments, err := r.scenarioAssignmentService.ListForScenarioNames(ctxWithParentTenant, scenarios)
+		if err != nil {
+			return err
+		}
 
-			if err := r.formationSvc.DeleteAutomaticScenarioAssignment(ctxWithParentTenant, scenarioAssignment); err != nil {
-				return err
-			}
+		if err := r.formationSvc.RemoveAssignedScenarios(ctx, assignments); err != nil {
+			return errors.Wrap(err, "while removing assigned scenarios")
 		}
 	}
 

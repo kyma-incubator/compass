@@ -26,6 +26,7 @@ func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:         repo.NewCreatorGlobal(resource.AutomaticScenarioAssigment, tableName, columns),
 		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, columns),
+		conditionLister: repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, columns),
 		singleGetter:    repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, columns),
 		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, columns),
 		deleter:         repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
@@ -37,6 +38,7 @@ type repository struct {
 	creator         repo.CreatorGlobal
 	singleGetter    repo.SingleGetter
 	lister          repo.Lister
+	conditionLister repo.ConditionTreeLister
 	pageableQuerier repo.PageableQuerier
 	deleter         repo.Deleter
 	conv            EntityConverter
@@ -109,6 +111,31 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 	assignmentModel := r.conv.FromEntity(ent)
 
 	return assignmentModel, nil
+}
+
+// ListForScenarioNames list ASAs for given scenario names
+func (r *repository) ListForScenarioNames(ctx context.Context, tenantID string, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error) {
+	var collection EntityCollection
+
+	scenarioConditions := make(repo.Conditions, 0, len(scenarioNames))
+	for _, name := range scenarioNames {
+		scenarioConditions = append(scenarioConditions, repo.NewEqualCondition(scenarioColumn, name))
+	}
+
+	conditions := repo.Or(repo.ConditionTreesFromConditions(scenarioConditions)...)
+
+	if err := r.conditionLister.ListConditionTree(ctx, resource.AutomaticScenarioAssigment, tenantID, &collection, conditions); err != nil {
+		return nil, errors.Wrapf(err, "while getting automatic scenario assignments for scenario names: %v", scenarioNames)
+	}
+
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(collection))
+
+	for _, ent := range collection {
+		m := r.conv.FromEntity(ent)
+		items = append(items, m)
+	}
+
+	return items, nil
 }
 
 // List missing godoc
