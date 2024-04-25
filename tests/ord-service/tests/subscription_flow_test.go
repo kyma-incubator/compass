@@ -144,10 +144,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-	consumerTokenURL, err := token.ChangeSubdomain(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain, conf.ProviderDestinationConfig.TokenPath)
-	require.NoError(t, err)
+	//consumerTokenURL, err := token.ChangeSubdomain(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain, conf.ProviderDestinationConfig.TokenPath)
+	//require.NoError(t, err)
 
-	destinationConsumerToken := token.GetClientCredentialsToken(stdT, ctx, consumerTokenURL, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
+	destinationConsumerToken := token.GetClientCredentialsToken(stdT, ctx, conf.ProviderDestinationConfig.TokenURL+conf.ProviderDestinationConfig.TokenPath, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
 
 	t.Run("ConsumerProvider flow with runtime as provider", func(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
