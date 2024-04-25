@@ -180,10 +180,21 @@ func SaveCorrelationKeyValuePairToContext(ctx context.Context, key, value string
 
 // AddCorrelationIDsToContext add all correlation IDs to the context
 func AddCorrelationIDsToContext(ctx context.Context, correlationID, traceID, spanID, parentSpanID string) context.Context {
-	ctx = SaveCorrelationKeyValuePairToContext(ctx, RequestIDHeaderKey, correlationID)
-	ctx = SaveCorrelationKeyValuePairToContext(ctx, TraceIDHeaderKey, traceID)
-	ctx = SaveCorrelationKeyValuePairToContext(ctx, SpanIDHeaderKey, spanID)
-	ctx = SaveCorrelationKeyValuePairToContext(ctx, ParentSpanIDHeaderKey, parentSpanID)
+	if correlationID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, RequestIDHeaderKey, correlationID)
+	}
+
+	if traceID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, TraceIDHeaderKey, traceID)
+	}
+
+	if spanID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, SpanIDHeaderKey, spanID)
+	}
+
+	if parentSpanID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, ParentSpanIDHeaderKey, parentSpanID)
+	}
 
 	return ctx
 }
