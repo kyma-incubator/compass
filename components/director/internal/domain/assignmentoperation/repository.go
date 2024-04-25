@@ -87,9 +87,9 @@ func (r *repository) ListForFormationAssignmentIDs(ctx context.Context, assignme
 		return nil, nil
 	}
 
-	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy(assignmentIDColumn), repo.NewDescOrderBy(startedAtColumn), repo.NewDescOrderBy(idColumn)}
+	orderByColumns := repo.OrderByParams{repo.NewAscOrderBy(assignmentIDColumn), repo.NewDescOrderBy(startedAtColumn)}
 
-	counts, err := r.unionLister.ListGlobal(ctx, assignmentIDs, idColumn, pageSize, cursor, orderByColumns, &assignmentOperationsCollection)
+	counts, err := r.unionLister.ListGlobal(ctx, assignmentIDs, assignmentIDColumn, pageSize, cursor, orderByColumns, &assignmentOperationsCollection)
 	if err != nil {
 		return nil, err
 	}

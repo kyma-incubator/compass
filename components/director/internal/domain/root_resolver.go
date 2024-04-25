@@ -405,6 +405,11 @@ func (r *RootResolver) FormationConstraintsDataLoader(ids []dataloader.ParamForm
 	return r.formationTemplate.FormationConstraintsDataLoader(ids)
 }
 
+// AssignmentOperationsDataLoader is the AssignmentOperations dataloader used in the graphql API router
+func (r *RootResolver) AssignmentOperationsDataLoader(ids []dataloader.ParamAssignmentOperation) ([]*graphql.AssignmentOperationPage, []error) {
+	return r.formationAssignment.AssignmentOperationsDataLoader(ids)
+}
+
 // Mutation missing godoc
 func (r *RootResolver) Mutation() graphql.MutationResolver {
 	return &mutationResolver{r}

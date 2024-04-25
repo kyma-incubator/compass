@@ -26,7 +26,7 @@ type ParamAssignmentOperation struct {
 func HandlerAssignmentOperation(fetchFunc func(keys []ParamAssignmentOperation) ([]*graphql.AssignmentOperationPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := context.WithValue(r.Context(), loadersKeyFormationAssignment, &AssignmentOperationLoaders{
+			ctx := context.WithValue(r.Context(), loadersKeyForAssignmentOperation, &AssignmentOperationLoaders{
 				AssignmentOperationByID: AssignmentOperationLoader{
 					maxBatch: maxBatch,
 					wait:     wait,

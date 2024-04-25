@@ -65,3 +65,13 @@ type AssignmentOperationPage struct {
 	PageInfo   *pagination.Page
 	TotalCount int
 }
+
+func FromFormationOperationType(op FormationOperation) AssignmentOperationType {
+	switch op {
+	case AssignFormation:
+		return Assign
+	case UnassignFormation:
+		return Unassign
+	}
+	return ""
+}

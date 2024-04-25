@@ -684,21 +684,6 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
-		// Finish the AssignmentOperation in the SYNC case
-		if err = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-			for _, a := range assignments {
-				if a.State == string(model.ReadyAssignmentState) {
-					if err = s.assignmentOperationService.Finish(ctxWithTransact, a.ID, a.FormationID, model.Assign); err != nil {
-						log.C(ctxWithTransact).Errorf("Error occurred while finishing %s Operation for assignment with ID: %s during SYNC processing. Error: %s", model.Assign, a.ID, err.Error())
-						return err
-					}
-				}
-			}
-			return nil
-		}); err != nil {
-			return nil, err
-		}
-
 	case graphql.FormationObjectTypeTenant:
 		targetTenantID, err := s.tenantSvc.GetInternalTenant(ctx, objectID)
 		if err != nil {

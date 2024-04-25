@@ -188,12 +188,12 @@ func (r *Resolver) AssignmentOperationsDataLoader(keys []dataloader.ParamAssignm
 
 	ctx := keys[0].Ctx
 
-	formationAssignmentIDs := make(map[string]struct{}, len(keys))
+	formationAssignmentIDs := make([]string, 0, len(keys))
 	for _, param := range keys {
 		if param.ID == "" {
 			return nil, []error{apperrors.NewInternalError("Cannot fetch Formation Assignment. ID is empty")}
 		}
-		formationAssignmentIDs[param.ID] = struct{}{}
+		formationAssignmentIDs = append(formationAssignmentIDs, param.ID)
 	}
 
 	var cursor string
@@ -213,7 +213,7 @@ func (r *Resolver) AssignmentOperationsDataLoader(keys []dataloader.ParamAssignm
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	assignmentOperationsPages, err := r.assignmentOperationService.ListByFormationAssignmentIDs(ctx, str.MapToSlice(formationAssignmentIDs), *keys[0].First, cursor)
+	assignmentOperationsPages, err := r.assignmentOperationService.ListByFormationAssignmentIDs(ctx, formationAssignmentIDs, *keys[0].First, cursor)
 	if err != nil {
 		return nil, []error{errors.Wrapf(err, "while fetching assignment operations")}
 	}
