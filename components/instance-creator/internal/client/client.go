@@ -68,7 +68,6 @@ func (c *client) RetrieveResource(ctx context.Context, region, subaccountID stri
 	if err != nil {
 		return "", errors.Wrapf(err, "while executing request for listing %s for subaccount with ID: %q", resources.GetType(), subaccountID)
 	}
-
 	log.C(ctx).Infof("Successfully listed %s for subaccount with ID: %q...", resources.GetType(), subaccountID)
 
 	err = json.Unmarshal(body, &resources)
