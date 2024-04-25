@@ -12,7 +12,6 @@ import (
 
 type contextKey string
 
-
 const loadersKeyAPIDef contextKey = "dataloadersAPIDef"
 
 // APIDefLoaders missing godoc
@@ -40,7 +39,6 @@ func HandlerAPIDef(fetchFunc func(keys []ParamAPIDef) ([]*graphql.APIDefinitionP
 				},
 			})
 			r = r.WithContext(ctx)
-
 			next.ServeHTTP(w, r)
 		})
 	}
