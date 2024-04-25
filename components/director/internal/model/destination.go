@@ -1,9 +1,5 @@
 package model
 
-import (
-	"errors"
-)
-
 // DestinationInput missing godoc
 type DestinationInput struct {
 	Name              string `json:"Name"`
@@ -27,15 +23,6 @@ type Destination struct {
 	SubaccountID          string  `json:"subaccount_id"`
 	InstanceID            *string `json:"instanceId"`
 	FormationAssignmentID *string `json:"formationAssignmentID"`
-}
-
-// Validate returns error if system doesn't have the required properties
-func (d *DestinationInput) Validate() error {
-	if d.XCorrelationID == "" {
-		return errors.New("missing destination correlation id")
-	}
-
-	return nil
 }
 
 // HasValidIdentifiers checks if the destination has either one of the pairs: XSystemTenantID and XSystemType, or XSystemBaseURL and XSystemTenantName

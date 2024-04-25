@@ -316,17 +316,8 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 		authType = authResult.String()
 	}
 
-	tokenValue, err := validateAuthorization(ctx, req)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
-		return
-	}
-
-	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
-		return
-	}
+	subaccountID := req.Header.Get("subaccount_id")
+	serviceInstanceID := req.Header.Get("instance_id")
 	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
 	var responses []PostResponse
@@ -385,7 +376,6 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 // DeleteDestination is an "internal/technical" handler for deleting Destinations from E2E tests
 func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	destinationName := mux.Vars(req)["name"]
 
@@ -394,17 +384,8 @@ func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	tokenValue, err := validateAuthorization(ctx, req)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
-		return
-	}
-
-	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
-		return
-	}
+	subaccountID := req.Header.Get("subaccount_id")
+	serviceInstanceID := req.Header.Get("instance_id")
 	log.C(ctx).Infof("Deleting Destination with subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
 	identifiers := map[string]string{

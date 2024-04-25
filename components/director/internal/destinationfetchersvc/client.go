@@ -70,11 +70,25 @@ type destinationFromService struct {
 	XFSystemName            string `json:"XFSystemName"`
 	CommunicationScenarioID string `json:"communicationScenarioId"`
 	ProductName             string `json:"product.name"`
-	XCorrelationID          string `json:"correlationIds"`
+	CorrelationIDs          string `json:"correlationIds"`
+	XCorrelationID          string `json:"x-correlation-id"`
 	XSystemTenantID         string `json:"x-system-id"`
 	XSystemTenantName       string `json:"x-system-name"`
 	XSystemType             string `json:"x-system-type"`
 	XSystemBaseURL          string `json:"x-system-base-url"`
+}
+
+// Validate returns error if system doesn't have the required properties
+func (d *destinationFromService) Validate() error {
+	if d.XCorrelationID == "" && d.CorrelationIDs == "" {
+		return errors.New("missing destination correlation id")
+	}
+
+	if d.XCorrelationID != "" && d.CorrelationIDs != "" {
+		return errors.New("old and new correlation ID format provided")
+	}
+
+	return nil
 }
 
 func (d *destinationFromService) setDefaults(result *model.DestinationInput) error {
@@ -114,12 +128,21 @@ func (d *destinationFromService) setDefaults(result *model.DestinationInput) err
 
 // ToModel missing godoc
 func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
+	if err := d.Validate(); err != nil {
+		return model.DestinationInput{}, err
+	}
+
+	correlationIDs := d.CorrelationIDs
+	if d.XCorrelationID != "" {
+		correlationIDs = d.XCorrelationID
+	}
+
 	result := model.DestinationInput{
 		Name:              d.Name,
 		Type:              d.Type,
 		URL:               d.URL,
 		Authentication:    d.Authentication,
-		XCorrelationID:    d.XCorrelationID,
+		XCorrelationID:    correlationIDs,
 		XSystemTenantID:   d.XSystemTenantID,
 		XSystemTenantName: d.XSystemTenantName,
 		XSystemType:       d.XSystemType,
@@ -130,7 +153,7 @@ func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
 		return model.DestinationInput{}, err
 	}
 
-	return result, result.Validate()
+	return result, nil
 }
 
 // DestinationResponse paged response from destination service
@@ -220,12 +243,6 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page
 	if err := json.NewDecoder(res.Body).Decode(&destinations); err != nil {
 		return nil, errors.Wrap(err, "failed to decode response body")
 	}
-
-	bytes, err := io.ReadAll(res.Body)
-	if err != nil {
-		return nil, errors.Wrap(err, "while reading response body")
-	}
-	log.C(ctx).Infof("ALEX destinations %+v", string(bytes))
 
 	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
 
