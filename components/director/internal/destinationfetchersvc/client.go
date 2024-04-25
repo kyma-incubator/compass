@@ -70,7 +70,7 @@ type destinationFromService struct {
 	XFSystemName            string `json:"XFSystemName"`
 	CommunicationScenarioID string `json:"communicationScenarioId"`
 	ProductName             string `json:"product.name"`
-	XCorrelationID          string `json:"x-correlation-id"`
+	XCorrelationID          string `json:"correlationIds"`
 	XSystemTenantID         string `json:"x-system-id"`
 	XSystemTenantName       string `json:"x-system-name"`
 	XSystemType             string `json:"x-system-type"`
@@ -220,6 +220,12 @@ func (c *Client) FetchTenantDestinationsPage(ctx context.Context, tenantID, page
 	if err := json.NewDecoder(res.Body).Decode(&destinations); err != nil {
 		return nil, errors.Wrap(err, "failed to decode response body")
 	}
+
+	bytes, err := io.ReadAll(res.Body)
+	if err != nil {
+		return nil, errors.Wrap(err, "while reading response body")
+	}
+	log.C(ctx).Infof("ALEX destinations %+v", string(bytes))
 
 	destinationsPageCallFullDuration := time.Since(destinationsPageCallStart)
 
