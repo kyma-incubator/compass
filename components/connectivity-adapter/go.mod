@@ -23,7 +23,7 @@ require (
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20240311150451-fb47652e9f70
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240423142345-0e5e50a94eea
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240425111152-510a4793a627
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
