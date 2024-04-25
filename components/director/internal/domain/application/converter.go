@@ -299,3 +299,31 @@ func (c *converter) statusGraphQLToModel(in *graphql.ApplicationStatus) *model.A
 		Timestamp: time.Time(in.Timestamp),
 	}
 }
+
+type appWithTenantsConverter struct {
+	appConv    ApplicationConverter
+	tenantConv TenantConverter
+}
+
+// NewAppWithTenantsConverter creates new application with tenant converter
+func NewAppWithTenantsConverter(appConv ApplicationConverter, tenantConv TenantConverter) *appWithTenantsConverter {
+	return &appWithTenantsConverter{appConv: appConv, tenantConv: tenantConv}
+}
+
+// MultipleToGraphQL converts multiple model objects to graphql objects
+func (c *appWithTenantsConverter) MultipleToGraphQL(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants {
+	applicationWithTenants := make([]*graphql.ApplicationWithTenants, 0, len(in))
+	for _, r := range in {
+		if r == nil {
+			continue
+		}
+
+		appWithTenants := &graphql.ApplicationWithTenants{
+			Application: c.appConv.ToGraphQL(&r.Application),
+			Tenants:     c.tenantConv.MultipleToGraphQL(r.Tenants),
+		}
+		applicationWithTenants = append(applicationWithTenants, appWithTenants)
+	}
+
+	return applicationWithTenants
+}
