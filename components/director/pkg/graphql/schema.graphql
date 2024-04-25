@@ -1084,6 +1084,17 @@ type ApplicationTemplatePage implements Pageable {
 	totalCount: Int!
 }
 
+type ApplicationWithTenants {
+	application: Application
+	tenants: [Tenant]
+}
+
+type ApplicationWithTenantsPage implements Pageable {
+	data: [ApplicationWithTenants]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Aspect {
 	id: ID!
 	name: String!
@@ -1680,6 +1691,7 @@ type Query {
 	- [query applications](examples/query-applications/query-applications.graphql)
 	"""
 	applications(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationPage! @hasScopes(path: "graphql.query.applications")
+	applicationsGlobal(filter: [LabelFilter!], first: Int = 200, after: PageCursor): ApplicationWithTenantsPage! @hasScopes(path: "graphql.query.applicationsGlobal")
 	"""
 	**Examples**
 	- [query application by local tenant id and app template id](examples/query-application/query-application-by-local-tenant-id-and-app-template-id.graphql)

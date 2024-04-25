@@ -57,6 +57,20 @@ func (e Entity) WithStatus(status Status) Entity {
 	return e
 }
 
+// EntityWithAppID represents a Compass tenant with application id.
+type EntityWithAppID struct {
+	*Entity
+	AppID string `db:"app_id"`
+}
+
+// EntityWithAppIDCollection represents a slice of EntityWithAppID objects
+type EntityWithAppIDCollection []EntityWithAppID
+
+// Len returns the current number of entities in the collection.
+func (a EntityWithAppIDCollection) Len() int {
+	return len(a)
+}
+
 // StrToType returns the tenant Type value of the provided string or "Unknown" if there's no type matching the string.
 func StrToType(value string) Type {
 	switch value {

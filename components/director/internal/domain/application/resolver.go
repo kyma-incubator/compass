@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strings"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -55,6 +57,7 @@ type ApplicationService interface {
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 	Unpair(ctx context.Context, id string) error
 	Merge(ctx context.Context, destID, sourceID string) (*model.Application, error)
+	ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
 }
 
 // ApplicationConverter missing godoc
@@ -66,6 +69,13 @@ type ApplicationConverter interface {
 	CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)
 	UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput
 	GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application
+}
+
+// ApplicationWithTenantsConverter is responsible for converting between graphql and model objects
+//
+//go:generate mockery --name=ApplicationWithTenantsConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationWithTenantsConverter interface {
+	MultipleToGraphQL(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants
 }
 
 // EventingService missing godoc
@@ -218,6 +228,14 @@ type OperationConverter interface {
 	MultipleToGraphQL(in []*model.Operation) ([]*graphql.Operation, error)
 }
 
+// TenantConverter is responsible for converting between graphql and model objects
+//
+//go:generate mockery --name=TenantConverter --output=automock --outpkg=automock --case=underscore --disable-version-string
+type TenantConverter interface {
+	MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant
+	FromEntity(in *tnt.Entity) *model.BusinessTenantMapping
+}
+
 // OneTimeTokenService missing godoc
 //
 //go:generate mockery --name=OneTimeTokenService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -244,8 +262,9 @@ type ApplicationTemplateConverter interface {
 type Resolver struct {
 	transact persistence.Transactioner
 
-	appSvc       ApplicationService
-	appConverter ApplicationConverter
+	appSvc                  ApplicationService
+	appConverter            ApplicationConverter
+	appWithTenantsConverter ApplicationWithTenantsConverter
 
 	appTemplateSvc       ApplicationTemplateService
 	appTemplateConverter ApplicationTemplateConverter
@@ -286,6 +305,7 @@ func NewResolver(transact persistence.Transactioner,
 	oAuth20Svc OAuth20Service,
 	sysAuthSvc SystemAuthService,
 	appConverter ApplicationConverter,
+	appWithTenantsConverter ApplicationWithTenantsConverter,
 	webhookConverter WebhookConverter,
 	sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService,
@@ -312,6 +332,7 @@ func NewResolver(transact persistence.Transactioner,
 		oAuth20Svc:                      oAuth20Svc,
 		sysAuthSvc:                      sysAuthSvc,
 		appConverter:                    appConverter,
+		appWithTenantsConverter:         appWithTenantsConverter,
 		webhookConverter:                webhookConverter,
 		sysAuthConv:                     sysAuthConv,
 		eventingSvc:                     eventingSvc,
@@ -405,6 +426,48 @@ func (r *Resolver) Applications(ctx context.Context, filter []*graphql.LabelFilt
 			StartCursor: graphql.PageCursor(appPage.PageInfo.StartCursor),
 			EndCursor:   graphql.PageCursor(appPage.PageInfo.EndCursor),
 			HasNextPage: appPage.PageInfo.HasNextPage,
+		},
+	}, nil
+}
+
+// ApplicationsGlobal retrieves a page of applications with their associated tenants filtered by the provided filters.
+// Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
+func (r *Resolver) ApplicationsGlobal(ctx context.Context, filter []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.ApplicationWithTenantsPage, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	labelFilter := labelfilter.MultipleFromGraphQL(filter)
+
+	var cursor string
+	if after != nil {
+		cursor = string(*after)
+	}
+	if first == nil {
+		return nil, apperrors.NewInvalidDataError("missing required parameter 'first'")
+	}
+
+	applicationWithTenantsPage, err := r.appSvc.ListAllGlobalByFilter(ctx, labelFilter, *first, cursor)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
+	}
+
+	gqlApplicationsWithTenants := r.appWithTenantsConverter.MultipleToGraphQL(applicationWithTenantsPage.Data)
+	return &graphql.ApplicationWithTenantsPage{
+		Data:       gqlApplicationsWithTenants,
+		TotalCount: applicationWithTenantsPage.TotalCount,
+		PageInfo: &graphql.PageInfo{
+			StartCursor: graphql.PageCursor(applicationWithTenantsPage.PageInfo.StartCursor),
+			EndCursor:   graphql.PageCursor(applicationWithTenantsPage.PageInfo.EndCursor),
+			HasNextPage: applicationWithTenantsPage.PageInfo.HasNextPage,
 		},
 	}, nil
 }

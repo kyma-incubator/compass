@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	gcli "github.com/machinebox/graphql"
 
@@ -1110,6 +1112,49 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	require.Len(t, appsPage.Data, 1)
 	delete(apps, appsPage.Data[0].ID)
 	assert.Len(t, apps, 0)
+}
+
+func TestQueryApplicationsGlobalPageable(t *testing.T) {
+	// GIVEN
+	pageSize := 10
+	cursor := ""
+	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log(fmt.Sprintf("Creating application with label with key %s and value %s", conf.ApplicationTypeLabelKey, "filter-me"))
+	appOne, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-one", conf.ApplicationTypeLabelKey, "filter-me", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &appOne)
+	require.NoError(t, err)
+	require.NotEmpty(t, appOne.ID)
+
+	t.Log(fmt.Sprintf("Creating application with label with key %s and value %s", conf.ApplicationTypeLabelKey, "unknown"))
+	appTwo, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-two", conf.ApplicationTypeLabelKey, "unknown", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &appTwo)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTwo.ID)
+
+	// WHEN
+	labelFilter := graphql.LabelFilter{
+		Key:   conf.ApplicationTypeLabelKey,
+		Query: str.Ptr(fmt.Sprintf("\"%s\"", "filter-me")),
+	}
+
+	labelFilterGQL, err := testctx.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
+	require.NoError(t, err)
+
+	t.Log("Executing applicationsGlobal query with label filter")
+	appWithTenantsPage := graphql.ApplicationWithTenantsPage{}
+	req := fixtures.FixApplicationsGlobalFilteredPageableRequest(labelFilterGQL, pageSize, cursor)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &appWithTenantsPage)
+	require.NoError(t, err)
+
+	//THEN
+	assert.Equal(t, cursor, string(appWithTenantsPage.PageInfo.StartCursor))
+	assert.False(t, appWithTenantsPage.PageInfo.HasNextPage)
+	assert.Equal(t, 1, appWithTenantsPage.TotalCount)
+	assert.Len(t, appWithTenantsPage.Data, 1)
+	assert.Len(t, appWithTenantsPage.Data[0].Tenants, 1)
+	assert.Equal(t, tnt.TypeToStr(tnt.Customer), appWithTenantsPage.Data[0].Tenants[0].Type)
 }
 
 func TestQuerySpecificApplication(t *testing.T) {
