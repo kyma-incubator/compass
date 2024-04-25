@@ -211,7 +211,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3785"
+      version: "PR-3843"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
@@ -1504,6 +1504,7 @@ global:
         - "formation:global_read"
       tenant_discovery_operator:
         - "application:read"
+        - "application_global:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
@@ -1573,6 +1574,7 @@ global:
       super_admin:
         - "application:read"
         - "application:write"
+        - "application_global:read"
         - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
