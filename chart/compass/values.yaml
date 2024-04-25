@@ -1504,6 +1504,7 @@ global:
         - "formation:global_read"
       tenant_discovery_operator:
         - "application:read"
+        - "application_global:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
