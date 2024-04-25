@@ -95,6 +95,7 @@ func (cl *certSubjectMappingLoader) InitialiseCertSubjectMappings(ctx context.Co
 	ctx = log.ContextWithLogger(ctx, entry)
 
 	var mappings []SubjectConsumerTypeMapping
+	
 	var err error
 
 	err = retry.Do(func() error {
