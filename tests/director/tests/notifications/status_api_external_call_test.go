@@ -104,14 +104,14 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 	}
 	executeFAStatusUpdateReqWithExternalToken(t, client, accountToken, testConfig, formationID, formationAssignmentID, http.StatusOK)
 
-	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+	expectedAssignments := map[string]map[string]fixtures.Assignment{
 		app1ID: {
-			app1ID: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil},
-			app2ID: fixtures.AssignmentState{State: initialAssignmentState, Config: &testConfig, Value: nil, Error: nil},
+			app1ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
+			app2ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: &testConfig, Value: nil, Error: nil}},
 		},
 		app2ID: {
-			app1ID: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil},
-			app2ID: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil},
+			app1ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
+			app2ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
 		},
 	}
 

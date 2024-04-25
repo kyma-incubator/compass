@@ -2,6 +2,8 @@ package asserters
 
 import (
 	"context"
+	"github.com/davecgh/go-spew/spew"
+	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -12,13 +14,13 @@ import (
 )
 
 type FormationAssignmentsAsserter struct {
-	expectations             map[string]map[string]fixtures.AssignmentState
+	expectations             map[string]map[string]fixtures.Assignment
 	expectedAssignmentsCount int
 	certSecuredGraphQLClient *graphql.Client
 	tenantID                 string
 }
 
-func NewFormationAssignmentAsserter(expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsserter {
+func NewFormationAssignmentAsserter(expectations map[string]map[string]fixtures.Assignment, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsserter {
 	return &FormationAssignmentsAsserter{
 		expectations:             expectations,
 		expectedAssignmentsCount: expectedAssignmentsCount,
@@ -33,31 +35,50 @@ func (a *FormationAssignmentsAsserter) AssertExpectations(t *testing.T, ctx cont
 	t.Log("Formation assignments are successfully asserted")
 }
 
-func (a *FormationAssignmentsAsserter) assertFormationAssignments(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+func (a *FormationAssignmentsAsserter) assertFormationAssignments(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.Assignment) {
+	spew.Dump(expectedAssignments)
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	assignments := assignmentsPage.Data
 	require.Equal(t, expectedAssignmentsCount, assignmentsPage.TotalCount)
 	for _, assignment := range assignments {
 		sourceAssignmentsExpectations, ok := expectedAssignments[assignment.Source]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q", assignment.Source)
+		require.Truef(t, ok, "Could not find expectations for assignment %q with source %q", assignment.ID, assignment.Source)
 
 		assignmentExpectation, ok := sourceAssignmentsExpectations[assignment.Target]
-		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
+		require.Truef(t, ok, "Could not find expectations for assignment %q with source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
 
-		require.Equal(t, assignmentExpectation.State, assignment.State)
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
+		// asserting state
+		require.Equal(t, assignmentExpectation.State.State, assignment.State)
+		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.State.Config)
 		assignmentConfiguration := str.PtrStrToStr(assignment.Configuration)
 		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && assignmentConfiguration != "" && assignmentConfiguration != "\"\"" {
 			require.JSONEq(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		} else {
 			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		}
-		if str.PtrStrToStr(assignmentExpectation.Value) != "" && str.PtrStrToStr(assignmentExpectation.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Value), str.PtrStrToStr(assignment.Value))
+		if str.PtrStrToStr(assignmentExpectation.State.Value) != "" && str.PtrStrToStr(assignmentExpectation.State.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
+			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.State.Value), str.PtrStrToStr(assignment.Value))
 		} else {
 			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		}
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
+		require.Equal(t, str.PtrStrToStr(assignmentExpectation.State.Error), str.PtrStrToStr(assignment.Error))
+
+		// asserting operations
+		require.Equal(t, len(assignmentExpectation.Operations), len(assignment.AssignmentOperations.Data))
+		for _, expectedOperation := range assignmentExpectation.Operations {
+			require.Truef(t, ContainsMatchingOperation(expectedOperation, assignment.AssignmentOperations.Data), "Could not find expected operation %v in assignment with ID %q", expectedOperation, assignment.ID)
+		}
 	}
+}
+
+func ContainsMatchingOperation(expectedOperation *fixtures.Operation, actualOperations []*gql.AssignmentOperation) bool {
+	for _, actualOperation := range actualOperations {
+		actualOperationIsFinished := actualOperation.FinishedAtTimestamp != nil
+		if expectedOperation.Type == actualOperation.OperationType && expectedOperation.TriggeredBy == actualOperation.TriggeredBy && expectedOperation.IsFinished == actualOperationIsFinished {
+			return true
+		}
+	}
+
+	return false
 }

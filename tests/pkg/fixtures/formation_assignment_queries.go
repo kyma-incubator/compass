@@ -17,7 +17,30 @@ type AssignmentState struct {
 	State  string
 }
 
-func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, listFormationAssignmentsReq *gcli.Request) *graphql.FormationAssignmentPage {
+type Operation struct {
+	SourceID    string
+	TargetID    string
+	Type        graphql.AssignmentOperationType
+	TriggeredBy graphql.OperationTrigger
+	IsFinished  bool
+}
+
+func NewOperation(sourceID, targetID string, operationType graphql.AssignmentOperationType, triggeredBy graphql.OperationTrigger, isFinished bool) *Operation {
+	return &Operation{
+		SourceID:    sourceID,
+		TargetID:    targetID,
+		Type:        operationType,
+		TriggeredBy: triggeredBy,
+		IsFinished:  isFinished,
+	}
+}
+
+type Assignment struct {
+	State      AssignmentState
+	Operations []*Operation
+}
+
+func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, listFormationAssignmentsReq *gcli.Request) *graphql.FormationAssignmentPageExt {
 	var formation graphql.FormationExt
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, listFormationAssignmentsReq, &formation)
 	require.NoError(t, err)
@@ -25,7 +48,7 @@ func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient
 	return &formation.FormationAssignments
 }
 
-func GetFormationAssignmentsBySourceAndTarget(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID, sourceID, targetID string) *graphql.FormationAssignment {
+func GetFormationAssignmentsBySourceAndTarget(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, formationID, sourceID, targetID string) *graphql.FormationAssignmentExt {
 	listFormationAssignmentsRequest := FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := ListFormationAssignments(t, ctx, gqlClient, tenantID, listFormationAssignmentsRequest)
 	assignments := assignmentsPage.Data
