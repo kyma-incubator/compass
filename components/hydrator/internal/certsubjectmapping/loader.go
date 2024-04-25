@@ -76,7 +76,6 @@ func (s *SubjectConsumerTypeMapping) Validate() error {
 
 func StartCertSubjectMappingLoader(ctx context.Context, certSubjectMappingCfg Config, directorClient DirectorClient) (Cache, error) {
 	cache := NewCertSubjectMappingCache()
-
 	certSubjectLoader := NewCertSubjectMappingLoader(cache, certSubjectMappingCfg, directorClient)
 
 	err := certSubjectLoader.InitialiseCertSubjectMappings(ctx, certSubjectMappingCfg.EnvironmentMappings)
@@ -95,7 +94,6 @@ func (cl *certSubjectMappingLoader) InitialiseCertSubjectMappings(ctx context.Co
 	ctx = log.ContextWithLogger(ctx, entry)
 
 	var mappings []SubjectConsumerTypeMapping
-	
 	var err error
 
 	err = retry.Do(func() error {
