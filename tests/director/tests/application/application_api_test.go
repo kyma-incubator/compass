@@ -1154,8 +1154,9 @@ func TestQueryApplicationsGlobalPageable(t *testing.T) {
 	assert.Equal(t, 1, appWithTenantsPage.TotalCount)
 	assert.Len(t, appWithTenantsPage.Data, 1)
 	assert.Equal(t, appWithTenantsPage.Data[0].Application.ID, appOne.ID)
-	_, exists := appWithTenantsPage.Data[0].Application.Labels["filter-me"]
+	val, exists := appWithTenantsPage.Data[0].Application.Labels[conf.ApplicationTypeLabelKey]
 	assert.True(t, exists)
+	assert.Equal(t, "filter-me", val.(string))
 	assert.Len(t, appWithTenantsPage.Data[0].Tenants, 1)
 	assert.Equal(t, tnt.TypeToStr(tnt.Customer), appWithTenantsPage.Data[0].Tenants[0].Type)
 }
