@@ -34,8 +34,24 @@ import (
 type logKey struct{}
 
 const (
-	// FieldRequestID missing godoc
-	FieldRequestID     = "x-request-id"
+	// FieldRequestID represent the request ID field name in the logger derived from the istio 'x-request-id' header
+	FieldRequestID = "x-request-id"
+
+	// FieldTraceID represent the trace ID field name in the logger derived from the istio 'x-b3-traceid' header
+	FieldTraceID = "x-trace-id"
+
+	// FieldSpanID represent the span ID field name in the logger derived from the istio 'x-b3-spanid' header
+	FieldSpanID = "x-span-id"
+
+	// FieldParentSpanID represent the parent span ID field name in the logger derived from the istio 'x-b3-parentspanid' header
+	FieldParentSpanID = "x-parent-span-id"
+
+	// FieldFormationID represent the formation field name in the logger
+	FieldFormationID = "formation-id"
+
+	// FieldFormationAssignmentID represent the formation assignment field name in the logger
+	FieldFormationAssignmentID = "formation-assignment-id"
+
 	fieldComponentName = "component"
 	jsonFormatterKey   = "json"
 	textFormatterKey   = "text"

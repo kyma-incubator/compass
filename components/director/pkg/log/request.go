@@ -17,6 +17,7 @@
 package log
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
@@ -33,6 +34,9 @@ func RequestLogger(pathsToLogOnDebug ...string) func(next http.Handler) http.Han
 		return http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			entry := LoggerWithCorrelationID(r)
+			entry = LoggerWithTraceID(r, entry)
+			entry = LoggerWithSpanID(r, entry)
+			entry = LoggerWithParentSpanID(r, entry)
 
 			ctx = ContextWithLogger(ctx, entry)
 			ctx = ContextWithMdc(ctx)
@@ -99,4 +103,56 @@ func LoggerWithCorrelationID(r *http.Request) *logrus.Entry {
 	}
 
 	return entry
+}
+
+// LoggerWithTraceID adds the trace ID to the logger
+func LoggerWithTraceID(r *http.Request, entry *logrus.Entry) *logrus.Entry {
+	if entry == nil {
+		ctx := r.Context()
+		entry = C(ctx)
+	}
+
+	if traceID := correlation.TraceIDForRequest(r); traceID != "" {
+		entry = entry.WithField(FieldTraceID, traceID)
+	}
+
+	return entry
+}
+
+// LoggerWithSpanID adds the span ID to the logger
+func LoggerWithSpanID(r *http.Request, entry *logrus.Entry) *logrus.Entry {
+	if entry == nil {
+		ctx := r.Context()
+		entry = C(ctx)
+	}
+
+	if spanID := correlation.SpanIDForRequest(r); spanID != "" {
+		entry = entry.WithField(FieldSpanID, spanID)
+	}
+
+	return entry
+}
+
+// LoggerWithParentSpanID adds the parent span ID to the logger
+func LoggerWithParentSpanID(r *http.Request, entry *logrus.Entry) *logrus.Entry {
+	if entry == nil {
+		ctx := r.Context()
+		entry = C(ctx)
+	}
+
+	if parentSpanID := correlation.ParentSpanIDForRequest(r); parentSpanID != "" {
+		entry = entry.WithField(FieldParentSpanID, parentSpanID)
+	}
+
+	return entry
+}
+
+// AddCorrelationIDsToLogger adds all correlation IDs to the logger
+func AddCorrelationIDsToLogger(ctx context.Context, correlationID, traceID, spanID, parentSpanID string) *logrus.Entry {
+	logger := C(ctx).WithField(FieldRequestID, correlationID)
+	logger = logger.WithField(FieldTraceID, traceID)
+	logger = logger.WithField(FieldSpanID, spanID)
+	logger = logger.WithField(FieldParentSpanID, parentSpanID)
+
+	return logger
 }
