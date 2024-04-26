@@ -311,7 +311,7 @@ if [ -f /tmp/tenant-mapping-config.json ]; then
 else
     echo "Tenant mapping configuration is missing"
     exit 1
-if
+fi
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
 export APP_APPLICATION_TEMPLATE_PRODUCT_LABEL="systemRole"
 
