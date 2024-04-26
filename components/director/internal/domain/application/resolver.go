@@ -54,6 +54,7 @@ type ApplicationService interface {
 	SetLabel(ctx context.Context, label *model.LabelInput) error
 	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error)
+	ListLabelsGlobal(ctx context.Context, applicationID string) (map[string]*model.Label, error)
 	DeleteLabel(ctx context.Context, applicationID string, key string) error
 	Unpair(ctx context.Context, id string) error
 	Merge(ctx context.Context, destID, sourceID string) (*model.Application, error)
@@ -846,7 +847,16 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	itemMap, err := r.appSvc.ListLabels(ctx, obj.ID)
+	itemMap := make(map[string]*model.Label)
+	tenantFromCtx, err := tenant.LoadFromContext(ctx)
+	if err != nil || tenantFromCtx == "" {
+		log.C(ctx).Infof("Kalo ListLabelsGlobal")
+		itemMap, err = r.appSvc.ListLabelsGlobal(ctx, obj.ID)
+	} else {
+		log.C(ctx).Infof("Kalo ListLabels")
+		itemMap, err = r.appSvc.ListLabels(ctx, obj.ID)
+	}
+
 	if err != nil {
 		if strings.Contains(err.Error(), "doesn't exist") {
 			return nil, tx.Commit()
