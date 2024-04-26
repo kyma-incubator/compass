@@ -847,13 +847,11 @@ func (r *Resolver) Labels(ctx context.Context, obj *graphql.Application, key *st
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	itemMap := make(map[string]*model.Label)
+	var itemMap map[string]*model.Label
 	tenantFromCtx, err := tenant.LoadFromContext(ctx)
 	if err != nil || tenantFromCtx == "" {
-		log.C(ctx).Infof("Kalo ListLabelsGlobal")
 		itemMap, err = r.appSvc.ListLabelsGlobal(ctx, obj.ID)
 	} else {
-		log.C(ctx).Infof("Kalo ListLabels")
 		itemMap, err = r.appSvc.ListLabels(ctx, obj.ID)
 	}
 
