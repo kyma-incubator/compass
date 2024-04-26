@@ -59,6 +59,75 @@ func TestRequestLoggerUseCorrelationIDFromHeaderIfProvided(t *testing.T) {
 	})).ServeHTTP(response, request)
 }
 
+func TestRequestLoggerUseTraceIDFromHeaderIfProvided(t *testing.T) {
+	traceID := "test-trace-id"
+	response := httptest.NewRecorder()
+
+	testURL, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    testURL,
+		Header: map[string][]string{},
+	}
+	request.Header.Set("x-b3-traceid", traceID)
+
+	handler := log.RequestLogger()
+	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		entry := log.C(request.Context())
+
+		traceIDFromLogger, exists := entry.Data[log.FieldTraceID]
+		require.True(t, exists)
+		require.Equal(t, traceID, traceIDFromLogger)
+	})).ServeHTTP(response, request)
+}
+
+func TestRequestLoggerUseSpanIDFromHeaderIfProvided(t *testing.T) {
+	testSpanID := "test-span-id"
+	response := httptest.NewRecorder()
+
+	testURL, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    testURL,
+		Header: map[string][]string{},
+	}
+	request.Header.Set("x-b3-spanid", testSpanID)
+
+	handler := log.RequestLogger()
+	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		entry := log.C(request.Context())
+
+		spanIDFromLogger, exists := entry.Data[log.FieldSpanID]
+		require.True(t, exists)
+		require.Equal(t, testSpanID, spanIDFromLogger)
+	})).ServeHTTP(response, request)
+}
+
+func TestRequestLoggerUseParentSpanIDFromHeaderIfProvided(t *testing.T) {
+	testParentSpanID := "test-parent-span-id"
+	response := httptest.NewRecorder()
+
+	testURL, err := url.Parse("http://localhost:8080")
+	require.NoError(t, err)
+	request := &http.Request{
+		Method: http.MethodPost,
+		URL:    testURL,
+		Header: map[string][]string{},
+	}
+	request.Header.Set("x-b3-parentspanid", testParentSpanID)
+
+	handler := log.RequestLogger()
+	handler(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		entry := log.C(request.Context())
+
+		parentSpanIDFromLogger, exists := entry.Data[log.FieldParentSpanID]
+		require.True(t, exists)
+		require.Equal(t, testParentSpanID, parentSpanIDFromLogger)
+	})).ServeHTTP(response, request)
+}
+
 func TestRequestLoggerWithMDC(t *testing.T) {
 	response := httptest.NewRecorder()
 	testURL, err := url.Parse("http://localhost:8080")

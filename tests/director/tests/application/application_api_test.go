@@ -6,6 +6,8 @@ import (
 	"strings"
 	"testing"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	gcli "github.com/machinebox/graphql"
 
@@ -1112,6 +1114,53 @@ func TestQueryApplicationsPageable(t *testing.T) {
 	assert.Len(t, apps, 0)
 }
 
+func TestQueryApplicationsGlobalPageable(t *testing.T) {
+	// GIVEN
+	pageSize := 10
+	cursor := ""
+	ctx := context.Background()
+	tenantId := tenant.TestTenants.GetDefaultTenantID()
+
+	t.Log(fmt.Sprintf("Creating application with label with key %s and value %s", conf.ApplicationTypeLabelKey, "filter-me"))
+	appOne, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-one", conf.ApplicationTypeLabelKey, "filter-me", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &appOne)
+	require.NoError(t, err)
+	require.NotEmpty(t, appOne.ID)
+
+	t.Log(fmt.Sprintf("Creating application with label with key %s and value %s", conf.ApplicationTypeLabelKey, "unknown"))
+	appTwo, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "app-two", conf.ApplicationTypeLabelKey, "unknown", tenantId)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &appTwo)
+	require.NoError(t, err)
+	require.NotEmpty(t, appTwo.ID)
+
+	// WHEN
+	labelFilter := graphql.LabelFilter{
+		Key:   conf.ApplicationTypeLabelKey,
+		Query: str.Ptr(fmt.Sprintf("\"%s\"", "filter-me")),
+	}
+
+	labelFilterGQL, err := testctx.Tc.Graphqlizer.LabelFilterToGQL(labelFilter)
+	require.NoError(t, err)
+
+	t.Log("Executing applicationsGlobal query with label filter")
+	appWithTenantsPage := graphql.ApplicationExtWithTenantsPage{}
+	req := fixtures.FixApplicationsGlobalFilteredPageableRequest(labelFilterGQL, pageSize, cursor)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &appWithTenantsPage)
+	require.NoError(t, err)
+
+	//THEN
+	assert.Equal(t, cursor, string(appWithTenantsPage.PageInfo.StartCursor))
+	assert.False(t, appWithTenantsPage.PageInfo.HasNextPage)
+	assert.Equal(t, 1, appWithTenantsPage.TotalCount)
+	assert.Len(t, appWithTenantsPage.Data, 1)
+	assert.Equal(t, appWithTenantsPage.Data[0].Application.ID, appOne.ID)
+	val, exists := appWithTenantsPage.Data[0].Application.Labels[conf.ApplicationTypeLabelKey]
+	assert.True(t, exists)
+	assert.Equal(t, "filter-me", val.(string))
+	assert.Len(t, appWithTenantsPage.Data[0].Tenants, 1)
+	assert.Equal(t, tnt.TypeToStr(tnt.Customer), appWithTenantsPage.Data[0].Tenants[0].Type)
+}
+
 func TestQuerySpecificApplication(t *testing.T) {
 	// GIVEN
 	in := graphql.ApplicationRegisterInput{
@@ -1871,8 +1920,10 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	formationTemplateName := "merge-applications-template"
 	nameJSONPath := "$.name-json-path"
 	displayNameJSONPath := "$.display-name-json-path"
-	appTechnicalProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-merge-technical-cn", conf.SkipSSLValidation)
-	appProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-merge-cn", conf.SkipSSLValidation)
+
+	// Make clients that use a certificate which has a OU value for subaccount the same as the OU in the certSecuredGraphQLClient
+	// in order to maintain the tenant isolation
+	appTechnicalProviderDirectorCertSecuredClient := directorCertSecuredClientWithExternalCertSubaccount(t, ctx, "app-template-merge-technical-cn")
 
 	appTmplInput := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(expectedProductType, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
 	appTmplInput.ApplicationInput.Name = "{{name}}"
@@ -1930,8 +1981,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	require.NoError(t, err)
 	createAppFromTmplFirstRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplSrcGQL)
 	outputSrcApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantId, createAppFromTmplFirstRequest, &outputSrcApp)
-	defer fixtures.CleanupApplication(t, ctx, appProviderDirectorCertSecuredClient, tenantId, &outputSrcApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplFirstRequest, &outputSrcApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputSrcApp)
 	require.NoError(t, err)
 
 	t.Logf("Should create destination application")
@@ -1939,8 +1990,8 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	require.NoError(t, err)
 	createAppFromTmplSecondRequest := fixtures.FixRegisterApplicationFromTemplate(appFromTmplDestGQL)
 	outputDestApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, appProviderDirectorCertSecuredClient, tenantId, createAppFromTmplSecondRequest, &outputDestApp)
-	defer fixtures.CleanupApplication(t, ctx, appProviderDirectorCertSecuredClient, tenantId, &outputDestApp)
+	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantId, createAppFromTmplSecondRequest, &outputDestApp)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &outputDestApp)
 	require.NoError(t, err)
 
 	t.Logf("Should update source application with more data")
@@ -1953,11 +2004,11 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 
 	updateRequest := fixtures.FixUpdateApplicationRequest(outputSrcApp.ID, updateInputGQL)
 	updatedApp := graphql.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, updateRequest, &updatedApp)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, updateRequest, &updatedApp)
 	require.NoError(t, err)
 
-	fixtures.SetApplicationLabelWithTenant(t, ctx, appProviderDirectorCertSecuredClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
-	fixtures.SetApplicationLabelWithTenant(t, ctx, appProviderDirectorCertSecuredClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
+	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
 	formationTemplateInput := fixtures.FixFormationTemplateInputWithTypes(formationTemplateName, []string{conf.KymaRuntimeTypeLabelValue}, []string{expectedProductType})
 	actualFormationTemplate := graphql.FormationTemplate{} // needed so the 'defer' can be above the formation template creation
@@ -2006,7 +2057,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	destApp := graphql.ApplicationExt{}
 	mergeRequest := fixtures.FixMergeApplicationsRequest(outputSrcApp.ID, outputDestApp.ID)
 	example.SaveExample(t, mergeRequest.Query(), "merge applications with self register distinguish label key")
-	err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, mergeRequest, &destApp)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, mergeRequest, &destApp)
 
 	// THEN
 	require.Error(t, err)
@@ -2015,7 +2066,7 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 
 	srcApp := graphql.ApplicationExt{}
 	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)
-	err = testctx.Tc.RunOperation(ctx, appProviderDirectorCertSecuredClient, getSrcAppReq, &srcApp)
+	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getSrcAppReq, &srcApp)
 	require.NoError(t, err)
 
 	// Source application is not deleted
@@ -2287,4 +2338,22 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	require.Equal(t, outputApp.Application.ID, newApp.Application.ID)
 	require.Equal(t, appTmpl.ID, *newApp.Application.ApplicationTemplateID)
 	require.Equal(t, localTenantID, *newApp.Application.LocalTenantID)
+}
+
+func directorCertSecuredClientWithExternalCertSubaccount(t *testing.T, ctx context.Context, cn string) *gcli.Client {
+	replacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestIntSystemOUSubaccount, conf.TestExternalCertCN, cn)
+	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertTestJobName,
+		TestExternalCertSubject:               replacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject),
+		ExternalClientCertCertKey:             conf.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
 }

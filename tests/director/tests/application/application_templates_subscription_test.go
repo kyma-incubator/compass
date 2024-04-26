@@ -375,8 +375,7 @@ func TestSubscriptionApplicationTemplateFlow(baseT *testing.T) {
 	})
 
 	t.Run("When creating app template with optional placeholders", func(stdT *testing.T) {
-		cn := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-onboarding-optional-placeholders-cn", -1)
-		appProviderDirectorOnboardingCertSecuredClient = certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, cn, conf.SkipSSLValidation)
+		appProviderDirectorOnboardingCertSecuredClient = certprovider.NewDirectorCertClientWithOtherSubject(baseT, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "app-template-optional-placeholders", conf.SkipSSLValidation)
 
 		t := testingx.NewT(stdT)
 

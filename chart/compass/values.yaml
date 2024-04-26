@@ -163,19 +163,19 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3841"
       name: compass-connector
     connectivity_adapter:
-      dir: prod/incubator/
-      version: "v20240320-ceeacd33"
+      dir: dev/incubator/
+      version: "PR-3841"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3841"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3853"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -186,24 +186,24 @@ global:
       version: "PR-3831"
       name: compass-ias-adapter
     kyma_adapter:
-      dir: prod/incubator/
-      version: "v20240319-276abee6"
+      dir: dev/incubator/
+      version: "PR-3841"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3792"
+      version: "PR-3842"
       name: compass-instance-creator
     default_tenant_mapping_handler:
-      dir: prod/incubator/
-      version: "v20240318-14e6aa90"
+      dir: dev/incubator/
+      version: "PR-3841"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3841"
       name: compass-gateway
     operations_controller:
-      dir: prod/incubator/
-      version: "v20240320-03034334"
+      dir: dev/incubator/
+      version: "PR-3841"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -211,7 +211,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3785"
+      version: "PR-3843"
       name: compass-schema-migrator
     system_broker:
       dir: prod/incubator/
@@ -224,11 +224,11 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3681"
+      version: "PR-3841"
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3824"
+      version: "PR-3853"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1504,6 +1504,7 @@ global:
         - "formation:global_read"
       tenant_discovery_operator:
         - "application:read"
+        - "application_global:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
@@ -1573,6 +1574,7 @@ global:
       super_admin:
         - "application:read"
         - "application:write"
+        - "application_global:read"
         - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"
