@@ -228,7 +228,7 @@ global:
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3850"
+      version: "PR-3853"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
