@@ -50,6 +50,7 @@ type EntityConverter interface {
 
 type pgRepository struct {
 	existQuerier          repo.ExistQuerier
+	existQuerierGlobal    repo.ExistQuerierGlobal
 	ownerExistQuerier     repo.ExistQuerier
 	singleGetter          repo.SingleGetter
 	globalGetter          repo.SingleGetterGlobal
@@ -73,6 +74,7 @@ type pgRepository struct {
 func NewRepository(conv EntityConverter) *pgRepository {
 	return &pgRepository{
 		existQuerier:          repo.NewExistQuerier(applicationTable),
+		existQuerierGlobal:    repo.NewExistQuerierGlobal(resource.Application, applicationTable),
 		ownerExistQuerier:     repo.NewExistQuerierWithOwnerCheck(applicationTable),
 		singleGetter:          repo.NewSingleGetter(applicationTable, applicationColumns),
 		globalGetter:          repo.NewSingleGetterGlobal(resource.Application, applicationTable, applicationColumns),
@@ -96,6 +98,11 @@ func NewRepository(conv EntityConverter) *pgRepository {
 // Exists missing godoc
 func (r *pgRepository) Exists(ctx context.Context, tenant, id string) (bool, error) {
 	return r.existQuerier.Exists(ctx, resource.Application, tenant, repo.Conditions{repo.NewEqualCondition("id", id)})
+}
+
+// ExistsGlobal missing godoc
+func (r *pgRepository) ExistsGlobal(ctx context.Context, id string) (bool, error) {
+	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)})
 }
 
 // OwnerExists checks if application with given id and tenant exists and has owner access

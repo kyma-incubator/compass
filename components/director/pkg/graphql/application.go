@@ -50,3 +50,16 @@ type ApplicationExt struct {
 	EventDefinition         EventAPIDefinitionExt            `json:"eventDefinition"`
 	IntegrationDependencies IntegrationDependencyPage        `json:"integrationDependencies"`
 }
+
+// ApplicationExtWithTenants defines extended struct of application with tenants
+type ApplicationExtWithTenants struct {
+	Application *ApplicationExt `json:"application,omitempty"`
+	Tenants     []*Tenant       `json:"tenants,omitempty"`
+}
+
+// ApplicationExtWithTenantsPage defines a page of extended struct of application with tenants
+type ApplicationExtWithTenantsPage struct {
+	Data       []*ApplicationExtWithTenants `json:"data"`
+	PageInfo   *PageInfo                    `json:"pageInfo"`
+	TotalCount int                          `json:"totalCount"`
+}

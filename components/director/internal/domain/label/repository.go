@@ -244,7 +244,42 @@ func (r *repository) GetByKeyGlobal(ctx context.Context, objectType model.Labela
 
 // ListForGlobalObject missing godoc
 func (r *repository) ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
-	return r.ListForObject(ctx, "", objectType, objectID)
+	var entities Collection
+
+	var conditions []repo.Condition
+	lister := r.lister
+	if objectType == model.TenantLabelableObject {
+		lister = r.embeddedTenantLister
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.ApplicationLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
+	} else {
+		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
+	}
+
+	if objectType == model.TenantLabelableObject {
+		if err := lister.List(ctx, objectType.GetResourceType(), objectID, &entities, conditions...); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
+			return nil, err
+		}
+	}
+
+	labelsMap := make(map[string]*model.Label)
+
+	for _, entity := range entities {
+		m, err := r.conv.FromEntity(&entity)
+		if err != nil {
+			return nil, errors.Wrap(err, "while converting Label entity to model")
+		}
+
+		labelsMap[m.Key] = m
+	}
+
+	return labelsMap, nil
 }
 
 // ListForObject missing godoc
