@@ -81,7 +81,7 @@ func TestContextEnrichMiddleware_HeadersForRequest_WellKnownCorrelationIDsAreAdd
 	wellKnownHeaderKey := "x-b3-traceid"
 	wellKnownHeaderValue := "35b74672-9f48-4361-8f47-408832bd5a25"
 
-	ctx := correlation.SaveCorrelationIDHeaderToContext(context.Background(), &wellKnownHeaderKey, &wellKnownHeaderValue)
+	ctx := correlation.SaveCorrelationKeyValuePairToContext(context.Background(), wellKnownHeaderKey, wellKnownHeaderValue)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req = req.WithContext(ctx)
@@ -105,7 +105,7 @@ func TestContextEnrichMiddleware_HeadersForRequest_AdditionalContextHeadersAreAd
 	headerKey := "X-Additional-Request-Id"
 	headerValue := "35b74672-9f48-4361-8f47-408832bd5a25"
 
-	ctx := correlation.SaveCorrelationIDHeaderToContext(context.Background(), &headerKey, &headerValue)
+	ctx := correlation.SaveCorrelationKeyValuePairToContext(context.Background(), headerKey, headerValue)
 
 	req := httptest.NewRequest("GET", "/", nil)
 	req = req.WithContext(ctx)
