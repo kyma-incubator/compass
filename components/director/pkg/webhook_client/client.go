@@ -97,7 +97,11 @@ func (c *client) Do(ctx context.Context, request WebhookRequest) (*webhook.Respo
 		}
 	}
 	correlationID := request.GetCorrelationID()
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &correlationID)
+	var correlationIDKey string
+	if webhook.CorrelationIDKey != nil {
+		correlationIDKey = *webhook.CorrelationIDKey
+	}
+	ctx = correlation.SaveCorrelationKeyValuePairToContext(ctx, correlationIDKey, correlationID)
 
 	req, err := http.NewRequestWithContext(ctx, method, *url, bytes.NewBuffer(body))
 	if err != nil {
@@ -163,7 +167,11 @@ func (c *client) Poll(ctx context.Context, request *PollRequest) (*webhook.Respo
 		}
 	}
 
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, webhook.CorrelationIDKey, &request.CorrelationID)
+	var correlationIDKey string
+	if webhook.CorrelationIDKey != nil {
+		correlationIDKey = *webhook.CorrelationIDKey
+	}
+	ctx = correlation.SaveCorrelationKeyValuePairToContext(ctx, correlationIDKey, request.CorrelationID)
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, request.PollURL, nil)
 	if err != nil {

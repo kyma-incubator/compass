@@ -118,22 +118,23 @@ func (i *InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Requ
 	}
 
 	correlationID := correlation.CorrelationIDFromContext(ctx)
-
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
 	// respond with 202 to the UCL call
 	httputils.Respond(w, http.StatusAccepted)
 
 	log.C(ctx).Info("Instance Creator Handler handles instances...")
-	go i.handleInstances(correlationID, &reqBody, uclStatusAPIUrl)
+	go i.handleInstances(correlationID, traceID, spanID, parentSpanID, &reqBody, uclStatusAPIUrl)
 }
 
-func (i *InstanceCreatorHandler) handleInstances(correlationID string, reqBody *tenantmapping.Body, statusAPIURL string) {
+func (i *InstanceCreatorHandler) handleInstances(correlationID, traceID, spanID, parentSpanID string, reqBody *tenantmapping.Body, statusAPIURL string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	if reqBody.Context.Operation == assignOperation {
