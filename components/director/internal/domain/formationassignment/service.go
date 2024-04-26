@@ -703,7 +703,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		if err = s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID, model.FromFormationOperationType(mappingPair.Operation)); err != nil {
-			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s during SYNC processing", model.Assign, assignment.ID)
+			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s during SYNC processing", model.FromFormationOperationType(mappingPair.Operation), assignment.ID)
 		}
 	}
 

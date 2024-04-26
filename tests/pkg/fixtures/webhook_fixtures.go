@@ -1,7 +1,6 @@
 package fixtures
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
@@ -22,7 +21,6 @@ func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode 
 		urlPtr = &url
 	}
 
-	spew.Dump("PTR", urlPtr)
 	return &graphql.WebhookInput{
 		Type: webhookType,
 		Auth: &graphql.AuthInput{

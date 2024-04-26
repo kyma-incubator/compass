@@ -48,7 +48,7 @@ func (b *FAExpectationsBuilder) WithParticipantAndStates(newParticipantID, targe
 	// add records for assignments where the new participant is target and a participant that was already added to the expectations structure is source
 	for previousParticipant, expectationsForPreviouslyAddedParticipantAsSource := range b.expectations {
 		expectationsForPreviouslyAddedParticipantAsSource[newParticipantID] = fixtures.Assignment{
-			State: fixtures.AssignmentState{State: targetState, Config: nil, Value: nil, Error: nil},
+			AssignmentStatus: fixtures.AssignmentState{State: targetState, Config: nil, Value: nil, Error: nil},
 			Operations: []*fixtures.Operation{{
 				SourceID:    previousParticipant,
 				TargetID:    newParticipantID,
@@ -64,7 +64,7 @@ func (b *FAExpectationsBuilder) WithParticipantAndStates(newParticipantID, targe
 	b.expectations[newParticipantID] = make(map[string]fixtures.Assignment, len(currentParticipantIDs)+1)
 	// add record for the loop assignment
 	b.expectations[newParticipantID][newParticipantID] = fixtures.Assignment{
-		State: fixtures.AssignmentState{State: selfState, Config: nil, Value: nil, Error: nil},
+		AssignmentStatus: fixtures.AssignmentState{State: selfState, Config: nil, Value: nil, Error: nil},
 		Operations: []*fixtures.Operation{{
 			SourceID:    newParticipantID,
 			TargetID:    newParticipantID,
@@ -76,7 +76,7 @@ func (b *FAExpectationsBuilder) WithParticipantAndStates(newParticipantID, targe
 	// add records for assignments where the new participant is source and the target is a participant that was already added to the expectations structure
 	for _, previouslyAddedParticipantID := range currentParticipantIDs {
 		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.Assignment{
-			State: fixtures.AssignmentState{State: sourceState, Config: nil, Value: nil, Error: nil},
+			AssignmentStatus: fixtures.AssignmentState{State: sourceState, Config: nil, Value: nil, Error: nil},
 			Operations: []*fixtures.Operation{{
 				SourceID:    newParticipantID,
 				TargetID:    previouslyAddedParticipantID,
@@ -100,7 +100,7 @@ func (b *FAExpectationsBuilder) WithCustomParticipants(newParticipantIDs []strin
 func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FAExpectationsBuilder {
 	for _, notification := range notifications {
 		assignmentExpectation := b.expectations[notification.SourceID][notification.TargetID]
-		assignmentExpectation.State = notification.getAssignmentState()
+		assignmentExpectation.AssignmentStatus = notification.getAssignmentState()
 		b.expectations[notification.SourceID][notification.TargetID] = assignmentExpectation
 	}
 	return b

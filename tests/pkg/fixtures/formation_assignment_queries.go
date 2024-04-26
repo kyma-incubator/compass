@@ -36,8 +36,8 @@ func NewOperation(sourceID, targetID string, operationType graphql.AssignmentOpe
 }
 
 type Assignment struct {
-	State      AssignmentState
-	Operations []*Operation
+	AssignmentStatus AssignmentState
+	Operations       []*Operation
 }
 
 func ListFormationAssignments(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, listFormationAssignmentsReq *gcli.Request) *graphql.FormationAssignmentPageExt {

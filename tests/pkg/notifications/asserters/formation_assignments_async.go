@@ -99,18 +99,18 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 				tOnce.Logf("The actual assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
-			if assignmentExpectation.State.State != assignment.State {
-				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+			if assignmentExpectation.AssignmentStatus.State != assignment.State {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.AssignmentStatus, assignment.State, assignment.ID)
 				tOnce.Logf("The actual assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
-			if isEqual := json.AssertJSONStringEquality(tOnce, assignmentExpectation.State.Error, assignment.Error); !isEqual {
-				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.State.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+			if isEqual := json.AssertJSONStringEquality(tOnce, assignmentExpectation.AssignmentStatus.Error, assignment.Error); !isEqual {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				tOnce.Logf("The actual assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
-			if isEqual := configMatcher(t, assignmentExpectation.State.Config, assignment.Configuration); !isEqual {
-				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.State.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+			if isEqual := configMatcher(t, assignmentExpectation.AssignmentStatus.Config, assignment.Configuration); !isEqual {
+				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				tOnce.Logf("The actual assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}

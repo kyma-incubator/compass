@@ -49,20 +49,20 @@ func (a *FormationAssignmentsAsserter) assertFormationAssignments(t *testing.T, 
 		require.Truef(t, ok, "Could not find expectations for assignment %q with source %q and target %q", assignment.ID, assignment.Source, assignment.Target)
 
 		// asserting state
-		require.Equal(t, assignmentExpectation.State.State, assignment.State)
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.State.Config)
+		require.Equal(t, assignmentExpectation.AssignmentStatus.State, assignment.State)
+		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Config)
 		assignmentConfiguration := str.PtrStrToStr(assignment.Configuration)
 		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && assignmentConfiguration != "" && assignmentConfiguration != "\"\"" {
 			require.JSONEq(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		} else {
 			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		}
-		if str.PtrStrToStr(assignmentExpectation.State.Value) != "" && str.PtrStrToStr(assignmentExpectation.State.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.State.Value), str.PtrStrToStr(assignment.Value))
+		if str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Value) != "" && str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
+			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Value), str.PtrStrToStr(assignment.Value))
 		} else {
 			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		}
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.State.Error), str.PtrStrToStr(assignment.Error))
+		require.Equal(t, str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Error), str.PtrStrToStr(assignment.Error))
 
 		// asserting operations
 		require.Equal(t, len(assignmentExpectation.Operations), len(assignment.AssignmentOperations.Data))

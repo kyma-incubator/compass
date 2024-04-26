@@ -106,12 +106,12 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 
 	expectedAssignments := map[string]map[string]fixtures.Assignment{
 		app1ID: {
-			app1ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
-			app2ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: &testConfig, Value: nil, Error: nil}},
+			app1ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
+			app2ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: &testConfig, Value: nil, Error: nil}},
 		},
 		app2ID: {
-			app1ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
-			app2ID: fixtures.Assignment{State: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
+			app1ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
+			app2ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
 		},
 	}
 
