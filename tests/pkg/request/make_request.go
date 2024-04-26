@@ -1,6 +1,7 @@
 package request
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	urlpkg "net/url"
@@ -22,9 +23,7 @@ func MakeRequestWithHeadersAndStatusExpect(t require.TestingT, httpClient *http.
 	}
 
 	response, err := httpClient.Do(request)
-
 	require.NoError(t, err)
-	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
 	parsedURL, err := urlpkg.Parse(url)
 	require.NoError(t, err)
@@ -45,6 +44,10 @@ func MakeRequestWithHeadersAndStatusExpect(t require.TestingT, httpClient *http.
 
 	body, err := io.ReadAll(response.Body)
 	require.NoError(t, err)
+
+	fmt.Println("ALEX- ", string(body))
+
+	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
 	return string(body)
 }

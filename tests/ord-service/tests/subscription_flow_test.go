@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -340,15 +341,13 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:           "test",
-			Type:           "HTTP",
-			URL:            "http://localhost",
-			Authentication: "BasicAuthentication",
-			AdditionalProperties: clients.DestinationAdditionalProperties{
-				XCorrelationID:  correlationID,
-				XSystemTenantID: localTenantID,
-				XSystemType:     string(util.ApplicationTypeC4C),
-			},
+			Name:            generateDestinationName("first-destination"),
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  correlationID,
+			XSystemTenantID: localTenantID,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
 		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
@@ -414,7 +413,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
+		destinationSecond.Name = generateDestinationName("second-destination")
 		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
 		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
@@ -665,15 +664,13 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:           "test",
-			Type:           "HTTP",
-			URL:            "http://localhost",
-			Authentication: "BasicAuthentication",
-			AdditionalProperties: clients.DestinationAdditionalProperties{
-				XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
-				XSystemTenantID: localTenantID,
-				XSystemType:     string(util.ApplicationTypeC4C),
-			},
+			Name:            generateDestinationName("first-destination"),
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
+			XSystemTenantID: localTenantID,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
 		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
@@ -751,7 +748,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
+		destinationSecond.Name = generateDestinationName("second-destination")
 		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
 		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
@@ -990,17 +987,14 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
-
 		destination := clients.Destination{
-			Name:           "test",
-			Type:           "HTTP",
-			URL:            "http://localhost",
-			Authentication: "BasicAuthentication",
-			AdditionalProperties: clients.DestinationAdditionalProperties{
-				XCorrelationID:  correlationID,
-				XSystemTenantID: localTenantID,
-				XSystemType:     string(util.ApplicationTypeC4C),
-			},
+			Name:            generateDestinationName("first-destination"),
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  correlationID,
+			XSystemTenantID: localTenantID,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
 		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
@@ -1066,7 +1060,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
+		destinationSecond.Name = generateDestinationName("second-destination")
 		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
 		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
@@ -1170,4 +1164,8 @@ func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expect
 	require.Equal(stdT, expectedFormationID, systemInstance.Get("formationDetails.formationId").String())
 	require.Equal(stdT, expectedFormationAssignmentID, systemInstance.Get("formationDetails.assignmentId").String())
 	require.Equal(stdT, expectedFormationTemplateID, systemInstance.Get("formationDetails.formationTypeId").String())
+}
+
+func generateDestinationName(name string) string {
+	return fmt.Sprintf("%s-%s", name, strconv.FormatInt(time.Now().Unix(), 10))
 }
