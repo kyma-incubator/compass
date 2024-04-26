@@ -115,6 +115,11 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
 
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	t.Logf("Create destination response: %s", string(body))
+
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 }
 
@@ -127,6 +132,12 @@ func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName, sub
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	t.Logf("Delete destination response: %s", string(body))
+
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 
