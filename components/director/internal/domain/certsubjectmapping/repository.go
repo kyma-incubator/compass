@@ -2,6 +2,7 @@ package certsubjectmapping
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -17,11 +18,12 @@ const (
 )
 
 var (
-	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"subject", "consumer_type", "internal_consumer_id", "tenant_access_levels"}
-	tableColumns          = append(idTableColumns, updatableTableColumns...)
-
+	idTableColumns           = []string{"id"}
+	updatableTableColumns    = []string{"subject", "consumer_type", "internal_consumer_id", "tenant_access_levels", "updated_at"}
+	tableColumns             = []string{"id", "subject", "consumer_type", "internal_consumer_id", "tenant_access_levels", "created_at", "updated_at"}
 	internalConsumerIDColumn = "internal_consumer_id"
+
+	Now = time.Now
 )
 
 // entityConverter converts between the internal model and entity
@@ -68,6 +70,7 @@ func (r *repository) Create(ctx context.Context, model *model.CertSubjectMapping
 	if err != nil {
 		return errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", model.ID)
 	}
+	entity.CreatedAt = Now()
 
 	log.C(ctx).Debugf("Persisting certificate mapping with ID: %s and subject: %s to DB", model.ID, model.Subject)
 	return r.creator.Create(ctx, entity)
@@ -100,6 +103,8 @@ func (r *repository) Update(ctx context.Context, model *model.CertSubjectMapping
 	if err != nil {
 		return errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", model.ID)
 	}
+	currentTime := Now()
+	entity.UpdatedAt = &currentTime
 
 	log.C(ctx).Debugf("Updating certificate mapping with ID: %s and subject: %s", model.ID, model.Subject)
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)

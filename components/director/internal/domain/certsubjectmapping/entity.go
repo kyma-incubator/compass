@@ -1,12 +1,16 @@
 package certsubjectmapping
 
+import "time"
+
 // Entity is a representation of a certificate subject mapping in the DB
 type Entity struct {
-	ID                 string  `db:"id"`
-	Subject            string  `db:"subject"`
-	ConsumerType       string  `db:"consumer_type"`
-	InternalConsumerID *string `db:"internal_consumer_id"`
-	TenantAccessLevels string  `db:"tenant_access_levels"`
+	ID                 string     `db:"id"`
+	Subject            string     `db:"subject"`
+	ConsumerType       string     `db:"consumer_type"`
+	InternalConsumerID *string    `db:"internal_consumer_id"`
+	TenantAccessLevels string     `db:"tenant_access_levels"`
+	CreatedAt          time.Time  `db:"created_at"`
+	UpdatedAt          *time.Time `db:"updated_at"`
 }
 
 // EntityCollection is a collection of certificate subject mapping entities.
