@@ -32,23 +32,15 @@ type DestinationServiceAPIConfig struct {
 	OAuthTokenPath                                       string        `envconfig:"APP_DESTINATION_OAUTH_TOKEN_PATH,default=/oauth/token"`
 }
 
-type DestinationAdditionalProperties struct {
-	XCorrelationID    string `json:"correlationIds"` // from bundle // x-correlation-id"
-	XSystemTenantID   string `json:"x-system-id"`    // local tenant id
-	XSystemTenantName string `json:"x-system-name"`  // random or application name
-	XSystemType       string `json:"x-system-type"`  // application type
-}
-
 type Destination struct {
-	Name           string `json:"Name"`
-	Type           string `json:"Type"`
-	URL            string `json:"URL"`
-	Authentication string `json:"Authentication"`
-	//AdditionalProperties DestinationAdditionalProperties `json:"additionalProperties"`
-	XCorrelationID    string `json:"correlationIds"` // from bundle // x-correlation-id"
-	XSystemTenantID   string `json:"x-system-id"`    // local tenant id
-	XSystemTenantName string `json:"x-system-name"`  // random or application name
-	XSystemType       string `json:"x-system-type"`  // application type
+	Name              string `json:"Name"`
+	Type              string `json:"Type"`
+	URL               string `json:"URL"`
+	Authentication    string `json:"Authentication"`
+	XCorrelationID    string `json:"correlationIds"`
+	XSystemTenantID   string `json:"x-system-id"`
+	XSystemTenantName string `json:"x-system-name"`
+	XSystemType       string `json:"x-system-type"`
 }
 
 type DestinationClient struct {

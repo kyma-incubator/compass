@@ -84,8 +84,6 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		return
 	}
 
-	fmt.Println("CreateDestinations", string(bodyBytes))
-
 	authTypeResult := gjson.GetBytes(bodyBytes, "authenticationType")
 	if !authTypeResult.Exists() || authTypeResult.String() == "" {
 		err := errors.New("The authenticationType field in the request body is required and it should not be empty")
@@ -101,12 +99,6 @@ func (h *Handler) CreateDestinations(writer http.ResponseWriter, r *http.Request
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
 		return
 	}
-
-	empJSON1, err := json.MarshalIndent(destinationRequestBody, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("CreateDestinations destinationRequestBody \n %s\n", string(empJSON1))
 
 	statusCode, err := h.createDestination(ctx, destinationRequestBody, subaccountIDParamValue, instanceIDParamValue)
 	if err != nil {
@@ -269,12 +261,6 @@ func (h *Handler) createDestination(ctx context.Context, reqBody DestinationRequ
 	}
 
 	destination := reqBody.ToDestination()
-
-	empJSON1, err := json.MarshalIndent(destination, "", "  ")
-	if err != nil {
-		fmt.Println("err", err)
-	}
-	fmt.Printf("createDestination \n %s\n", string(empJSON1))
 
 	log.C(ctx).Infof("Destination with identifier: %q added to the destination service", destinationIdentifier)
 	h.DestinationSvcDestinations[destinationIdentifier] = destination

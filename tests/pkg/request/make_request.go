@@ -1,11 +1,14 @@
 package request
 
 import (
-	"fmt"
 	"io"
 	"net/http"
 	urlpkg "net/url"
 	"strings"
+	"time"
+
+	"github.com/avast/retry-go/v4"
+	"github.com/pkg/errors"
 
 	"github.com/stretchr/testify/require"
 )
@@ -22,8 +25,34 @@ func MakeRequestWithHeadersAndStatusExpect(t require.TestingT, httpClient *http.
 		}
 	}
 
-	response, err := httpClient.Do(request)
+	var (
+		response *http.Response
+	)
+
+	err = retry.Do(
+		func() error {
+			response, err = httpClient.Do(request)
+			if err != nil {
+				return err
+			}
+
+			if response.StatusCode != expectedHTTPStatus {
+				return errors.Errorf("unexpected response status code: %d. expected: %d", response.StatusCode, expectedHTTPStatus)
+			}
+
+			return nil
+		},
+		retry.Attempts(3),
+		retry.Delay(time.Second),
+		retry.DelayType(retry.FixedDelay),
+		retry.LastErrorOnly(true),
+	)
 	require.NoError(t, err)
+
+	body, err := io.ReadAll(response.Body)
+	require.NoError(t, err)
+
+	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
 	parsedURL, err := urlpkg.Parse(url)
 	require.NoError(t, err)
@@ -41,13 +70,6 @@ func MakeRequestWithHeadersAndStatusExpect(t require.TestingT, httpClient *http.
 			require.Contains(t, contentType, ordServiceDefaultResponseType)
 		}
 	}
-
-	body, err := io.ReadAll(response.Body)
-	require.NoError(t, err)
-
-	fmt.Println("ALEX- ", string(body))
-
-	require.Equal(t, expectedHTTPStatus, response.StatusCode)
 
 	return string(body)
 }

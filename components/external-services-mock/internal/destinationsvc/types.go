@@ -52,11 +52,11 @@ type BaseDestinationRequestBody struct {
 	Type               destinationcreatorpkg.Type      `json:"type"`
 	ProxyType          destinationcreatorpkg.ProxyType `json:"proxyType"`
 	AuthenticationType destinationcreatorpkg.AuthType  `json:"authenticationType"`
-	XCorrelationID     string                          `json:"x-correlation-id"`
-	CorrelationIds     string                          `json:"correlationIds"` // from bundle // x-correlation-id"
-	XSystemTenantID    string                          `json:"x-system-id"`    // local tenant id
-	XSystemTenantName  string                          `json:"x-system-name"`  // random or application name
-	XSystemType        string                          `json:"x-system-type"`  // application type
+	XCorrelationID     string                          `json:"x-correlation-id"` // old format
+	CorrelationIds     string                          `json:"correlationIds"`   // new format
+	XSystemTenantID    string                          `json:"x-system-id"`      // local tenant id
+	XSystemTenantName  string                          `json:"x-system-name"`    // random or application name
+	XSystemType        string                          `json:"x-system-type"`    // application type
 }
 
 // DesignTimeDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth
