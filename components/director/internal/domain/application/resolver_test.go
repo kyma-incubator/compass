@@ -2355,18 +2355,22 @@ func TestResolver_Labels(t *testing.T) {
 	// GIVEN
 
 	id := "foo"
-	tenant := "tenant"
+	tnt := "tenant"
+	externalTenant := "ex-tnt"
 	labelKey1 := "key1"
 	labelValue1 := "val1"
 	labelKey2 := "key2"
 	labelValue2 := "val2"
+
+	ctx := context.TODO()
+	ctxWithTenant := tenant.SaveToContext(ctx, tnt, externalTenant)
 
 	gqlApp := fixGQLApplication(id, "name", "desc")
 
 	modelLabels := map[string]*model.Label{
 		"abc": {
 			ID:         "abc",
-			Tenant:     str.Ptr(tenant),
+			Tenant:     str.Ptr(tnt),
 			Key:        labelKey1,
 			Value:      labelValue1,
 			ObjectID:   id,
@@ -2374,7 +2378,7 @@ func TestResolver_Labels(t *testing.T) {
 		},
 		"def": {
 			ID:         "def",
-			Tenant:     str.Ptr(tenant),
+			Tenant:     str.Ptr(tnt),
 			Key:        labelKey2,
 			Value:      labelValue2,
 			ObjectID:   id,
@@ -2400,6 +2404,7 @@ func TestResolver_Labels(t *testing.T) {
 		ServiceFn       func() *automock.ApplicationService
 		InputApp        *graphql.Application
 		InputKey        *string
+		InputCtx        context.Context
 		ExpectedResult  graphql.Labels
 		ExpectedErr     error
 	}{
@@ -2413,6 +2418,21 @@ func TestResolver_Labels(t *testing.T) {
 				return svc
 			},
 			InputKey:       nil,
+			InputCtx:       ctxWithTenant,
+			ExpectedResult: gqlLabels,
+			ExpectedErr:    nil,
+		},
+		{
+			Name:            "Success - no tenant provided",
+			PersistenceFn:   txtest.PersistenceContextThatExpectsCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListLabelsGlobal", contextParam, id).Return(modelLabels, nil).Once()
+				return svc
+			},
+			InputKey:       nil,
+			InputCtx:       ctx,
 			ExpectedResult: gqlLabels,
 			ExpectedErr:    nil,
 		},
@@ -2426,6 +2446,7 @@ func TestResolver_Labels(t *testing.T) {
 				return svc
 			},
 			InputKey:       &labelKey1,
+			InputCtx:       ctxWithTenant,
 			ExpectedResult: gqlLabels1,
 			ExpectedErr:    nil,
 		},
@@ -2439,6 +2460,21 @@ func TestResolver_Labels(t *testing.T) {
 				return svc
 			},
 			InputKey:       &labelKey1,
+			InputCtx:       ctxWithTenant,
+			ExpectedResult: nil,
+			ExpectedErr:    testErr,
+		},
+		{
+			Name:            "Returns error when global label listing failed",
+			PersistenceFn:   txtest.PersistenceContextThatDoesntExpectCommit,
+			TransactionerFn: txtest.TransactionerThatSucceeds,
+			ServiceFn: func() *automock.ApplicationService {
+				svc := &automock.ApplicationService{}
+				svc.On("ListLabelsGlobal", contextParam, id).Return(nil, testErr).Once()
+				return svc
+			},
+			InputKey:       &labelKey1,
+			InputCtx:       ctx,
 			ExpectedResult: nil,
 			ExpectedErr:    testErr,
 		},
@@ -2453,7 +2489,7 @@ func TestResolver_Labels(t *testing.T) {
 			resolver := application.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", "")
 
 			// WHEN
-			result, err := resolver.Labels(context.TODO(), gqlApp, testCase.InputKey)
+			result, err := resolver.Labels(testCase.InputCtx, gqlApp, testCase.InputKey)
 
 			// then
 			assert.Equal(t, testCase.ExpectedResult, result)
