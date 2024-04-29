@@ -158,8 +158,8 @@ func TestQueryCertSubjectMappings(t *testing.T) {
 }
 
 func TestQueryCertSubjectMappingWithNewlyCreatedSubjectMapping(t *testing.T) {
-	certSubjcetMappingCN := "cert-subject-mapping-cn"
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
+	certSubjectMappingCN := "cert-subject-mapping-cn"
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCN, -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component

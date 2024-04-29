@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/tests/pkg/gql"
@@ -65,6 +67,8 @@ type config struct {
 	SubscriptionConfig                                    subscription.Config
 	ORDWebhookMappings                                    string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 	ProxyApplicationTemplateName                          string `envconfig:"APP_PROXY_APPLICATION_TEMPLATE_NAME"`
+	certprovider.ExternalCertProviderConfig
+	GatewayOauth string `envconfig:"APP_GATEWAY_OAUTH"`
 }
 
 var (

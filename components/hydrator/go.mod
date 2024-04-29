@@ -8,7 +8,7 @@ require (
 	github.com/ghodss/yaml v1.0.1-0.20190212211648-25d852aebe32
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.0
-	github.com/lestrrat-go/iter v1.0.2
+	github.com/lestrrat-go/iter v1.0.2 // indirect
 	github.com/lestrrat-go/jwx v1.2.29
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/patrickmn/go-cache v2.1.0+incompatible
@@ -23,8 +23,8 @@ require (
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20240311150451-fb47652e9f70
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240312193954-fd717b97efd9
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20240326085251-9907e2de8d97
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240423142345-0e5e50a94eea
 	github.com/prometheus/client_golang v1.17.0
 	golang.org/x/oauth2 v0.11.0
 )
@@ -90,7 +90,7 @@ require (
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.21.0 // indirect
-	golang.org/x/net v0.21.0 // indirect
+	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect

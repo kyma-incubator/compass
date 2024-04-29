@@ -201,6 +201,10 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 				return
 			}
 
+			logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+			logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID)
+			ctx = log.ContextWithLogger(ctx, logger)
+
 			tntFromToken, err := tenant.LoadFromContext(ctx)
 			if err != nil {
 				log.C(ctx).Debug("Tenant was not found in context")
@@ -254,6 +258,9 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 				respondWithError(ctx, w, http.StatusBadRequest, errors.New("Not all of the required parameters are provided"))
 				return
 			}
+
+			logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+			ctx = log.ContextWithLogger(ctx, logger)
 
 			isAuthorized, statusCode, err := a.isFormationAuthorized(ctx, formationID)
 			if err != nil {

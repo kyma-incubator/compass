@@ -37,10 +37,10 @@ type Destination struct {
 	Type              string `json:"Type"`
 	URL               string `json:"URL"`
 	Authentication    string `json:"Authentication"`
-	XCorrelationID    string `json:"x-correlation-id"` // from bundle
-	XSystemTenantID   string `json:"x-system-id"`      // local tenant id
-	XSystemTenantName string `json:"x-system-name"`    // random or application name
-	XSystemType       string `json:"x-system-type"`    // application type
+	XCorrelationID    string `json:"correlationIds"`
+	XSystemTenantID   string `json:"x-system-id"`
+	XSystemTenantName string `json:"x-system-name"`
+	XSystemType       string `json:"x-system-type"`
 }
 
 type DestinationClient struct {
@@ -98,7 +98,7 @@ func NewDestinationClient(instanceConfig config.InstanceConfig, apiConfig Destin
 	}, nil
 }
 
-func (c *DestinationClient) CreateDestination(t *testing.T, destination Destination) {
+func (c *DestinationClient) CreateDestination(t *testing.T, destination Destination, subaccountID string) {
 	destinationBytes, err := json.Marshal(destination)
 	require.NoError(t, err)
 
@@ -106,19 +106,34 @@ func (c *DestinationClient) CreateDestination(t *testing.T, destination Destinat
 	request, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(destinationBytes))
 	require.NoError(t, err)
 
+	request.Header.Add("subaccount_id", subaccountID)
+
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	t.Logf("Create destination response: %s", string(body))
 
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
 }
 
-func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName string) {
+func (c *DestinationClient) DeleteDestination(t *testing.T, destinationName, subaccountID string) {
 	url := c.apiURL + c.apiConfig.EndpointTenantSubaccountLevelDestinations + "/" + url.QueryEscape(destinationName)
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
 
+	request.Header.Add("subaccount_id", subaccountID)
+
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+
+	t.Logf("Delete destination response: %s", string(body))
+
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 }
 

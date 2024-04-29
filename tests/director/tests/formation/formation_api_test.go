@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -133,22 +132,7 @@ func TestListFormationsForObjectGlobal(t *testing.T) {
 
 	formationTemplateName := "e2e-test-list-formations-for-object-global"
 
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, "landscape_resource_operator", -1)
-
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               certSubjectMappingCustomSubject,
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
-
-	pk, cert := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
-	LROCertSecuredGraphQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, pk, cert, conf.SkipSSLValidation)
+	LROCertSecuredGraphQLClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, conf.ExternalCertProviderConfig, conf.DirectorExternalCertSecuredURL, "landscape_resource_operator", conf.SkipSSLValidation)
 
 	t.Log("Create integration system")
 	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "int-system-app-to-app-notifications")

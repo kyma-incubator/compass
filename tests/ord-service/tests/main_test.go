@@ -22,6 +22,8 @@ import (
 	"testing"
 	"time"
 
+	testconfig "github.com/kyma-incubator/compass/tests/pkg/config"
+
 	cfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -66,15 +68,22 @@ type config struct {
 	TestConsumerAccountID               string
 	TestProviderSubaccountID            string
 	TestConsumerSubaccountID            string
+	TestConsumerTenantID                string
+	DestinationConsumerSubdomainMtls    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	CertSvcInstanceSecretName           string `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
 	ApplicationTypeLabelKey             string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	SaaSAppNameLabelKey                 string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`
 	DestinationAPIConfig                clients.DestinationServiceAPIConfig
 	DestinationsConfig                  cfg.DestinationsConfig
-	DestinationConsumerSubdomainMtls    string        `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
-	ExternalClientCertSecretName        string        `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	DestinationConsumerSubdomain        string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
+	ExternalClientCertSecretName        string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
+	ProviderDestinationConfig           testconfig.ProviderDestinationConfig
+	ExternalServicesMockMtlsSecuredURL  string        `envconfig:"APP_EXTERNAL_SERVICES_MOCK_MTLS_SECURED_URL"`
+	GlobalSubaccountIDLabelKey          string        `envconfig:"APP_GLOBAL_SUBACCOUNT_ID_LABEL_KEY"`
 	CertSubjectMappingResyncInterval    time.Duration `envconfig:"APP_CERT_SUBJECT_MAPPING_RESYNC_INTERVAL"`
 	ApplicationTemplateProductLabel     string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
+	GatewayOauth                        string        `envconfig:"APP_GATEWAY_OAUTH"`
+	ExternalCertTestOUSubaccount        string        `envconfig:"APP_EXTERNAL_CERT_TEST_OU_SUBACCOUNT"`
 }
 
 var conf config

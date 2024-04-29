@@ -393,6 +393,9 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
+	logger := log.C(ctx).WithField(log.FieldFormationID, newFormation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	if newFormation.State == model.DraftFormationState {
 		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the formation is finalized", newFormation.State)
 	} else {
@@ -551,6 +554,9 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	if err != nil {
 		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, ft.formation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	if !isObjectTypeSupported(ft.formationTemplate, objectType) {
 		return nil, errors.Errorf("Formation %q of type %q does not support resources of type %q", ft.formation.Name, ft.formationTemplate.Name, objectType)
@@ -892,6 +898,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
 	}
 
+	logger := log.C(ctx).WithField(log.FieldFormationID, ft.formation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	formationFromDB := ft.formation
 
 	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
@@ -1097,8 +1106,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	return formationFromDB, nil
 }
 
-// FinalizeDraftFormation changes the formation state do initial and start processing the formation and formation assignment notifications
+// FinalizeDraftFormation changes the formation state to initial and start processing the formation and formation assignment notifications
 func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error) {
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	log.C(ctx).Infof("Finalizing formation with ID: %q", formationID)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -1131,7 +1143,7 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 		newState = model.InitialFormationState
 	}
 
-	log.C(ctx).Infof("Setting formation with ID %s to %s state and starting resinchronization", formationID, newState)
+	log.C(ctx).Infof("Setting formation with ID: %s to: %s state and starting resynchronization", formationID, newState)
 	formation.State = newState
 
 	formationStateTx, err := s.transact.Begin()
@@ -1156,6 +1168,9 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, shouldReset bool) (*model.Formation, error) {
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -1236,6 +1251,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		resyncableFormationAssignments = resyncableFAs
 
 		for _, fa := range resyncableFormationAssignments {
+			logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, fa.ID)
+			ctx = log.ContextWithLogger(ctx, logger)
+
 			operation := fa.GetOperation()
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, operation)
@@ -1870,14 +1888,6 @@ func (s *service) isValidApplicationType(ctx context.Context, tnt string, applic
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported applicationType %q for formation template %q, allowing only %q", applicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
 	}
 	return nil
-}
-
-func setToSlice(set map[string]bool) []string {
-	result := make([]string, 0, len(set))
-	for key := range set {
-		result = append(result, key)
-	}
-	return result
 }
 
 func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {

@@ -25,19 +25,21 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/tidwall/sjson"
+
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
+	"github.com/kyma-incubator/compass/tests/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/claims"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
-	"github.com/tidwall/sjson"
-
 	"github.com/kyma-incubator/compass/tests/pkg/util"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -133,21 +135,17 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	subscriptionConsumerSubaccountID := conf.TestConsumerSubaccountID
 
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
-		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
-		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
-		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
-		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
-		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-		TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-subscription-cn", -1),
-		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
-		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
-		ExternalCertProvider:                  certprovider.CertificateService,
-	}
+	externalTechnicalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-technical-cn", -1), conf.CertSvcInstanceTestSecretName)
+	externalCertProviderConfig := createExternalConfigProvider(strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "ord-service-consumer-provider-cn", -1), conf.CertSvcInstanceTestSecretName)
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerTechnicalClientKey, providerTechnicalRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalTechnicalCertProviderConfig, true)
+	directorTechnicalCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerTechnicalClientKey, providerTechnicalRawCertChain, conf.SkipSSLValidation)
+
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	stdT.Log("Using provider token for test")
 
 	t.Run("ConsumerProvider flow with runtime as provider", func(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
@@ -339,12 +337,11 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomainMtls
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
+			Name:            generateDestinationName("first-destination"),
 			Type:            "HTTP",
 			URL:             "http://localhost",
 			Authentication:  "BasicAuthentication",
@@ -353,8 +350,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destination.Name, subscriptionConsumerSubaccountID)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -416,9 +413,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		destinationSecond.Name = generateDestinationName("second-destination")
+		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
@@ -468,8 +465,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 		}
 
-		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, directorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, directorTechnicalCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, directorTechnicalCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -509,12 +506,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.NotEmpty(stdT, consumerApp.Name)
 
 		const correlationID = "correlationID"
-		bndlInput := graphql.BundleCreateInput{
-			Name:           "test-bundle",
+		const correlationIDSecond = "correlationID-second"
+		bndlInput1 := graphql.BundleCreateInput{
+			Name:           "test-bundle-1",
 			CorrelationIDs: []string{correlationID},
 		}
-		bundle := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput)
-		require.NotEmpty(stdT, bundle.ID)
+		bndlInput2 := graphql.BundleCreateInput{
+			Name:           "test-bundle-2",
+			CorrelationIDs: []string{correlationIDSecond},
+		}
+
+		bundle1 := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput1)
+		require.NotEmpty(stdT, bundle1.ID)
+		bundle2 := fixtures.CreateBundleWithInput(t, ctx, certSecuredGraphQLClient, secondaryTenant, consumerApp.ID, bndlInput2)
+		require.NotEmpty(stdT, bundle2.ID)
 
 		formationTmplName := "e2e-test-formation-template-name"
 		applicationType := util.ApplicationTypeC4C
@@ -655,22 +660,21 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomainMtls
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:            "test",
+			Name:            generateDestinationName("first-destination"),
 			Type:            "HTTP",
 			URL:             "http://localhost",
 			Authentication:  "BasicAuthentication",
-			XCorrelationID:  correlationID,
+			XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
 			XSystemTenantID: localTenantID,
 			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destination.Name, subscriptionConsumerSubaccountID)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -696,28 +700,47 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			respBody = makeRequestWithHeadersAndQueryParams(stdT, certHttpClient, conf.ORDExternalCertSecuredServiceURL+fmt.Sprintf("/systemInstances(%s)?", consumerApp.ID), headers, params)
 
 			appName := gjson.Get(respBody, "title").String()
+
 			if appName != consumerApp.Name {
 				return false
 			}
 			require.Equal(stdT, consumerApp.Name, appName)
 
-			appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
-			if appDestinationsRaw == "" {
+			appDestinations1Raw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
+			if appDestinations1Raw == "" {
 				return false
 			}
-			require.NotEmpty(stdT, appDestinationsRaw)
+			require.NotEmpty(stdT, appDestinations1Raw)
 
-			appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
-			if len(appDestinations) != 1 {
+			appDestinations2Raw := gjson.Get(respBody, "consumptionBundles.1.destinations").Raw
+			if appDestinations2Raw == "" {
 				return false
 			}
-			require.Len(stdT, appDestinations, 1)
+			require.NotEmpty(stdT, appDestinations2Raw)
 
-			appDestinationName := appDestinations[0].Get("sensitiveData.destinationConfiguration.Name").String()
-			if appDestinationName != destination.Name {
+			appDestinationsForBundle1 := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
+			if len(appDestinationsForBundle1) != 1 {
 				return false
 			}
-			require.Equal(stdT, destination.Name, appDestinationName)
+			require.Len(stdT, appDestinationsForBundle1, 1)
+
+			appDestinationsForBundle2 := gjson.Get(respBody, "consumptionBundles.1.destinations").Array()
+			if len(appDestinationsForBundle2) != 1 {
+				return false
+			}
+			require.Len(stdT, appDestinationsForBundle2, 1)
+
+			appDestination1Name := appDestinationsForBundle1[0].Get("sensitiveData.destinationConfiguration.Name").String()
+			if appDestination1Name != destination.Name {
+				return false
+			}
+			require.Equal(stdT, destination.Name, appDestination1Name)
+
+			appDestination2Name := appDestinationsForBundle2[0].Get("sensitiveData.destinationConfiguration.Name").String()
+			if appDestination2Name != destination.Name {
+				return false
+			}
+			require.Equal(stdT, destination.Name, appDestination2Name)
 
 			return true
 		}, time.Second*30, time.Second)
@@ -725,9 +748,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		destinationSecond.Name = generateDestinationName("second-destination")
+		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
 		// With destinations - reload
 		params = url.Values{}
@@ -962,12 +985,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		subdomain := conf.DestinationConsumerSubdomainMtls
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, subdomain)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
-
 		destination := clients.Destination{
-			Name:            "test",
+			Name:            generateDestinationName("first-destination"),
 			Type:            "HTTP",
 			URL:             "http://localhost",
 			Authentication:  "BasicAuthentication",
@@ -976,8 +997,8 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
-		client.CreateDestination(stdT, destination)
-		defer client.DeleteDestination(stdT, destination.Name)
+		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destination.Name, subscriptionConsumerSubaccountID)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -1039,9 +1060,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
-		client.CreateDestination(stdT, destinationSecond)
-		defer client.DeleteDestination(stdT, destinationSecond.Name)
+		destinationSecond.Name = generateDestinationName("second-destination")
+		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
@@ -1143,4 +1164,8 @@ func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expect
 	require.Equal(stdT, expectedFormationID, systemInstance.Get("formationDetails.formationId").String())
 	require.Equal(stdT, expectedFormationAssignmentID, systemInstance.Get("formationDetails.assignmentId").String())
 	require.Equal(stdT, expectedFormationTemplateID, systemInstance.Get("formationDetails.formationTypeId").String())
+}
+
+func generateDestinationName(name string) string {
+	return fmt.Sprintf("%s-%s", name, strconv.FormatInt(time.Now().Unix(), 10))
 }

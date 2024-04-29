@@ -20,7 +20,7 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/jmoiron/sqlx v1.3.5
 	github.com/kelseyhightower/envconfig v1.3.0
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240311150451-fb47652e9f70
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240314124741-0167d9da3002
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20240311150451-fb47652e9f70
 	github.com/kyma-incubator/compass/components/system-broker v0.0.0-20240311150451-fb47652e9f70
 	github.com/lestrrat-go/iter v1.0.2
@@ -41,7 +41,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.11
 	github.com/vrischmann/envconfig v1.3.0
 	github.com/xeipuuv/gojsonschema v1.2.0
-	golang.org/x/net v0.21.0
+	golang.org/x/net v0.23.0
 	golang.org/x/oauth2 v0.11.0
 	golang.org/x/sync v0.6.0
 	golang.org/x/text v0.14.0
