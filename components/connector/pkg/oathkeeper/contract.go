@@ -11,6 +11,7 @@ const (
 	ClientIdFromCertificateHeader = "Client-Id-From-Certificate"
 	ClientCertificateHashHeader   = "Client-Certificate-Hash"
 	ClientCertificateIssuerHeader = "Client-Certificate-Issuer"
+	SubjectHeader                 = "Subject-From-Certificate"
 
 	ConnectorIssuer = "connector"
 	ExternalIssuer  = "certificate-service"
