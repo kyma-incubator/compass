@@ -545,7 +545,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			region := conf.SubscriptionConfig.SelfRegRegion
 			instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 			require.True(t, ok)
-			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
+			destinationClient, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 			require.NoError(t, err)
 
 			consumerTokenURL, err := buildConsumerTokenURL(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain)
