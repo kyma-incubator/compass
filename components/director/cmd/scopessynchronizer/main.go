@@ -35,8 +35,7 @@ func main() {
 	defer cancel()
 
 	uidSvc := uid.NewService()
-	correlationID := uidSvc.Generate()
-	ctx = withCorrelationID(ctx, correlationID)
+	ctx = correlation.SaveCorrelationKeyValuePairToContext(ctx, correlation.RequestIDHeaderKey, uidSvc.Generate())
 
 	term := make(chan os.Signal)
 	signal.HandleInterrupts(ctx, cancel, term)
@@ -87,11 +86,6 @@ func exitOnError(ctx context.Context, err error, context string) {
 		log.C(ctx).WithError(err).Errorf("%s: %v", context, err)
 		os.Exit(1)
 	}
-}
-
-func withCorrelationID(ctx context.Context, id string) context.Context {
-	correlationIDKey := correlation.RequestIDHeaderKey
-	return correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &id)
 }
 
 func configProvider(ctx context.Context, cfg config) *configprovider.Provider {

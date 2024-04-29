@@ -30,8 +30,19 @@ type contextKey string
 // HeadersContextKey missing godoc
 const HeadersContextKey contextKey = "CorrelationHeaders"
 
-// RequestIDHeaderKey missing godoc
-const RequestIDHeaderKey = "x-request-id"
+const (
+	// RequestIDHeaderKey missing godoc
+	RequestIDHeaderKey = "x-request-id"
+
+	// TraceIDHeaderKey missing godoc
+	TraceIDHeaderKey = "x-b3-traceid"
+
+	// SpanIDHeaderKey missing godoc
+	SpanIDHeaderKey = "x-b3-spanid"
+
+	// ParentSpanIDHeaderKey missing godoc
+	ParentSpanIDHeaderKey = "x-b3-parentspanid"
+)
 
 // headerKeys are the expected headers that are used for distributed tracing.
 var headerKeys = []string{"x-request-id", "x-b3-traceid", "x-b3-spanid", "x-b3-parentspanid", "x-b3-sampled", "x-b3-flags", "b3"}
@@ -42,6 +53,21 @@ type Headers map[string]string
 // CorrelationIDForRequest returns the correlation ID for the current request
 func CorrelationIDForRequest(request *http.Request) string {
 	return HeadersForRequest(request)[RequestIDHeaderKey]
+}
+
+// TraceIDForRequest returns the trace ID for the current request
+func TraceIDForRequest(request *http.Request) string {
+	return HeadersForRequest(request)[TraceIDHeaderKey]
+}
+
+// SpanIDForRequest returns the span ID for the current request
+func SpanIDForRequest(request *http.Request) string {
+	return HeadersForRequest(request)[SpanIDHeaderKey]
+}
+
+// ParentSpanIDForRequest returns the parent span ID for the current request
+func ParentSpanIDForRequest(request *http.Request) string {
+	return HeadersForRequest(request)[ParentSpanIDHeaderKey]
 }
 
 // AttachCorrelationIDToContext returns middleware that attaches all headers used for tracing in the current request.
@@ -111,9 +137,24 @@ func HeadersFromContext(ctx context.Context) Headers {
 	return headersFromCtx
 }
 
-// CorrelationIDFromContext returns correlation id from the given context
+// CorrelationIDFromContext returns correlation ID from the given context
 func CorrelationIDFromContext(ctx context.Context) string {
 	return HeadersFromContext(ctx)[RequestIDHeaderKey]
+}
+
+// TraceIDFromContext returns trace ID from the given context
+func TraceIDFromContext(ctx context.Context) string {
+	return HeadersFromContext(ctx)[TraceIDHeaderKey]
+}
+
+// SpanIDFromContext returns span ID from the given context
+func SpanIDFromContext(ctx context.Context) string {
+	return HeadersFromContext(ctx)[SpanIDHeaderKey]
+}
+
+// ParentSpanIDFromContext returns parent span ID from the given context
+func ParentSpanIDFromContext(ctx context.Context) string {
+	return HeadersFromContext(ctx)[ParentSpanIDHeaderKey]
 }
 
 // SaveToContext saves the provided headers as correlation ID headers in the specified context
@@ -121,9 +162,9 @@ func SaveToContext(ctx context.Context, headers Headers) context.Context {
 	return context.WithValue(ctx, HeadersContextKey, headers)
 }
 
-// SaveCorrelationIDHeaderToContext saves the header provided key/value pair as a correlation ID header in the specified context
-func SaveCorrelationIDHeaderToContext(ctx context.Context, key, value *string) context.Context {
-	if key == nil || value == nil {
+// SaveCorrelationKeyValuePairToContext saves the provided correlation key/value pair in the specified context
+func SaveCorrelationKeyValuePairToContext(ctx context.Context, key, value string) context.Context {
+	if key == "" || value == "" {
 		return ctx
 	}
 
@@ -132,7 +173,28 @@ func SaveCorrelationIDHeaderToContext(ctx context.Context, key, value *string) c
 		headers = make(map[string]string)
 	}
 
-	headers[*key] = *value
+	headers[key] = value
 
 	return SaveToContext(ctx, headers)
+}
+
+// AddCorrelationIDsToContext add all correlation IDs to the context
+func AddCorrelationIDsToContext(ctx context.Context, correlationID, traceID, spanID, parentSpanID string) context.Context {
+	if correlationID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, RequestIDHeaderKey, correlationID)
+	}
+
+	if traceID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, TraceIDHeaderKey, traceID)
+	}
+
+	if spanID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, SpanIDHeaderKey, spanID)
+	}
+
+	if parentSpanID != "" {
+		ctx = SaveCorrelationKeyValuePairToContext(ctx, ParentSpanIDHeaderKey, parentSpanID)
+	}
+
+	return ctx
 }

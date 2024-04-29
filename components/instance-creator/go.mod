@@ -10,8 +10,8 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.0
 	github.com/jmoiron/sqlx v1.3.5
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240313130948-c1a00dbcc8b4
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240313130948-c1a00dbcc8b4
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240425111152-510a4793a627
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240314124741-0167d9da3002
 	github.com/lib/pq v1.10.9
 	github.com/pkg/errors v0.9.1
 	github.com/stretchr/testify v1.9.0
