@@ -10,7 +10,7 @@ require (
 	github.com/gavv/httpexpect/v2 v2.3.1
 	github.com/google/uuid v1.6.0
 	github.com/gorilla/mux v1.8.0
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240418141740-4db3d23428fc
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240429113713-b8c9fccb7a1b
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/maxbrunsfeld/counterfeiter/v6 v6.7.0
 	github.com/pivotal-cf/brokerapi/v7 v7.5.0
@@ -68,7 +68,7 @@ require (
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240418141740-4db3d23428fc // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240429113713-b8c9fccb7a1b // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect
