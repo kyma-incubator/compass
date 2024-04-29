@@ -91,6 +91,12 @@ func (d *destinationFromService) Validate() error {
 	return nil
 }
 
+func (d *destinationFromService) handleDefaultCorrelationID() {
+	if d.XCorrelationID == "" && d.CorrelationIDs == "" && d.CommunicationScenarioID != "" {
+		d.XCorrelationID = correlationIDPrefix + d.CommunicationScenarioID
+	}
+}
+
 func (d *destinationFromService) setDefaults(result *model.DestinationInput) error {
 	// Set values from custom properties
 	if result.XSystemType == "" {
@@ -99,11 +105,7 @@ func (d *destinationFromService) setDefaults(result *model.DestinationInput) err
 	if result.XSystemType != s4HANAType {
 		return nil
 	}
-	if result.XCorrelationID == "" {
-		if d.CommunicationScenarioID != "" {
-			result.XCorrelationID = correlationIDPrefix + d.CommunicationScenarioID
-		}
-	}
+
 	if result.XSystemTenantName == "" {
 		result.XSystemTenantName = d.XFSystemName
 	}
@@ -128,6 +130,8 @@ func (d *destinationFromService) setDefaults(result *model.DestinationInput) err
 
 // ToModel missing godoc
 func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
+	d.handleDefaultCorrelationID()
+
 	if err := d.Validate(); err != nil {
 		return model.DestinationInput{}, err
 	}

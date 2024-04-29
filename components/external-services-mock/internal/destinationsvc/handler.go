@@ -319,6 +319,14 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 
 	subaccountID := req.Header.Get("subaccount_id")
 	serviceInstanceID := req.Header.Get("instance_id")
+
+	if subaccountID == "" && serviceInstanceID == "" {
+		err := errors.New("missing subaccount_id and instance_id headers")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+
+		return
+	}
+
 	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
 	var responses []PostResponse
@@ -387,6 +395,11 @@ func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Reques
 
 	subaccountID := req.Header.Get("subaccount_id")
 	serviceInstanceID := req.Header.Get("instance_id")
+	if subaccountID == "" && serviceInstanceID == "" {
+		http.Error(writer, "Bad request - missing subaccount_id and instance_id headers", http.StatusBadRequest)
+		return
+	}
+
 	log.C(ctx).Infof("Deleting Destination with subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
 	identifiers := map[string]string{
