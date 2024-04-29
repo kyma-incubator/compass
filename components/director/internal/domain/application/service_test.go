@@ -7,6 +7,8 @@ import (
 	"testing"
 	"time"
 
+	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -4071,6 +4073,82 @@ func TestService_ListAll(t *testing.T) {
 	}
 }
 
+func TestService_ListAllGlobalByFilter(t *testing.T) {
+	// GIVEN
+	ctx := context.TODO()
+
+	modelApplication := fixModelApplication("foo", "tenant-foo", "Foo", "Lorem Ipsum")
+	modelTenant := fixBusinessTenantMappingModel("customer", tnt.Customer)
+	modelApplicationsWithTenants := []*model.ApplicationWithTenants{
+		{
+			Application: *modelApplication,
+			Tenants: []*model.BusinessTenantMapping{
+				modelTenant,
+			},
+		},
+	}
+	applicationWithTenantsPage := fixApplicationWithTenantsPage(modelApplicationsWithTenants)
+
+	testErr := errors.New("test error")
+	pageSize := 2
+	cursor := ""
+	query := "foo"
+	labelFilter := []*labelfilter.LabelFilter{
+		{Key: "", Query: &query},
+	}
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.ApplicationRepository
+		ExpectedResult     *model.ApplicationWithTenantsPage
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllGlobalByFilter", ctx, labelFilter, pageSize, cursor).Return(applicationWithTenantsPage, nil).Once()
+				return repo
+			},
+
+			ExpectedResult:     applicationWithTenantsPage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when ListAllGlobalByFilter fail",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAllGlobalByFilter", ctx, labelFilter, pageSize, cursor).Return(applicationWithTenantsPage, testErr).Once()
+				return repo
+			},
+			ExpectedResult:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+			defer mock.AssertExpectationsForObjects(t, repo)
+
+			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			app, err := svc.ListAllGlobalByFilter(ctx, labelFilter, pageSize, cursor)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, app)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+		})
+	}
+}
+
 func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeUUID := uuid.New()
 	testError := errors.New("test error")
@@ -5281,6 +5359,115 @@ func TestService_ListLabel(t *testing.T) {
 
 			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
+
+			// then
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, l, testCase.ExpectedOutput)
+			} else {
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+			labelRepo.AssertExpectations(t)
+		})
+	}
+}
+
+func TestService_ListLabelsGlobal(t *testing.T) {
+	// GIVEN
+	internalTenant := "tenant"
+	ctx := context.TODO()
+	testErr := errors.New("Test error")
+
+	applicationID := "foo"
+	labelKey := "key"
+	labelValue := []string{"value1"}
+
+	label := &model.LabelInput{
+		Key:        labelKey,
+		Value:      labelValue,
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	modelLabel := &model.Label{
+		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
+		Tenant:     str.Ptr(internalTenant),
+		Key:        labelKey,
+		Value:      labelValue,
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
+	labels := map[string]*model.Label{"first": modelLabel, "second": modelLabel}
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.ApplicationRepository
+		LabelRepositoryFn  func() *automock.LabelRepository
+		InputApplicationID string
+		InputLabel         *model.LabelInput
+		ExpectedOutput     map[string]*model.Label
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ExistsGlobal", ctx, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForGlobalObject", ctx, model.ApplicationLabelableObject, applicationID).Return(labels, nil).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+			InputLabel:         label,
+			ExpectedOutput:     labels,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Returns error when labels receiving failed",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ExistsGlobal", ctx, applicationID).Return(true, nil).Once()
+
+				return repo
+			},
+			LabelRepositoryFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForGlobalObject", ctx, model.ApplicationLabelableObject, applicationID).Return(nil, testErr).Once()
+				return repo
+			},
+			InputApplicationID: applicationID,
+			InputLabel:         label,
+			ExpectedOutput:     nil,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application doesn't exist",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ExistsGlobal", ctx, applicationID).Return(false, testErr).Once()
+
+				return repo
+			},
+			LabelRepositoryFn:  UnusedLabelRepository,
+			InputApplicationID: applicationID,
+			InputLabel:         label,
+			ExpectedErrMessage: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+			labelRepo := testCase.LabelRepositoryFn()
+			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+
+			// WHEN
+			l, err := svc.ListLabelsGlobal(ctx, testCase.InputApplicationID)
 
 			// then
 			if testCase.ExpectedErrMessage == "" {

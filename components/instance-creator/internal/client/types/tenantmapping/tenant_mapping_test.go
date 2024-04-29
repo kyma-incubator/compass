@@ -108,14 +108,14 @@ func Test_GetTenantCommunication(t *testing.T) {
 
 	testCases := []struct {
 		name              string
-		body              tenantmapping.Body
+		body              *tenantmapping.Body
 		tenantType        tenantmapping.TenantType
 		communicationType string
 		expectedResult    string
 	}{
 		{
 			name: "Assigned tenant with inbound communication",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -130,7 +130,7 @@ func Test_GetTenantCommunication(t *testing.T) {
 		},
 		{
 			name: "Assigned tenant with inbound communication - more complex",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -145,7 +145,7 @@ func Test_GetTenantCommunication(t *testing.T) {
 		},
 		{
 			name: "Assigned tenant with outbound communication",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -160,7 +160,7 @@ func Test_GetTenantCommunication(t *testing.T) {
 		},
 		{
 			name: "Receiver tenant with inbound communication",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -175,7 +175,7 @@ func Test_GetTenantCommunication(t *testing.T) {
 		},
 		{
 			name: "Receiver tenant with outbound communication",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -190,7 +190,7 @@ func Test_GetTenantCommunication(t *testing.T) {
 		},
 		{
 			name: "Unknown tenant",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -205,7 +205,7 @@ func Test_GetTenantCommunication(t *testing.T) {
 		},
 		{
 			name: "Unknown communication type",
-			body: tenantmapping.Body{
+			body: &tenantmapping.Body{
 				Context: tenantmapping.Context{
 					FormationID: "123",
 					Operation:   "assign",
@@ -243,9 +243,9 @@ func TestAddReceiverTenantOutboundCommunicationIfMissing(t *testing.T) {
 					Operation:   "assign",
 				},
 				ReceiverTenant: tenantmapping.ReceiverTenant{
-					Region:        "region",
-					SubaccountID:  "subaccount",
-					Configuration: json.RawMessage(`{"outboundCommunication": {"auth_method": {}}}`),
+					DeploymentRegion: "region",
+					SubaccountID:     "subaccount",
+					Configuration:    json.RawMessage(`{"outboundCommunication": {"auth_method": {}}}`),
 				},
 			},
 			expectedResult: `{"outboundCommunication":{"auth_method":{}}}`,
@@ -261,9 +261,9 @@ func TestAddReceiverTenantOutboundCommunicationIfMissing(t *testing.T) {
 					Configuration: json.RawMessage(`{"inboundCommunication": {"auth_method": {}}}`),
 				},
 				ReceiverTenant: tenantmapping.ReceiverTenant{
-					Region:        "region",
-					SubaccountID:  "subaccount",
-					Configuration: json.RawMessage(`{}`),
+					DeploymentRegion: "region",
+					SubaccountID:     "subaccount",
+					Configuration:    json.RawMessage(`{}`),
 				},
 			},
 			expectedResult: `{"outboundCommunication":{}}`,

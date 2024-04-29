@@ -194,6 +194,19 @@ type ApplicationUpdateInput struct {
 	LocalTenantID        *string                     `json:"localTenantID,omitempty"`
 }
 
+type ApplicationWithTenants struct {
+	Application *Application `json:"application,omitempty"`
+	Tenants     []*Tenant    `json:"tenants,omitempty"`
+}
+
+type ApplicationWithTenantsPage struct {
+	Data       []*ApplicationWithTenants `json:"data"`
+	PageInfo   *PageInfo                 `json:"pageInfo"`
+	TotalCount int                       `json:"totalCount"`
+}
+
+func (ApplicationWithTenantsPage) IsPageable() {}
+
 type AspectAPIDefinitionInput struct {
 	OrdID string `json:"ordId"`
 }

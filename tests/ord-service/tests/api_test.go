@@ -952,17 +952,16 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 
 func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testing.T) {
 	ctx := context.Background()
-	tenantID := tenant.TestTenants.GetDefaultTenantID()
 	cn := "ord-svc-system-with-csm-discovery"
 
 	technicalCertSubjectReplacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestOUSubaccount, conf.ExternalCertProviderConfig.TestExternalCertCN, "csm-discovery-technical")
-	technicalCertProvider := createExternalConfigProvider(technicalCertSubjectReplacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceTestSecretName)
+	technicalCertProvider := createExternalConfigProvider(technicalCertSubjectReplacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceSecretName)
 	technicalProviderClientKey, technicalProviderRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, technicalCertProvider, false)
 	technicalCertDirectorGQLClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, technicalProviderClientKey, technicalProviderRawCertChain, conf.SkipSSLValidation)
 
 	certSubjectReplacer := strings.NewReplacer(conf.TestProviderSubaccountID, conf.ExternalCertTestOUSubaccount, conf.ExternalCertProviderConfig.TestExternalCertCN, cn)
 	// We need an externally issued cert with a subject that is not part of the access level mappings
-	externalCertProviderConfig := createExternalConfigProvider(certSubjectReplacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceTestSecretName)
+	externalCertProviderConfig := createExternalConfigProvider(certSubjectReplacer.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject), conf.CertSvcInstanceSecretName)
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, false)
@@ -1014,8 +1013,8 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	time.Sleep(conf.CertSubjectMappingResyncInterval)
 
 	consumerAppType := string(util.ApplicationTypeC4C)
-	consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumer-app", conf.ApplicationTypeLabelKey, consumerAppType, tenantID)
-	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, &consumerApp)
+	consumerApp, err := fixtures.RegisterApplicationWithApplicationType(t, ctx, certSecuredGraphQLClient, "consumer-app", conf.ApplicationTypeLabelKey, consumerAppType, conf.ExternalCertTestOUSubaccount)
+	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, conf.ExternalCertTestOUSubaccount, &consumerApp)
 	require.NoError(t, err)
 	require.NotEmpty(t, consumerApp.ID)
 
@@ -1041,16 +1040,16 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	})
 
 	systemDiscoveryFormationName := "e2e-tests-system-discovery-formation"
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, systemDiscoveryFormationName)
-	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, systemDiscoveryFormationName, &formationTmplName)
+	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, conf.ExternalCertTestOUSubaccount, systemDiscoveryFormationName)
+	formation := fixtures.CreateFormationFromTemplateWithinTenant(t, ctx, certSecuredGraphQLClient, conf.ExternalCertTestOUSubaccount, systemDiscoveryFormationName, &formationTmplName)
 	require.NotEmpty(t, formation.ID)
 	t.Logf("Successfully created formation: %s", systemDiscoveryFormationName)
 
-	assignToFormation(t, ctx, application.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
-	defer unassignFromFormation(t, ctx, application.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
+	assignToFormation(t, ctx, application.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, conf.ExternalCertTestOUSubaccount)
+	defer unassignFromFormation(t, ctx, application.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, conf.ExternalCertTestOUSubaccount)
 
-	assignToFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
-	defer unassignFromFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, tenantID)
+	assignToFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, conf.ExternalCertTestOUSubaccount)
+	defer unassignFromFormation(t, ctx, consumerApp.ID, string(directorSchema.FormationObjectTypeApplication), systemDiscoveryFormationName, conf.ExternalCertTestOUSubaccount)
 
 	t.Log("Getting application using custom certificate and appplicationTenantId header after formation is created...")
 
@@ -1071,7 +1070,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	require.Equal(t, true, isSystemFound)
 	t.Log("Successfully fetched system instance details using custom certificate and application tenant ID header")
 
-	expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(t, ctx, tenantID, consumerApp.ID, application.ID, formation.ID)
+	expectedFormationDetailsAssignmentID := getExpectedFormationDetailsAssignmentID(t, ctx, conf.ExternalCertTestOUSubaccount, consumerApp.ID, application.ID, formation.ID)
 	verifyFormationDetails(t, systemInstanceDetails, formation.ID, expectedFormationDetailsAssignmentID, ft.ID)
 }
 

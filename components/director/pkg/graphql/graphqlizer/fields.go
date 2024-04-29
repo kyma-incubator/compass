@@ -91,6 +91,18 @@ func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) stri
 	}, omittedProperties)
 }
 
+// ForApplicationWithTenants provides all gql fields for ApplicationWithTenants object
+func (fp *GqlFieldsProvider) ForApplicationWithTenants() string {
+	return fmt.Sprintf(`
+		application{
+            %s
+        }
+        tenants{
+            %s
+        }
+	`, fp.ForApplication(), fp.ForTenant())
+}
+
 // ForApplication missing godoc
 func (fp *GqlFieldsProvider) ForApplication(ctx ...FieldCtx) string {
 	return addFieldsFromContext(fmt.Sprintf(`
