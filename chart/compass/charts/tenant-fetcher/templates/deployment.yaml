@@ -44,6 +44,9 @@ spec:
       - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       volumes:
+      - name: self-reg-app-names-volume
+        secret:
+          secretName: {{ .Values.global.systemFieldDiscoveryEngine.secrets.saasAppNameCfg.name }}
       - name: credentials-secret
         secret:
           secretName: {{ .Values.global.tenantFetcher.k8sSecret.name }}
@@ -413,6 +416,9 @@ spec:
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
           volumeMounts:
+            - name: self-reg-app-names-volume
+              mountPath: {{ .Values.global.systemFieldDiscoveryEngine.secrets.saasAppNameCfg.path }}
+              readOnly: true
             - name: dependencies-config
               mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
               readOnly: true

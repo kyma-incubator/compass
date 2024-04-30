@@ -5,8 +5,9 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 	"net/http"
+
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
 	"github.com/pkg/errors"

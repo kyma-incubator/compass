@@ -1154,6 +1154,7 @@ global:
     saasRegistryURLPath: "localSaaSRegistryPath"
     secrets:
       saasAppNameCfg:
+        name: "saas-app-names"
         key: "appNameConfig"
         path: "/tmp/appNameConfig"
     client:

@@ -4,6 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/config"
@@ -11,8 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
-	"io"
-	"net/http"
 
 	"github.com/pkg/errors"
 )
@@ -88,10 +89,7 @@ func (s *Service) ProcessSaasRegistryApplication(ctx context.Context, appID, ten
 	}
 
 	url := fmt.Sprintf("%s/saas-manager/v1/service/subscriptions?includeIndirectSubscriptions=true&tenantId=%s", s.cfg.RegionToSaasRegConfig[region].SaasRegistryURL, tenantID)
-	ctx, err = s.saveCredentialsToContext(ctx, region)
-	if err != nil {
-		return errors.Wrap(err, "failed saving credentials to context")
-	}
+	ctx = s.saveCredentialsToContext(ctx, region)
 	respBody, err := executeCall(ctx, s.client, url)
 	if err != nil {
 		return errors.Wrapf(err, "failed executing request for url %q and appID %q", url, appID)
@@ -172,7 +170,7 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 	return ctx, nil
 }
 
-func (s *Service) saveCredentialsToContext(ctx context.Context, region string) (context.Context, error) {
+func (s *Service) saveCredentialsToContext(ctx context.Context, region string) context.Context {
 
 	credentials := &pkgAuth.OAuthCredentials{
 		ClientID:     s.cfg.RegionToSaasRegConfig[region].ClientID,
@@ -180,7 +178,7 @@ func (s *Service) saveCredentialsToContext(ctx context.Context, region string) (
 		TokenURL:     s.cfg.RegionToSaasRegConfig[region].TokenURL + s.cfg.OauthTokenPath,
 	}
 	ctx = pkgAuth.SaveToContext(ctx, credentials)
-	return ctx, nil
+	return ctx
 }
 
 func (s *Service) processSubscription(ctx context.Context, subscription subscription, url, appID string) (bool, error) {

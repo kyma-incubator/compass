@@ -20,6 +20,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"net/http"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
@@ -27,10 +32,6 @@ import (
 	systemfielddiscoveryenginecfg "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
