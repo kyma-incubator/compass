@@ -217,8 +217,6 @@ spec:
               value: {{ .Values.global.director.selfRegister.saasAppNameLabelKey }}
             - name: APP_SELF_REGISTER_SAAS_APP_NAME_PATH
               value: {{ .Values.global.director.selfRegister.saasAppNamePath }}
-            - name: APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH
-              value: {{ .Values.global.director.selfRegister.saasRegistryURLPath }}
             - name: APP_SELF_REGISTER_PATH
               value: {{ .Values.global.director.selfRegister.path }}
             - name: APP_SELF_REGISTER_NAME_QUERY_PARAM
@@ -324,6 +322,12 @@ spec:
             - name: APP_SYSTEM_FETCHER_CLIENT_TIMEOUT
               value: {{ .Values.global.systemFetcher.client.timeout }}
             - name: APP_SYSTEM_FETCHER_SKIP_SSL_VALIDATION
+              value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
+            - name: APP_SYSTEM_FIELD_DISCOVERY_ENGINE_SAAS_REGISTRY_API
+              value: "https://{{ .Values.global.gateway.tls.secure.internal.host }}.{{ .Values.global.ingress.domainName }}{{ .Values.global.tenantFetcher.prefix }}{{ .Values.global.systemFieldDiscoveryEngine.discoveryEndpoint }}"
+            - name: APP_SYSTEM_FIELD_DISCOVERY_ENGINE_CLIENT_TIMEOUT
+              value: {{ .Values.global.systemFieldDiscoveryEngine.client.timeout }}
+            - name: APP_SYSTEM_FIELD_DISCOVERY_ENGINE_SKIP_SSL_VALIDATION
               value: {{ $.Values.global.http.client.skipSSLValidation | quote }}
             - name: APP_SUBJECT_CONSUMER_MAPPING_CONFIG
               value: {{ .Values.global.hydrator.subjectConsumerMappingConfig | quote }}

@@ -352,7 +352,6 @@ global:
       requestBodyPattern: '{"key": "%s"}'
       saasAppNameLabelKey: "CMPSaaSAppName"
       saasAppNamePath: "localSaaSAppNamePath"
-      saasRegistryURLPath: "localSaaSRegistryPath"
     clientIDHeaderKey: client_user
     suggestTokenHeaderKey: suggest_token
     runtimeTypeLabelKey: "runtimeType"
@@ -753,7 +752,7 @@ global:
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
     auth:
-      idpHost: ""
+      idpHost: "https://as5rzk3dn.accounts400.ondemand.com"
       path: "/oauth2/certs"
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}", "subject": "{{ print .Extra.subject }}"}'
@@ -1146,6 +1145,19 @@ global:
     maintainOperationsJobInterval: 60m
     operationProcessorsQuietPeriod: 5s
     asyncRequestProcessors: 100
+  systemFieldDiscoveryEngine:
+    discoveryEndpoint: /system-field-discovery
+    oauthTokenPath: "/cert/token"
+    clientIdPath: "clientId"
+    clientSecretPath: "clientSecret"
+    urlPath: "url"
+    saasRegistryURLPath: "localSaaSRegistryPath"
+    secrets:
+      saasAppNameCfg:
+        key: "appNameConfig"
+        path: "/tmp/appNameConfig"
+    client:
+      timeout: "30s"
   tenantFetchers:
     job1:
       enabled: false

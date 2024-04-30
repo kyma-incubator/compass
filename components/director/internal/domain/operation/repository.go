@@ -150,10 +150,19 @@ func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (b
 	return r.globalFunctioner.AdvisoryLock(ctx, identifier)
 }
 
+// DeleteOperations deletes the operations.
+func (r *pgRepository) DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	log.C(ctx).Debug("Deleting Operations")
+	equalCondition := repo.NewEqualCondition("status", "COMPLETED")
+	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
+	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
+	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{equalCondition, equalTypeCondition, dateCondition})
+}
+
 // RescheduleOperations reschedules the operations.
-func (r *pgRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+func (r *pgRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error {
 	log.C(ctx).Debug("Rescheduling Operations")
-	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
+	inCondition := repo.NewInConditionForStringValues("status", operationStatuses)
 	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
 	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, equalTypeCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})

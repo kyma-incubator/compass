@@ -12,6 +12,7 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
 
 	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	systemfielddiscoveryapiclient "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
 	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
@@ -165,8 +166,6 @@ type config struct {
 
 	SelfRegConfig configprovider.SelfRegConfig
 
-	SystemFieldDiscoveryEngineConfig configprovider.SystemFieldDiscoveryEngineConfig
-
 	OperationsNamespace string `envconfig:"default=compass-system"`
 
 	DisableAsyncMode bool `envconfig:"default=false"`
@@ -194,8 +193,9 @@ type config struct {
 
 	SkipSSLValidation bool `envconfig:"default=false,APP_HTTP_CLIENT_SKIP_SSL_VALIDATION"`
 
-	OrdAggregatorClientConfig     ordapiclient.OrdAggregatorClientConfig
-	SystemFetcherSyncClientConfig sfapiclient.SystemFetcherSyncClientConfig
+	OrdAggregatorClientConfig        ordapiclient.OrdAggregatorClientConfig
+	SystemFetcherSyncClientConfig    sfapiclient.SystemFetcherSyncClientConfig
+	SystemFieldDiscoveryClientConfig systemfielddiscoveryapiclient.SystemFieldDiscoveryEngineClientConfig
 
 	ORDWebhookMappings       string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
 	TenantMappingConfigPath  string `envconfig:"APP_TENANT_MAPPING_CONFIG_PATH"`
@@ -323,7 +323,6 @@ func main() {
 		securedHTTPClient,
 		mtlsHTTPClient,
 		cfg.SelfRegConfig,
-		cfg.SystemFieldDiscoveryEngineConfig,
 		cfg.OneTimeToken.Length,
 		adminURL,
 		accessStrategyExecutorProvider,
@@ -336,6 +335,7 @@ func main() {
 		cfg.DestinationCreatorConfig,
 		cfg.OrdAggregatorClientConfig,
 		cfg.SystemFetcherSyncClientConfig,
+		cfg.SystemFieldDiscoveryClientConfig,
 		certSubjects,
 	)
 	exitOnError(err, "Failed to initialize root resolver")

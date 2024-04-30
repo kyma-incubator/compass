@@ -27,6 +27,8 @@ const (
 	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
 	// OperationTypeSystemFetching specifies system fetching operation type
 	OperationTypeSystemFetching OperationType = "SYSTEM_FETCHING"
+	// OperationTypeSaasRegistryDiscovery specifies saas registry discovery operation type
+	OperationTypeSaasRegistryDiscovery OperationType = "SAAS_REGISTRY_DISCOVERY"
 )
 
 // Operation represents an Operation

@@ -1,19 +1,20 @@
 package config
 
 import (
+	directorcfg "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/pkg/errors"
 	"github.com/tidwall/gjson"
 )
 
 // SystemFieldDiscoveryEngineConfig is configuration for the system field discovery engine
 type SystemFieldDiscoveryEngineConfig struct {
-	SaasRegSecretPath string `envconfig:"APP_SELF_REGISTER_SAAS_APP_SECRET_PATH"`
-	OauthTokenPath    string `envconfig:"APP_SELF_REGISTER_OAUTH_TOKEN_PATH,optional"`
+	SaasRegSecretPath string `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_SAAS_APP_SECRET_PATH"`
+	OauthTokenPath    string `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_OAUTH_TOKEN_PATH,optional"`
 
-	SaasRegClientIDPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_ID_PATH"`
-	SaasRegClientSecretPath string `envconfig:"APP_SELF_REGISTER_INSTANCE_CLIENT_SECRET_PATH"`
-	SaasRegTokenURLPath     string `envconfig:"APP_SELF_REGISTER_INSTANCE_URL_PATH"`
-	SaasRegURLPath          string `envconfig:"APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH"`
+	SaasRegClientIDPath     string `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_INSTANCE_CLIENT_ID_PATH"`
+	SaasRegClientSecretPath string `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_CLIENT_SECRET_PATH"`
+	SaasRegTokenURLPath     string `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_URL_PATH"`
+	SaasRegURLPath          string `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_SAAS_REGISTRY_URL_PATH"`
 
 	RegionToSaasRegConfig map[string]SaasRegConfig `envconfig:"-"`
 }
@@ -29,12 +30,12 @@ func (c *SystemFieldDiscoveryEngineConfig) PrepareConfiguration() error {
 
 // MapSaasRegConfigs parses the SaasRegConfigs json string to map with key: region name and value: SaasRegConfig for the instance in the region
 func (c *SystemFieldDiscoveryEngineConfig) MapSaasRegConfigs() error {
-	secretData, err := ReadConfigFile(c.SaasRegSecretPath)
+	secretData, err := directorcfg.ReadConfigFile(c.SaasRegSecretPath)
 	if err != nil {
 		return errors.Wrapf(err, "while getting destinations secret")
 	}
 
-	bindingsMap, err := ParseConfigToJSONMap(secretData)
+	bindingsMap, err := directorcfg.ParseConfigToJSONMap(secretData)
 	if err != nil {
 		return err
 	}

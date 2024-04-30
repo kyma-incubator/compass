@@ -32,7 +32,8 @@ type OperationService interface {
 	Get(ctx context.Context, operationID string) (*model.Operation, error)
 	GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error)
 	Update(ctx context.Context, input *model.Operation) error
-	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error
 	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
 	RescheduleOperation(ctx context.Context, operationID string, priority int) error
 }

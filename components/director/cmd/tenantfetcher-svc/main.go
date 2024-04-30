@@ -20,12 +20,17 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
+	systemfielddiscoveryenginecfg "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/config"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -39,7 +44,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
@@ -84,7 +88,12 @@ type config struct {
 
 	Features features.Config
 
-	SecurityConfig securityConfig
+	SecurityConfig                   securityConfig
+	SystemFieldDiscoveryEngineConfig systemfielddiscoveryenginecfg.SystemFieldDiscoveryEngineConfig
+
+	OperationsManagerConfig       operationsmanager.OperationsManagerConfig
+	ParallelOperationProcessors   int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
+	OperationProcessorQuietPeriod time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=5s"`
 
 	WebhookProcessorElectionConfig cronjob.ElectionConfig
 	WebhookProcessorJobInterval    time.Duration `envconfig:"APP_WEBHOOK_PROCESSOR_JOB_INTERVAL,default=1m"`
@@ -139,14 +148,16 @@ func main() {
 		},
 	}
 
-	handler := initAPIHandler(ctx, httpClient, cfg, tenantSynchronizers)
-	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
-
-	go func() {
-		<-ctx.Done()
-		// Interrupt signal received - shut down the servers
-		shutdownMainSrv()
+	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
+	exitOnError(err, "Error while establishing the connection to the database")
+	defer func() {
+		err := closeFunc()
+		exitOnError(err, "error while closing the connection to the database")
 	}()
+	opRepo := operation.NewRepository(operation.NewConverter())
+	opSvc := operation.NewService(opRepo, uid.NewService())
+
+	saasRegistryOperationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSaasRegistryDiscovery, cfg.OperationsManagerConfig)
 
 	authConverter := auth.NewConverter()
 	frConverter := fetchrequest.NewConverter(authConverter)
@@ -159,28 +170,72 @@ func main() {
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
 	tenantConverter := tenant.NewConverter()
+
+	applicationRepo := application.NewRepository(appConverter)
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
-	webhookRepo := webhook.NewRepository(webhookConverter)
-	applicationRepo := application.NewRepository(appConverter)
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, nil, nil, nil, nil, uidSvc, nil, "", nil)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
 
-	webhookClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
+	systemFieldDiscoveryClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
 
-	transact, closeFunc, err := persistence.Configure(ctx, cfg.Handler.Database)
-	exitOnError(err, "Error while establishing the connection to the database")
-	defer func() {
-		err := closeFunc()
-		exitOnError(err, "error while closing the connection to the database")
+	systemFieldDiscoverySvc, err := systemfielddiscoveryengine.NewSystemFieldDiscoverEngineService(cfg.SystemFieldDiscoveryEngineConfig, systemFieldDiscoveryClient, transact, appSvc, tenantSvc)
+	exitOnError(err, "error while creating system field discovery engine")
+
+	systemFieldDiscoveryProcessor := &systemfielddiscoveryengine.OperationsProcessor{
+		SystemFieldDiscoverySvc: systemFieldDiscoverySvc,
+	}
+	onDemandChannel := make(chan string, 100)
+
+	handler := initAPIHandler(ctx, httpClient, cfg, tenantSynchronizers, saasRegistryOperationsManager, onDemandChannel)
+	runMainSrv, shutdownMainSrv := createServer(ctx, cfg, handler, "main")
+
+	go func() {
+		<-ctx.Done()
+		// Interrupt signal received - shut down the servers
+		shutdownMainSrv()
 	}()
 
-	webhookProcessor := webhookprocessor.NewWebhookProcessor(transact, webhookSvc, tenantSvc, appSvc, webhookClient, cfg.WebhookProcessorElectionConfig, cfg.WebhookProcessorJobInterval, cfg.SystemFieldDiscoveryWebhookPartialProcessing, cfg.SystemFieldDiscoveryWebhookPartialProcessMaxDays)
+	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
+		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfielddiscoveryengine.OperationsProcessor, executorIndex int) {
+			for {
+				select {
+				case <-onDemandChannel:
+				default:
+				}
+
+				processedOperationID, err := claimAndProcessOperation(ctx, opManager, opProcessor)
+				if err != nil {
+					log.C(ctx).Errorf("Failed during claim and process operation %q by executor %d . Err: %v", processedOperationID, executorIndex, err)
+				}
+				if len(processedOperationID) > 0 {
+					log.C(ctx).Infof("Processed Operation: %s by executor %d", processedOperationID, executorIndex)
+				} else {
+					// Queue is empty - no operation claimed
+					log.C(ctx).Infof("No Processed Operation by executor %d", executorIndex)
+
+					select {
+					case operationID := <-onDemandChannel:
+						log.C(ctx).Infof("Operation %q send for processing through OnDemand channel to executor %d", operationID, executorIndex)
+					case <-time.After(cfg.OperationProcessorQuietPeriod):
+						log.C(ctx).Infof("Quiet period finished for executor %d", executorIndex)
+					}
+				}
+			}
+		}(ctx, saasRegistryOperationsManager, systemFieldDiscoveryProcessor, i)
+	}
+
 	go func() {
-		if err := webhookProcessor.StartWebhookProcessorJob(ctx, webhookprocessor.SaaSRegistryLabelValue); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to run WebhookProcessorJob. Stopping app...")
+		if err := saasRegistryOperationsManager.StartRescheduleOperationsJob(ctx, []string{"COMPLETED"}); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
+			cancel()
+		}
+	}()
+
+	go func() {
+		if err := saasRegistryOperationsManager.StartDeleteOperationsJob(ctx); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
 			cancel()
 		}
 	}()
@@ -193,10 +248,11 @@ func stopTenantFetcherJobTicker(ctx context.Context, tenantFetcherJobTicker *tim
 	log.C(ctx).Infof("Ticker for tenant fetcher job %s is stopped", jobName)
 }
 
-func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, synchronizers []*resync.TenantsSynchronizer) http.Handler {
+func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, synchronizers []*resync.TenantsSynchronizer, opMgr *operationsmanager.OperationsManager, onDemandChannel chan string) http.Handler {
 	const (
-		healthzEndpoint = "/healthz"
-		readyzEndpoint  = "/readyz"
+		healthzEndpoint              = "/healthz"
+		readyzEndpoint               = "/readyz"
+		systemFieldDiscoveryEndpoint = "/system-field-discovery"
 	)
 	logger := log.C(ctx)
 	mainRouter := mux.NewRouter()
@@ -206,6 +262,9 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, sy
 	tenantsAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SubscriptionCallbackScope)
 	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
+
+	handler := systemfielddiscoveryengine.NewSystemFieldDiscoveryHTTPHandler(opMgr, onDemandChannel)
+	tenantsAPIRouter.HandleFunc(systemFieldDiscoveryEndpoint, handler.ScheduleSaaSRegistryDiscoveryForSystemFieldDiscoveryData).Methods(http.MethodPost)
 
 	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)
@@ -427,4 +486,33 @@ func dependenciesConfigToMap(cfg tenantfetcher.HandlerConfig) (map[string][]tena
 	}
 
 	return dependenciesConfig, nil
+}
+
+func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfielddiscoveryengine.OperationsProcessor) (string, error) {
+	op, errGetOperation := opManager.GetOperation(ctx)
+	if errGetOperation != nil {
+		if apperrors.IsNoScheduledOperationsError(errGetOperation) {
+			log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", errGetOperation)
+			return "", nil
+		} else {
+			log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
+			return "", errGetOperation
+		}
+	}
+	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
+	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
+		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
+
+		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess); errMarkAsFailed != nil {
+			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+			return op.ID, errMarkAsFailed
+		}
+		return op.ID, errProcess
+	}
+	if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, nil); errMarkAsCompleted != nil {
+		log.C(ctx).Errorf("Error while marking operation with id %q as completed. Err: %v", op.ID, errMarkAsCompleted)
+		return op.ID, errMarkAsCompleted
+	}
+
+	return op.ID, nil
 }

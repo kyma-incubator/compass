@@ -262,7 +262,7 @@ func main() {
 		}()
 
 		go func() {
-			if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
+			if err := operationsManager.StartRescheduleOperationsJob(ctx, []string{"COMPLETED", "FAILED"}); err != nil {
 				log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
 				cancel()
 			}

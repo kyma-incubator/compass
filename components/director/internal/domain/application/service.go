@@ -519,10 +519,10 @@ func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 }
 
 // CreateFromTemplate missing godoc
-func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error) {
+func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryValue bool) (string, error) {
 	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
-		// this is needed, if the applicationInputJSON contains webhook of type SYSTEM_FIELD_DISCOVERY, which must be executed first before setting the app ready state to true
-		if systemFieldDiscoveryLabelIsTrue {
+		// this is needed, if the app template contains systemFieldDiscovery label and the operation must be executed first before setting the app ready state to true
+		if systemFieldDiscoveryValue {
 			application.Ready = false
 		}
 		application.ApplicationTemplateID = appTemplateID
