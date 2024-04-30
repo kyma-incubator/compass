@@ -64,6 +64,7 @@ type repoUpserterFunc func(ctx context.Context, tenant string, application *mode
 //go:generate mockery --name=ApplicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
+	ExistsGlobal(ctx context.Context, id string) (bool, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
@@ -98,6 +99,7 @@ type ApplicationRepository interface {
 type LabelRepository interface {
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
+	ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 	ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error)
 	ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error)
 	Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error
@@ -869,6 +871,25 @@ func (s *service) ListLabels(ctx context.Context, applicationID string) (map[str
 	}
 
 	labels, err := s.labelRepo.ListForObject(ctx, appTenant, model.ApplicationLabelableObject, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting label for Application")
+	}
+
+	return labels, nil
+}
+
+// ListLabelsGlobal missing godoc
+func (s *service) ListLabelsGlobal(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
+	appExists, err := s.appRepo.ExistsGlobal(ctx, applicationID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while checking Application existence")
+	}
+
+	if !appExists {
+		return nil, errors.Errorf("application with ID %s doesn't exist", applicationID)
+	}
+
+	labels, err := s.labelRepo.ListForGlobalObject(ctx, model.ApplicationLabelableObject, applicationID)
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting label for Application")
 	}

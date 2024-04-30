@@ -330,6 +330,32 @@ func (_m *ApplicationService) ListLabels(ctx context.Context, applicationID stri
 	return r0, r1
 }
 
+// ListLabelsGlobal provides a mock function with given fields: ctx, applicationID
+func (_m *ApplicationService) ListLabelsGlobal(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, applicationID)
+
+	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, applicationID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
+		r0 = rf(ctx, applicationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*model.Label)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, applicationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Merge provides a mock function with given fields: ctx, destID, sourceID
 func (_m *ApplicationService) Merge(ctx context.Context, destID string, sourceID string) (*model.Application, error) {
 	ret := _m.Called(ctx, destID, sourceID)

@@ -299,6 +299,8 @@ spec:
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_CLIENT_ID
@@ -661,6 +663,8 @@ spec:
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_CLIENT_ID
@@ -1023,6 +1027,8 @@ spec:
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_CLIENT_ID
@@ -1385,6 +1391,8 @@ spec:
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_CLIENT_ID
@@ -1747,6 +1755,8 @@ spec:
                   key: {{ .Values.global.tests.subscription.destinationOauthSecret.dependencyKey }}
             - name: APP_DESTINATION_CONSUMER_SUBDOMAIN
               value: {{ .Values.global.tests.destination.consumerSubdomain | quote }}
+            - name: APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS
+              value: {{ .Values.global.tests.destination.consumerSubdomainMtls | quote }}
             - name: APP_TEST_DESTINATION_INSTANCE_ID
               value: {{ .Values.global.tests.destination.instanceID | quote }}
             - name: APP_USER_AUTHENTICATOR_ACCOUNT_CLIENT_ID

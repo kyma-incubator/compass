@@ -84,6 +84,30 @@ func (_m *ApplicationRepository) Exists(ctx context.Context, tenant string, id s
 	return r0, r1
 }
 
+// ExistsGlobal provides a mock function with given fields: ctx, id
+func (_m *ApplicationRepository) ExistsGlobal(ctx context.Context, id string) (bool, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 bool
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
+		return rf(ctx, id)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) bool); ok {
+		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Get(0).(bool)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetByFilter provides a mock function with given fields: ctx, tenant, filter
 func (_m *ApplicationRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, filter)

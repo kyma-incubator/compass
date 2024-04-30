@@ -66,18 +66,20 @@ func (tmh *DefaultTenantMappingHandler) HandlerFunc(w http.ResponseWriter, r *ht
 	httputils.Respond(w, http.StatusAccepted)
 
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
 
-	go tmh.callUCLStatusAPI(uclStatusAPIUrl, correlationID)
+	go tmh.callUCLStatusAPI(uclStatusAPIUrl, correlationID, traceID, spanID, parentSpanID)
 }
 
-func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlationID string) {
+func (tmh *DefaultTenantMappingHandler) callUCLStatusAPI(statusAPIURL, correlationID, traceID, spanID, parentSpanID string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	reqBodyBytes, err := json.Marshal(types.SuccessResponse{State: readyState})
