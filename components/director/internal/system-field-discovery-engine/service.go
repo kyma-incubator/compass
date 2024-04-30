@@ -171,7 +171,6 @@ func (s *Service) saveLowestOwnerForAppToContext(ctx context.Context, appID stri
 }
 
 func (s *Service) saveCredentialsToContext(ctx context.Context, region string) context.Context {
-
 	credentials := &pkgAuth.OAuthCredentials{
 		ClientID:     s.cfg.RegionToSaasRegConfig[region].ClientID,
 		ClientSecret: s.cfg.RegionToSaasRegConfig[region].ClientSecret,
