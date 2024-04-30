@@ -879,7 +879,7 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 //
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
-func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
+func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (f *model.Formation, err error) {
 	log.C(ctx).Infof("Unassigning object with ID: %q of type: %q from formation %q", objectID, objectType, formation.Name)
 
 	if !isObjectTypeAllowed(objectType) {
@@ -896,7 +896,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
 		return nil, err
-	} else if isFormationComingFromASA {
+	} else if !ignoreASA && isFormationComingFromASA {
 		return formationFromDB, nil
 	}
 
@@ -1095,6 +1095,10 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	return formationFromDB, nil
+}
+
+func (s *service) UnassignFormationIgnoreASA(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
+	return s.UnassignFormation(ctx, tnt, objectID, objectType, formation, true)
 }
 
 // FinalizeDraftFormation changes the formation state do initial and start processing the formation and formation assignment notifications
@@ -1480,7 +1484,7 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in *mod
 		return errors.Wrap(err, "while deleting the Assignment")
 	}
 
-	if err = s.asaEngine.RemoveAssignedScenario(ctx, in, s.UnassignFormation); err != nil {
+	if err = s.asaEngine.RemoveAssignedScenario(ctx, in, s.UnassignFormationIgnoreASA); err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 
@@ -1490,7 +1494,7 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in *mod
 // RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
 func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
-		if err := s.asaEngine.RemoveAssignedScenario(ctx, asa, s.UnassignFormation); err != nil {
+		if err := s.asaEngine.RemoveAssignedScenario(ctx, asa, s.UnassignFormationIgnoreASA); err != nil {
 			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
 		}
 	}
