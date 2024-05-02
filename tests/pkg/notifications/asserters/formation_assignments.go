@@ -2,15 +2,13 @@ package asserters
 
 import (
 	"context"
-	"github.com/davecgh/go-spew/spew"
 	gql "github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"testing"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	context_keys "github.com/kyma-incubator/compass/tests/pkg/notifications/context-keys"
 	"github.com/machinebox/graphql"
 	"github.com/stretchr/testify/require"
+	"testing"
 )
 
 type FormationAssignmentsAsserter struct {
@@ -36,7 +34,6 @@ func (a *FormationAssignmentsAsserter) AssertExpectations(t *testing.T, ctx cont
 }
 
 func (a *FormationAssignmentsAsserter) assertFormationAssignments(t *testing.T, ctx context.Context, certSecuredGraphQLClient *graphql.Client, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.Assignment) {
-	spew.Dump(expectedAssignments)
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	assignments := assignmentsPage.Data

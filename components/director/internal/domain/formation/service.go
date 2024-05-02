@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
@@ -1262,6 +1261,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 
+	assignmentOperationTriggeredBy := model.ResyncAssignment
 	formationID := formation.ID
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		if shouldReset {
@@ -1283,11 +1283,12 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err != nil {
 					return err
 				}
+				assignmentOperationTriggeredBy = model.ResetAssignment
 				if _, err = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
 					Type:                  model.Assign,
 					FormationAssignmentID: assignment.ID,
 					FormationID:           assignment.FormationID,
-					TriggeredBy:           model.ResetAssignment,
+					TriggeredBy:           assignmentOperationTriggeredBy,
 				}); err != nil {
 					return err
 				}
@@ -1340,7 +1341,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
-				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, model.Unassign, model.ResyncAssignment); err != nil {
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, model.Unassign, assignmentOperationTriggeredBy); err != nil {
 					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by resync", model.Unassign, faClone.ID)
 				}
 			}
@@ -1351,7 +1352,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
-				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, model.Assign, model.ResyncAssignment); err != nil {
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, model.Assign, assignmentOperationTriggeredBy); err != nil {
 					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by resync", model.Assign, faClone.ID)
 				}
 			}

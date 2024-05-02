@@ -104,18 +104,23 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 	}
 	executeFAStatusUpdateReqWithExternalToken(t, client, accountToken, testConfig, formationID, formationAssignmentID, http.StatusOK)
 
-	expectedAssignments := map[string]map[string]fixtures.Assignment{
-		app1ID: {
-			app1ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
-			app2ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: &testConfig, Value: nil, Error: nil}},
-		},
-		app2ID: {
-			app1ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
-			app2ID: fixtures.Assignment{AssignmentStatus: fixtures.AssignmentState{State: initialAssignmentState, Config: nil, Value: nil, Error: nil}},
-		},
-	}
+	expectationsBuilder := mock_data.NewFAExpectationsBuilder().
+		WithParticipant(app1ID).
+		WithParticipant(app2ID).
+		WithNotifications([]*mock_data.NotificationData{
+			mock_data.NewNotificationData(app1ID, app1ID, initialAssignmentState, nil, nil),
+			mock_data.NewNotificationData(app1ID, app2ID, initialAssignmentState, &testConfig, nil),
+			mock_data.NewNotificationData(app2ID, app2ID, initialAssignmentState, nil, nil),
+			mock_data.NewNotificationData(app2ID, app1ID, initialAssignmentState, nil, nil),
+		}).
+		WithOperations([]*fixtures.Operation{
+			fixtures.NewOperation(app1ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", false),
+			fixtures.NewOperation(app1ID, app2ID, "ASSIGN", "ASSIGN_OBJECT", false),
+			fixtures.NewOperation(app2ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", false),
+			fixtures.NewOperation(app2ID, app2ID, "ASSIGN", "ASSIGN_OBJECT", false),
+		})
 
-	asserters.NewFormationAssignmentAsyncAsserter(expectedAssignments, 4, certSecuredGraphQLClient, tnt).
+	asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
 		WithFormationName(draftFormationName).
 		AssertExpectations(t, ctx)
 
@@ -125,11 +130,17 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 	op.Execute(t, ctx, certSecuredGraphQLClient)
 
 	t.Logf("Finalize formation")
-	expectationsBuilder := mock_data.NewFAExpectationsBuilder().
+	expectationsBuilder = mock_data.NewFAExpectationsBuilder().
 		WithParticipant(app1ID).
 		WithParticipant(app2ID).
 		WithNotifications([]*mock_data.NotificationData{
 			mock_data.NewNotificationData(app1ID, app2ID, readyAssignmentState, fixtures.StatusAPISyncConfigJSON, nil),
+		}).
+		WithOperations([]*fixtures.Operation{
+			fixtures.NewOperation(app1ID, app1ID, "ASSIGN", "RESYNC", true),
+			fixtures.NewOperation(app1ID, app2ID, "ASSIGN", "RESYNC", true),
+			fixtures.NewOperation(app2ID, app1ID, "ASSIGN", "RESYNC", true),
+			fixtures.NewOperation(app2ID, app2ID, "ASSIGN", "RESYNC", true),
 		})
 	faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
 		WithFormationName(draftFormationName)

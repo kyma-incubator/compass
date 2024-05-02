@@ -5,7 +5,7 @@ import (
 )
 
 type FAExpectationsBuilder struct {
-	// target: source: state
+	// source: target: state
 	expectations map[string]map[string]fixtures.Assignment
 }
 

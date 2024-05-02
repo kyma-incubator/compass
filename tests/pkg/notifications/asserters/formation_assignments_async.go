@@ -114,6 +114,16 @@ func (a *FormationAssignmentsAsyncAsserter) assertFormationAssignmentsAsynchrono
 				tOnce.Logf("The actual assignments are: %s", *json.MarshalJSON(t, assignmentsPage))
 				return
 			}
+			if len(assignmentExpectation.Operations) != len(assignment.AssignmentOperations.Data) {
+				tOnce.Logf("The expected number of operations: %d doesn't match the actual number: %d", len(assignmentExpectation.Operations), len(assignment.AssignmentOperations.Data))
+				return
+			}
+			for _, expectedOperation := range assignmentExpectation.Operations {
+				if !ContainsMatchingOperation(expectedOperation, assignment.AssignmentOperations.Data) {
+					tOnce.Logf("Could not find expected operation %v in assignment with ID %q", expectedOperation, assignment.ID)
+					return
+				}
+			}
 		}
 
 		tOnce.Logf("Successfully asserted formation assignments asynchronously")

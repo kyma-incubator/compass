@@ -239,8 +239,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					}},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -252,14 +256,26 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
@@ -280,8 +296,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, unassignFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
+				app2.ID: {
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					}},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -404,9 +424,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 0)
 			assertNotificationsCountForTenant(t, body, localTenantID2, 0)
 
-			expectedAssignmentsBySourceID := map[string]map[string]fixtures.AssignmentState{
+			expectedAssignmentsBySourceID := map[string]map[string]fixtures.Assignment{
 				app2.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID)
@@ -456,14 +479,26 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationDetailsConfigWithPlaceholders := "{\"destinations\":[{\"name\":\"%s\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"%s\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e-basic-destination description\",\"url\":\"%s\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e saml assertion destination description\",\"url\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e client cert auth destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]},\"oauth2mtls\":{\"correlationIds\":[\"e2e-oauth2mTLS-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 mTLS destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2mTLSAuthTestKey\":\"e2e-oauth2mTLSTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}"
 			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, conf.TestProviderSubaccountID, basicDestinationName, basicDestinationURLPath, conf.TestProviderSubaccountID, testDestinationInstanceID, samlAssertionDestinationName, samlAssertionDestinationURL, testDestinationInstanceID, clientCertAuthDestinationName, clientCertAuthDestinationURL, oauth2ClientCredsDestinationName, conf.TestProviderSubaccountID, oauth2ClientCredsDestinationURL, oauth2mTLSDestinationName, conf.TestProviderSubaccountID, oauth2mTLSDestinationURL)
 			destinationCredentialsConfig := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"%s\",\"username\":\"%s\",\"password\":\"%s\"},\"samlAssertion\":{\"url\":\"%s\"},\"clientCertificateAuthentication\":{\"url\":\"%s\"},\"oauth2ClientCredentials\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"},\"oauth2mtls\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\"}}}}", basicDestinationURLFromCreds, basicDestinationUsername, basicDestinationPassword, samlAssertionDestinationURL, clientCertAuthDestinationURL, oauth2ClientCredsDestinationURL, oauth2ClientCredsDestinationTokenURL, oauth2ClientCredsDestinationClientID, oauth2ClientCredsDestinationClientSecret, oauth2mTLSDestinationURL, oauth2mTLSDestinationTokenURL, oauth2mTLSDestinationClientID)
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignmentsBySourceID = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 
@@ -558,12 +593,21 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			// assert the intermediate FA state only if the unassign operation duration is within the fixed tenant mapping async delay
 			if unassignDuration < time.Millisecond*time.Duration(conf.TenantMappingAsyncResponseDelay) {
-				expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+				expectedAssignmentsBySourceID = map[string]map[string]fixtures.Assignment{
 					app1.ID: {
-						app2.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
+						app2.ID: fixtures.Assignment{
+							AssignmentStatus: fixtures.AssignmentState{State: "DELETING", Config: nil},
+							Operations: []*fixtures.Operation{
+								fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+								fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+							},
+						},
 					},
 					app2.ID: {
-						app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+						app2.ID: fixtures.Assignment{
+							AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+							Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+						},
 					},
 				}
 
@@ -584,9 +628,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Logf("Destinations and destination certificates are successfully deleted as part of the unassign operation")
 
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignmentsBySourceID = map[string]map[string]fixtures.Assignment{
 				app2.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID, eventuallyTimeoutForDestinations, eventuallyTickForDestinations)

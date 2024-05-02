@@ -3,15 +3,16 @@ package notifications
 import (
 	"context"
 	"fmt"
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
+	"github.com/tidwall/gjson"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
@@ -22,7 +23,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
 )
 
 var emptyHeaderTemplate *string = nil
@@ -704,7 +704,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		urlTemplateFormation := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
 		inputTemplateFormation := "{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}"
 		outputTemplateFormation := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200}"
-		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateFormation, inputTemplateFormation, outputTemplateFormation, "",emptyHeaderTemplate)
+		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplateFormation, inputTemplateFormation, outputTemplateFormation, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to formation template with ID %q", webhookType, webhookMode, ft.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
@@ -740,7 +740,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		urlTemplateFormation := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
 		inputTemplateFormation := "{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}"
 		outputTemplateFormation := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200}"
-		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(formationLifecycleWebhookType, syncWebhookMode, urlTemplateFormation, inputTemplateFormation, outputTemplateFormation, "",emptyHeaderTemplate)
+		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(formationLifecycleWebhookType, syncWebhookMode, urlTemplateFormation, inputTemplateFormation, outputTemplateFormation, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationLifecycleWebhookType, syncWebhookMode, ft.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
@@ -752,7 +752,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		applicationTntMappingWebhookType := graphql.WebhookTypeApplicationTenantMapping
 		asyncCallbacWebhookMode := graphql.WebhookModeAsyncCallback
-		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbacWebhookMode, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbacWebhookMode, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, asyncCallbacWebhookMode, app1.ID)
 		actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
@@ -762,7 +762,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplateSyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplateSyncApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateSyncApplication, outputTemplateSyncApplication, "",emptyHeaderTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateSyncApplication, outputTemplateSyncApplication, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, syncWebhookMode, app2.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
@@ -781,8 +781,11 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formation.ID, assignedFormation.ID)
 		require.Equal(t, formation.State, assignedFormation.State)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app1.ID: {app1.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+			}},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
@@ -799,14 +802,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formation.ID, assignedFormation.ID)
 		require.Equal(t, formation.State, assignedFormation.State)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -831,14 +846,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formationName, formation.Name)
 		require.Equal(t, "READY", formation.State)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -853,9 +880,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -917,7 +947,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with application with ID %q", app1.ID)
 		actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
@@ -927,7 +957,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
@@ -946,9 +976,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formation.ID, assignedFormation.ID)
 		require.Equal(t, formation.State, assignedFormation.State)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
-		}
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			}}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
 			Condition: graphql.FormationStatusConditionReady,
@@ -961,14 +995,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formation.ID, assignedFormation.ID)
 		require.Equal(t, formation.State, assignedFormation.State)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -984,14 +1030,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formationName, formation.Name)
 		require.Equal(t, "READY", formation.State)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -1004,14 +1062,38 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formationName, formation.Name)
 		require.Equal(t, "READY", formation.State)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations: []*fixtures.Operation{
+						fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESET", true),
+					},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations: []*fixtures.Operation{
+						fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),
+					},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					Operations: []*fixtures.Operation{
+						fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true),
+					},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations: []*fixtures.Operation{
+						fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESET", true),
+					},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -1020,9 +1102,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		t.Logf("Unassign Application 1 from formation %s", formationName)
 		fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app1.ID, tnt)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations: []*fixtures.Operation{
+						fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESET", true),
+					},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -1055,7 +1143,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplateFormation := "{\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"details\\\":{\\\"id\\\":\\\"{{.Formation.ID}}\\\",\\\"name\\\":\\\"{{.Formation.Name}}\\\"}}"
 		outputTemplateFormation := "{\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatNeverResponds, inputTemplateFormation, outputTemplateFormation, "",emptyHeaderTemplate)
+		formationTemplateWebhookInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatNeverResponds, inputTemplateFormation, outputTemplateFormation, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
 		actualFormationTemplateWebhook := fixtures.AddWebhookToFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateWebhookInput, "", ft.ID)
@@ -1065,7 +1153,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+		applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1.ID)
 		actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
@@ -1075,7 +1163,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
@@ -1095,9 +1183,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, formation.ID, assignedFormation.ID)
 		require.Equal(t, formation.State, assignedFormation.State)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil}},
-		}
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
+			}}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 
@@ -1122,21 +1214,33 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 		assertAsyncFormationNotificationFromCreationOrDeletionWithEventually(t, ctx, body, formation.ID, formation.Name, "INITIAL", createFormationOperation, tnt, tntParentCustomer, eventuallyTimeout, eventuallyTick)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "INITIAL", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionInProgress, Errors: nil})
 
 		urlTemplateThatFailsOnce := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/v1/businessIntegration/async-fail-once/{{.Formation.ID}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"createFormation\\\"}}POST{{else}}DELETE{{end}}\\\"}"
-		webhookThatFailsOnceInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatFailsOnce, inputTemplateFormation, outputTemplateFormation, "",emptyHeaderTemplate)
+		webhookThatFailsOnceInput := fixtures.FixFormationNotificationWebhookInput(formationTemplateWebhookType, formationTemplateWebhookMode, urlTemplateThatFailsOnce, inputTemplateFormation, outputTemplateFormation, "", emptyHeaderTemplate)
 
 		t.Logf("Update webhook with type %q and mode: %q for formation template with ID: %q", formationTemplateWebhookType, formationTemplateWebhookMode, ft.ID)
 		updatedFormationTemplateWebhook := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, "", actualFormationTemplateWebhook.ID, webhookThatFailsOnceInput)
@@ -1178,14 +1282,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.Equal(t, "INITIAL", formation.State)
 		require.Empty(t, formation.Error)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+				},
 			},
 		}
 
@@ -1209,9 +1325,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+				},
 			},
 		}
 		assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -1300,7 +1419,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "",emptyHeaderTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
@@ -1339,9 +1458,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
-		}
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			}}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1352,14 +1475,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -1395,21 +1530,48 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				exceptionTypeApp.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				exceptionTypeApp.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, exceptionTypeApp.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				exceptionTypeApp.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				exceptionTypeApp.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, exceptionTypeApp.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			exceptionTypeApp.ID: {
-				app1.ID:             fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app2.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				exceptionTypeApp.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(exceptionTypeApp.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(exceptionTypeApp.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				exceptionTypeApp.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(exceptionTypeApp.ID, exceptionTypeApp.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 
@@ -1430,14 +1592,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				exceptionTypeApp.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				exceptionTypeApp.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, exceptionTypeApp.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			exceptionTypeApp.ID: {
-				app2.ID:             fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				exceptionTypeApp.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(exceptionTypeApp.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				exceptionTypeApp.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(exceptionTypeApp.ID, exceptionTypeApp.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -1463,9 +1637,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
@@ -1483,17 +1660,28 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
-
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1510,9 +1698,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
-		}
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			}}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1550,7 +1742,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "",emptyHeaderTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 		actualRegisterApplicationWebhook := fixtures.AddWebhookToApplicationTemplate(t, ctx, oauthGraphQLClient, applicationWebhookInput, "", appTmpl.ID)
@@ -1605,9 +1797,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
-		}
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app2.ID: {
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			}}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1618,14 +1814,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -1643,24 +1851,50 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app3.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app3.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app3.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app3.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app3.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app3.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app3.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app3.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app3.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app3.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app3.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app3.ID, app3.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
-
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 9, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -1686,14 +1920,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app3.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app3.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app3.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app3.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app3.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app3.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app3.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app3.ID, app3.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -1730,9 +1976,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app2.ID: {
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
@@ -1758,7 +2007,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 		outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "",emptyHeaderTemplate)
+		applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "", emptyHeaderTemplate)
 
 		t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 		actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
@@ -1795,8 +2044,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -1808,14 +2062,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -1835,8 +2101,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
+			app2.ID: {
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -1888,8 +2159,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -1901,14 +2177,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			app2.ID: {
-				app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 4, expectedAssignments)
@@ -1923,8 +2211,13 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 		require.NoError(t, err)
 		require.Equal(t, formationName, unassignFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-			app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
+			app2.ID: {
+				app2.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			},
 		}
 		assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -1976,7 +2269,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate, "",emptyHeaderTemplate)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
@@ -1995,16 +2288,35 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
 			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true),
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
+
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
@@ -2028,17 +2340,37 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app2.ID, app1.ID)
 			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true),
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
-
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
@@ -2066,14 +2398,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateAsync := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"config\\\":{{ .ReverseAssignment.Value }},\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateAsync := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-			applicationWebhookInputAsync := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncWebhookMode, urlTemplateAsync, inputTemplateAsync, outputTemplateAsync, "",emptyHeaderTemplate)
+			applicationWebhookInputAsync := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncWebhookMode, urlTemplateAsync, inputTemplateAsync, outputTemplateAsync, "", emptyHeaderTemplate)
 
 			syncWebhookMode := graphql.WebhookModeSync
 			urlTemplateSync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 			inputTemplateSync := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateSync := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookInputSync := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSync, inputTemplateSync, outputTemplateSync, "",emptyHeaderTemplate)
+			applicationWebhookInputSync := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSync, inputTemplateSync, outputTemplateSync, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, asyncWebhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInputAsync, tnt, app1.ID)
@@ -2092,14 +2424,36 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
 			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, formationAssignmentID, http.StatusOK)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			// We use the async method, because the status API is being called.
@@ -2125,17 +2479,41 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 
 			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app2.ID, app1.ID)
 			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", expectedResetConfig, tnt, formation.ID, reverseAssignmentID, http.StatusOK)
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is previous  t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is previous t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
-
 			// We use the async method, because the status API is being called.
 			// Even though the case is synchronous, the notification is executed in a separate goroutine and isn't guaranteed
 			// to have been executed before we perform the checks otherwise.
@@ -2163,7 +2541,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate, "",emptyHeaderTemplate)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplate, inputTemplate, outputTemplate, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app1.ID)
@@ -2177,17 +2555,42 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
 			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "READY", *fixtures.StatusAPIResetConfigJSON, tnt, formation.ID, formationAssignmentID, http.StatusOK)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the second nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the second nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the second nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the second nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the current t.Run() because the assignments are reused
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
-
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 
@@ -2204,14 +2607,42 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			t.Logf("Calling FA status reset for formation assignment with source %q and target %q", app1.ID, app2.ID)
 			executeFAStatusResetReqWithExpectedStatusCode(t, certSecuredHTTPClient, "CONFIG_PENDING", *fixtures.StatusAPIResetConfigJSON, tnt, formation.ID, formationAssignmentID, http.StatusOK)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: fixtures.StatusAPIResetConfigJSON, Value: fixtures.StatusAPIResetConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),  // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),  // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),  // this is from the second nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),  // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", true),  // this is from the current t.Run()
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESET", false), // this is from the current t.Run()
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the second nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the first nested t.Run() because the assignments are reused
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESET", true), // this is from the current t.Run()
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -2295,7 +2726,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplication, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, tnt, app2.ID)
@@ -2307,9 +2738,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.Equal(t, formation.ID, assignedFormation.ID)
 			require.Equal(t, formation.State, assignedFormation.State)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
 				app2.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						},
+					},
 				},
 			}
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
@@ -2334,7 +2770,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1.ID)
 			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
@@ -2346,8 +2782,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.Equal(t, formation.ID, assignedFormation.ID)
 			require.Equal(t, formation.State, assignedFormation.State)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil}},
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						},
+					},
+				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -2372,7 +2815,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookThatFailsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationFailsSync, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+			applicationWebhookThatFailsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationFailsSync, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookThatFailsInput, tnt, app2.ID)
@@ -2384,14 +2827,18 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.Equal(t, formation.ID, assignedFormation.ID)
 			require.Equal(t, formation.State, assignedFormation.State)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app2.ID: {app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON}},
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
+				app2.ID: {
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					}},
 			}
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionError, Errors: []*graphql.FormationStatusError{fixtures.StatusAPISyncError}})
 
 			urlTemplateApplicationSucceedsSync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			applicationWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationSucceedsSync, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+			applicationWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationSucceedsSync, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that succeeds", actualApplicationWebhook.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync)
 			updatedWebhookSync := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID, applicationWebhookThatSucceedsInput)
@@ -2403,8 +2850,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil}},
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
+				app2.ID: {
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+					}},
 			}
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -2419,8 +2870,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 			require.Error(t, err)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app2.ID: {app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON}},
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
+				app2.ID: {
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app2.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					}},
 			}
 			assertFormationAssignments(t, ctx, tnt, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, tnt, formation.ID, graphql.FormationStatus{
@@ -2448,7 +2906,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1.ID)
 			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
@@ -2460,13 +2918,17 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.Equal(t, formation.ID, assignedFormation.ID)
 			require.Equal(t, formation.State, assignedFormation.State)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: nil, Error: nil}},
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					}},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
 
 			urlTemplateApplicationSucceedsAsync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-old/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			applicationAsyncWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateApplicationSucceedsAsync, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+			applicationAsyncWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateApplicationSucceedsAsync, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that succeeds", actualApplicationAsyncWebhookInput.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback)
 			updatedWebhook := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationAsyncWebhookInput.ID, applicationAsyncWebhookThatSucceedsInput)
@@ -2478,8 +2940,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil}},
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+					}},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
 
@@ -2494,8 +2960,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, unassignFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: nil, Error: nil}},
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: nil, Error: nil},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app1.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					}},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
 
@@ -2520,7 +2993,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookThatFailsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationFailsSync, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+			applicationWebhookThatFailsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationFailsSync, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, app2.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookThatFailsInput, tnt, app2.ID)
@@ -2530,7 +3003,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			inputTemplateAsyncApplication := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"formation-assignment-id\\\":\\\"{{ .Assignment.ID }}\\\",\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\"}]}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 202}"
 
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateAsyncApplication, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, app1.ID)
 			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, tnt, app1.ID)
@@ -2542,8 +3015,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.Equal(t, formation.ID, assignedFormation.ID)
 			require.Equal(t, formation.State, assignedFormation.State)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON}},
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					}},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 1, expectedAssignments, eventuallyTimeout, eventuallyTick)
 
@@ -2558,14 +3035,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.Equal(t, formation.ID, assignedFormation.ID)
 			require.Equal(t, formation.State, assignedFormation.State)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "CREATE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -2587,14 +3076,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 			urlTemplateApplicationSucceedsAsync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/async-old/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			applicationAsyncWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateApplicationSucceedsAsync, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "",emptyHeaderTemplate)
+			applicationAsyncWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback, urlTemplateApplicationSucceedsAsync, inputTemplateAsyncApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that succeeds", actualApplicationAsyncWebhookInput.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeAsyncCallback)
 			updatedWebhook := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationAsyncWebhookInput.ID, applicationAsyncWebhookThatSucceedsInput)
 			require.Equal(t, updatedWebhook.ID, actualApplicationAsyncWebhookInput.ID)
 
 			urlTemplateApplicationSucceedsSync := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/{{.TargetApplication.ID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
-			applicationWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationSucceedsSync, inputTemplateApplication, outputTemplateApplication, "",emptyHeaderTemplate)
+			applicationWebhookThatSucceedsInput := fixtures.FixFormationNotificationWebhookInput(graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync, urlTemplateApplicationSucceedsSync, inputTemplateApplication, outputTemplateApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Update webhook with ID: %q of type: %q and mode: %q to have URLTemlate that points to endpoint that succeeds", actualApplicationWebhook.ID, graphql.WebhookTypeApplicationTenantMapping, graphql.WebhookModeSync)
 			updatedWebhookSync := fixtures.UpdateWebhook(t, ctx, certSecuredGraphQLClient, tnt, actualApplicationWebhook.ID, applicationWebhookThatSucceedsInput)
@@ -2606,14 +3095,26 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPIAsyncConfigJSON, Value: fixtures.StatusAPIAsyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -2645,14 +3146,35 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 			require.Error(t, err)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app1.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true)},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
@@ -2675,14 +3197,41 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 			unassignReq = fixtures.FixUnassignFormationRequest(app2.ID, string(graphql.FormationObjectTypeApplication), formationName)
 			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, unassignReq, &unassignFormation)
 			require.Error(t, err)
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app1.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
-					app2.ID: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPISyncErrorMessageJSON, Error: fixtures.StatusAPISyncErrorMessageJSON},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "RESYNC", true),
+							fixtures.NewOperation(app2.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+						},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, tnt, formation.ID, 4, expectedAssignments, eventuallyTimeout, eventuallyTick)
