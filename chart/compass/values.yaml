@@ -752,7 +752,7 @@ global:
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
     auth:
-      idpHost: "https://as5rzk3dn.accounts400.ondemand.com"
+      idpHost: ""
       path: "/oauth2/certs"
     idTokenConfig:
       claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}", "subject": "{{ print .Extra.subject }}"}'
