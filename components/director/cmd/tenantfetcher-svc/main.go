@@ -21,6 +21,7 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"net/http"
 	"os"
 	"strings"
@@ -167,11 +168,12 @@ func main() {
 	tenantConverter := tenant.NewConverter()
 
 	applicationRepo := application.NewRepository(appConverter)
+	labelRepo := label.NewRepository(label.NewConverter())
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, nil, nil, nil, nil, uidSvc, nil, "", nil)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, labelRepo, nil, nil, nil, uidSvc, nil, "", nil)
 
 	systemFieldDiscoveryClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
 
