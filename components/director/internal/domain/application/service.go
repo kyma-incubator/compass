@@ -1492,7 +1492,7 @@ func (s *service) assignFormations(ctx context.Context, appTenant, objectID stri
 func (s *service) unassignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldUnassignCriteria func(string) bool) error {
 	for _, f := range formations {
 		if shouldUnassignCriteria(f) {
-			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}, false); err != nil {
 				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
 			}
 		}
