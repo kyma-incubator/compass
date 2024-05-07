@@ -27,12 +27,13 @@ func (_m *ApplicationService) UpdateBaseURLAndReadyState(ctx context.Context, ap
 	return r0
 }
 
-// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewApplicationService(t interface {
+type mockConstructorTestingTNewApplicationService interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ApplicationService {
+}
+
+// NewApplicationService creates a new instance of ApplicationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewApplicationService(t mockConstructorTestingTNewApplicationService) *ApplicationService {
 	mock := &ApplicationService{}
 	mock.Mock.Test(t)
 

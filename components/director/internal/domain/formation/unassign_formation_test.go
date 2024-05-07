@@ -267,6 +267,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectType                    graphql.FormationObjectType
 			ObjectID                      string
 			InputFormation                model.Formation
+			ShouldSkipASA                 bool
 			ExpectedFormation             *model.Formation
 			ExpectedErrMessage            string
 		}{
@@ -2229,7 +2230,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil)
 
 				// WHEN
-				actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
+				actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation, testCase.ShouldSkipASA)
 
 				// THEN
 				if testCase.ExpectedErrMessage == "" {
@@ -2283,6 +2284,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 		ObjectType                    graphql.FormationObjectType
 		ObjectID                      string
 		InputFormation                model.Formation
+		ShouldSkipASA                 bool
 		ExpectedFormation             *model.Formation
 		ExpectedErrMessage            string
 	}{
@@ -2504,7 +2506,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			svc := formation.NewServiceWithAsaEngine(transact, nil, nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, asaService, tenantSvc, nil, nil, nil, nil, nil, nil, constraintEngine, runtimeType, applicationType, asaEngine, nil)
 
 			// WHEN
-			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
+			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation, testCase.ShouldSkipASA)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {
