@@ -20,18 +20,11 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
-	"github.com/kyma-incubator/compass/components/director/internal/model"
-	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
-	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
-	systemfielddiscoveryenginecfg "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/config"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
@@ -40,10 +33,16 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/document"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventdef"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/fetchrequest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/spec"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/version"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook"
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
+	systemfielddiscoveryenginecfg "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/config"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
@@ -93,14 +92,8 @@ type config struct {
 	SystemFieldDiscoveryEngineConfig systemfielddiscoveryenginecfg.SystemFieldDiscoveryEngineConfig
 
 	OperationsManagerConfig       operationsmanager.OperationsManagerConfig
-	ParallelOperationProcessors   int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
+	ParallelOperationProcessors   int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"` // add env vars
 	OperationProcessorQuietPeriod time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=5s"`
-
-	WebhookProcessorElectionConfig cronjob.ElectionConfig
-	WebhookProcessorJobInterval    time.Duration `envconfig:"APP_WEBHOOK_PROCESSOR_JOB_INTERVAL,default=1m"`
-
-	SystemFieldDiscoveryWebhookPartialProcessing     bool `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESSING"`
-	SystemFieldDiscoveryWebhookPartialProcessMaxDays int  `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_WEBHOOK_PARTIAL_PROCESS_MAX_DAYS"`
 }
 
 type securityConfig struct {
@@ -109,6 +102,7 @@ type securityConfig struct {
 	JwksEndpoint              string        `envconfig:"default=file://hack/default-jwks.json,APP_JWKS_ENDPOINT"`
 	SubscriptionCallbackScope string        `envconfig:"APP_SUBSCRIPTION_CALLBACK_SCOPE"`
 	FetchTenantOnDemandScope  string        `envconfig:"APP_FETCH_TENANT_ON_DEMAND_SCOPE"`
+	SystemFieldDiscoveryScope string        `envconfig:"APP_SYSTEM_FIELD_DISCOVERY_SCOPE"`
 }
 
 func main() {
@@ -198,6 +192,7 @@ func main() {
 		shutdownMainSrv()
 	}()
 
+	spew.Dump("ParallelOperationProcessors: ", cfg.ParallelOperationProcessors)
 	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
 		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfielddiscoveryengine.OperationsProcessor, executorIndex int) {
 			for {
@@ -265,7 +260,9 @@ func initAPIHandler(ctx context.Context, httpClient *http.Client, cfg config, sy
 	registerTenantsHandler(ctx, tenantsAPIRouter, cfg.Handler)
 
 	handler := systemfielddiscoveryengine.NewSystemFieldDiscoveryHTTPHandler(opMgr, onDemandChannel)
-	tenantsAPIRouter.HandleFunc(systemFieldDiscoveryEndpoint, handler.ScheduleSaaSRegistryDiscoveryForSystemFieldDiscoveryData).Methods(http.MethodPost)
+	systemFieldDiscoveryAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
+	configureAuthMiddleware(ctx, httpClient, systemFieldDiscoveryAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.SystemFieldDiscoveryScope)
+	systemFieldDiscoveryAPIRouter.HandleFunc(systemFieldDiscoveryEndpoint, handler.ScheduleSaaSRegistryDiscoveryForSystemFieldDiscoveryData).Methods(http.MethodPost)
 
 	tenantsOnDemandAPIRouter := mainRouter.PathPrefix(cfg.TenantsRootAPI).Subrouter()
 	configureAuthMiddleware(ctx, httpClient, tenantsOnDemandAPIRouter, cfg.SecurityConfig, cfg.SecurityConfig.FetchTenantOnDemandScope)

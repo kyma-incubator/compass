@@ -133,6 +133,8 @@ spec:
               value: {{ .Values.global.tenantFetcher.requiredAuthScope | quote }}
             - name: APP_FETCH_TENANT_ON_DEMAND_SCOPE
               value: {{ .Values.global.tenantFetcher.fetchTenantAuthScope | quote }}
+            - name: APP_SYSTEM_FIELD_DISCOVERY_SCOPE
+              value: {{ .Values.global.tenantFetcher.systemFieldDiscoveryAuthScope | quote }}
             - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY

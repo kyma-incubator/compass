@@ -70,7 +70,7 @@ func (c *SystemFieldDiscoveryEngineClient) Discover(ctx context.Context, appID, 
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.Errorf("received unexpected status code %d while calling aggregate API with ApplicationID %q and Registry %q", resp.StatusCode, appID, registry)
+		return errors.Errorf("received unexpected status code %d while calling discover API with ApplicationID %q and Registry %q", resp.StatusCode, appID, registry)
 	}
 
 	return nil
