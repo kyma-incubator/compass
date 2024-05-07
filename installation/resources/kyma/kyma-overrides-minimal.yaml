@@ -26,23 +26,22 @@ helm-broker:
         memory: 256Mi
 istio:
   global:
+    containerRegistry:
+      path: docker.io
     # Use official images that have support for arm and amd as Kyma's images are only for amd
     images:
       istio_proxyv2:
         name: "proxyv2"
-        version: "1.17.2-distroless"
+        version: "1.18.1-distroless"
         directory: "istio"
-        containerRegistryPath: "docker.io"
       istio_pilot:
         name: "pilot"
-        version: "1.17.2-distroless"
+        version: "1.18.1-distroless"
         directory: "istio"
-        containerRegistryPath: "docker.io"
       istio_install-cni:
         name: "install-cni"
-        version: "1.17.2-distroless"
+        version: "1.18.1-distroless"
         directory: "istio"
-        containerRegistryPath: "docker.io"
 
   components:
     egressGateways:
