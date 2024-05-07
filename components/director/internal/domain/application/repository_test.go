@@ -58,6 +58,34 @@ func TestRepository_Exists(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ExistsGlobal(t *testing.T) {
+	suite := testdb.RepoExistTestSuite{
+		Name: "Application Exists",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT 1 FROM public.applications WHERE id = $1`),
+				Args:     []driver.Value{givenID()},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectExist()}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{testdb.RowWhenObjectDoesNotExist()}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc: application.NewRepository,
+		TargetID:            givenID(),
+		MethodName:          "ExistsGlobal",
+		MethodArgs:          []interface{}{givenID()},
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_OwnerExists(t *testing.T) {
 	suite := testdb.RepoExistTestSuite{
 		Name: "Application Exists",

@@ -38,6 +38,7 @@ type DirectorConfig struct {
 	DestinationAPIConfig                               clients.DestinationServiceAPIConfig
 	DestinationsConfig                                 directorcfg.DestinationsConfig
 	ProviderDestinationConfig                          config.ProviderDestinationConfig
+	DestinationConsumerSubdomainMtls                   string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	DestinationConsumerSubdomain                       string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN"`
 	TestDestinationInstanceID                          string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 	TestCostObjectID                                   string

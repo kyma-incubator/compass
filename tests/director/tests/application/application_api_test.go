@@ -1143,7 +1143,7 @@ func TestQueryApplicationsGlobalPageable(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Log("Executing applicationsGlobal query with label filter")
-	appWithTenantsPage := graphql.ApplicationWithTenantsPage{}
+	appWithTenantsPage := graphql.ApplicationExtWithTenantsPage{}
 	req := fixtures.FixApplicationsGlobalFilteredPageableRequest(labelFilterGQL, pageSize, cursor)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &appWithTenantsPage)
 	require.NoError(t, err)
@@ -1153,6 +1153,10 @@ func TestQueryApplicationsGlobalPageable(t *testing.T) {
 	assert.False(t, appWithTenantsPage.PageInfo.HasNextPage)
 	assert.Equal(t, 1, appWithTenantsPage.TotalCount)
 	assert.Len(t, appWithTenantsPage.Data, 1)
+	assert.Equal(t, appWithTenantsPage.Data[0].Application.ID, appOne.ID)
+	val, exists := appWithTenantsPage.Data[0].Application.Labels[conf.ApplicationTypeLabelKey]
+	assert.True(t, exists)
+	assert.Equal(t, "filter-me", val.(string))
 	assert.Len(t, appWithTenantsPage.Data[0].Tenants, 1)
 	assert.Equal(t, tnt.TypeToStr(tnt.Customer), appWithTenantsPage.Data[0].Tenants[0].Type)
 }
