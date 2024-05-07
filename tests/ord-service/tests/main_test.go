@@ -69,6 +69,7 @@ type config struct {
 	TestProviderSubaccountID            string
 	TestConsumerSubaccountID            string
 	TestConsumerTenantID                string
+	DestinationConsumerSubdomainMtls    string `envconfig:"APP_DESTINATION_CONSUMER_SUBDOMAIN_MTLS"`
 	CertSvcInstanceSecretName           string `envconfig:"CERT_SVC_INSTANCE_SECRET_NAME"`
 	ApplicationTypeLabelKey             string `envconfig:"APP_APPLICATION_TYPE_LABEL_KEY,default=applicationType"`
 	SaaSAppNameLabelKey                 string `envconfig:"APP_SELF_REGISTER_SAAS_APP_LABEL_KEY,default=CMPSaaSAppName"`

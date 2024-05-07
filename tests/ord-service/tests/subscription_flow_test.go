@@ -25,6 +25,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -144,10 +145,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
-	consumerTokenURL, err := token.ChangeSubdomain(conf.ProviderDestinationConfig.TokenURL, conf.DestinationConsumerSubdomain, conf.ProviderDestinationConfig.TokenPath)
-	require.NoError(t, err)
-
-	destinationConsumerToken := token.GetClientCredentialsToken(stdT, ctx, consumerTokenURL, conf.ProviderDestinationConfig.ClientID, conf.ProviderDestinationConfig.ClientSecret, claims.DestinationConsumerClaimKey)
+	stdT.Log("Using provider token for test")
 
 	t.Run("ConsumerProvider flow with runtime as provider", func(stdT *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
@@ -339,23 +337,21 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:           "test",
-			Type:           "HTTP",
-			URL:            "http://localhost",
-			Authentication: "BasicAuthentication",
-			AdditionalProperties: clients.DestinationAdditionalProperties{
-				XCorrelationID:  correlationID,
-				XSystemTenantID: localTenantID,
-				XSystemType:     string(util.ApplicationTypeC4C),
-			},
+			Name:            generateDestinationName("first-destination"),
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  correlationID,
+			XSystemTenantID: localTenantID,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
-		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
-		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
+		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destination.Name, subscriptionConsumerSubaccountID)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -417,9 +413,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
-		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
-		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
+		destinationSecond.Name = generateDestinationName("second-destination")
+		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
@@ -664,23 +660,21 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
 
 		destination := clients.Destination{
-			Name:           "test",
-			Type:           "HTTP",
-			URL:            "http://localhost",
-			Authentication: "BasicAuthentication",
-			AdditionalProperties: clients.DestinationAdditionalProperties{
-				XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
-				XSystemTenantID: localTenantID,
-				XSystemType:     string(util.ApplicationTypeC4C),
-			},
+			Name:            generateDestinationName("first-destination"),
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  fmt.Sprintf("%s,%s-new", correlationID, correlationID),
+			XSystemTenantID: localTenantID,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
-		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
-		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
+		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destination.Name, subscriptionConsumerSubaccountID)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -754,9 +748,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
-		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
-		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
+		destinationSecond.Name = generateDestinationName("second-destination")
+		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
 		// With destinations - reload
 		params = url.Values{}
@@ -991,23 +985,20 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		instance, ok := conf.DestinationsConfig.RegionToInstanceConfig[region]
 		require.True(t, ok)
 
-		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig)
+		client, err := clients.NewDestinationClient(instance, conf.DestinationAPIConfig, conf.DestinationConsumerSubdomainMtls)
 		require.NoError(stdT, err)
-
 		destination := clients.Destination{
-			Name:           "test",
-			Type:           "HTTP",
-			URL:            "http://localhost",
-			Authentication: "BasicAuthentication",
-			AdditionalProperties: clients.DestinationAdditionalProperties{
-				XCorrelationID:  correlationID,
-				XSystemTenantID: localTenantID,
-				XSystemType:     string(util.ApplicationTypeC4C),
-			},
+			Name:            generateDestinationName("first-destination"),
+			Type:            "HTTP",
+			URL:             "http://localhost",
+			Authentication:  "BasicAuthentication",
+			XCorrelationID:  correlationID,
+			XSystemTenantID: localTenantID,
+			XSystemType:     string(util.ApplicationTypeC4C),
 		}
 
-		client.CreateDestinationInDestService(stdT, destination, destinationConsumerToken)
-		defer client.DeleteDestinationFromDestService(stdT, destination.Name, destinationConsumerToken)
+		client.CreateDestination(stdT, destination, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destination.Name, subscriptionConsumerSubaccountID)
 		// After successful subscription from above, the part of the code below prepare and execute a request to the ord service
 
 		// HTTP client configured with certificate with patched subject, issued from cert-rotation job
@@ -1069,9 +1060,9 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 
 		// Create second destination
 		destinationSecond := destination
-		destinationSecond.Name = "test-second"
-		client.CreateDestinationInDestService(stdT, destinationSecond, destinationConsumerToken)
-		defer client.DeleteDestinationFromDestService(stdT, destinationSecond.Name, destinationConsumerToken)
+		destinationSecond.Name = generateDestinationName("second-destination")
+		client.CreateDestination(stdT, destinationSecond, subscriptionConsumerSubaccountID)
+		defer client.DeleteDestination(stdT, destinationSecond.Name, subscriptionConsumerSubaccountID)
 
 		// With destinations - reload
 		stdT.Log("Getting system with bundles and destinations - reloading the destination")
@@ -1173,4 +1164,8 @@ func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expect
 	require.Equal(stdT, expectedFormationID, systemInstance.Get("formationDetails.formationId").String())
 	require.Equal(stdT, expectedFormationAssignmentID, systemInstance.Get("formationDetails.assignmentId").String())
 	require.Equal(stdT, expectedFormationTemplateID, systemInstance.Get("formationDetails.formationTypeId").String())
+}
+
+func generateDestinationName(name string) string {
+	return fmt.Sprintf("%s-%s", name, strconv.FormatInt(time.Now().Unix(), 10))
 }

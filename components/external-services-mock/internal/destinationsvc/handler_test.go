@@ -933,8 +933,9 @@ func TestHandler_CleanupDestinationCertificates(t *testing.T) {
 }
 
 func TestHandler_PostDestination(t *testing.T) {
-	tokenWithSubaccountIDAndInstanceID := generateJWT(t, testSubaccountID, testServiceInstanceID)
-	invalidToken := generateJWT(t, "", "")
+	headerWithSubaccountIDAndInstanceID := http.Header{}
+	headerWithSubaccountIDAndInstanceID.Add("subaccount_id", testSubaccountID)
+	headerWithSubaccountIDAndInstanceID.Add("instance_id", testServiceInstanceID)
 
 	testCases := []struct {
 		Name                         string
@@ -943,7 +944,7 @@ func TestHandler_PostDestination(t *testing.T) {
 		ExistingDestinations         map[string]destcreatorpkg.Destination
 		BodyData                     []byte
 		ExpectedResponseBodyData     string
-		AuthorizationToken           string
+		Headers                      http.Header
 		StatusCode                   int
 	}{
 		{
@@ -953,7 +954,7 @@ func TestHandler_PostDestination(t *testing.T) {
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
 			},
 			BodyData:                 []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
-			AuthorizationToken:       tokenWithSubaccountIDAndInstanceID,
+			Headers:                  headerWithSubaccountIDAndInstanceID,
 			ExpectedResponseBodyData: "",
 		},
 		{
@@ -962,22 +963,15 @@ func TestHandler_PostDestination(t *testing.T) {
 			ExpectedDestinationSensitive: map[string][]byte{},
 			ExpectedResponseBodyData:     "{\"error\":\"The authenticationType field in the request body is required and it should not be empty. X-Request-Id: \"}\n",
 			BodyData:                     []byte{},
-			AuthorizationToken:           tokenWithSubaccountIDAndInstanceID,
+			Headers:                      headerWithSubaccountIDAndInstanceID,
 		},
 		{
-			Name:                         "Error when there is no token",
-			ExpectedResponseCode:         http.StatusUnauthorized,
+			Name:                         "Error when there are no headers",
+			ExpectedResponseCode:         http.StatusBadRequest,
 			ExpectedDestinationSensitive: map[string][]byte{},
-			ExpectedResponseBodyData:     "{\"error\":\"Missing authorization header. X-Request-Id: \"}\n",
+			ExpectedResponseBodyData:     "{\"error\":\"missing subaccount_id and instance_id headers. X-Request-Id: \"}\n",
+			Headers:                      http.Header{},
 			BodyData:                     []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
-		},
-		{
-			Name:                         "Error when there is token does not have subaccount",
-			ExpectedResponseCode:         http.StatusInternalServerError,
-			ExpectedDestinationSensitive: map[string][]byte{},
-			ExpectedResponseBodyData:     "{\"error\":\"The subaccount ID claim in the token could not be empty. X-Request-Id: \"}\n",
-			BodyData:                     []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
-			AuthorizationToken:           invalidToken,
 		},
 		{
 			Name:                         "Error when destination type is invalid",
@@ -985,7 +979,7 @@ func TestHandler_PostDestination(t *testing.T) {
 			ExpectedDestinationSensitive: map[string][]byte{},
 			ExpectedResponseBodyData:     "{\"error\":\"The provided destination authentication type: invalid is invalid. X-Request-Id: \"}\n",
 			BodyData:                     []byte(gjson.Get(invalidDestination, "destinationConfiguration").String()),
-			AuthorizationToken:           tokenWithSubaccountIDAndInstanceID,
+			Headers:                      headerWithSubaccountIDAndInstanceID,
 		},
 		{
 			Name:                 "Error with conflict",
@@ -997,7 +991,7 @@ func TestHandler_PostDestination(t *testing.T) {
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
 			},
 			BodyData:                 []byte(gjson.Get(destinationServiceFindAPIResponseBodyForBasicAssertionDest, "destinationConfiguration").String()),
-			AuthorizationToken:       tokenWithSubaccountIDAndInstanceID,
+			Headers:                  headerWithSubaccountIDAndInstanceID,
 			ExpectedResponseBodyData: "[{\"name\":\"test-basic-dest\",\"status\":409,\"cause\":\"Destination name already taken\"},{\"name\":\"test-basic-dest\",\"status\":201}]",
 		},
 	}
@@ -1010,8 +1004,8 @@ func TestHandler_PostDestination(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer(testCase.BodyData))
 			require.NoError(t, err)
 
-			if testCase.AuthorizationToken != "" {
-				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", testCase.AuthorizationToken))
+			if testCase.Headers != nil {
+				req.Header = testCase.Headers
 			}
 			req = req.WithContext(context.WithValue(ctx, correlation.RequestIDHeaderKey, "corr-id"))
 
@@ -1047,8 +1041,12 @@ func TestHandler_PostDestination(t *testing.T) {
 }
 
 func TestHandler_DeleteDestination(t *testing.T) {
-	tokenWithSubaccountIDAndInstanceID := generateJWT(t, testSubaccountID, testServiceInstanceID)
-	invalidToken := generateJWT(t, "", "")
+	headerWithSubaccountIDAndInstanceID := http.Header{}
+	headerWithSubaccountIDAndInstanceID.Add("subaccount_id", testSubaccountID)
+	headerWithSubaccountIDAndInstanceID.Add("instance_id", testServiceInstanceID)
+
+	emptyHeaders := http.Header{}
+
 	testCases := []struct {
 		Name                          string
 		ExpectedResponseCode          int
@@ -1058,7 +1056,7 @@ func TestHandler_DeleteDestination(t *testing.T) {
 		ExistingDestinationsSensitive map[string][]byte
 		ExpectedDestinations          map[string]destcreatorpkg.Destination
 		ExpectedDestinationsSensitive map[string][]byte
-		AuthorizationToken            string
+		Headers                       http.Header
 		StatusCode                    int
 	}{
 		{
@@ -1070,7 +1068,7 @@ func TestHandler_DeleteDestination(t *testing.T) {
 			ExistingDestinations: map[string]destcreatorpkg.Destination{
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
 			},
-			AuthorizationToken:            tokenWithSubaccountIDAndInstanceID,
+			Headers:                       headerWithSubaccountIDAndInstanceID,
 			ExpectedDestinationsSensitive: map[string][]byte{},
 			ExpectedDestinations:          map[string]destcreatorpkg.Destination{},
 			DestNameParam:                 nameParamKey,
@@ -1085,7 +1083,7 @@ func TestHandler_DeleteDestination(t *testing.T) {
 			ExistingDestinations: map[string]destcreatorpkg.Destination{
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
 			},
-			AuthorizationToken: tokenWithSubaccountIDAndInstanceID,
+			Headers: headerWithSubaccountIDAndInstanceID,
 			ExpectedDestinationsSensitive: map[string][]byte{
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
 			},
@@ -1096,34 +1094,15 @@ func TestHandler_DeleteDestination(t *testing.T) {
 			DestName:      "",
 		},
 		{
-			Name:                 "Error when token is missing",
-			ExpectedResponseCode: http.StatusUnauthorized,
+			Name:                 "Error when headers are missing",
+			ExpectedResponseCode: http.StatusBadRequest,
 			ExistingDestinationsSensitive: map[string][]byte{
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
 			},
 			ExistingDestinations: map[string]destcreatorpkg.Destination{
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
 			},
-			AuthorizationToken: "",
-			ExpectedDestinationsSensitive: map[string][]byte{
-				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
-			},
-			ExpectedDestinations: map[string]destcreatorpkg.Destination{
-				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
-			},
-			DestNameParam: nameParamKey,
-			DestName:      basicAuthDestName,
-		},
-		{
-			Name:                 "Error when token does not have subaccount data",
-			ExpectedResponseCode: http.StatusInternalServerError,
-			ExistingDestinationsSensitive: map[string][]byte{
-				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
-			},
-			ExistingDestinations: map[string]destcreatorpkg.Destination{
-				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): nil,
-			},
-			AuthorizationToken: invalidToken,
+			Headers: emptyHeaders,
 			ExpectedDestinationsSensitive: map[string][]byte{
 				fmt.Sprintf("name_%s_subacc_%s_instance_%s", basicAuthDestName, testSubaccountID, testServiceInstanceID): []byte(destinationServiceFindAPIResponseBodyForBasicAssertionDest),
 			},
@@ -1141,8 +1120,8 @@ func TestHandler_DeleteDestination(t *testing.T) {
 			req, err := http.NewRequest(http.MethodPost, url, bytes.NewBuffer([]byte{}))
 			require.NoError(t, err)
 
-			if testCase.AuthorizationToken != "" {
-				req.Header.Add(httphelpers.AuthorizationHeaderKey, fmt.Sprintf("Bearer %s", testCase.AuthorizationToken))
+			if testCase.Headers != nil {
+				req.Header = testCase.Headers
 			}
 
 			config := &destinationsvc.Config{

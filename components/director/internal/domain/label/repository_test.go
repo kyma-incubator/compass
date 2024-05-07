@@ -1197,6 +1197,261 @@ func TestRepository_ListForObject(t *testing.T) {
 	})
 }
 
+func TestRepository_ListForGlobalObject(t *testing.T) {
+	t.Run("Success - Label for Runtime", func(t *testing.T) {
+		// GIVEN
+		label1Model := fixModelLabelWithID("1", "foo", model.RuntimeLabelableObject)
+		label2Model := fixModelLabelWithID("2", "bar", model.RuntimeLabelableObject)
+
+		label1Entity := fixEntityLabelWithID("1", "foo", model.RuntimeLabelableObject)
+		label2Entity := fixEntityLabelWithID("2", "bar", model.RuntimeLabelableObject)
+
+		inputItems := []*label.Entity{label1Entity, label2Entity}
+		expected := map[string]*model.Label{
+			"foo": label1Model,
+			"bar": label2Model,
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		for _, entity := range inputItems {
+			mockConverter.On("FromEntity", entity).Return(expected[entity.Key], nil).Once()
+		}
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE runtime_id = $1`)
+		mockedRows := sqlmock.NewRows(fixColumns).
+			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version, label1Entity.WebhookID).
+			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label2Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version, label2Entity.WebhookID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: refID}).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := labelRepo.ListForGlobalObject(ctx, model.RuntimeLabelableObject, refID)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Success - Label for Runtime Context", func(t *testing.T) {
+		// GIVEN
+		label1Model := fixModelLabelWithID("1", "foo", model.RuntimeContextLabelableObject)
+		label2Model := fixModelLabelWithID("2", "bar", model.RuntimeContextLabelableObject)
+
+		label1Entity := fixEntityLabelWithID("1", "foo", model.RuntimeContextLabelableObject)
+		label2Entity := fixEntityLabelWithID("2", "bar", model.RuntimeContextLabelableObject)
+
+		inputItems := []*label.Entity{label1Entity, label2Entity}
+		expected := map[string]*model.Label{
+			"foo": label1Model,
+			"bar": label2Model,
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		for _, entity := range inputItems {
+			mockConverter.On("FromEntity", entity).Return(expected[entity.Key], nil).Once()
+		}
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE runtime_context_id = $1`)
+		mockedRows := sqlmock.NewRows(fixColumns).
+			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version, label1Entity.WebhookID).
+			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label2Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version, label2Entity.WebhookID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: refID}).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := labelRepo.ListForGlobalObject(ctx, model.RuntimeContextLabelableObject, refID)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Success - Label for Application", func(t *testing.T) {
+		// GIVEN
+		label1Model := fixModelLabelWithID("1", "foo", model.ApplicationLabelableObject)
+		label2Model := fixModelLabelWithID("2", "bar", model.ApplicationLabelableObject)
+
+		label1Entity := fixEntityLabelWithID("1", "foo", model.ApplicationLabelableObject)
+		label2Entity := fixEntityLabelWithID("2", "bar", model.ApplicationLabelableObject)
+
+		inputItems := []*label.Entity{label1Entity, label2Entity}
+		expected := map[string]*model.Label{
+			"foo": label1Model,
+			"bar": label2Model,
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		for _, entity := range inputItems {
+			mockConverter.On("FromEntity", entity).Return(expected[entity.Key], nil).Once()
+		}
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE app_id = $1`)
+		mockedRows := sqlmock.NewRows(fixColumns).
+			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version, label1Entity.WebhookID).
+			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label1Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version, label2Entity.WebhookID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: refID}).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		// WHEN
+		actual, err := labelRepo.ListForGlobalObject(ctx, model.ApplicationLabelableObject, refID)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Success - Label for Tenant", func(t *testing.T) {
+		// GIVEN
+		label1Model := fixModelLabelWithID("1", "foo", model.TenantLabelableObject)
+		label2Model := fixModelLabelWithID("2", "bar", model.TenantLabelableObject)
+
+		label1Entity := fixEntityLabelWithID("1", "foo", model.TenantLabelableObject)
+		label2Entity := fixEntityLabelWithID("2", "bar", model.TenantLabelableObject)
+
+		inputItems := []*label.Entity{label1Entity, label2Entity}
+		expected := map[string]*model.Label{
+			"foo": label1Model,
+			"bar": label2Model,
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		for _, entity := range inputItems {
+			mockConverter.On("FromEntity", entity).Return(expected[entity.Key], nil).Once()
+		}
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE tenant_id = $1 AND app_id IS NULL AND runtime_context_id IS NULL AND runtime_id IS NULL`)
+		mockedRows := sqlmock.NewRows(fixColumns).
+			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version, label1Entity.WebhookID).
+			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label2Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version, label2Entity.WebhookID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(tenantID).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		// WHEN
+		actual, err := labelRepo.ListForGlobalObject(ctx, model.TenantLabelableObject, tenantID)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Success - Label for Application Template", func(t *testing.T) {
+		// GIVEN
+		label1Model := fixModelLabelWithID("1", "foo", model.AppTemplateLabelableObject)
+		label2Model := fixModelLabelWithID("2", "bar", model.AppTemplateLabelableObject)
+
+		label1Entity := fixEntityLabelWithID("1", "foo", model.AppTemplateLabelableObject)
+		label2Entity := fixEntityLabelWithID("2", "bar", model.AppTemplateLabelableObject)
+
+		inputItems := []*label.Entity{label1Entity, label2Entity}
+		expected := map[string]*model.Label{
+			"foo": label1Model,
+			"bar": label2Model,
+		}
+
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+		for _, entity := range inputItems {
+			mockConverter.On("FromEntity", entity).Return(expected[entity.Key], nil).Once()
+		}
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE `)
+		mockedRows := sqlmock.NewRows(fixColumns).
+			AddRow(label1Entity.ID, label1Entity.TenantID, label1Entity.AppID, label1Entity.RuntimeID, label1Entity.RuntimeContextID, label1Entity.AppTemplateID, label1Entity.Key, label1Entity.Value, label1Entity.Version, label1Entity.WebhookID).
+			AddRow(label2Entity.ID, label2Entity.TenantID, label2Entity.AppID, label2Entity.RuntimeID, label2Entity.RuntimeContextID, label2Entity.AppTemplateID, label2Entity.Key, label2Entity.Value, label2Entity.Version, label2Entity.WebhookID)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(tenantID).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+
+		// WHEN
+		actual, err := labelRepo.ListForGlobalObject(ctx, model.AppTemplateLabelableObject, tenantID)
+		// THEN
+		require.NoError(t, err)
+		assert.Equal(t, expected, actual)
+	})
+
+	t.Run("Error - Doesn't exist", func(t *testing.T) {
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		labelRepo := label.NewRepository(mockConverter)
+
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE app_id = $1`)
+		mockedRows := sqlmock.NewRows(fixColumns)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: refID}).WillReturnRows(mockedRows)
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		actual, err := labelRepo.ListForGlobalObject(ctx, model.ApplicationLabelableObject, refID)
+		// THEN
+		require.NoError(t, err)
+		assert.Empty(t, actual)
+	})
+
+	t.Run("Error - Select error", func(t *testing.T) {
+		labelRepo := label.NewRepository(nil)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+
+		escapedQuery := regexp.QuoteMeta(`SELECT id, tenant_id, app_id, runtime_id, runtime_context_id, app_template_id, key, value, version, webhook_id FROM public.labels WHERE app_id = $1`)
+		dbMock.ExpectQuery(escapedQuery).WithArgs(sql.NullString{Valid: true, String: refID}).WillReturnError(errors.New("persistence error"))
+
+		ctx := context.TODO()
+		ctx = persistence.SaveToContext(ctx, db)
+		// WHEN
+		_, err := labelRepo.ListForGlobalObject(ctx, model.ApplicationLabelableObject, refID)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Unexpected error while executing SQL query")
+	})
+
+	t.Run("Error - Missing persistence", func(t *testing.T) {
+		// GIVEN
+		labelRepo := label.NewRepository(nil)
+
+		// WHEN
+		_, err := labelRepo.ListForObject(context.TODO(), tenantID, model.ApplicationLabelableObject, refID)
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "unable to fetch database from context")
+	})
+}
+
 func TestRepository_ListByKey(t *testing.T) {
 	label1Model := fixModelLabelWithID("1", "foo", model.RuntimeLabelableObject)
 	label2Model := fixModelLabelWithID("2", "bar", model.ApplicationLabelableObject)
