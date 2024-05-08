@@ -21,7 +21,9 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/davecgh/go-spew/spew"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"net/http"
 	"os"
 	"strings"
@@ -165,19 +167,21 @@ func main() {
 	eventAPIConverter := eventdef.NewConverter(versionConverter, specConverter)
 	bundleConverter := bundleutil.NewConverter(authConverter, apiConverter, eventAPIConverter, docConverter)
 	appConverter := application.NewConverter(webhookConverter, bundleConverter)
+	appTemplateConverter := apptemplate.NewConverter(appConverter, webhookConverter)
 	tenantConverter := tenant.NewConverter()
 
 	applicationRepo := application.NewRepository(appConverter)
+	appTemplateRepo := apptemplate.NewRepository(appTemplateConverter)
 	labelRepo := label.NewRepository(label.NewConverter())
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, labelRepo, nil, nil, nil, uidSvc, nil, "", nil)
-
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, nil, nil, nil, labelRepo, nil, nil)
 	systemFieldDiscoveryClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)
 
-	systemFieldDiscoverySvc, err := systemfielddiscoveryengine.NewSystemFieldDiscoverEngineService(cfg.SystemFieldDiscoveryEngineConfig, systemFieldDiscoveryClient, transact, appSvc, tenantSvc)
+	systemFieldDiscoverySvc, err := systemfielddiscoveryengine.NewSystemFieldDiscoverEngineService(cfg.SystemFieldDiscoveryEngineConfig, systemFieldDiscoveryClient, transact, appSvc, appTemplateSvc, tenantSvc)
 	exitOnError(err, "error while creating system field discovery engine")
 
 	systemFieldDiscoveryProcessor := &systemfielddiscoveryengine.OperationsProcessor{
@@ -502,8 +506,12 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-
-		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, errProcess); errMarkAsFailed != nil {
+		processingError := &ord.ProcessingError{
+			RuntimeError: &ord.RuntimeError{
+				Message: errProcess.Error(),
+			},
+		}
+		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 			return op.ID, errMarkAsFailed
 		}

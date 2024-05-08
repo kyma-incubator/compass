@@ -37,7 +37,15 @@ type subscriptionsResponse struct {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	UpdateBaseURLAndReadyState(ctx context.Context, appID, baseURL string, ready bool) error
-	GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
+	//GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
+	Get(ctx context.Context, id string) (*model.Application, error)
+}
+
+// ApplicationTemplateService is responsible for the service-layer ApplicationTemplate operations.
+//
+//go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ApplicationTemplateService interface {
+	GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error)
 }
 
 // TenantService missing godoc
@@ -54,21 +62,23 @@ type Service struct {
 	client   *http.Client
 	transact persistence.Transactioner
 
-	appSvc    ApplicationService
-	tenantSvc TenantService
+	appSvc         ApplicationService
+	appTemplateSvc ApplicationTemplateService
+	tenantSvc      TenantService
 }
 
 // NewSystemFieldDiscoverEngineService returns a new object responsible for service-layer system field discovery engine operations.
-func NewSystemFieldDiscoverEngineService(cfg config.SystemFieldDiscoveryEngineConfig, client *http.Client, transact persistence.Transactioner, appSvc ApplicationService, tenantSvc TenantService) (*Service, error) {
+func NewSystemFieldDiscoverEngineService(cfg config.SystemFieldDiscoveryEngineConfig, client *http.Client, transact persistence.Transactioner, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, tenantSvc TenantService) (*Service, error) {
 	if err := cfg.PrepareConfiguration(); err != nil {
 		return nil, errors.Wrap(err, "while preparing system field discovery engine configuration")
 	}
 	return &Service{
-		cfg:       cfg,
-		transact:  transact,
-		client:    client,
-		appSvc:    appSvc,
-		tenantSvc: tenantSvc,
+		cfg:            cfg,
+		transact:       transact,
+		client:         client,
+		appSvc:         appSvc,
+		appTemplateSvc: appTemplateSvc,
+		tenantSvc:      tenantSvc,
 	}, nil
 }
 
@@ -79,6 +89,7 @@ func (s *Service) ProcessSaasRegistryApplication(ctx context.Context, appID, ten
 		return err
 	}
 
+	// Region label of app template?
 	region, err := s.getRegionLabelInTx(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving label with key %q for application with id %q failed", regionLabelKey, appID)
@@ -120,14 +131,22 @@ func (s *Service) getRegionLabelInTx(ctx context.Context, appID string) (string,
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
-	label, err := s.appSvc.GetLabel(ctx, appID, regionLabelKey)
+
+	app, err := s.appSvc.Get(ctx, appID)
 	if err != nil {
-		log.C(ctx).WithError(err).Errorf("error while getting label with key %q for application with ID %q", regionLabelKey, appID)
+		log.C(ctx).WithError(err).Errorf("error while getting applicationw with id %q", appID)
+		return "", err
+	}
+
+	//if app.ApplicationTemplateID!=nil
+	label, err := s.appTemplateSvc.GetLabel(ctx, *app.ApplicationTemplateID, regionLabelKey)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("error while getting label with key %q for applicationTemplate with ID %q", regionLabelKey, *app.ApplicationTemplateID)
 		return "", err
 	}
 	regionValue, ok := label.Value.(string)
 	if !ok {
-		log.C(ctx).Infof("%q label for application with ID %q is not a string", regionLabelKey, appID)
+		log.C(ctx).Infof("%q label for applicationTemplate with ID %q is not a string", regionLabelKey, *app.ApplicationTemplateID)
 		return "", nil
 	}
 
