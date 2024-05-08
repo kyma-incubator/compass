@@ -67,7 +67,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplateRegisterInput, formationTemplateOutput)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &formationTemplateRegisterInput, formationTemplateOutput)
 }
 
 func TestCreateAppOnlyFormationTemplate(t *testing.T) {
@@ -85,7 +85,7 @@ func TestCreateAppOnlyFormationTemplate(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertAppOnlyFormationTemplate(t, &appOnlyFormationTemplateRegisterInput, formationTemplateOutput)
+	assertions.AssertAppOnlyFormationTemplateFromRegisterInput(t, &appOnlyFormationTemplateRegisterInput, formationTemplateOutput)
 
 	invalidFormationTemplateWithArtifactKindName := "invalid-formation-template-with-artifact-kind"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithArtifactKindName)
@@ -151,7 +151,7 @@ func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplateRegisterInput, formationTemplateOutput)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &formationTemplateRegisterInput, formationTemplateOutput)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	formationName := "test-formation"
@@ -177,11 +177,11 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "create-formation-template-with-webhook-name"
-	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	webhookSyncMode := graphql.WebhookModeSync
 
-	formationTemplateInput.Webhooks = []*graphql.WebhookInput{
+	formationTemplateRegisterInput.Webhooks = []*graphql.WebhookInput{
 		{
 			Type: graphql.WebhookTypeFormationLifecycle,
 			Mode: &webhookSyncMode,
@@ -189,7 +189,7 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 		},
 	}
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTemplateInput)
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTemplateRegisterInput)
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -204,7 +204,7 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 	//THEN
 	require.NotEmpty(t, output.ID)
 	require.NotEmpty(t, output.Name)
-	assertions.AssertFormationTemplate(t, &formationTemplateInput, &output)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &formationTemplateRegisterInput, &output)
 
 	example.SaveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template with webhooks")
 
@@ -212,7 +212,7 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplateInput, formationTemplateOutput)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &formationTemplateRegisterInput, formationTemplateOutput)
 }
 
 func TestDeleteFormationTemplate(t *testing.T) {
@@ -284,7 +284,7 @@ func TestUpdateFormationTemplate(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateID)
 
-	assertions.AssertFormationTemplate(t, &updatedFormationTemplateInput, formationTemplateOutput)
+	assertions.AssertFormationTemplateFromUpdateInput(t, &updatedFormationTemplateInput, formationTemplateOutput)
 }
 
 func TestUpdateAppOnlyFormationTemplate(t *testing.T) {
@@ -303,7 +303,7 @@ func TestUpdateAppOnlyFormationTemplate(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateID)
 
-	assertions.AssertAppOnlyFormationTemplate(t, &appOnlyFormationTemplateRegisterInput, formationTemplateOutput)
+	assertions.AssertAppOnlyFormationTemplateFromRegisterInput(t, &appOnlyFormationTemplateRegisterInput, formationTemplateOutput)
 
 	t.Log("Should fail to update formation template by adding runtime artifact kind only")
 
@@ -423,11 +423,11 @@ func TestQueryFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "query-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	var createdFormationRequest graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &createdFormationRequest)
-	createdFormationRequest = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	createdFormationRequest = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	queryFormationTemplateRequest := fixtures.FixQueryFormationTemplateRequest(createdFormationRequest.ID)
 	output := graphql.FormationTemplate{}
@@ -445,7 +445,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 
 	t.Logf("Check if formation template with name %q and ID %q was received", formationTemplateName, createdFormationRequest.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplateInput, &output)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &formationTemplateRegisterInput, &output)
 }
 
 func TestQueryFormationTemplates(t *testing.T) {
@@ -525,14 +525,14 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	scopedFormationTemplateName := "tenant-scoped-formation-template-test"
-	scopedFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
+	scopedFormationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
 
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
 	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, &scopedFormationTemplate)
-	scopedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateInput) // tenant_id is extracted from the subject of the cert
+	scopedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateRegisterInput) // tenant_id is extracted from the subject of the cert
 
-	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &scopedFormationTemplateRegisterInput, &scopedFormationTemplate)
 
 	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
 	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSize(t, ctx, directorCertSecuredClient, first)
@@ -587,14 +587,14 @@ func TestResourceGroupScopedFormationTemplates(t *testing.T) {
 	resourceGroup := tenant.TestTenants.GetIDByName(t, tenant.TestAtomResourceGroup)
 
 	scopedFormationTemplateName := "resource-group-scoped-formation-template-test"
-	scopedFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
+	scopedFormationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
 
 	t.Logf("Create resource group scoped formation template with name: %q", scopedFormationTemplateName)
 	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, &scopedFormationTemplate)
-	scopedFormationTemplate = fixtures.CreateFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, scopedFormationTemplateInput)
+	scopedFormationTemplate = fixtures.CreateFormationTemplateWithTenant(t, ctx, certSecuredGraphQLClient, resourceGroup, scopedFormationTemplateRegisterInput)
 
-	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &scopedFormationTemplateRegisterInput, &scopedFormationTemplate)
 
 	t.Logf("List all formation templates for the tenant in which formation template with name: %q was created and verify that it is visible there", scopedFormationTemplateName)
 	formationTemplatePage := fixtures.QueryFormationTemplatesWithPageSizeAndTenant(t, ctx, certSecuredGraphQLClient, first, resourceGroup)
@@ -629,15 +629,15 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	scopedFormationTemplateName := "tenant-scoped-formation-template-with-webhook-test"
-	scopedFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
+	scopedFormationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
 	webhookSyncMode := graphql.WebhookModeSync
 
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
 	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, directorCertSecuredClient, &scopedFormationTemplate)
-	scopedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateInput) // tenant_id is extracted from the subject of the cert
+	scopedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, directorCertSecuredClient, scopedFormationTemplateRegisterInput) // tenant_id is extracted from the subject of the cert
 
-	assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
+	assertions.AssertFormationTemplateFromRegisterInput(t, &scopedFormationTemplateRegisterInput, &scopedFormationTemplate)
 	urlUpdated := "http://updated.url"
 	webhookInput := &graphql.WebhookInput{
 		Type: graphql.WebhookTypeFormationLifecycle,
@@ -687,6 +687,6 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 		err = testctx.Tc.RunOperation(ctx, directorCertSecuredClient, deleteReq, &deletedWebhook)
 		require.NoError(t, err)
 
-		assertions.AssertFormationTemplate(t, &scopedFormationTemplateInput, &scopedFormationTemplate)
+		assertions.AssertFormationTemplateFromRegisterInput(t, &scopedFormationTemplateRegisterInput, &scopedFormationTemplate)
 	})
 }
