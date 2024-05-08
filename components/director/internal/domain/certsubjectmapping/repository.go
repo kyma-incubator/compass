@@ -23,6 +23,7 @@ var (
 	tableColumns             = []string{"id", "subject", "consumer_type", "internal_consumer_id", "tenant_access_levels", "created_at", "updated_at"}
 	internalConsumerIDColumn = "internal_consumer_id"
 
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
 	Now = time.Now
 )
 
