@@ -16,41 +16,8 @@ function enableNodeExporterMTLS() {
   # Secret replication is tricky, that's why the patch is kept.
 
   daemonset=$(cat <<"EOF"
-apiVersion: apps/v1
-kind: DaemonSet
-metadata:
-  annotations:
-    deprecated.daemonset.template.generation: "1"
-    meta.helm.sh/release-name: monitoring
-    meta.helm.sh/release-namespace: kyma-system
-  labels:
-    app: prometheus-node-exporter
-    app.kubernetes.io/instance: monitoring
-    app.kubernetes.io/managed-by: Helm
-    app.kubernetes.io/name: prometheus-node-exporter
-    chart: prometheus-node-exporter-1.12.0
-    helm.sh/chart: prometheus-node-exporter-1.12.0
-    jobLabel: node-exporter
-    release: monitoring
-  name: monitoring-prometheus-node-exporter
-  namespace: kyma-system
 spec:
-  revisionHistoryLimit: 10
-  selector:
-    matchLabels:
-      app: prometheus-node-exporter
-      release: monitoring
   template:
-    metadata:
-      labels:
-        app: prometheus-node-exporter
-        app.kubernetes.io/instance: monitoring
-        app.kubernetes.io/managed-by: Helm
-        app.kubernetes.io/name: prometheus-node-exporter
-        chart: prometheus-node-exporter-1.12.0
-        helm.sh/chart: prometheus-node-exporter-1.12.0
-        jobLabel: node-exporter
-        release: monitoring
     spec:
       initContainers:
       - name: certs-init
@@ -75,85 +42,24 @@ spec:
           mountPath: /etc/certs
       containers:
       - args:
-        - --path.procfs=/host/proc
-        - --path.sysfs=/host/sys
-        - --path.rootfs=/host/root
-        - --web.listen-address=$(HOST_IP):9100
-        - --web.config=/etc/certs/web.yaml
-        - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+)($|/)
-        - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|cgroup|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|mqueue|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|sysfs|tracefs)$
+        - --web.config.file=/etc/certs/web.yaml
+        name: node-exporter
         env:
         - name: HOST_IP
           value: 0.0.0.0
-        image: eu.gcr.io/kyma-project/tpi/node-exporter:1.0.1-1de56388
-        imagePullPolicy: IfNotPresent
-        name: node-exporter
         livenessProbe: null
         readinessProbe: null
-        ports:
-        - containerPort: 9100
-          hostPort: 9100
-          name: metrics
-          protocol: TCP
-        resources: {}
-        securityContext:
-          allowPrivilegeEscalation: false
-          privileged: false
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
         volumeMounts:
         - mountPath: /etc/certs
           name: node-certs
         - name: istio-certs
           mountPath: /etc/istio/certs
-        - mountPath: /host/proc
-          name: proc
-          readOnly: true
-        - mountPath: /host/sys
-          name: sys
-          readOnly: true
-        - mountPath: /host/root
-          mountPropagation: HostToContainer
-          name: root
-          readOnly: true
-      dnsPolicy: ClusterFirst
-      hostNetwork: true
-      hostPID: true
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext:
-        fsGroup: 65534
-        runAsGroup: 65534
-        runAsNonRoot: true
-        runAsUser: 65534
-      serviceAccount: monitoring-prometheus-node-exporter
-      serviceAccountName: monitoring-prometheus-node-exporter
-      terminationGracePeriodSeconds: 30
-      tolerations:
-      - effect: NoSchedule
-        operator: Exists
       volumes:
       - name: istio-certs
         secret:
           secretName: istio-ca-secret
       - name: node-certs
         emptyDir: {}
-      - hostPath:
-          path: /proc
-          type: ""
-        name: proc
-      - hostPath:
-          path: /sys
-          type: ""
-        name: sys
-      - hostPath:
-          path: /
-          type: ""
-        name: root
-  updateStrategy:
-    rollingUpdate:
-      maxUnavailable: 1
-    type: RollingUpdate
 
 EOF
   )
@@ -161,7 +67,7 @@ EOF
 
   kubectl_k3d_kyma get secret istio-ca-secret --namespace=istio-system -o yaml | grep -v '^\s*namespace:\s' | kubectl_k3d_kyma replace --force --namespace=kyma-system -f -
 
-  kubectl_k3d_kyma apply -f daemonset.yaml
+  kubectl_k3d_kyma patch daemonset monitoring-prometheus-node-exporter -n kyma-system --patch-file daemonset.yaml
 
   rm daemonset.yaml
 } 
