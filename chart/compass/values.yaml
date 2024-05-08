@@ -224,11 +224,11 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3841"
+      version: "PR-3852"
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3853"
+      version: "PR-3852"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -1341,6 +1341,7 @@ global:
       region: "eu-1"
     destination:
       consumerSubdomain: "compass-external-services-mock"
+      consumerSubdomainMtls: "compass-external-services-mock-sap-mtls"
       instanceID: "37d7d783-d9ad-47de-b6c8-b05a4cb961ca" # randomly generated UUID
       claims:
         subaccountIDKey: "subaccountid"

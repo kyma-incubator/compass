@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/tidwall/sjson"
 	"io"
 	"net/http"
 	"strconv"
@@ -316,17 +317,16 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 		authType = authResult.String()
 	}
 
-	tokenValue, err := validateAuthorization(ctx, req)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
+	subaccountID := req.Header.Get("subaccount_id")
+	serviceInstanceID := req.Header.Get("instance_id")
+
+	if subaccountID == "" && serviceInstanceID == "" {
+		err := errors.New("missing subaccount_id and instance_id headers")
+		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
+
 		return
 	}
 
-	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
-		return
-	}
 	log.C(ctx).Infof("Subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
 	var responses []PostResponse
@@ -385,7 +385,6 @@ func (h *Handler) PostDestination(writer http.ResponseWriter, req *http.Request)
 // DeleteDestination is an "internal/technical" handler for deleting Destinations from E2E tests
 func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	correlationID := correlation.CorrelationIDFromContext(ctx)
 
 	destinationName := mux.Vars(req)["name"]
 
@@ -394,17 +393,13 @@ func (h *Handler) DeleteDestination(writer http.ResponseWriter, req *http.Reques
 		return
 	}
 
-	tokenValue, err := validateAuthorization(ctx, req)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusUnauthorized)
+	subaccountID := req.Header.Get("subaccount_id")
+	serviceInstanceID := req.Header.Get("instance_id")
+	if subaccountID == "" && serviceInstanceID == "" {
+		http.Error(writer, "Bad request - missing subaccount_id and instance_id headers", http.StatusBadRequest)
 		return
 	}
 
-	subaccountID, serviceInstanceID, err := extractSubaccountIDAndServiceInstanceIDFromDestinationToken(tokenValue)
-	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusInternalServerError)
-		return
-	}
 	log.C(ctx).Infof("Deleting Destination with subaccount ID: %q and service instance ID: %q in the destination token", subaccountID, serviceInstanceID)
 
 	identifiers := map[string]string{
@@ -877,6 +872,14 @@ func requestBodyToDestination(authType string, bodyBytes []byte) (DestinationReq
 		destinationRequestBody = &OAuth2ClientCredsDestRequestBody{}
 	default:
 		return nil, errors.Errorf("The provided destination authentication type: %s is invalid", authType)
+	}
+
+	var err error
+	if correlationIds := gjson.GetBytes(bodyBytes, "additionalProperties.correlationIds"); correlationIds.Exists() {
+		bodyBytes, err = sjson.SetBytes(bodyBytes, "correlationIds", correlationIds.String())
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	destinationTypeName := destinationRequestBody.GetDestinationType()
