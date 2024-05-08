@@ -961,15 +961,15 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		clientID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.ClientIDKey)
+		clientID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.ClientIDKey).String()
 		require.NotEmpty(t, clientID)
-		subaccountID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey)
+		subaccountID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey).String()
 		require.NotEmpty(t, subaccountID)
-		userName := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey)
+		userName := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey).String()
 		require.NotEmpty(t, userName)
-		subdomain := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey)
+		subdomain := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey).String()
 		require.NotEmpty(t, subdomain)
-		userContextHeader := buildUserContextHeader(t, clientID.String(), subaccountID.String(), userName.String(), subdomain.String())
+		userContextHeader := buildUserContextHeader(t, clientID, subaccountID, userName, subdomain)
 		headers := map[string][]string{subscription.UserContextHeader: {userContextHeader}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
