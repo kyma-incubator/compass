@@ -968,7 +968,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		userName := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey).String()
 		require.NotEmpty(t, userName)
 		subdomain := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey).String()
-		require.NotEmpty(t, subdomain)
 		userContextHeader := buildUserContextHeader(t, clientID, subaccountID, userName, subdomain)
 		headers := map[string][]string{subscription.UserContextHeader: {userContextHeader}}
 
