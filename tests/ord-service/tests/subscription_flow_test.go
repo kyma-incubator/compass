@@ -961,9 +961,15 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
-		require.NoError(t, err)
-		headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
+		clientID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.ClientIDKey).String()
+		require.NotEmpty(t, clientID)
+		subaccountID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey).String()
+		require.NotEmpty(t, subaccountID)
+		userName := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey).String()
+		require.NotEmpty(t, userName)
+		subdomain := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey).String()
+		userContextHeader := buildUserContextHeader(t, clientID, subaccountID, userName, subdomain)
+		headers := map[string][]string{subscription.UserContextHeader: {userContextHeader}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
 		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
@@ -1168,4 +1174,18 @@ func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expect
 
 func generateDestinationName(name string) string {
 	return fmt.Sprintf("%s-%s", name, strconv.FormatInt(time.Now().Unix(), 10))
+}
+
+func buildUserContextHeader(t *testing.T, clientID, subaccountID, userName, subdomain string) string {
+	consumerClaims, err := sjson.Set("{}", conf.ConsumerClaimsKeysConfig.ClientIDKey, clientID)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey, subaccountID)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey, userName)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey, subdomain)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+	require.NoError(t, err)
+	return consumerClaims
 }

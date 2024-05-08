@@ -84,6 +84,7 @@ type config struct {
 	ApplicationTemplateProductLabel     string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 	GatewayOauth                        string        `envconfig:"APP_GATEWAY_OAUTH"`
 	ExternalCertTestOUSubaccount        string        `envconfig:"APP_EXTERNAL_CERT_TEST_OU_SUBACCOUNT"`
+	ConsumerClaimsKeysConfig            testconfig.ConsumerClaimsKeysConfig
 }
 
 var conf config
