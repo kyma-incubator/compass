@@ -31,6 +31,7 @@ var (
 	tableColumnsWithoutTenant = []string{idColumn, "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset", "discovery_consumers", "created_at", "updated_at"}
 	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)
 
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
 	Now = time.Now
 )
 
