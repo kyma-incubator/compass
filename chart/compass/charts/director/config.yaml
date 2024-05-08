@@ -96,6 +96,8 @@ graphql:
     deleteApplicationLabel: ["application:write"]
     setRuntimeLabel: ["runtime:write"]
     deleteRuntimeLabel: ["runtime:write"]
+    setFormationTemplateLabel: ["formation_template:write"]
+    deleteFormationTemplateLabel: ["formation_template:write"]
     requestOneTimeTokenForRuntime: ["runtime:write"]
     requestOneTimeTokenForApplication: ["application:write"]
     requestClientCredentialsForRuntime: ["runtime:write"]

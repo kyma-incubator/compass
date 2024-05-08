@@ -719,8 +719,8 @@ func (g *Graphqlizer) FormationInputWithStateToGQL(in graphql.FormationInput) (s
 	}`)
 }
 
-// FormationTemplateInputToGQL missing godoc
-func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateInput) (string, error) {
+// FormationTemplateRegisterInputToGQL missing godoc
+func (g *Graphqlizer) FormationTemplateRegisterInputToGQL(in graphql.FormationTemplateRegisterInput) (string, error) {
 	return g.genericToGQL(in, `{
 		name: "{{.Name}}"
 		applicationTypes: [
@@ -757,6 +757,45 @@ func (g *Graphqlizer) FormationTemplateInputToGQL(in graphql.FormationTemplateIn
 		{{- end}}
 		{{- if .SupportsReset }}
 		supportsReset: {{.SupportsReset}}
+		{{- end}}
+		{{- if .Labels }}
+		labels: {{ LabelsToGQL .Labels}},
+		{{- end }}
+	}`)
+}
+
+// FormationTemplateUpdateInputToGQL missing godoc
+func (g *Graphqlizer) FormationTemplateUpdateInputToGQL(in graphql.FormationTemplateUpdateInput) (string, error) {
+	return g.genericToGQL(in, `{
+		name: "{{.Name}}"
+		applicationTypes: [
+			{{- range $i, $e := .ApplicationTypes}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		runtimeTypes:  [
+			{{- range $i, $e := .RuntimeTypes}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+        {{- if .RuntimeTypeDisplayName }}
+		runtimeTypeDisplayName: "{{.RuntimeTypeDisplayName}}"
+		{{- end }}
+        {{- if .RuntimeArtifactKind }}
+		runtimeArtifactKind: {{.RuntimeArtifactKind}}
+		{{- end }}
+		{{- if .LeadingProductIDs }} 
+		leadingProductIDs: [
+			{{- range $i, $e := .LeadingProductIDs }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
+		{{- end}}
+		{{- if .SupportsReset }}
+		supportsReset: {{.SupportsReset}}
+		{{- end}}
+		{{- if .DiscoveryConsumers }} 
+		discoveryConsumers: [
+			{{- range $i, $e := .DiscoveryConsumers }}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }} ],
 		{{- end}}
 	}`)
 }

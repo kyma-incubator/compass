@@ -628,7 +628,15 @@ type FormationStatusError struct {
 	ErrorCode    int     `json:"errorCode"`
 }
 
-type FormationTemplateInput struct {
+type FormationTemplatePage struct {
+	Data       []*FormationTemplate `json:"data"`
+	PageInfo   *PageInfo            `json:"pageInfo"`
+	TotalCount int                  `json:"totalCount"`
+}
+
+func (FormationTemplatePage) IsPageable() {}
+
+type FormationTemplateRegisterInput struct {
 	Name                   string          `json:"name"`
 	ApplicationTypes       []string        `json:"applicationTypes"`
 	RuntimeTypes           []string        `json:"runtimeTypes,omitempty"`
@@ -638,15 +646,19 @@ type FormationTemplateInput struct {
 	LeadingProductIDs      []string        `json:"leadingProductIDs,omitempty"`
 	SupportsReset          *bool           `json:"supportsReset,omitempty"`
 	DiscoveryConsumers     []string        `json:"discoveryConsumers,omitempty"`
+	Labels                 Labels          `json:"labels,omitempty"`
 }
 
-type FormationTemplatePage struct {
-	Data       []*FormationTemplate `json:"data"`
-	PageInfo   *PageInfo            `json:"pageInfo"`
-	TotalCount int                  `json:"totalCount"`
+type FormationTemplateUpdateInput struct {
+	Name                   string        `json:"name"`
+	ApplicationTypes       []string      `json:"applicationTypes"`
+	RuntimeTypes           []string      `json:"runtimeTypes,omitempty"`
+	RuntimeTypeDisplayName *string       `json:"runtimeTypeDisplayName,omitempty"`
+	RuntimeArtifactKind    *ArtifactType `json:"runtimeArtifactKind,omitempty"`
+	LeadingProductIDs      []string      `json:"leadingProductIDs,omitempty"`
+	SupportsReset          *bool         `json:"supportsReset,omitempty"`
+	DiscoveryConsumers     []string      `json:"discoveryConsumers,omitempty"`
 }
-
-func (FormationTemplatePage) IsPageable() {}
 
 type HealthCheck struct {
 	Type      HealthCheckType            `json:"type"`

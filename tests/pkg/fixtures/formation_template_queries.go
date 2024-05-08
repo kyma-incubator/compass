@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) graphql.FormationTemplate {
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateRegisterInput) graphql.FormationTemplate {
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
 
@@ -23,8 +23,8 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	return formationTemplate
 }
 
-func CreateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateInput) {
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+func CreateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateRegisterInput) {
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
 	formationTemplate := graphql.FormationTemplate{}
@@ -39,8 +39,8 @@ func CreateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlCl
 	t.Log("Error: ", err.Error())
 }
 
-func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.FormationTemplateInput) graphql.FormationTemplate {
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant string, in graphql.FormationTemplateRegisterInput) graphql.FormationTemplate {
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(in)
 	require.NoError(t, err)
 	createRequest := FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
 
@@ -52,7 +52,7 @@ func CreateFormationTemplateWithTenant(t require.TestingT, ctx context.Context, 
 }
 
 func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
-	formationTmplInput := graphql.FormationTemplateInput{
+	formationTmplRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           []string{runtimeType},
@@ -60,7 +60,7 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 		RuntimeArtifactKind:    &runtimeArtifactKind,
 	}
 
-	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTmplRegisterInput)
 	require.NoError(t, err)
 	formationTmplRequest := FixCreateFormationTemplateRequest(formationTmplGQLInput)
 
@@ -72,14 +72,14 @@ func CreateFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlC
 }
 
 func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName string, applicationTypes []string, leadingProductIDs []string, supportsReset bool) graphql.FormationTemplate {
-	formationTmplInput := graphql.FormationTemplateInput{
+	formationTmplRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:              formationTemplateName,
 		ApplicationTypes:  applicationTypes,
 		LeadingProductIDs: leadingProductIDs,
 		SupportsReset:     &supportsReset,
 	}
 
-	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTmplRegisterInput)
 	require.NoError(t, err)
 	formationTmplRequest := FixCreateFormationTemplateRequest(formationTmplGQLInput)
 
@@ -91,9 +91,9 @@ func CreateAppOnlyFormationTemplateWithoutInput(t *testing.T, ctx context.Contex
 }
 
 func CreateFormationTemplateWithLeadingProductIDs(t *testing.T, ctx context.Context, gqlClient *gcli.Client, formationTemplateName, runtimeType string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplate {
-	formationTmplInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, applicationTypes, []string{runtimeType}, runtimeArtifactKind, leadingProductIDs)
+	formationTmplRegisterInput := FixFormationTemplateRegisterInputWithLeadingProductIDs(formationTemplateName, applicationTypes, []string{runtimeType}, runtimeArtifactKind, leadingProductIDs)
 
-	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTmplRegisterInput)
 	require.NoError(t, err)
 	formationTmplRequest := FixCreateFormationTemplateRequest(formationTmplGQLInput)
 
@@ -159,8 +159,8 @@ func CleanupFormationTemplate(t require.TestingT, ctx context.Context, gqlClient
 	return &formationTemplate
 }
 
-func UpdateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, in graphql.FormationTemplateInput) {
-	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(in)
+func UpdateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, id string, in graphql.FormationTemplateUpdateInput) {
+	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateUpdateInputToGQL(in)
 	require.NoError(t, err)
 
 	updateFormationTemplateRequest := FixUpdateFormationTemplateRequest(id, updatedFormationTemplateInputGQLString)

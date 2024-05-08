@@ -2,10 +2,9 @@ package formationtemplate_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplate/automock"
-	"github.com/pkg/errors"
-
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -14,17 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var testErr = errors.New("test-error")
-
-func TestConverter_FromInputGraphQL(t *testing.T) {
+func TestConverter_FromRegisterInputGraphQL(t *testing.T) {
 	modelWebhookInputs := fixModelWebhookInput()
 	GQLWebhooksInputs := fixGQLWebhookInput()
 
 	testCases := []struct {
 		Name               string
-		Input              *graphql.FormationTemplateInput
+		Input              *graphql.FormationTemplateRegisterInput
 		WebhookConverterFn func() *automock.WebhookConverter
-		Expected           *model.FormationTemplateInput
+		Expected           *model.FormationTemplateRegisterInput
 		ExpectedErr        bool
 	}{
 		{
@@ -35,7 +32,7 @@ func TestConverter_FromInputGraphQL(t *testing.T) {
 				conv.On("MultipleInputFromGraphQL", GQLWebhooksInputs).Return(modelWebhookInputs, nil)
 				return conv
 			},
-			Expected: &formationTemplateModelInput,
+			Expected: &formationTemplateRegisterInputModel,
 		},
 		{
 			Name:  "Success for app only templates",
@@ -84,7 +81,7 @@ func TestConverter_FromInputGraphQL(t *testing.T) {
 			whConverter := testCase.WebhookConverterFn()
 			converter := formationtemplate.NewConverter(whConverter)
 			// WHEN
-			result, err := converter.FromInputGraphQL(testCase.Input)
+			result, err := converter.FromRegisterInputGraphQL(testCase.Input)
 			if testCase.ExpectedErr {
 				require.Error(t, err)
 			} else {
@@ -98,14 +95,16 @@ func TestConverter_FromInputGraphQL(t *testing.T) {
 }
 
 func TestConverter_FromModelInputToModel(t *testing.T) {
+	ftModel := fixFormationTemplateModel(time.Time{}, nil)
+
 	testCases := []struct {
 		Name     string
-		Input    *model.FormationTemplateInput
+		Input    *model.FormationTemplateRegisterInput
 		Expected *model.FormationTemplate
 	}{{
 		Name:     "Success",
-		Input:    &formationTemplateModelInput,
-		Expected: &formationTemplateModel,
+		Input:    &formationTemplateRegisterInputModel,
+		Expected: ftModel,
 	}, {
 		Name:     "Empty",
 		Input:    nil,
@@ -117,7 +116,7 @@ func TestConverter_FromModelInputToModel(t *testing.T) {
 			// GIVEN
 			converter := formationtemplate.NewConverter(nil)
 			// WHEN
-			result := converter.FromModelInputToModel(testCase.Input, testID, testTenantID)
+			result := converter.FromModelRegisterInputToModel(testCase.Input, testFormationTemplateID, testTenantID)
 
 			if testCase.Expected != nil {
 				testCase.Expected.Webhooks[0].ID = result.Webhooks[0].ID // id is generated ad-hoc and can't be mocked
@@ -263,15 +262,18 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_ToEntity(t *testing.T) {
+	ftModel := fixFormationTemplateModel(time.Time{}, nil)
+	ftEntity := fixFormationTemplateEntity(time.Time{}, nil)
+
 	t.Run("Success", func(t *testing.T) {
 		// GIVEN
 		converter := formationtemplate.NewConverter(nil)
 		// WHEN
-		result, err := converter.ToEntity(&formationTemplateModel)
+		result, err := converter.ToEntity(ftModel)
 
 		// THEN
 		require.NoError(t, err)
-		assert.Equal(t, result, &formationTemplateEntity)
+		assert.Equal(t, result, ftEntity)
 	})
 	t.Run("Returns nil when given empty model", func(t *testing.T) {
 		// GIVEN
@@ -285,16 +287,19 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func TestConverter_FromEntity(t *testing.T) {
-	formationTemplateModelWithoutWebhooks := formationTemplateModel
+	formationTemplateModelWithoutWebhooks := fixFormationTemplateModel(time.Time{}, nil)
 	formationTemplateModelWithoutWebhooks.Webhooks = nil
+
+	ftEntity := fixFormationTemplateEntity(time.Time{}, nil)
+
 	testCases := []struct {
 		Name     string
 		Input    *formationtemplate.Entity
 		Expected *model.FormationTemplate
 	}{{
 		Name:     "Success",
-		Input:    &formationTemplateEntity,
-		Expected: &formationTemplateModelWithoutWebhooks,
+		Input:    ftEntity,
+		Expected: formationTemplateModelWithoutWebhooks,
 	}, {
 		Name:     "Empty",
 		Input:    nil,

@@ -2,6 +2,11 @@ package formationtemplate
 
 import (
 	"context"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -21,10 +26,12 @@ const (
 
 var (
 	idTableColumns            = []string{idColumn}
-	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset", "discovery_consumers"}
+	updatableTableColumns     = []string{"name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset", "discovery_consumers", "updated_at"}
 	tenantTableColumn         = []string{tenantIDColumn}
-	tableColumnsWithoutTenant = append(idTableColumns, updatableTableColumns...)
+	tableColumnsWithoutTenant = []string{idColumn, "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset", "discovery_consumers", "created_at", "updated_at"}
 	tableColumns              = append(tableColumnsWithoutTenant, tenantTableColumn...)
+
+	Now = time.Now
 )
 
 // EntityConverter converts between the internal model and entity
@@ -70,20 +77,21 @@ func (r *repository) Create(ctx context.Context, item *model.FormationTemplate) 
 		return apperrors.NewInternalError("model can not be empty")
 	}
 
-	log.C(ctx).Debugf("Converting Formation Template with id %s to entity", item.ID)
+	log.C(ctx).Debugf("Converting formation template with ID: %s to entity", item.ID)
 	entity, err := r.conv.ToEntity(item)
 	if err != nil {
-		return errors.Wrapf(err, "while converting Formation Template with ID %s", item.ID)
+		return errors.Wrapf(err, "while converting formation template with ID: %s", item.ID)
 	}
 
-	log.C(ctx).Debugf("Persisting Formation Template entity with id %s to db", item.ID)
+	entity.CreatedAt = Now()
+	log.C(ctx).Debugf("Persisting Formation Template entity with ID: %s to DB", item.ID)
 	return r.creator.Create(ctx, entity)
 }
 
 // Get queries for a single FormationTemplate matching the given id
 func (r *repository) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
 	var entity Entity
-	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition("id", id)}, repo.NoOrderBy, &entity); err != nil {
+	if err := r.singleGetterGlobal.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 
@@ -136,7 +144,7 @@ func (r *repository) GetByNameAndTenant(ctx context.Context, templateName, tenan
 }
 
 // List queries for all FormationTemplate filtered by name, sorted by ID and paginated by the pageSize and cursor parameters
-func (r *repository) List(ctx context.Context, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+func (r *repository) List(ctx context.Context, filters []*labelfilter.LabelFilter, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
 	var entityCollection EntityCollection
 
 	var conditions *repo.ConditionTree
@@ -150,6 +158,19 @@ func (r *repository) List(ctx context.Context, name *string, tenantID string, pa
 		conditions = repo.And(conditions, &repo.ConditionTree{Operand: repo.NewEqualCondition(nameColumn, *name)})
 	}
 
+	// The tenant isolation for the formation template is handled with the 'tenant_id' where clause above.
+	// That's why we use default UUID here, and in the label filter query we ignore it when the query is for formation template entity.
+	var defaultUUIDTenant uuid.UUID
+
+	filterSubquery, args, err := label.FilterQuery(model.FormationTemplateLabelableObject, label.IntersectSet, defaultUUIDTenant, filters)
+	if err != nil {
+		return nil, errors.Wrap(err, "while building filter query for formation template")
+	}
+
+	if filterSubquery != "" {
+		conditions = repo.And(conditions, &repo.ConditionTree{Operand: repo.NewInConditionForSubQuery(idColumn, filterSubquery, args)})
+	}
+
 	page, totalCount, err := r.pageableQuerierGlobal.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, idColumn, &entityCollection, conditions)
 	if err != nil {
 		return nil, err
@@ -160,7 +181,7 @@ func (r *repository) List(ctx context.Context, name *string, tenantID string, pa
 	for _, entity := range entityCollection {
 		isModel, err := r.conv.FromEntity(entity)
 		if err != nil {
-			return nil, errors.Wrapf(err, "while converting Formation Template entity with ID %s", entity.ID)
+			return nil, errors.Wrapf(err, "while converting Formation Template entity with ID: %s", entity.ID)
 		}
 
 		items = append(items, isModel)
@@ -182,6 +203,8 @@ func (r *repository) Update(ctx context.Context, model *model.FormationTemplate)
 	if err != nil {
 		return errors.Wrapf(err, "while converting Formation Template with ID %s", model.ID)
 	}
+	currentTime := Now()
+	entity.UpdatedAt = &currentTime
 
 	if model.TenantID != nil {
 		return r.updaterWithEmbeddedTenant.UpdateSingleGlobal(ctx, entity)
@@ -201,7 +224,7 @@ func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 	return r.deleterWithEmbeddedTenant.DeleteOne(ctx, resource.FormationTemplate, tenantID, conditions)
 }
 
-// Exists check if a formation template with given ID exists
-func (r *repository) Exists(ctx context.Context, id string) (bool, error) {
+// ExistsGlobal check if a formation template with given ID exists globally
+func (r *repository) ExistsGlobal(ctx context.Context, id string) (bool, error) {
 	return r.existQuerierGlobal.ExistsGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)})
 }

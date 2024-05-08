@@ -27,7 +27,7 @@ const (
 var (
 	runtimeType                   = "runtimeTypeTest"
 	serviceInstanceArtifactType   = graphql.ArtifactTypeServiceInstance
-	updatedFormationTemplateInput = graphql.FormationTemplateInput{
+	updatedFormationTemplateInput = graphql.FormationTemplateUpdateInput{
 		Name:                   "updated-formation-template-name",
 		ApplicationTypes:       []string{"app-type-3", "app-type-4"},
 		RuntimeTypes:           []string{"runtime-type-2"},
@@ -43,9 +43,9 @@ func TestCreateFormationTemplate(t *testing.T) {
 	appType := "async-app-type-1"
 	formationTemplateName := "create-formation-template-name"
 	leadingProductIDs := []string{"leading-product-id"}
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, []string{appType}, []string{"runtimeTypeTest"}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithLeadingProductIDs(formationTemplateName, []string{appType}, []string{"runtimeTypeTest"}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTemplateRegisterInput)
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -67,7 +67,7 @@ func TestCreateFormationTemplate(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplateInput, formationTemplateOutput)
+	assertions.AssertFormationTemplate(t, &formationTemplateRegisterInput, formationTemplateOutput)
 }
 
 func TestCreateAppOnlyFormationTemplate(t *testing.T) {
@@ -76,45 +76,45 @@ func TestCreateAppOnlyFormationTemplate(t *testing.T) {
 	appOnlyFormationTemplateName := "app-only-formation-template"
 	t.Logf("Create formation template with name: %q", appOnlyFormationTemplateName)
 
-	appOnlyFormationTemplateInput := fixtures.FixAppOnlyFormationTemplateInput(appOnlyFormationTemplateName)
+	appOnlyFormationTemplateRegisterInput := fixtures.FixAppOnlyFormationTemplateRegisterInput(appOnlyFormationTemplateName)
 	var output graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &output)
-	output = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateInput)
+	output = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateRegisterInput)
 
 	t.Logf("Check if formation template with name %q was created", appOnlyFormationTemplateName)
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertAppOnlyFormationTemplate(t, &appOnlyFormationTemplateInput, formationTemplateOutput)
+	assertions.AssertAppOnlyFormationTemplate(t, &appOnlyFormationTemplateRegisterInput, formationTemplateOutput)
 
 	invalidFormationTemplateWithArtifactKindName := "invalid-formation-template-with-artifact-kind"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithArtifactKindName)
 
-	invalidFormationTemplateWithArtifactKindInput := fixtures.FixInvalidFormationTemplateInputWithRuntimeArtifactKind(invalidFormationTemplateWithArtifactKindName)
+	invalidFormationTemplateWithArtifactKindInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeArtifactKind(invalidFormationTemplateWithArtifactKindName)
 	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithArtifactKindInput)
 
 	invalidFormationTemplateWithDisplayName := "invalid-formation-template-with-display-name"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithDisplayName)
 
-	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateInputWithRuntimeTypeDisplayName(invalidFormationTemplateWithDisplayName)
+	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(invalidFormationTemplateWithDisplayName)
 	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithDisplayNameInput)
 
 	invalidFormationTemplateWithRuntimeTypesName := "invalid-formation-template-with-runtime-types"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithRuntimeTypesName)
 
-	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateInputWithRuntimeTypes(invalidFormationTemplateWithRuntimeTypesName, runtimeType)
+	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(invalidFormationTemplateWithRuntimeTypesName, runtimeType)
 	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithRuntimeTypesInput)
 
 	invalidFormationTemplateWithoutArtifactKindName := "invalid-formation-template-without-artifact-kind"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithoutArtifactKindName)
 
-	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateInputWithoutArtifactKind(invalidFormationTemplateWithoutArtifactKindName, runtimeType)
+	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(invalidFormationTemplateWithoutArtifactKindName, runtimeType)
 	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutArtifactKindInput)
 
 	invalidFormationTemplateWithoutDisplayName := "invalid-formation-template-without-display-name"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithoutDisplayName)
 
-	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateInputWithoutDisplayName(invalidFormationTemplateWithoutDisplayName, runtimeType)
+	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutDisplayName(invalidFormationTemplateWithoutDisplayName, runtimeType)
 	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutDisplayNameInput)
 }
 
@@ -125,11 +125,11 @@ func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
 	appType := "formation-app-type1"
 	formationTemplateName := "create-formation-template-name"
 	leadingProductIDs := []string{"leading-product-id"}
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, []string{appType}, []string{"runtimeTypeTest"}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithLeadingProductIDs(formationTemplateName, []string{appType}, []string{"runtimeTypeTest"}, graphql.ArtifactTypeEnvironmentInstance, leadingProductIDs)
 	supportsReset := false
-	formationTemplateInput.SupportsReset = &supportsReset
+	formationTemplateRegisterInput.SupportsReset = &supportsReset
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTemplateRegisterInput)
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -151,7 +151,7 @@ func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
 
-	assertions.AssertFormationTemplate(t, &formationTemplateInput, formationTemplateOutput)
+	assertions.AssertFormationTemplate(t, &formationTemplateRegisterInput, formationTemplateOutput)
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 	formationName := "test-formation"
@@ -177,7 +177,7 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "create-formation-template-with-webhook-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	webhookSyncMode := graphql.WebhookModeSync
 
@@ -189,7 +189,7 @@ func TestCreateFormationTemplateWithFormationLifecycleWebhook(t *testing.T) {
 		},
 	}
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTemplateInput)
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -220,7 +220,7 @@ func TestDeleteFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "delete-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	var formationTemplateReq graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplateReq)
@@ -256,9 +256,9 @@ func TestUpdateFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	createdFormationTemplateName := "created-formation-template-name"
-	createdFormationTemplateInput := fixtures.FixFormationTemplateInput(createdFormationTemplateName)
+	createdFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(createdFormationTemplateName)
 
-	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
+	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateUpdateInputToGQL(updatedFormationTemplateInput)
 	require.NoError(t, err)
 
 	var formationTemplateReq graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
@@ -293,41 +293,41 @@ func TestUpdateAppOnlyFormationTemplate(t *testing.T) {
 	appOnlyFormationTemplateName := "app-only-formation-template"
 	t.Logf("Create formation template with name: %q", appOnlyFormationTemplateName)
 
-	appOnlyFormationTemplateInput := fixtures.FixAppOnlyFormationTemplateInput(appOnlyFormationTemplateName)
+	appOnlyFormationTemplateRegisterInput := fixtures.FixAppOnlyFormationTemplateRegisterInput(appOnlyFormationTemplateName)
 	var output graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &output)
-	output = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateInput)
+	output = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, appOnlyFormationTemplateRegisterInput)
 	formationTemplateID := output.ID
 
 	t.Logf("Check if formation template with name %q was created", appOnlyFormationTemplateName)
 
 	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateID)
 
-	assertions.AssertAppOnlyFormationTemplate(t, &appOnlyFormationTemplateInput, formationTemplateOutput)
+	assertions.AssertAppOnlyFormationTemplate(t, &appOnlyFormationTemplateRegisterInput, formationTemplateOutput)
 
 	t.Log("Should fail to update formation template by adding runtime artifact kind only")
 
-	invalidFormationTemplateWithArtifactKindInput := fixtures.FixInvalidFormationTemplateInputWithRuntimeArtifactKind(appOnlyFormationTemplateName)
+	invalidFormationTemplateWithArtifactKindInput := fixtures.FixInvalidFormationTemplateUpdateInputWithRuntimeArtifactKind(appOnlyFormationTemplateName)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithArtifactKindInput)
 
 	t.Log("Should fail to update formation template by adding runtime type display name only")
 
-	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateInputWithRuntimeTypeDisplayName(appOnlyFormationTemplateName)
+	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(appOnlyFormationTemplateName)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithDisplayNameInput)
 
 	t.Log("Should fail to update formation template by adding runtime types only")
 
-	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateInputWithRuntimeTypes(appOnlyFormationTemplateName, runtimeType)
+	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(appOnlyFormationTemplateName, runtimeType)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithRuntimeTypesInput)
 
 	t.Log("Should fail to update formation template by adding runtime artifact kind and runtime types only")
 
-	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateInputWithoutDisplayName(appOnlyFormationTemplateName, runtimeType)
+	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutDisplayName(appOnlyFormationTemplateName, runtimeType)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithoutArtifactKindInput)
 
 	t.Log("Should fail to update formation template by adding runtime display name and runtime types only")
 
-	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateInputWithoutArtifactKind(appOnlyFormationTemplateName, runtimeType)
+	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(appOnlyFormationTemplateName, runtimeType)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithoutDisplayNameInput)
 }
 
@@ -336,9 +336,9 @@ func TestModifyFormationTemplateWebhooks(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "create-formation-template-with-webhook-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
-	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTemplateInput)
+	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTemplateInput)
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
@@ -423,7 +423,7 @@ func TestQueryFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "query-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	var createdFormationRequest graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &createdFormationRequest)
@@ -453,9 +453,9 @@ func TestQueryFormationTemplates(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "delete-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 	runtimeType := "runtime-type-2"
-	secondFormationInput := graphql.FormationTemplateInput{
+	secondFormationRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:                   "test-formation-template-2",
 		ApplicationTypes:       []string{"app-type-3", "app-type-5"},
 		RuntimeTypes:           []string{runtimeType},
@@ -472,7 +472,7 @@ func TestQueryFormationTemplates(t *testing.T) {
 	createdFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
 	var secondCreatedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &secondCreatedFormationTemplate)
-	secondCreatedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationInput)
+	secondCreatedFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, secondFormationRegisterInput)
 
 	var output graphql.FormationTemplatePage
 	queryFormationTemplatesRequest := fixtures.FixQueryFormationTemplatesRequestWithPageSize(first)
@@ -525,7 +525,7 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	scopedFormationTemplateName := "tenant-scoped-formation-template-test"
-	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
+	scopedFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
 
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)
 	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
@@ -569,7 +569,7 @@ func TestTenantScopedFormationTemplates(t *testing.T) {
 
 	t.Logf("Verify that tenant scoped call can NOT update global formation template with name: %q", globalFormationTemplateName)
 
-	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(updatedFormationTemplateInput)
+	updatedFormationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateUpdateInputToGQL(updatedFormationTemplateInput)
 	require.NoError(t, err)
 
 	updateFormationTemplateRequest := fixtures.FixUpdateFormationTemplateRequest(globalFormationTemplateID, updatedFormationTemplateInputGQLString)
@@ -587,7 +587,7 @@ func TestResourceGroupScopedFormationTemplates(t *testing.T) {
 	resourceGroup := tenant.TestTenants.GetIDByName(t, tenant.TestAtomResourceGroup)
 
 	scopedFormationTemplateName := "resource-group-scoped-formation-template-test"
-	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
+	scopedFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
 
 	t.Logf("Create resource group scoped formation template with name: %q", scopedFormationTemplateName)
 	var scopedFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
@@ -629,7 +629,7 @@ func TestTenantScopedFormationTemplatesWithWebhooks(t *testing.T) {
 	directorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	scopedFormationTemplateName := "tenant-scoped-formation-template-with-webhook-test"
-	scopedFormationTemplateInput := fixtures.FixFormationTemplateInput(scopedFormationTemplateName)
+	scopedFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(scopedFormationTemplateName)
 	webhookSyncMode := graphql.WebhookModeSync
 
 	t.Logf("Create tenant scoped formation template with name: %q", scopedFormationTemplateName)

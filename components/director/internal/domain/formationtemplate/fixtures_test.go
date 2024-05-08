@@ -1,7 +1,15 @@
 package formationtemplate_test
 
 import (
+	"context"
 	"encoding/json"
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
+
+	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 
@@ -12,37 +20,63 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
-	"github.com/kyma-incubator/compass/components/director/pkg/tenant"
 )
 
 const (
-	testID                     = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
+	testFormationTemplateID    = "d1fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	formationTemplateName      = "formation-template-name"
 	applicationTypesAsString   = "[\"some-application-type\"]"
 	runtimeTypesAsString       = "[\"some-runtime-type\"]"
 	testTenantID               = "d9fddec6-5456-4a1e-9ae0-74447f5d6ae9"
-	testParentTenantID         = "d8fddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	testWebhookID              = "test-wh-id"
 	leadingProductIDsAsString  = "[\"leading-product-id\",\"leading-product-id-2\"]"
 	discoveryConsumersAsString = "[\"some-application-type\",\"some-runtime-type\"]"
 )
 
 var (
-	runtimeTypeDisplayName      = "display-name-for-runtime"
-	artifactKindAsString        = "SUBSCRIPTION"
-	runtimeArtifactKind         = model.RuntimeArtifactKindSubscription
-	artifactKind                = graphql.ArtifactTypeSubscription
-	nilModelEntity              *model.FormationTemplate
-	emptyTemplate               = `{}`
-	url                         = "http://foo.com"
-	modelWebhookMode            = model.WebhookModeSync
-	graphqlWebhookMode          = graphql.WebhookModeSync
-	applicationTypes            = []string{"some-application-type"}
-	runtimeTypes                = []string{"some-runtime-type"}
-	leadingProductIDs           = []string{"leading-product-id", "leading-product-id-2"}
-	discoveryConsumers          = []string{"some-application-type", "some-runtime-type"}
-	shouldReset                 = true
-	formationTemplateModelInput = model.FormationTemplateInput{
+	ctx                          = context.Background()
+	testErr                      = errors.New("test error")
+	formationTemplateNotFoundErr = apperrors.NewNotFoundError(resource.FormationTemplate, testFormationTemplateID)
+	nilModelEntity               *model.FormationTemplate
+	nilLabelFilters              []*labelfilter.LabelFilter
+	emptyLabelFilters            = []*labelfilter.LabelFilter{}
+
+	runtimeTypeDisplayName = "display-name-for-runtime"
+	artifactKindAsString   = "SUBSCRIPTION"
+	runtimeArtifactKind    = model.RuntimeArtifactKindSubscription
+	artifactKind           = graphql.ArtifactTypeSubscription
+	emptyTemplate          = `{}`
+	url                    = "http://foo.com"
+	modelWebhookMode       = model.WebhookModeSync
+	graphqlWebhookMode     = graphql.WebhookModeSync
+	applicationTypes       = []string{"some-application-type"}
+	runtimeTypes           = []string{"some-runtime-type"}
+	leadingProductIDs      = []string{"leading-product-id", "leading-product-id-2"}
+	discoveryConsumers     = []string{"some-application-type", "some-runtime-type"}
+	shouldReset            = true
+	testTime               = time.Date(2024, 05, 07, 9, 9, 9, 9, time.Local)
+	testLabelKey           = "testLblKey"
+	testLabelValue         = "testLblValue"
+
+	registerInputLabels = map[string]interface{}{testLabelKey: testLabelValue}
+	lblInput            = fixGQLLabelInput(testLabelKey, testLabelValue)
+
+	gqlLabel  = fixGQLLabel(testLabelKey, testLabelValue)
+	gqlLabels = graphql.Labels{testLabelKey: testLabelValue}
+
+	modelLabel  = fixModelLabel(testLabelKey, testLabelValue)
+	modelLabels = map[string]*model.Label{testLabelKey: modelLabel}
+
+	testLabelFilter = []*labelfilter.LabelFilter{
+		{
+			Key:   testLabelKey,
+			Query: nil,
+		},
+	}
+
+	formationTemplateLabelInput = fixModelLabelInput(testLabelKey, testLabelValue, testFormationTemplateID, model.FormationTemplateLabelableObject)
+
+	formationTemplateRegisterInputModel = model.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -52,7 +86,30 @@ var (
 		DiscoveryConsumers:     discoveryConsumers,
 		Webhooks:               fixModelWebhookInput(),
 	}
-	formationTemplateModelWithResetInput = model.FormationTemplateInput{
+
+	formationTemplateRegisterInputModelWithLabels = model.FormationTemplateRegisterInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		DiscoveryConsumers:     discoveryConsumers,
+		Webhooks:               fixModelWebhookInput(),
+		Labels:                 registerInputLabels,
+	}
+
+	formationTemplateUpdateInputModel = model.FormationTemplateUpdateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		DiscoveryConsumers:     discoveryConsumers,
+	}
+
+	formationTemplateModelWithResetInput = model.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -63,7 +120,8 @@ var (
 		Webhooks:               fixModelWebhookInput(),
 		SupportsReset:          shouldReset,
 	}
-	formationTemplateGraphQLInput = graphql.FormationTemplateInput{
+
+	formationTemplateGraphQLInput = graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -73,7 +131,18 @@ var (
 		DiscoveryConsumers:     discoveryConsumers,
 		Webhooks:               fixGQLWebhookInput(),
 	}
-	formationTemplateWithResetGraphQLInput = graphql.FormationTemplateInput{
+
+	formationTemplateUpdateInputGraphQL = graphql.FormationTemplateUpdateInput{
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: str.Ptr(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    &artifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		DiscoveryConsumers:     discoveryConsumers,
+	}
+
+	formationTemplateWithResetGraphQLInput = graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -85,22 +154,24 @@ var (
 		SupportsReset:          &shouldReset,
 	}
 
-	formationTemplateModelInputAppOnly = model.FormationTemplateInput{
+	formationTemplateModelInputAppOnly = model.FormationTemplateRegisterInput{
 		Name:               formationTemplateName,
 		ApplicationTypes:   applicationTypes,
 		LeadingProductIDs:  leadingProductIDs,
 		DiscoveryConsumers: discoveryConsumers,
 		Webhooks:           fixModelWebhookInput(),
 	}
-	formationTemplateGraphQLInputAppOnly = graphql.FormationTemplateInput{
+
+	formationTemplateGraphQLInputAppOnly = graphql.FormationTemplateRegisterInput{
 		Name:               formationTemplateName,
 		ApplicationTypes:   applicationTypes,
 		LeadingProductIDs:  leadingProductIDs,
 		DiscoveryConsumers: discoveryConsumers,
 		Webhooks:           fixGQLWebhookInput(),
 	}
+
 	formationTemplateModelAppOnly = model.FormationTemplate{
-		ID:                 testID,
+		ID:                 testFormationTemplateID,
 		Name:               formationTemplateName,
 		ApplicationTypes:   applicationTypes,
 		LeadingProductIDs:  leadingProductIDs,
@@ -110,7 +181,7 @@ var (
 	}
 
 	formationTemplateModel = model.FormationTemplate{
-		ID:                     testID,
+		ID:                     testFormationTemplateID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -120,9 +191,12 @@ var (
 		DiscoveryConsumers:     discoveryConsumers,
 		TenantID:               str.Ptr(testTenantID),
 		Webhooks:               []*model.Webhook{fixFormationTemplateModelWebhook()},
+		CreatedAt:              testTime,
+		UpdatedAt:              &testTime,
 	}
+
 	formationTemplateModelNullTenant = model.FormationTemplate{
-		ID:                     testID,
+		ID:                     testFormationTemplateID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -131,9 +205,12 @@ var (
 		LeadingProductIDs:      leadingProductIDs,
 		DiscoveryConsumers:     discoveryConsumers,
 		TenantID:               nil,
+		CreatedAt:              testTime,
+		UpdatedAt:              &testTime,
 	}
+
 	formationTemplateEntity = formationtemplate.Entity{
-		ID:                     testID,
+		ID:                     testFormationTemplateID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
 		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
@@ -142,9 +219,12 @@ var (
 		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(testTenantID),
 		DiscoveryConsumers:     repo.NewNullableStringFromJSONRawMessage(json.RawMessage(discoveryConsumersAsString)),
+		CreatedAt:              testTime,
+		UpdatedAt:              &testTime,
 	}
+
 	formationTemplateEntityNullTenant = formationtemplate.Entity{
-		ID:                     testID,
+		ID:                     testFormationTemplateID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypesAsString,
 		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
@@ -153,9 +233,12 @@ var (
 		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
 		TenantID:               repo.NewValidNullableString(""),
 		DiscoveryConsumers:     repo.NewNullableStringFromJSONRawMessage(json.RawMessage(discoveryConsumersAsString)),
+		CreatedAt:              testTime,
+		UpdatedAt:              &testTime,
 	}
+
 	graphQLFormationTemplate = graphql.FormationTemplate{
-		ID:                     testID,
+		ID:                     testFormationTemplateID,
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -164,7 +247,10 @@ var (
 		LeadingProductIDs:      leadingProductIDs,
 		DiscoveryConsumers:     discoveryConsumers,
 		Webhooks:               []*graphql.Webhook{fixFormationTemplateGQLWebhook()},
+		CreatedAt:              graphql.Timestamp(testTime),
+		UpdatedAt:              graphql.TimePtrToGraphqlTimestampPtr(&testTime),
 	}
+
 	formationTemplateModelPage = model.FormationTemplatePage{
 		Data: []*model.FormationTemplate{&formationTemplateModel},
 		PageInfo: &pagination.Page{
@@ -174,6 +260,7 @@ var (
 		},
 		TotalCount: 1,
 	}
+
 	formationTemplateModelNullTenantPage = model.FormationTemplatePage{
 		Data: []*model.FormationTemplate{&formationTemplateModelNullTenant},
 		PageInfo: &pagination.Page{
@@ -183,6 +270,7 @@ var (
 		},
 		TotalCount: 1,
 	}
+
 	graphQLFormationTemplatePage = graphql.FormationTemplatePage{
 		Data: []*graphql.FormationTemplate{&graphQLFormationTemplate},
 		PageInfo: &graphql.PageInfo{
@@ -247,15 +335,67 @@ var (
 	}
 )
 
-func newModelBusinessTenantMappingWithType(tenantType tenant.Type) *model.BusinessTenantMapping {
-	return &model.BusinessTenantMapping{
-		ID:             testTenantID,
-		Name:           "name",
-		ExternalTenant: "external",
-		Parents:        []string{testParentTenantID},
-		Type:           tenantType,
-		Provider:       "test-provider",
-		Status:         tenant.Active,
+func fixModelLabelInput(key string, value interface{}, objectID string, objectType model.LabelableObject) *model.LabelInput {
+	return &model.LabelInput{
+		Key:        key,
+		Value:      value,
+		ObjectID:   objectID,
+		ObjectType: objectType,
+	}
+}
+
+func fixModelLabel(key string, value interface{}) *model.Label {
+	return &model.Label{
+		Key:   key,
+		Value: value,
+	}
+}
+
+func fixGQLLabel(key string, value interface{}) *graphql.Label {
+	return &graphql.Label{
+		Key:   key,
+		Value: value,
+	}
+}
+
+func fixGQLLabelInput(key string, value interface{}) graphql.LabelInput {
+	return graphql.LabelInput{
+		Key:   key,
+		Value: value,
+	}
+}
+
+func fixFormationTemplateEntity(createdAt time.Time, updatedAt *time.Time) *formationtemplate.Entity {
+	return &formationtemplate.Entity{
+		ID:                     testFormationTemplateID,
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypesAsString,
+		RuntimeTypes:           repo.NewValidNullableString(runtimeTypesAsString),
+		RuntimeTypeDisplayName: repo.NewValidNullableString(runtimeTypeDisplayName),
+		RuntimeArtifactKind:    repo.NewValidNullableString(artifactKindAsString),
+		LeadingProductIDs:      repo.NewNullableStringFromJSONRawMessage(json.RawMessage(leadingProductIDsAsString)),
+		TenantID:               repo.NewValidNullableString(testTenantID),
+		DiscoveryConsumers:     repo.NewNullableStringFromJSONRawMessage(json.RawMessage(discoveryConsumersAsString)),
+		CreatedAt:              createdAt,
+		UpdatedAt:              updatedAt,
+	}
+
+}
+
+func fixFormationTemplateModel(createdAt time.Time, updatedAt *time.Time) *model.FormationTemplate {
+	return &model.FormationTemplate{
+		ID:                     testFormationTemplateID,
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		DiscoveryConsumers:     discoveryConsumers,
+		TenantID:               str.Ptr(testTenantID),
+		Webhooks:               []*model.Webhook{fixFormationTemplateModelWebhook()},
+		CreatedAt:              createdAt,
+		UpdatedAt:              updatedAt,
 	}
 }
 
@@ -292,7 +432,7 @@ func fixGQLWebhookInput() []*graphql.WebhookInput {
 func fixFormationTemplateModelWebhook() *model.Webhook {
 	return &model.Webhook{
 		ID:             testWebhookID,
-		ObjectID:       testID,
+		ObjectID:       testFormationTemplateID,
 		ObjectType:     model.FormationTemplateWebhookReference,
 		Type:           model.WebhookTypeFormationLifecycle,
 		URL:            &url,
@@ -308,7 +448,7 @@ func fixFormationTemplateModelWebhook() *model.Webhook {
 func fixFormationTemplateGQLWebhook() *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:                  testWebhookID,
-		FormationTemplateID: str.Ptr(testID),
+		FormationTemplateID: str.Ptr(testFormationTemplateID),
 		Type:                graphql.WebhookTypeFormationLifecycle,
 		URL:                 &url,
 		Auth:                &graphql.Auth{},
@@ -322,7 +462,7 @@ func fixFormationTemplateGQLWebhook() *graphql.Webhook {
 }
 
 func fixColumns() []string {
-	return []string{"id", "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset", "discovery_consumers", "tenant_id"}
+	return []string{"id", "name", "application_types", "runtime_types", "runtime_type_display_name", "runtime_artifact_kind", "leading_product_ids", "supports_reset", "discovery_consumers", "created_at", "updated_at", "tenant_id"}
 }
 
 func UnusedFormationTemplateService() *automock.FormationTemplateService {
@@ -341,8 +481,16 @@ func UnusedTenantService() *automock.TenantService {
 	return &automock.TenantService{}
 }
 
+func UnusedLabelService() *automock.LabelService {
+	return &automock.LabelService{}
+}
+
 func UnusedWebhookService() *automock.WebhookService {
 	return &automock.WebhookService{}
+}
+
+func UnusedWebhookRepo() *automock.WebhookRepository {
+	return &automock.WebhookRepository{}
 }
 
 func UnusedFormationConstraintService() *automock.FormationConstraintService {

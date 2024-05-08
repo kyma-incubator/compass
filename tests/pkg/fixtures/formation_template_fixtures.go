@@ -5,13 +5,18 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
-func FixFormationTemplateInput(formationName string) graphql.FormationTemplateInput {
-	return FixFormationTemplateInputWithRuntimeTypes(formationName, []string{"runtime-type"})
+const (
+	FormationTemplateLabelKey = "e2e-test-formation-template-lbl-key"
+	FormationTemplateLabelValue = "e2e-test-formation-template-lbl-value"
+)
+
+func FixFormationTemplateRegisterInput(formationName string) graphql.FormationTemplateRegisterInput {
+	return FixFormationTemplateRegisterInputWithRuntimeTypes(formationName, []string{"runtime-type"})
 }
 
-func FixFormationTemplateInputWithApplicationTypes(formationName string, applicationTypes []string) graphql.FormationTemplateInput {
+func FixFormationTemplateRegisterInputWithApplicationTypes(formationName string, applicationTypes []string) graphql.FormationTemplateRegisterInput {
 	subscription := graphql.ArtifactTypeSubscription
-	return graphql.FormationTemplateInput{
+	return graphql.FormationTemplateRegisterInput{
 		Name:                   formationName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           []string{"runtime-type"},
@@ -20,58 +25,69 @@ func FixFormationTemplateInputWithApplicationTypes(formationName string, applica
 	}
 }
 
-func FixFormationTemplateInputWithRuntimeTypes(formationName string, runtimeTypes []string) graphql.FormationTemplateInput {
+func FixFormationTemplateRegisterInputWithRuntimeTypes(formationName string, runtimeTypes []string) graphql.FormationTemplateRegisterInput {
 	subscription := graphql.ArtifactTypeSubscription
-	return graphql.FormationTemplateInput{
+	return graphql.FormationTemplateRegisterInput{
 		Name:                   formationName,
 		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
 		RuntimeTypes:           runtimeTypes,
 		RuntimeTypeDisplayName: str.Ptr("runtime-type-display-name"),
 		RuntimeArtifactKind:    &subscription,
+		Labels:                 map[string]interface{}{FormationTemplateLabelKey: FormationTemplateLabelValue},
 	}
 }
 
-func FixFormationTemplateInputWithTypes(formationName string, runtimeTypes, applicationTypes []string) graphql.FormationTemplateInput {
-	in := FixFormationTemplateInput(formationName)
+func FixFormationTemplateRegisterInputWithTypes(formationName string, runtimeTypes, applicationTypes []string) graphql.FormationTemplateRegisterInput {
+	in := FixFormationTemplateRegisterInput(formationName)
 	in.RuntimeTypes = runtimeTypes
 	in.ApplicationTypes = applicationTypes
 	return in
 }
 
-func FixAppOnlyFormationTemplateInput(formationName string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
+func FixAppOnlyFormationTemplateRegisterInput(formationName string) graphql.FormationTemplateRegisterInput {
+	return graphql.FormationTemplateRegisterInput{
 		Name:             formationName,
 		ApplicationTypes: []string{"app-type-1", "app-type-2"},
 	}
 }
 
-func FixInvalidFormationTemplateInputWithRuntimeArtifactKind(formationName string) graphql.FormationTemplateInput {
+func FixInvalidFormationTemplateRegisterInputWithRuntimeArtifactKind(formationName string) graphql.FormationTemplateRegisterInput {
 	subscription := graphql.ArtifactTypeSubscription
-	return graphql.FormationTemplateInput{
+	return graphql.FormationTemplateRegisterInput{
 		Name:                formationName,
 		ApplicationTypes:    []string{"app-type-1", "app-type-2"},
 		RuntimeArtifactKind: &subscription,
 	}
 }
 
-func FixInvalidFormationTemplateInputWithRuntimeTypeDisplayName(formationName string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
+// todo::: new/double check
+func FixInvalidFormationTemplateUpdateInputWithRuntimeArtifactKind(formationName string) graphql.FormationTemplateUpdateInput {
+	subscription := graphql.ArtifactTypeSubscription
+	return graphql.FormationTemplateUpdateInput{
+		Name:                formationName,
+		ApplicationTypes:    []string{"app-type-1", "app-type-2"},
+		RuntimeArtifactKind: &subscription,
+	}
+}
+
+func FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(formationName string) graphql.FormationTemplateRegisterInput {
+	return graphql.FormationTemplateRegisterInput{
 		Name:                   formationName,
 		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
 		RuntimeTypeDisplayName: str.Ptr("runtime-type-display-name"),
 	}
 }
 
-func FixInvalidFormationTemplateInputWithRuntimeTypes(formationName string, runtimeType string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
+func FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(formationName string, runtimeType string) graphql.FormationTemplateRegisterInput {
+	return graphql.FormationTemplateRegisterInput{
 		Name:             formationName,
 		ApplicationTypes: []string{"app-type-1", "app-type-2"},
 		RuntimeTypes:     []string{runtimeType},
 	}
 }
 
-func FixInvalidFormationTemplateInputWithoutArtifactKind(formationName string, runtimeType string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
+func FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(formationName string, runtimeType string) graphql.FormationTemplateRegisterInput {
+	return graphql.FormationTemplateRegisterInput{
 		Name:                   formationName,
 		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
 		RuntimeTypes:           []string{runtimeType},
@@ -79,9 +95,9 @@ func FixInvalidFormationTemplateInputWithoutArtifactKind(formationName string, r
 	}
 }
 
-func FixInvalidFormationTemplateInputWithoutDisplayName(formationName string, runtimeType string) graphql.FormationTemplateInput {
+func FixInvalidFormationTemplateRegisterInputWithoutDisplayName(formationName string, runtimeType string) graphql.FormationTemplateRegisterInput {
 	subscription := graphql.ArtifactTypeSubscription
-	return graphql.FormationTemplateInput{
+	return graphql.FormationTemplateRegisterInput{
 		Name:                formationName,
 		ApplicationTypes:    []string{"app-type-1", "app-type-2"},
 		RuntimeTypes:        []string{runtimeType},
@@ -89,8 +105,8 @@ func FixInvalidFormationTemplateInputWithoutDisplayName(formationName string, ru
 	}
 }
 
-func FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName string, applicationTypes, runtimeTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
+func FixFormationTemplateRegisterInputWithLeadingProductIDs(formationTemplateName string, applicationTypes, runtimeTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string) graphql.FormationTemplateRegisterInput {
+	return graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -98,43 +114,4 @@ func FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName string
 		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 	}
-}
-
-func FixFormationTemplateInputWithWebhook(formationTemplateName string, applicationTypes, runtimeTypes []string, runtimeArtifactKind graphql.ArtifactType, webhookType graphql.WebhookType, webhookMode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) graphql.FormationTemplateInput {
-	return graphql.FormationTemplateInput{
-		Name:                   formationTemplateName,
-		ApplicationTypes:       applicationTypes,
-		RuntimeTypes:           runtimeTypes,
-		RuntimeTypeDisplayName: &formationTemplateName,
-		RuntimeArtifactKind:    &runtimeArtifactKind,
-		Webhooks: []*graphql.WebhookInput{
-			{
-				Type: webhookType,
-				Auth: &graphql.AuthInput{
-					AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-				},
-				Mode:           &webhookMode,
-				URLTemplate:    &urlTemplate,
-				InputTemplate:  &inputTemplate,
-				OutputTemplate: &outputTemplate,
-			},
-		},
-	}
-}
-
-func FixFormationTemplateInputWithWebhookAndLeadingProductIDs(formationTemplateName string, applicationTypes, runtimeTypes []string, runtimeArtifactKind graphql.ArtifactType, leadingProductIDs []string, webhookType graphql.WebhookType, webhookMode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string) graphql.FormationTemplateInput {
-	ftInput := FixFormationTemplateInputWithLeadingProductIDs(formationTemplateName, applicationTypes, runtimeTypes, runtimeArtifactKind, leadingProductIDs)
-	ftInput.Webhooks = []*graphql.WebhookInput{
-		{
-			Type: webhookType,
-			Auth: &graphql.AuthInput{
-				AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
-			},
-			Mode:           &webhookMode,
-			URLTemplate:    &urlTemplate,
-			InputTemplate:  &inputTemplate,
-			OutputTemplate: &outputTemplate,
-		},
-	}
-	return ftInput
 }
