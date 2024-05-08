@@ -187,15 +187,15 @@ global:
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3841"
+      version: "PR-3863"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3842"
+      version: "PR-3863"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3841"
+      version: "PR-3863"
       name: compass-default-tenant-mapping-handler
     gateway:
       dir: dev/incubator/
