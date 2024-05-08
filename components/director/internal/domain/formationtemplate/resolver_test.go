@@ -1205,7 +1205,7 @@ func TestResolver_SetFormationTemplateLabel(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:  "Error when commiting transaction fails",
+			Name:  "Error when committing transaction fails",
 			Input: lblInput,
 			TxFn:  txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
@@ -1293,7 +1293,7 @@ func TestResolver_DeleteFormationTemplateLabel(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name: "Error when commiting transaction fails",
+			Name: "Error when committing transaction fails",
 			TxFn: txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
@@ -1389,7 +1389,7 @@ func TestResolver_Labels(t *testing.T) {
 			ExpectedError: testErr,
 		},
 		{
-			Name:  "Error when commiting transaction fails",
+			Name:  "Error when committing transaction fails",
 			TxFn:  txGen.ThatFailsOnCommit,
 			Input: &graphQLFormationTemplate,
 			FormationTemplateService: func() *automock.FormationTemplateService {
