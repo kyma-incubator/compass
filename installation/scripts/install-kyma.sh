@@ -47,7 +47,3 @@ fi
 
 echo "Installing minimal Kyma"
 "$KYMA" deploy --components-file "$KYMA_COMPONENTS_MINIMAL"  --values-file "$MINIMAL_OVERRIDES_TEMP" --source=local --workspace "$KYMA_WORKSPACE"
-
-# Needed since Kyma 2.5.2 to gather metrics
-echo "Patch the metrics port of the kube state metrics service resource to have 'http-' prefix"
-"$KUBECTL" get services -n kyma-system monitoring-kube-state-metrics -o yaml | sed 's/name: metrics/name: http-metrics/g' | "$KUBECTL" apply -f -
