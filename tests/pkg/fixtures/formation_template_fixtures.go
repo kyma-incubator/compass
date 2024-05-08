@@ -60,7 +60,6 @@ func FixInvalidFormationTemplateRegisterInputWithRuntimeArtifactKind(formationNa
 	}
 }
 
-// todo::: new/double check
 func FixInvalidFormationTemplateUpdateInputWithRuntimeArtifactKind(formationName string) graphql.FormationTemplateUpdateInput {
 	subscription := graphql.ArtifactTypeSubscription
 	return graphql.FormationTemplateUpdateInput{
@@ -78,8 +77,24 @@ func FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(formatio
 	}
 }
 
+func FixInvalidFormationTemplateUpdateInputWithRuntimeTypeDisplayName(formationName string) graphql.FormationTemplateUpdateInput {
+	return graphql.FormationTemplateUpdateInput{
+		Name:                   formationName,
+		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
+		RuntimeTypeDisplayName: str.Ptr("runtime-type-display-name"),
+	}
+}
+
 func FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(formationName string, runtimeType string) graphql.FormationTemplateRegisterInput {
 	return graphql.FormationTemplateRegisterInput{
+		Name:             formationName,
+		ApplicationTypes: []string{"app-type-1", "app-type-2"},
+		RuntimeTypes:     []string{runtimeType},
+	}
+}
+
+func FixInvalidFormationTemplateUpdateInputWithRuntimeTypes(formationName string, runtimeType string) graphql.FormationTemplateUpdateInput {
+	return graphql.FormationTemplateUpdateInput{
 		Name:             formationName,
 		ApplicationTypes: []string{"app-type-1", "app-type-2"},
 		RuntimeTypes:     []string{runtimeType},
@@ -95,9 +110,28 @@ func FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(formationName s
 	}
 }
 
+func FixInvalidFormationTemplateUpdateInputWithoutArtifactKind(formationName string, runtimeType string) graphql.FormationTemplateUpdateInput {
+	return graphql.FormationTemplateUpdateInput{
+		Name:                   formationName,
+		ApplicationTypes:       []string{"app-type-1", "app-type-2"},
+		RuntimeTypes:           []string{runtimeType},
+		RuntimeTypeDisplayName: str.Ptr("runtime-type-display-name"),
+	}
+}
+
 func FixInvalidFormationTemplateRegisterInputWithoutDisplayName(formationName string, runtimeType string) graphql.FormationTemplateRegisterInput {
 	subscription := graphql.ArtifactTypeSubscription
 	return graphql.FormationTemplateRegisterInput{
+		Name:                formationName,
+		ApplicationTypes:    []string{"app-type-1", "app-type-2"},
+		RuntimeTypes:        []string{runtimeType},
+		RuntimeArtifactKind: &subscription,
+	}
+}
+
+func FixInvalidFormationTemplateUpdateInputWithoutDisplayName(formationName string, runtimeType string) graphql.FormationTemplateUpdateInput {
+	subscription := graphql.ArtifactTypeSubscription
+	return graphql.FormationTemplateUpdateInput{
 		Name:                formationName,
 		ApplicationTypes:    []string{"app-type-1", "app-type-2"},
 		RuntimeTypes:        []string{runtimeType},

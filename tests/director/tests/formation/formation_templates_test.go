@@ -90,32 +90,32 @@ func TestCreateAppOnlyFormationTemplate(t *testing.T) {
 	invalidFormationTemplateWithArtifactKindName := "invalid-formation-template-with-artifact-kind"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithArtifactKindName)
 
-	invalidFormationTemplateWithArtifactKindInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeArtifactKind(invalidFormationTemplateWithArtifactKindName)
-	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithArtifactKindInput)
+	invalidFormationTemplateWithArtifactKindRegisterInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeArtifactKind(invalidFormationTemplateWithArtifactKindName)
+	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithArtifactKindRegisterInput)
 
 	invalidFormationTemplateWithDisplayName := "invalid-formation-template-with-display-name"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithDisplayName)
 
-	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(invalidFormationTemplateWithDisplayName)
-	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithDisplayNameInput)
+	invalidFormationTemplateWithDisplayNameRegisterInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(invalidFormationTemplateWithDisplayName)
+	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithDisplayNameRegisterInput)
 
 	invalidFormationTemplateWithRuntimeTypesName := "invalid-formation-template-with-runtime-types"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithRuntimeTypesName)
 
-	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(invalidFormationTemplateWithRuntimeTypesName, runtimeType)
-	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithRuntimeTypesInput)
+	invalidFormationTemplateWithRuntimeTypesRegisterInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(invalidFormationTemplateWithRuntimeTypesName, runtimeType)
+	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithRuntimeTypesRegisterInput)
 
 	invalidFormationTemplateWithoutArtifactKindName := "invalid-formation-template-without-artifact-kind"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithoutArtifactKindName)
 
-	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(invalidFormationTemplateWithoutArtifactKindName, runtimeType)
-	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutArtifactKindInput)
+	invalidFormationTemplateWithoutArtifactKindRegisterInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(invalidFormationTemplateWithoutArtifactKindName, runtimeType)
+	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutArtifactKindRegisterInput)
 
 	invalidFormationTemplateWithoutDisplayName := "invalid-formation-template-without-display-name"
 	t.Logf("Should fail to create formation template with name: %q", invalidFormationTemplateWithoutDisplayName)
 
-	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutDisplayName(invalidFormationTemplateWithoutDisplayName, runtimeType)
-	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutDisplayNameInput)
+	invalidFormationTemplateWithoutDisplayNameRegisterInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutDisplayName(invalidFormationTemplateWithoutDisplayName, runtimeType)
+	fixtures.CreateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, invalidFormationTemplateWithoutDisplayNameRegisterInput)
 }
 
 func TestCreateFormationTemplateThatSupportsReset(t *testing.T) {
@@ -312,22 +312,22 @@ func TestUpdateAppOnlyFormationTemplate(t *testing.T) {
 
 	t.Log("Should fail to update formation template by adding runtime type display name only")
 
-	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypeDisplayName(appOnlyFormationTemplateName)
+	invalidFormationTemplateWithDisplayNameInput := fixtures.FixInvalidFormationTemplateUpdateInputWithRuntimeTypeDisplayName(appOnlyFormationTemplateName)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithDisplayNameInput)
 
 	t.Log("Should fail to update formation template by adding runtime types only")
 
-	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateRegisterInputWithRuntimeTypes(appOnlyFormationTemplateName, runtimeType)
+	invalidFormationTemplateWithRuntimeTypesInput := fixtures.FixInvalidFormationTemplateUpdateInputWithRuntimeTypes(appOnlyFormationTemplateName, runtimeType)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithRuntimeTypesInput)
 
 	t.Log("Should fail to update formation template by adding runtime artifact kind and runtime types only")
 
-	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutDisplayName(appOnlyFormationTemplateName, runtimeType)
+	invalidFormationTemplateWithoutArtifactKindInput := fixtures.FixInvalidFormationTemplateUpdateInputWithoutDisplayName(appOnlyFormationTemplateName, runtimeType)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithoutArtifactKindInput)
 
 	t.Log("Should fail to update formation template by adding runtime display name and runtime types only")
 
-	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateRegisterInputWithoutArtifactKind(appOnlyFormationTemplateName, runtimeType)
+	invalidFormationTemplateWithoutDisplayNameInput := fixtures.FixInvalidFormationTemplateUpdateInputWithoutArtifactKind(appOnlyFormationTemplateName, runtimeType)
 	fixtures.UpdateFormationTemplateExpectError(t, ctx, certSecuredGraphQLClient, formationTemplateID, invalidFormationTemplateWithoutDisplayNameInput)
 }
 
