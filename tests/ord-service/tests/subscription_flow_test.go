@@ -961,10 +961,10 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		clientID := gjson.Get(consumerClaims, "client_id")
-		subaccountID := gjson.Get(consumerClaims, "subaccountid")
-		userName := gjson.Get(consumerClaims, "user_name")
-		subdomain := gjson.Get(consumerClaims, "subdomain")
+		clientID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.ClientIDKey)
+		subaccountID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey)
+		userName := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey)
+		subdomain := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey)
 		userContextHeader := buildUserContextHeader(t, clientID.String(), subaccountID.String(), userName.String(), subdomain.String())
 		headers := map[string][]string{subscription.UserContextHeader: {userContextHeader}}
 
@@ -1174,13 +1174,13 @@ func generateDestinationName(name string) string {
 }
 
 func buildUserContextHeader(t *testing.T, clientID, subaccountID, userName, subdomain string) string {
-	consumerClaims, err := sjson.Set("{}", "client_id", clientID)
+	consumerClaims, err := sjson.Set("{}", conf.ConsumerClaimsKeysConfig.ClientIDKey, clientID)
 	require.NoError(t, err)
-	consumerClaims, err = sjson.Set(consumerClaims, "subaccountid", subaccountID)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey, subaccountID)
 	require.NoError(t, err)
-	consumerClaims, err = sjson.Set(consumerClaims, "user_name", userName)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey, userName)
 	require.NoError(t, err)
-	consumerClaims, err = sjson.Set(consumerClaims, "subdomain", subdomain)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey, subdomain)
 	require.NoError(t, err)
 	consumerClaims, err = sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
 	require.NoError(t, err)
