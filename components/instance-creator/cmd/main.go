@@ -12,7 +12,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
-
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
 
 	"github.com/gorilla/mux"
