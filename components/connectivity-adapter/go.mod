@@ -22,8 +22,8 @@ require (
 	github.com/huandu/xstrings v1.4.0 // indirect
 	github.com/imdario/mergo v0.3.14 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/kyma-incubator/compass/components/connector v0.0.0-20240311150451-fb47652e9f70
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240425111152-510a4793a627
+	github.com/kyma-incubator/compass/components/connector v0.0.0-20240429124008-273ce1ffbcfd
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240429124008-273ce1ffbcfd
 	github.com/machinebox/graphql v0.2.3-0.20181106130121-3a9253180225
 	github.com/mitchellh/copystructure v1.1.2 // indirect
 	github.com/mitchellh/reflectwalk v1.0.1 // indirect
@@ -69,7 +69,7 @@ require (
 	github.com/google/gnostic v0.5.7-v3refs // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
-	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240314124741-0167d9da3002 // indirect
+	github.com/kyma-incubator/compass/components/hydrator v0.0.0-20240429124008-273ce1ffbcfd // indirect
 	github.com/lestrrat-go/backoff/v2 v2.0.8 // indirect
 	github.com/lestrrat-go/blackmagic v1.0.2 // indirect
 	github.com/lestrrat-go/httpcc v1.0.1 // indirect

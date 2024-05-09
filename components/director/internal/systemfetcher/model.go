@@ -1,20 +1,29 @@
 package systemfetcher
 
 import (
-	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
 	"github.com/pkg/errors"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 )
 
+const (
+	// SlisFilterLabelKey is the name of the slis filter label for app template
+	SlisFilterLabelKey = "slisFilter"
+	// ProductIDKey is the name of the property relating to system roles in system payload
+	ProductIDKey = "productId"
+	// TrimPrefix is the prefix which should be trimmed from the jsonpath input when building select criteria for system fetcher
+	TrimPrefix = "$."
+)
+
 var (
-	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshaling of system data
+	// ApplicationTemplates contains available Application Templates, should only be used for the unmarshalling of system data
 	// It represents a model.ApplicationTemplate with its labels in the form of map[string]*model.Label
-	ApplicationTemplates map[TemplateMappingKey]TemplateMapping
+	ApplicationTemplates []TemplateMapping
 	// ApplicationTemplateLabelFilter represent a label for the Application Templates which has a value that
 	// should match to the SystemSourceKey's value of the fetched systems
 	ApplicationTemplateLabelFilter string
@@ -23,12 +32,6 @@ var (
 	// SystemSourceKey represents a key for filtering systems
 	SystemSourceKey string
 )
-
-// TemplateMappingKey is a mapping for regional Application Templates
-type TemplateMappingKey struct {
-	Label  string
-	Region string
-}
 
 // TemplateMapping holds data for Application Templates and their Labels
 type TemplateMapping struct {
@@ -50,6 +53,29 @@ type SystemSynchronizationTimestamp struct {
 	LastSyncTimestamp time.Time
 }
 
+// SlisFilterOperationType represents the type of operation which considers whether to match the values in the slis filter with values for systems from system payload
+type SlisFilterOperationType string
+
+const (
+	// IncludeOperationType is the type of slis filter operation which requires the values from slis filter to be present in the values from system payload
+	IncludeOperationType SlisFilterOperationType = "include"
+	// ExcludeOperationType is the type of slis filter operation which requires the values from slis filter to not be present in the values from system payload
+	ExcludeOperationType SlisFilterOperationType = "exclude"
+)
+
+// SlisFilter represents the additional properties by which fetched systems are matched to an application template
+type SlisFilter struct {
+	Key       string                  `json:"key"`
+	Value     []string                `json:"value"`
+	Operation SlisFilterOperationType `json:"operation"`
+}
+
+// ProductIDFilterMapping represents the structure of the slis filter per product id
+type ProductIDFilterMapping struct {
+	ProductID string       `json:"productID"`
+	Filter    []SlisFilter `json:"filter,omitempty"`
+}
+
 // UnmarshalJSON missing godoc
 func (s *System) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s.SystemPayload); err != nil {
@@ -61,85 +87,80 @@ func (s *System) UnmarshalJSON(data []byte) error {
 
 // EnhanceWithTemplateID tries to find an Application Template ID for the system and attach it to the object.
 func (s *System) EnhanceWithTemplateID() (System, error) {
-	for tmKey, tm := range ApplicationTemplates {
-		if !s.isMatchedBySystemRole(tmKey) {
-			continue
-		}
-		// Global Application Template
-		if tmKey.Region == "" {
-			s.TemplateID = tm.AppTemplate.ID
-			break
+	for _, tm := range ApplicationTemplates {
+		slisFilter, slisFilterExists := tm.Labels[SlisFilterLabelKey]
+		if !slisFilterExists {
+			return *s, errors.Errorf("missing slis filter for application template with ID %q", tm.AppTemplate.ID)
 		}
 
-		// Regional Application Template
-		// Use GenerateAppRegisterInput to resolve the application Input. This way we would know what is the actual
-		// region from the system payload
-		appInput, err := tm.Renderer.GenerateAppRegisterInput(context.Background(), *s, tm.AppTemplate, false)
+		productIDFilterMappings := make([]ProductIDFilterMapping, 0)
+
+		slisFilterLabelJSON, err := json.Marshal(slisFilter.Value)
 		if err != nil {
 			return *s, err
 		}
 
-		regionLabel, err := getLabelFromInput(appInput)
+		err = json.Unmarshal(slisFilterLabelJSON, &productIDFilterMappings)
 		if err != nil {
 			return *s, err
 		}
 
-		foundTemplateMapping := getTemplateMappingBySystemRoleAndRegion(s.SystemPayload, regionLabel)
-		if foundTemplateMapping.AppTemplate == nil {
-			return *s, errors.Errorf("cannot find an app template mapping for a system with payload: %+v", s.SystemPayload)
+		systemSource, systemSourceValueExists := s.SystemPayload[SystemSourceKey]
+
+		if !systemSourceValueExists {
+			return *s, nil
 		}
 
-		s.TemplateID = foundTemplateMapping.AppTemplate.ID
-		break
+		for _, mapping := range productIDFilterMappings {
+			if mapping.ProductID == systemSource {
+				systemMatches, err := systemMatchesSlisFilters(s.SystemPayload, mapping.Filter)
+				if err != nil {
+					return *s, err
+				}
+
+				if systemMatches {
+					s.TemplateID = tm.AppTemplate.ID
+					return *s, nil
+				}
+			}
+		}
 	}
 
 	return *s, nil
 }
 
-func (s *System) isMatchedBySystemRole(tmKey TemplateMappingKey) bool {
-	systemSource, systemSourceKeyExists := s.SystemPayload[SystemSourceKey]
-	if !systemSourceKeyExists {
-		return false
+func systemMatchesSlisFilters(systemPayload map[string]interface{}, slisFilters []SlisFilter) (bool, error) {
+	payload, err := json.Marshal(systemPayload)
+	if err != nil {
+		return false, err
 	}
 
-	systemSourceValue, ok := systemSource.(string)
-	if !ok {
-		return false
-	}
+	for _, filter := range slisFilters {
+		path := strings.TrimPrefix(filter.Key, TrimPrefix)
+		valueFromSystemPayload := gjson.Get(string(payload), path)
 
-	return tmKey.Label == systemSourceValue
-}
-
-func getTemplateMappingBySystemRoleAndRegion(systemPayload map[string]interface{}, region string) TemplateMapping {
-	systemSource, systemSourceKeyExists := systemPayload[SystemSourceKey]
-	if !systemSourceKeyExists {
-		return TemplateMapping{}
-	}
-
-	systemSourceValue, ok := systemSource.(string)
-	if !ok {
-		return TemplateMapping{}
-	}
-
-	for key, mapping := range ApplicationTemplates {
-		if key.Label == systemSourceValue && key.Region == region {
-			return mapping
+		switch filter.Operation {
+		case IncludeOperationType:
+			if !valueMatchesFilter(valueFromSystemPayload.String(), filter.Value, true) {
+				return false, nil
+			}
+		case ExcludeOperationType:
+			if !valueMatchesFilter(valueFromSystemPayload.String(), filter.Value, false) {
+				return false, nil
+			}
+		default:
+			return false, errors.New("slis filter operation doesn't match the defined operation types")
 		}
 	}
 
-	return TemplateMapping{}
+	return true, nil
 }
 
-func getLabelFromInput(appInput *model.ApplicationRegisterInput) (string, error) {
-	regionLabel, ok := appInput.Labels[selfregmanager.RegionLabel]
-	if !ok {
-		return "", errors.Errorf("%q label should be present for regional app templates", selfregmanager.RegionLabel)
+func valueMatchesFilter(value string, filterValues []string, expectedResultIfEqualValue bool) bool {
+	for _, filterValue := range filterValues {
+		if value == filterValue {
+			return expectedResultIfEqualValue
+		}
 	}
-
-	regionLabelStr, ok := regionLabel.(string)
-	if !ok {
-		return "", errors.Errorf("%q label cannot be parsed to string", selfregmanager.RegionLabel)
-	}
-
-	return regionLabelStr, nil
+	return !expectedResultIfEqualValue
 }
