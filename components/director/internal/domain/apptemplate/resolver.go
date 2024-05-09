@@ -6,7 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
@@ -46,6 +49,14 @@ const (
 	sapProviderName            = "SAP"
 	displayNameLabelKey        = "displayName"
 )
+
+var defaultSlisFilterValueForManagedByProperty = []interface{}{
+	map[string]interface{}{
+		"key":       "$.additionalAttributes.managedBy",
+		"value":     []string{"SAP Cloud"},
+		"operation": "exclude",
+	},
+}
 
 // ApplicationTemplateService missing godoc
 //
@@ -249,14 +260,101 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 	}, nil
 }
 
-// CreateApplicationTemplate missing godoc
-func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
-	log.C(ctx).Infof("Validating graphql input for Application Template with name %s", in.Name)
+func (r *Resolver) validateLabels(labels map[string]interface{}) error {
+	systemRolesLabel, hasSystemRoles := labels[r.appTemplateProductLabel]
+	slisFilterLabel, hasSlisFilter := labels[systemfetcher.SlisFilterLabelKey]
+
+	if !hasSystemRoles && hasSlisFilter {
+		return errors.New("system role is required when slis filter is defined")
+	}
+
+	if !hasSystemRoles {
+		return nil
+	}
+
+	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
+	if !ok {
+		return errors.New("invalid format of system roles label")
+	}
+
+	if len(systemRolesLabelValue) == 0 && hasSlisFilter {
+		return errors.New("system role must not be empty when slis filter is defined")
+	}
+
+	if !hasSlisFilter {
+		return nil
+	}
+
+	systemRoles, err := str.ConvertToStringArray(systemRolesLabelValue)
+	if err != nil {
+		return err
+	}
+
+	slisFilterLabelValue, ok := slisFilterLabel.([]interface{})
+	if !ok {
+		return errors.Errorf("invalid format of slis filter label")
+	}
+
+	productIds := make([]string, 0)
+
+	for _, slisFilterValue := range slisFilterLabelValue {
+		filter, ok := slisFilterValue.(map[string]interface{})
+		if !ok {
+			return errors.New("invalid format of slis filter value")
+		}
+
+		productID, ok := filter[systemfetcher.ProductIDKey]
+		if !ok {
+			return errors.New("missing productId in slis filter")
+		}
+
+		productIDStr, ok := productID.(string)
+		if !ok {
+			return errors.New("invalid format of productId value")
+		}
+
+		productIds = append(productIds, productIDStr)
+	}
+
+	systemRolesCount := len(systemRoles)
+	slisFilterProductIdsCount := len(productIds)
+
+	if systemRolesCount != slisFilterProductIdsCount {
+		return errors.New("system roles count does not match the product ids count in slis filter")
+	}
+
+	sort.Strings(systemRoles)
+	sort.Strings(productIds)
+
+	for i, systemRole := range systemRoles {
+		if systemRole != productIds[i] {
+			return errors.New("system roles don't match with product ids in slis filter")
+		}
+	}
+
+	return nil
+}
+
+func (r *Resolver) validateApplicationTemplate(in graphql.ApplicationTemplateInput) error {
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return err
+	}
+
+	if err := r.validateLabels(in.Labels); err != nil {
+		return err
 	}
 
 	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateApplicationTemplate missing godoc
+func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	log.C(ctx).Infof("Validating graphql input for Application Template with name %s", in.Name)
+	if err := r.validateApplicationTemplate(in); err != nil {
 		return nil, err
 	}
 
@@ -339,6 +437,35 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	ctx = persistence.SaveToContext(ctx, tx)
 	if err := r.checkProviderAppTemplateExistence(ctx, labels, convertedIn); err != nil {
 		return nil, err
+	}
+
+	systemRole, hasSystemRole := labels[r.appTemplateProductLabel]
+	_, slisFilterLabelExists := labels[systemfetcher.SlisFilterLabelKey]
+
+	if hasSystemRole && !slisFilterLabelExists {
+		log.C(ctx).Infof("Application Template with name %s has system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
+
+		systemRoleValues, ok := systemRole.([]interface{})
+		if !ok {
+			return nil, errors.Errorf("invalid format of system roles for application template with ID %s", convertedIn.Name)
+		}
+
+		filtersFromSystemRoles := make([]interface{}, 0)
+
+		for _, systemRoleValue := range systemRoleValues {
+			systemRoleValueStr, ok := systemRoleValue.(string)
+			if !ok {
+				return nil, errors.Errorf("system role value should be a string for application template with ID %s", convertedIn.Name)
+			}
+			slisFilter := map[string]interface{}{
+				"productId": systemRoleValueStr,
+				"filter":    defaultSlisFilterValueForManagedByProperty,
+			}
+
+			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
+		}
+
+		labels[systemfetcher.SlisFilterLabelKey] = filtersFromSystemRoles
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)

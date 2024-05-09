@@ -342,7 +342,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		ctx := context.Background()
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-invalid")
 		appTemplateInputInvalid := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
-		appTemplateInputInvalid.Labels[conf.ApplicationTemplateProductLabel] = "test1"
+		appTemplateInputInvalid.Labels[conf.ApplicationTemplateProductLabel] = []string{"test1"}
 
 		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInputInvalid)
 		require.NoError(t, err)
