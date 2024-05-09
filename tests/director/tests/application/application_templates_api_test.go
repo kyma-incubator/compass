@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 	"time"
@@ -2225,7 +2226,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id %q not found", appTemplateName, conf.TestProviderSubaccountIDRegion2))
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id REDACTED_%x not found", appTemplateName, sha256.Sum256([]byte(conf.TestProviderSubaccountIDRegion2))))
 }
 
 func TestAddWebhookToApplicationTemplateWithTenant(t *testing.T) {
