@@ -54,9 +54,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
-	"github.com/kyma-incubator/compass/components/director/internal/info"
-
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/info"
 	mp_authenticator "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
