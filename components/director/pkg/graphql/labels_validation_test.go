@@ -109,3 +109,20 @@ func fixValidLabelInput() graphql.LabelInput {
 		Value: "valid",
 	}
 }
+
+func fixLabelsInputWithSystemRole(systemRoles []interface{}) graphql.Labels {
+	labelsInput := graphql.Labels{
+		"systemRole": systemRoles,
+	}
+
+	return labelsInput
+}
+
+func fixLabelsInputWithSystemRoleAndSlisFilter(systemRoles []interface{}, slisFilter interface{}) graphql.Labels {
+	labelsInput := graphql.Labels{
+		"systemRole": systemRoles,
+		"slisFilter": slisFilter,
+	}
+
+	return labelsInput
+}
