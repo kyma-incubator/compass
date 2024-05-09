@@ -42,6 +42,7 @@ func (i FormationTemplateRegisterInput) Validate() error {
 	return validation.ValidateStruct(&i, fieldRules...)
 }
 
+// Validate validates the formation template update input
 func (i FormationTemplateUpdateInput) Validate() error {
 	subtypes := make([]interface{}, 0, len(i.RuntimeTypes)+len(i.ApplicationTypes))
 	for _, subtype := range i.RuntimeTypes {

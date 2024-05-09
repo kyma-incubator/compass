@@ -71,7 +71,7 @@ func FixLabelDefinitionRequest(labelKey string) *gcli.Request {
 
 func FixLabelDefinitionsRequest() *gcli.Request {
 	return gcli.NewRequest(
-		fmt.Sprintf(`query {
+		fmt.Sprint(`query {
 			result:	labelDefinitions() {
 					key
 					schema

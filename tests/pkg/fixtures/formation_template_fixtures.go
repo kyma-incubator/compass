@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	FormationTemplateLabelKey = "e2e-test-formation-template-lbl-key"
+	FormationTemplateLabelKey   = "e2e-test-formation-template-lbl-key"
 	FormationTemplateLabelValue = "e2e-test-formation-template-lbl-value"
 )
 

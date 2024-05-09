@@ -379,7 +379,6 @@ func fixFormationTemplateEntity(createdAt time.Time, updatedAt *time.Time) *form
 		CreatedAt:              createdAt,
 		UpdatedAt:              updatedAt,
 	}
-
 }
 
 func fixFormationTemplateModel(createdAt time.Time, updatedAt *time.Time) *model.FormationTemplate {
