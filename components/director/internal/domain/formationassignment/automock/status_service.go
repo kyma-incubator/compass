@@ -21,10 +21,6 @@ type StatusService struct {
 func (_m *StatusService) DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error {
 	ret := _m.Called(ctx, id, notificationStatusReport)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteWithConstraints")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *statusreport.NotificationStatusReport) error); ok {
 		r0 = rf(ctx, id, notificationStatusReport)
@@ -38,10 +34,6 @@ func (_m *StatusService) DeleteWithConstraints(ctx context.Context, id string, n
 // UpdateWithConstraints provides a mock function with given fields: ctx, notificationStatusReport, fa, operation
 func (_m *StatusService) UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error {
 	ret := _m.Called(ctx, notificationStatusReport, fa, operation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateWithConstraints")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *statusreport.NotificationStatusReport, *model.FormationAssignment, model.FormationOperation) error); ok {

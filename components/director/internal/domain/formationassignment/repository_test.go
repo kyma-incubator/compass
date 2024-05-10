@@ -3,8 +3,10 @@ package formationassignment_test
 import (
 	"context"
 	"database/sql/driver"
+	"fmt"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/require"
@@ -551,13 +553,15 @@ func TestRepository_Update(t *testing.T) {
 
 	suite.Run(t)
 
-	t.Run("Success when the formation assignment state is changed and timestamp is updated", func(t *testing.T) {
+	t.Run("Success when the formation assignment state is changed and last state change timestamp is updated", func(t *testing.T) {
 		// GIVEN
 		faModelWithReadyState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
 		faModelWithReadyState.State = readyAssignmentState
 
 		faEntityWithReadyState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
 		faEntityWithReadyState.State = readyAssignmentState
+
+		formationassignment.Now = func() time.Time { return defaultTime }
 
 		slqxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
@@ -566,6 +570,10 @@ func TestRepository_Update(t *testing.T) {
 		rows := sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, TestStateInitial, TestConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)
 		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`)).
 			WithArgs(TestID).WillReturnRows(rows)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_state_change_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, TestID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
 			WithArgs(readyAssignmentState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
@@ -592,6 +600,8 @@ func TestRepository_Update(t *testing.T) {
 		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
 		faEntityWithConfigPendingState.State = configPendingAssignmentState
 
+		formationassignment.Now = func() time.Time { return defaultTime }
+
 		slqxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
@@ -599,6 +609,10 @@ func TestRepository_Update(t *testing.T) {
 		rows := sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, configPendingAssignmentState, TestNewConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)
 		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`)).
 			WithArgs(TestID).WillReturnRows(rows)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_state_change_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, TestID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
 
 		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET state = ?, value = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
 			WithArgs(configPendingAssignmentState, TestConfigValueStr, TestErrorValueStr, sqlmock.AnyArg(), &defaultTime, TestID, TestTenantID).
@@ -612,6 +626,72 @@ func TestRepository_Update(t *testing.T) {
 
 		// WHEN
 		err := r.Update(ctx, faModelWithConfigPendingState)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when the formation assignment state is changed and last state change timestamp update fail", func(t *testing.T) {
+		// GIVEN
+		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithConfigPendingState.State = configPendingAssignmentState
+
+		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithConfigPendingState.State = configPendingAssignmentState
+
+		formationassignment.Now = func() time.Time { return defaultTime }
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		rows := sqlmock.NewRows(fixColumns).AddRow(TestID, TestFormationID, TestTenantID, TestSource, TestSourceType, TestTarget, TestTargetType, configPendingAssignmentState, TestNewConfigValueStr, TestErrorValueStr, &defaultTime, &defaultTime)
+		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, formation_id, tenant_id, source, source_type, target, target_type, state, value, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formation_assignments WHERE id = $1`)).
+			WithArgs(TestID).WillReturnRows(rows)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_state_change_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, TestID).
+			WillReturnError(testErr)
+
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+		mockConverter.On("ToEntity", faModelWithConfigPendingState).Return(faEntityWithConfigPendingState)
+
+		r := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := r.Update(ctx, faModelWithConfigPendingState)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), fmt.Sprintf("while updating the last state change timestamp for formation assignment with ID: %s", TestID))
+	})
+}
+
+func TestRepository_UpdateLastNotificationSentTimestamps(t *testing.T) {
+	t.Run("Success when updating formation assignment last notification sent timestamp", func(t *testing.T) {
+		// GIVEN
+		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithConfigPendingState.State = configPendingAssignmentState
+
+		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithConfigPendingState.State = configPendingAssignmentState
+
+		formationassignment.Now = func() time.Time { return defaultTime }
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_notification_sent_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, TestID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		mockConverter := &automock.EntityConverter{}
+		r := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := r.UpdateLastNotificationSentTimestamps(ctx, TestID)
 
 		// THEN
 		require.NoError(t, err)
