@@ -56,12 +56,12 @@ func Test_converter_MultipleToGraphQL(t *testing.T) {
 		{
 			Name:     "Success when input is empty slice",
 			Input:    []*model.AssignmentOperation{},
-			Expected: nil,
+			Expected: []*graphql.AssignmentOperation{},
 		},
 		{
 			Name:     "Success when input is nil",
 			Input:    nil,
-			Expected: nil,
+			Expected: []*graphql.AssignmentOperation{},
 		},
 	}
 

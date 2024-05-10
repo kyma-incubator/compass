@@ -64,7 +64,7 @@ func (c *converter) ToGraphQL(in *model.AssignmentOperation) *gql.AssignmentOper
 
 // MultipleToGraphQL converts multiple entities from internal models to graphql models
 func (c *converter) MultipleToGraphQL(in []*model.AssignmentOperation) []*gql.AssignmentOperation {
-	var assignmentOperations []*gql.AssignmentOperation
+	assignmentOperations := make([]*gql.AssignmentOperation, 0, len(in))
 	for _, r := range in {
 		if r == nil {
 			continue
