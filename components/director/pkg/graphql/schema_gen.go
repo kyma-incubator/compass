@@ -171,6 +171,17 @@ type ComplexityRoot struct {
 		TotalCount func(childComplexity int) int
 	}
 
+	ApplicationWithTenants struct {
+		Application func(childComplexity int) int
+		Tenants     func(childComplexity int) int
+	}
+
+	ApplicationWithTenantsPage struct {
+		Data       func(childComplexity int) int
+		PageInfo   func(childComplexity int) int
+		TotalCount func(childComplexity int) int
+	}
+
 	Aspect struct {
 		APIResources   func(childComplexity int) int
 		CreatedAt      func(childComplexity int) int
@@ -710,6 +721,7 @@ type ComplexityRoot struct {
 		Applications                               func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		ApplicationsByLocalTenantID                func(childComplexity int, localTenantID string, filter []*LabelFilter, first *int, after *PageCursor) int
 		ApplicationsForRuntime                     func(childComplexity int, runtimeID string, first *int, after *PageCursor) int
+		ApplicationsGlobal                         func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		AutomaticScenarioAssignmentForScenario     func(childComplexity int, scenarioName string) int
 		AutomaticScenarioAssignments               func(childComplexity int, first *int, after *PageCursor) int
 		AutomaticScenarioAssignmentsForSelector    func(childComplexity int, selector LabelSelectorInput) int
@@ -735,7 +747,6 @@ type ComplexityRoot struct {
 		LabelDefinitions                           func(childComplexity int) int
 		RootTenants                                func(childComplexity int, externalTenant string) int
 		Runtime                                    func(childComplexity int, id string) int
-		RuntimeByTokenIssuer                       func(childComplexity int, issuer string) int
 		Runtimes                                   func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		SystemAuth                                 func(childComplexity int, id string) int
 		SystemAuthByToken                          func(childComplexity int, token string) int
@@ -1032,6 +1043,7 @@ type QueryResolver interface {
 	ApisForApplication(ctx context.Context, appID string, first *int, after *PageCursor) (*APIDefinitionPage, error)
 	EventsForApplication(ctx context.Context, appID string, first *int, after *PageCursor) (*EventDefinitionPage, error)
 	Applications(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
+	ApplicationsGlobal(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationWithTenantsPage, error)
 	Application(ctx context.Context, id string) (*Application, error)
 	ApplicationBySystemNumber(ctx context.Context, systemNumber string) (*Application, error)
 	ApplicationsByLocalTenantID(ctx context.Context, localTenantID string, filter []*LabelFilter, first *int, after *PageCursor) (*ApplicationPage, error)
@@ -1041,7 +1053,6 @@ type QueryResolver interface {
 	ApplicationTemplate(ctx context.Context, id string) (*ApplicationTemplate, error)
 	Runtimes(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*RuntimePage, error)
 	Runtime(ctx context.Context, id string) (*Runtime, error)
-	RuntimeByTokenIssuer(ctx context.Context, issuer string) (*Runtime, error)
 	LabelDefinitions(ctx context.Context) ([]*LabelDefinition, error)
 	LabelDefinition(ctx context.Context, key string) (*LabelDefinition, error)
 	BundleByInstanceAuth(ctx context.Context, authID string) (*Bundle, error)
@@ -1646,6 +1657,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ApplicationTemplatePage.TotalCount(childComplexity), true
+
+	case "ApplicationWithTenants.application":
+		if e.complexity.ApplicationWithTenants.Application == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWithTenants.Application(childComplexity), true
+
+	case "ApplicationWithTenants.tenants":
+		if e.complexity.ApplicationWithTenants.Tenants == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWithTenants.Tenants(childComplexity), true
+
+	case "ApplicationWithTenantsPage.data":
+		if e.complexity.ApplicationWithTenantsPage.Data == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWithTenantsPage.Data(childComplexity), true
+
+	case "ApplicationWithTenantsPage.pageInfo":
+		if e.complexity.ApplicationWithTenantsPage.PageInfo == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWithTenantsPage.PageInfo(childComplexity), true
+
+	case "ApplicationWithTenantsPage.totalCount":
+		if e.complexity.ApplicationWithTenantsPage.TotalCount == nil {
+			break
+		}
+
+		return e.complexity.ApplicationWithTenantsPage.TotalCount(childComplexity), true
 
 	case "Aspect.apiResources":
 		if e.complexity.Aspect.APIResources == nil {
@@ -4850,6 +4896,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.ApplicationsForRuntime(childComplexity, args["runtimeID"].(string), args["first"].(*int), args["after"].(*PageCursor)), true
 
+	case "Query.applicationsGlobal":
+		if e.complexity.Query.ApplicationsGlobal == nil {
+			break
+		}
+
+		args, err := ec.field_Query_applicationsGlobal_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.ApplicationsGlobal(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
+
 	case "Query.automaticScenarioAssignmentForScenario":
 		if e.complexity.Query.AutomaticScenarioAssignmentForScenario == nil {
 			break
@@ -5139,18 +5197,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Runtime(childComplexity, args["id"].(string)), true
-
-	case "Query.runtimeByTokenIssuer":
-		if e.complexity.Query.RuntimeByTokenIssuer == nil {
-			break
-		}
-
-		args, err := ec.field_Query_runtimeByTokenIssuer_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.Query.RuntimeByTokenIssuer(childComplexity, args["issuer"].(string)), true
 
 	case "Query.runtimes":
 		if e.complexity.Query.Runtimes == nil {
@@ -9133,6 +9179,39 @@ func (ec *executionContext) field_Query_applicationsForRuntime_args(ctx context.
 	return args, nil
 }
 
+func (ec *executionContext) field_Query_applicationsGlobal_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 []*LabelFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilterᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["first"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["first"] = arg1
+	var arg2 *PageCursor
+	if tmp, ok := rawArgs["after"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["after"] = arg2
+	return args, nil
+}
+
 func (ec *executionContext) field_Query_applications_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -9616,21 +9695,6 @@ func (ec *executionContext) field_Query_rootTenants_args(ctx context.Context, ra
 		}
 	}
 	args["externalTenant"] = arg0
-	return args, nil
-}
-
-func (ec *executionContext) field_Query_runtimeByTokenIssuer_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
-	var err error
-	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["issuer"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("issuer"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["issuer"] = arg0
 	return args, nil
 }
 
@@ -13581,6 +13645,310 @@ func (ec *executionContext) _ApplicationTemplatePage_totalCount(ctx context.Cont
 func (ec *executionContext) fieldContext_ApplicationTemplatePage_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "ApplicationTemplatePage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ApplicationWithTenants_application(ctx context.Context, field graphql.CollectedField, obj *ApplicationWithTenants) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationWithTenants_application(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Application, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Application)
+	fc.Result = res
+	return ec.marshalOApplication2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplication(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationWithTenants_application(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationWithTenants",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Application_id(ctx, field)
+			case "name":
+				return ec.fieldContext_Application_name(ctx, field)
+			case "systemNumber":
+				return ec.fieldContext_Application_systemNumber(ctx, field)
+			case "localTenantID":
+				return ec.fieldContext_Application_localTenantID(ctx, field)
+			case "baseUrl":
+				return ec.fieldContext_Application_baseUrl(ctx, field)
+			case "providerName":
+				return ec.fieldContext_Application_providerName(ctx, field)
+			case "description":
+				return ec.fieldContext_Application_description(ctx, field)
+			case "integrationSystemID":
+				return ec.fieldContext_Application_integrationSystemID(ctx, field)
+			case "applicationTemplateID":
+				return ec.fieldContext_Application_applicationTemplateID(ctx, field)
+			case "applicationTemplate":
+				return ec.fieldContext_Application_applicationTemplate(ctx, field)
+			case "labels":
+				return ec.fieldContext_Application_labels(ctx, field)
+			case "status":
+				return ec.fieldContext_Application_status(ctx, field)
+			case "webhooks":
+				return ec.fieldContext_Application_webhooks(ctx, field)
+			case "operations":
+				return ec.fieldContext_Application_operations(ctx, field)
+			case "healthCheckURL":
+				return ec.fieldContext_Application_healthCheckURL(ctx, field)
+			case "bundles":
+				return ec.fieldContext_Application_bundles(ctx, field)
+			case "bundle":
+				return ec.fieldContext_Application_bundle(ctx, field)
+			case "apiDefinition":
+				return ec.fieldContext_Application_apiDefinition(ctx, field)
+			case "eventDefinition":
+				return ec.fieldContext_Application_eventDefinition(ctx, field)
+			case "integrationDependencies":
+				return ec.fieldContext_Application_integrationDependencies(ctx, field)
+			case "auths":
+				return ec.fieldContext_Application_auths(ctx, field)
+			case "eventingConfiguration":
+				return ec.fieldContext_Application_eventingConfiguration(ctx, field)
+			case "applicationNamespace":
+				return ec.fieldContext_Application_applicationNamespace(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Application_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Application_updatedAt(ctx, field)
+			case "deletedAt":
+				return ec.fieldContext_Application_deletedAt(ctx, field)
+			case "systemStatus":
+				return ec.fieldContext_Application_systemStatus(ctx, field)
+			case "error":
+				return ec.fieldContext_Application_error(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Application", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ApplicationWithTenants_tenants(ctx context.Context, field graphql.CollectedField, obj *ApplicationWithTenants) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationWithTenants_tenants(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Tenants, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.([]*Tenant)
+	fc.Result = res
+	return ec.marshalOTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationWithTenants_tenants(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationWithTenants",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Tenant_id(ctx, field)
+			case "internalID":
+				return ec.fieldContext_Tenant_internalID(ctx, field)
+			case "name":
+				return ec.fieldContext_Tenant_name(ctx, field)
+			case "type":
+				return ec.fieldContext_Tenant_type(ctx, field)
+			case "parents":
+				return ec.fieldContext_Tenant_parents(ctx, field)
+			case "initialized":
+				return ec.fieldContext_Tenant_initialized(ctx, field)
+			case "labels":
+				return ec.fieldContext_Tenant_labels(ctx, field)
+			case "provider":
+				return ec.fieldContext_Tenant_provider(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Tenant", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ApplicationWithTenantsPage_data(ctx context.Context, field graphql.CollectedField, obj *ApplicationWithTenantsPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationWithTenantsPage_data(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Data, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ApplicationWithTenants)
+	fc.Result = res
+	return ec.marshalNApplicationWithTenants2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenants(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationWithTenantsPage_data(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationWithTenantsPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "application":
+				return ec.fieldContext_ApplicationWithTenants_application(ctx, field)
+			case "tenants":
+				return ec.fieldContext_ApplicationWithTenants_tenants(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ApplicationWithTenants", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ApplicationWithTenantsPage_pageInfo(ctx context.Context, field graphql.CollectedField, obj *ApplicationWithTenantsPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationWithTenantsPage_pageInfo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PageInfo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*PageInfo)
+	fc.Result = res
+	return ec.marshalNPageInfo2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageInfo(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationWithTenantsPage_pageInfo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationWithTenantsPage",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "startCursor":
+				return ec.fieldContext_PageInfo_startCursor(ctx, field)
+			case "endCursor":
+				return ec.fieldContext_PageInfo_endCursor(ctx, field)
+			case "hasNextPage":
+				return ec.fieldContext_PageInfo_hasNextPage(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type PageInfo", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ApplicationWithTenantsPage_totalCount(ctx context.Context, field graphql.CollectedField, obj *ApplicationWithTenantsPage) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ApplicationWithTenantsPage_totalCount(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TotalCount, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ApplicationWithTenantsPage_totalCount(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ApplicationWithTenantsPage",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -35956,6 +36324,93 @@ func (ec *executionContext) fieldContext_Query_applications(ctx context.Context,
 	return fc, nil
 }
 
+func (ec *executionContext) _Query_applicationsGlobal(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_applicationsGlobal(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().ApplicationsGlobal(rctx, fc.Args["filter"].([]*LabelFilter), fc.Args["first"].(*int), fc.Args["after"].(*PageCursor))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.applicationsGlobal")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*ApplicationWithTenantsPage); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.ApplicationWithTenantsPage`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ApplicationWithTenantsPage)
+	fc.Result = res
+	return ec.marshalNApplicationWithTenantsPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenantsPage(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_applicationsGlobal(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "data":
+				return ec.fieldContext_ApplicationWithTenantsPage_data(ctx, field)
+			case "pageInfo":
+				return ec.fieldContext_ApplicationWithTenantsPage_pageInfo(ctx, field)
+			case "totalCount":
+				return ec.fieldContext_ApplicationWithTenantsPage_totalCount(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ApplicationWithTenantsPage", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_applicationsGlobal_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_application(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_application(ctx, field)
 	if err != nil {
@@ -36916,84 +37371,6 @@ func (ec *executionContext) fieldContext_Query_runtime(ctx context.Context, fiel
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_runtime_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _Query_runtimeByTokenIssuer(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_runtimeByTokenIssuer(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().RuntimeByTokenIssuer(rctx, fc.Args["issuer"].(string))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*Runtime)
-	fc.Result = res
-	return ec.marshalORuntime2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐRuntime(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_Query_runtimeByTokenIssuer(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "Query",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "id":
-				return ec.fieldContext_Runtime_id(ctx, field)
-			case "metadata":
-				return ec.fieldContext_Runtime_metadata(ctx, field)
-			case "name":
-				return ec.fieldContext_Runtime_name(ctx, field)
-			case "description":
-				return ec.fieldContext_Runtime_description(ctx, field)
-			case "labels":
-				return ec.fieldContext_Runtime_labels(ctx, field)
-			case "webhooks":
-				return ec.fieldContext_Runtime_webhooks(ctx, field)
-			case "status":
-				return ec.fieldContext_Runtime_status(ctx, field)
-			case "auths":
-				return ec.fieldContext_Runtime_auths(ctx, field)
-			case "eventingConfiguration":
-				return ec.fieldContext_Runtime_eventingConfiguration(ctx, field)
-			case "runtimeContext":
-				return ec.fieldContext_Runtime_runtimeContext(ctx, field)
-			case "runtimeContexts":
-				return ec.fieldContext_Runtime_runtimeContexts(ctx, field)
-			case "applicationNamespace":
-				return ec.fieldContext_Runtime_applicationNamespace(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Runtime", field.Name)
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_Query_runtimeByTokenIssuer_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -47972,6 +48349,13 @@ func (ec *executionContext) _Pageable(ctx context.Context, sel ast.SelectionSet,
 			return graphql.Null
 		}
 		return ec._ApplicationTemplatePage(ctx, sel, obj)
+	case ApplicationWithTenantsPage:
+		return ec._ApplicationWithTenantsPage(ctx, sel, &obj)
+	case *ApplicationWithTenantsPage:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._ApplicationWithTenantsPage(ctx, sel, obj)
 	case AssignmentOperationPage:
 		return ec._AssignmentOperationPage(ctx, sel, &obj)
 	case *AssignmentOperationPage:
@@ -49126,6 +49510,93 @@ func (ec *executionContext) _ApplicationTemplatePage(ctx context.Context, sel as
 			}
 		case "totalCount":
 			out.Values[i] = ec._ApplicationTemplatePage_totalCount(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var applicationWithTenantsImplementors = []string{"ApplicationWithTenants"}
+
+func (ec *executionContext) _ApplicationWithTenants(ctx context.Context, sel ast.SelectionSet, obj *ApplicationWithTenants) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, applicationWithTenantsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ApplicationWithTenants")
+		case "application":
+			out.Values[i] = ec._ApplicationWithTenants_application(ctx, field, obj)
+		case "tenants":
+			out.Values[i] = ec._ApplicationWithTenants_tenants(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var applicationWithTenantsPageImplementors = []string{"ApplicationWithTenantsPage", "Pageable"}
+
+func (ec *executionContext) _ApplicationWithTenantsPage(ctx context.Context, sel ast.SelectionSet, obj *ApplicationWithTenantsPage) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, applicationWithTenantsPageImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ApplicationWithTenantsPage")
+		case "data":
+			out.Values[i] = ec._ApplicationWithTenantsPage_data(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "pageInfo":
+			out.Values[i] = ec._ApplicationWithTenantsPage_pageInfo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "totalCount":
+			out.Values[i] = ec._ApplicationWithTenantsPage_totalCount(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -53388,6 +53859,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "applicationsGlobal":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_applicationsGlobal(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "application":
 			field := field
 
@@ -53562,25 +54055,6 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_runtime(ctx, field)
-				return res
-			}
-
-			rrm := func(ctx context.Context) graphql.Marshaler {
-				return ec.OperationContext.RootResolverMiddleware(ctx,
-					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "runtimeByTokenIssuer":
-			field := field
-
-			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._Query_runtimeByTokenIssuer(ctx, field)
 				return res
 			}
 
@@ -55869,6 +56343,58 @@ func (ec *executionContext) unmarshalNApplicationTemplateUpdateInput2githubᚗco
 func (ec *executionContext) unmarshalNApplicationUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationUpdateInput(ctx context.Context, v interface{}) (ApplicationUpdateInput, error) {
 	res, err := ec.unmarshalInputApplicationUpdateInput(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNApplicationWithTenants2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenants(ctx context.Context, sel ast.SelectionSet, v []*ApplicationWithTenants) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOApplicationWithTenants2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenants(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalNApplicationWithTenantsPage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenantsPage(ctx context.Context, sel ast.SelectionSet, v ApplicationWithTenantsPage) graphql.Marshaler {
+	return ec._ApplicationWithTenantsPage(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNApplicationWithTenantsPage2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenantsPage(ctx context.Context, sel ast.SelectionSet, v *ApplicationWithTenantsPage) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._ApplicationWithTenantsPage(ctx, sel, v)
 }
 
 func (ec *executionContext) marshalNAspect2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐAspect(ctx context.Context, sel ast.SelectionSet, v *Aspect) graphql.Marshaler {
@@ -58194,6 +58720,13 @@ func (ec *executionContext) marshalOApplicationTemplate2ᚖgithubᚗcomᚋkyma�
 	return ec._ApplicationTemplate(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOApplicationWithTenants2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐApplicationWithTenants(ctx context.Context, sel ast.SelectionSet, v *ApplicationWithTenants) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._ApplicationWithTenants(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx context.Context, v interface{}) (*ArtifactType, error) {
 	if v == nil {
 		return nil, nil
@@ -59783,6 +60316,47 @@ func (ec *executionContext) unmarshalOTemplateValueInput2ᚖgithubᚗcomᚋkyma�
 	}
 	res, err := ec.unmarshalInputTemplateValueInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx context.Context, sel ast.SelectionSet, v []*Tenant) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOTenant2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenant(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
 }
 
 func (ec *executionContext) marshalOTenant2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTenantᚄ(ctx context.Context, sel ast.SelectionSet, v []*Tenant) graphql.Marshaler {

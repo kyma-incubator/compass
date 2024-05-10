@@ -92,26 +92,6 @@ spec:
           for: 5m
           labels:
             severity: critical
-        - alert: OperationGotErrorCondition
-          annotations:
-            description: Operation name={{`{{`}} $labels.name {{`}}`}} with correlationID={{`{{`}} $labels.correlation_id
-              {{`}}`}}, operationType={{`{{`}} $labels.type {{`}}`}}, category={{`{{`}} $labels.category {{`}}`}}, requestObject={{`{{`}}
-              $labels.request_object {{`}}`}} failed with error={{`{{`}} $labels.error {{`}}`}}
-          expr: (compass_operations_controller_failed_operations_count == 1) unless (compass_operations_controller_failed_operations_count
-            offset 1m == 1 )
-          for: 0m
-          labels:
-            severity: critical
-        - alert: OperationInProgressNearTimeout
-          annotations:
-            description: Operation with type={{`{{`}} $labels.type {{`}}`}} has been InProgress near
-              reconciliation timeout.
-          expr: (compass_operations_controller_operations_near_reconciliation_timeout_count
-            >= 1) unless (compass_operations_controller_operations_near_reconciliation_timeout_count
-            offset 90s == compass_operations_controller_operations_near_reconciliation_timeout_count)
-          for: 0m
-          labels:
-            severity: warning
         - alert: IstioRequests-RateLimited-429
           annotations:
             description: From source_workload={{`{{`}} $labels.source_workload {{`}}`}} to destination_workload={{`{{`}}

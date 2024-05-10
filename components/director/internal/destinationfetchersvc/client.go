@@ -70,11 +70,31 @@ type destinationFromService struct {
 	XFSystemName            string `json:"XFSystemName"`
 	CommunicationScenarioID string `json:"communicationScenarioId"`
 	ProductName             string `json:"product.name"`
+	CorrelationIDs          string `json:"correlationIds"`
 	XCorrelationID          string `json:"x-correlation-id"`
 	XSystemTenantID         string `json:"x-system-id"`
 	XSystemTenantName       string `json:"x-system-name"`
 	XSystemType             string `json:"x-system-type"`
 	XSystemBaseURL          string `json:"x-system-base-url"`
+}
+
+// Validate returns error if system doesn't have the required properties
+func (d *destinationFromService) Validate() error {
+	if d.XCorrelationID == "" && d.CorrelationIDs == "" {
+		return errors.New("missing destination correlation id")
+	}
+
+	if d.XCorrelationID != "" && d.CorrelationIDs != "" {
+		return errors.New("old and new correlation ID format provided")
+	}
+
+	return nil
+}
+
+func (d *destinationFromService) handleDefaultCorrelationID() {
+	if d.XCorrelationID == "" && d.CorrelationIDs == "" && d.CommunicationScenarioID != "" {
+		d.XCorrelationID = correlationIDPrefix + d.CommunicationScenarioID
+	}
 }
 
 func (d *destinationFromService) setDefaults(result *model.DestinationInput) error {
@@ -85,11 +105,7 @@ func (d *destinationFromService) setDefaults(result *model.DestinationInput) err
 	if result.XSystemType != s4HANAType {
 		return nil
 	}
-	if result.XCorrelationID == "" {
-		if d.CommunicationScenarioID != "" {
-			result.XCorrelationID = correlationIDPrefix + d.CommunicationScenarioID
-		}
-	}
+
 	if result.XSystemTenantName == "" {
 		result.XSystemTenantName = d.XFSystemName
 	}
@@ -114,12 +130,23 @@ func (d *destinationFromService) setDefaults(result *model.DestinationInput) err
 
 // ToModel missing godoc
 func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
+	d.handleDefaultCorrelationID()
+
+	if err := d.Validate(); err != nil {
+		return model.DestinationInput{}, err
+	}
+
+	correlationIDs := d.CorrelationIDs
+	if d.XCorrelationID != "" {
+		correlationIDs = d.XCorrelationID
+	}
+
 	result := model.DestinationInput{
 		Name:              d.Name,
 		Type:              d.Type,
 		URL:               d.URL,
 		Authentication:    d.Authentication,
-		XCorrelationID:    d.XCorrelationID,
+		XCorrelationID:    correlationIDs,
 		XSystemTenantID:   d.XSystemTenantID,
 		XSystemTenantName: d.XSystemTenantName,
 		XSystemType:       d.XSystemType,
@@ -130,7 +157,7 @@ func (d *destinationFromService) ToModel() (model.DestinationInput, error) {
 		return model.DestinationInput{}, err
 	}
 
-	return result, result.Validate()
+	return result, nil
 }
 
 // DestinationResponse paged response from destination service

@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"
@@ -283,13 +284,15 @@ func TestRepository_Update(t *testing.T) {
 
 	suite.Run(t)
 
-	t.Run("Success when the formation state is changed and timestamp is updated", func(t *testing.T) {
+	t.Run("Success when the formation state is changed and last state change timestamp is updated", func(t *testing.T) {
 		// GIVEN
 		formationModelWithReadyState := fixFormationModel()
 		formationModelWithReadyState.State = model.ReadyFormationState
 
 		formationEntityWithReadyState := fixFormationEntity()
 		formationEntityWithReadyState.State = string(model.ReadyFormationState)
+
+		formation.Now = func() time.Time { return defaultTime }
 
 		emptyCtx := context.TODO()
 		sqlxDB, sqlMock := testdb.MockDatabase(t)
@@ -315,6 +318,67 @@ func TestRepository_Update(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
+	})
+}
+
+func TestRepository_UpdateLastNotificationSentTimestamps(t *testing.T) {
+	t.Run("Success when updating formation last notification sent timestamp", func(t *testing.T) {
+		// GIVEN
+		formationModelWithReadyState := fixFormationModel()
+		formationModelWithReadyState.State = model.ReadyFormationState
+
+		formationEntityWithReadyState := fixFormationEntity()
+		formationEntityWithReadyState.State = string(model.ReadyFormationState)
+
+		formation.Now = func() time.Time { return defaultTime }
+
+		emptyCtx := context.TODO()
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, sqlxDB)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formations SET last_notification_sent_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, FormationID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		mockConverter := &automock.EntityConverter{}
+		repo := formation.NewRepository(mockConverter)
+
+		// WHEN
+		err := repo.UpdateLastNotificationSentTimestamps(ctx, FormationID)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when formation's last notification sent timestamp update fail", func(t *testing.T) {
+		// GIVEN
+		formationModelWithReadyState := fixFormationModel()
+		formationModelWithReadyState.State = model.ReadyFormationState
+
+		formationEntityWithReadyState := fixFormationEntity()
+		formationEntityWithReadyState.State = string(model.ReadyFormationState)
+
+		formation.Now = func() time.Time { return defaultTime }
+
+		emptyCtx := context.TODO()
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, sqlxDB)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formations SET last_notification_sent_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, FormationID).
+			WillReturnError(testErr)
+
+		mockConverter := &automock.EntityConverter{}
+		repo := formation.NewRepository(mockConverter)
+
+		// WHEN
+		err := repo.UpdateLastNotificationSentTimestamps(ctx, FormationID)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Unexpected error while executing SQL query")
 	})
 }
 

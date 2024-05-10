@@ -19,10 +19,6 @@ type RuntimeRepo struct {
 func (_m *RuntimeRepo) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, ids)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByIDs")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {

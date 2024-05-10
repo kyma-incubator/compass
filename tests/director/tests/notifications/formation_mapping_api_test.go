@@ -318,7 +318,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 			CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
 			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
+			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-update-formation-assignment-cn", -1),
 			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
 			ExternalCertProvider:                  certprovider.CertificateService,
@@ -341,7 +341,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredGQLClient, subscriptionConsumerAccountID, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredGQLClient, subscriptionConsumerAccountID, appTmpl)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredGQLClient, appTmpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])

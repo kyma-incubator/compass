@@ -2,6 +2,12 @@ package fixtures
 
 import (
 	"context"
+	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
+	"github.com/kyma-incubator/compass/components/director/pkg/inputvalidation"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/pkg/assertions"
@@ -42,4 +48,31 @@ func CleanupCertificateSubjectMapping(t require.TestingT, ctx context.Context, g
 	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 
 	return &result
+}
+
+func FindCertSubjectMappingForApplicationTemplate(t *testing.T, ctx context.Context, gqlClient *gcli.Client, appTemplateID, expectedCN string) *graphql.CertificateSubjectMapping {
+	after := ""
+	for {
+		queryCertSubjectMappingReq := FixQueryCertificateSubjectMappingsRequestWithPagination(300, after)
+		currentCertSubjectMappings := graphql.CertificateSubjectMappingPage{}
+
+		t.Log("Getting current certificate subject mappings...")
+		err := testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, queryCertSubjectMappingReq, &currentCertSubjectMappings)
+		require.NoError(t, err)
+
+		after = string(currentCertSubjectMappings.PageInfo.EndCursor)
+
+		for _, csm := range currentCertSubjectMappings.Data {
+			if str.PtrStrToStr(csm.InternalConsumerID) == appTemplateID {
+				require.Contains(t, csm.Subject, expectedCN)
+				require.Equal(t, string(consumer.ApplicationProvider), csm.ConsumerType)
+				require.Equal(t, []string{inputvalidation.GlobalAccessLevel}, csm.TenantAccessLevels)
+				return csm
+			}
+		}
+
+		if !currentCertSubjectMappings.PageInfo.HasNextPage {
+			return nil
+		}
+	}
 }

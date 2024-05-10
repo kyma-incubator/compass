@@ -31,6 +31,7 @@ type SQLQueryDetails struct {
 	InvalidResult       driver.Result
 	ValidRowsProvider   func() []*sqlmock.Rows
 	InvalidRowsProvider func() []*sqlmock.Rows
+	SkipFailValidation  bool
 }
 
 // RepoCreateTestSuite represents a generic test suite for repository Create method of any global entity or entity that has externally managed tenants in m2m table/view.

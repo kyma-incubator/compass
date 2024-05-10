@@ -624,9 +624,13 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 	assignment := assignmentReqMappingClone.FormationAssignment
 
-	if assignment != nil {
-		log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", assignment.ID, assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType, assignment.State)
+	if assignment == nil {
+		return errors.New("formation assignment is nil")
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, assignment.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+	log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", assignment.ID, assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType, assignment.State)
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("The formation assignment with ID: %q is in %q state. No notifications will be sent for it.", assignment.ID, assignment.State)
@@ -764,6 +768,9 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 // In all other cases the `State` and `Config` are updated accordingly
 func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation) (bool, error) {
 	assignment := mappingPair.AssignmentReqMapping.FormationAssignment
+	logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, assignment.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	if mappingPair.AssignmentReqMapping.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			if apperrors.IsNotFoundError(err) {

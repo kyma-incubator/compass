@@ -1,9 +1,14 @@
 package formationassignment_test
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -920,4 +925,25 @@ func fixParentTenant(id, externalID string, t tnt.Type) *model.BusinessTenantMap
 		Provider:       testProvider,
 		Status:         tnt.Active,
 	}
+}
+
+func ctxWithTenantAndLoggerMatcher() interface{} {
+	return mock.MatchedBy(func(ctx context.Context) bool {
+		return tenantMatcher(ctx) && loggerMatcher(ctx)
+	})
+}
+
+func tenantMatcher(ctx context.Context) bool {
+	tenants, err := tenant.LoadTenantPairFromContext(ctx)
+	return err == nil && (tenants.ExternalID == externalTnt && tenants.InternalID == TestTenantID)
+}
+
+func loggerMatcher(ctx context.Context) bool {
+	logEntry := log.C(ctx)
+	if logEntry != nil && logEntry.Data != nil {
+		formationLogField := logEntry.Data[log.FieldFormationID]
+		formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
+		return formationLogField != "" || formationAssignmentLogField != ""
+	}
+	return false
 }

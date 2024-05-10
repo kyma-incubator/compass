@@ -27,10 +27,6 @@ type NotificationsService struct {
 func (_m *NotificationsService) GenerateFormationAssignmentNotifications(ctx context.Context, tenant string, objectID string, _a3 *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error) {
 	ret := _m.Called(ctx, tenant, objectID, _a3, operation, objectType)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GenerateFormationAssignmentNotifications")
-	}
-
 	var r0 []*webhookclient.FormationAssignmentNotificationRequestTargetMapping
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, *model.Formation, model.FormationOperation, graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)); ok {
@@ -56,10 +52,6 @@ func (_m *NotificationsService) GenerateFormationAssignmentNotifications(ctx con
 // GenerateFormationNotifications provides a mock function with given fields: ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation
 func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, _a3 *model.Formation, formationTemplateName string, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error) {
 	ret := _m.Called(ctx, formationTemplateWebhooks, tenantID, _a3, formationTemplateName, formationTemplateID, formationOperation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GenerateFormationNotifications")
-	}
 
 	var r0 []*webhookclient.FormationNotificationRequest
 	var r1 error
@@ -87,10 +79,6 @@ func (_m *NotificationsService) GenerateFormationNotifications(ctx context.Conte
 func (_m *NotificationsService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, _a1 *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	ret := _m.Called(ctx, _a1, operation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for PrepareDetailsForNotificationStatusReturned")
-	}
-
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Formation, model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)); ok {
@@ -116,10 +104,6 @@ func (_m *NotificationsService) PrepareDetailsForNotificationStatusReturned(ctx 
 // SendNotification provides a mock function with given fields: ctx, webhookNotificationReq
 func (_m *NotificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, webhookNotificationReq)
-
-	if len(ret) == 0 {
-		panic("no return value specified for SendNotification")
-	}
 
 	var r0 *webhook.Response
 	var r1 error
