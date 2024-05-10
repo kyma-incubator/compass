@@ -182,9 +182,7 @@ func main() {
 	systemFieldDiscoverySvc, err := systemfielddiscoveryengine.NewSystemFieldDiscoverEngineService(cfg.SystemFieldDiscoveryEngineConfig, systemFieldDiscoveryClient, transact, appSvc, appTemplateSvc, tenantSvc)
 	exitOnError(err, "error while creating system field discovery engine")
 
-	systemFieldDiscoveryProcessor := &systemfielddiscoveryengine.OperationsProcessor{
-		SystemFieldDiscoverySvc: systemFieldDiscoverySvc,
-	}
+	systemFieldDiscoveryProcessor := systemfielddiscoveryengine.NewOperationProcessor(systemFieldDiscoverySvc)
 	onDemandChannel := make(chan string, 100)
 
 	handler := initAPIHandler(ctx, httpClient, cfg, tenantSynchronizers, saasRegistryOperationsManager, onDemandChannel)

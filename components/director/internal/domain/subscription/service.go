@@ -118,15 +118,6 @@ type ApplicationService interface {
 	Delete(ctx context.Context, id string) error
 }
 
-// SystemFieldDiscoveryEngine is responsible for system field discovery operations
-//
-//go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
-type SystemFieldDiscoveryEngine interface {
-	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subaccountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
-	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
-	DiscoverSaasRegistry(ctx context.Context, region, appName, appTemplateName, subaccountID string, systemFieldDiscovery bool) error
-}
-
 type service struct {
 	runtimeSvc                   RuntimeService
 	runtimeCtxSvc                RuntimeCtxService
@@ -137,7 +128,6 @@ type service struct {
 	appTemplateConv              ApplicationTemplateConverter
 	appSvc                       ApplicationService
 	uidSvc                       uidService
-	systemFieldDiscoveryEngine   SystemFieldDiscoveryEngine
 	globalSubaccountIDLabelKey   string
 	subscriptionLabelKey         string
 	runtimeTypeLabelKey          string

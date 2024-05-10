@@ -58,12 +58,19 @@ type ApplicationTemplateService interface {
 	GetLabel(ctx context.Context, appTemplateID string, key string) (*model.Label, error)
 }
 
-// TenantService missing godoc
+// TenantService is responsible for tenant operations
 //
 //go:generate mockery --name=TenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
+}
+
+// SystemFieldDiscoveryEngineConfig is responsible for system field discovery configuration
+//
+//go:generate mockery --name=SystemFieldDiscoveryEngineConfig --output=automock --outpkg=automock --case=underscore --disable-version-string
+type SystemFieldDiscoveryEngineConfig interface {
+	PrepareConfiguration() error
 }
 
 // Service consists of various resource services responsible for service-layer system field discovery engine operations.

@@ -38,7 +38,13 @@ func (p *ProcessingError) toJSON() string {
 
 // OperationsProcessor defines Open Resource Discovery operation processor
 type OperationsProcessor struct {
-	SystemFieldDiscoverySvc SystemFieldDiscoveryService
+	systemFieldDiscoverySvc SystemFieldDiscoveryService
+}
+
+func NewOperationProcessor(systemFieldDiscoverySvc SystemFieldDiscoveryService) *OperationsProcessor {
+	return &OperationsProcessor{
+		systemFieldDiscoverySvc: systemFieldDiscoverySvc,
+	}
 }
 
 // Process processes the given operation
@@ -55,7 +61,7 @@ func (p *OperationsProcessor) Process(ctx context.Context, operation *model.Oper
 	}
 
 	if opData.ApplicationID != "" && opData.TenantID != "" {
-		if err := p.SystemFieldDiscoverySvc.ProcessSaasRegistryApplication(ctx, opData.ApplicationID, opData.TenantID); err != nil {
+		if err := p.systemFieldDiscoverySvc.ProcessSaasRegistryApplication(ctx, opData.ApplicationID, opData.TenantID); err != nil {
 			return errors.Wrap(err, "while processing saas registry application")
 		}
 	} else {
