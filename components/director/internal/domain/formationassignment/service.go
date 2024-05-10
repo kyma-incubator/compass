@@ -630,6 +630,9 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("The formation assignment with ID: %q is in %q state. No notifications will be sent for it.", assignment.ID, assignment.State)
+		if err := s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID); err != nil {
+			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s", model.FromFormationOperationType(mappingPair.Operation), assignment.ID)
+		}
 		return nil
 	}
 

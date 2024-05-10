@@ -146,7 +146,7 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 		WithFormationName(draftFormationName)
 	statusAsserter := asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
 		WithFormationName(draftFormationName)
-	notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app2ID, app1ID, "", "", "", tnt, "", testConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+	notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app2ID, app1ID, "", "", "", tnt, "", &testConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
 		WithAssertTrustDetails(true).
 		WithFormationName(draftFormationName).
 		WithGQLClient(certSecuredGraphQLClient)

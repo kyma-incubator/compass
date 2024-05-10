@@ -33,6 +33,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 	tnt := tenant.TestTenants.GetDefaultTenantID()
 	tntParentCustomer := tenant.TestTenants.GetIDByName(t, tenant.TestDefaultCustomerTenant) // parent of `tenant.TestTenants.GetDefaultTenantID()` above
 
+	emptyConfig := ""
+
 	certSecuredHTTPClient := fixtures.FixCertSecuredHTTPClient(cc, conf.ExternalClientCertSecretName, conf.SkipSSLValidation)
 
 	formationTemplateName := "app-only-formation-template-name"
@@ -206,7 +208,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsserter := asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -229,7 +231,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		asserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsAsserter = asserters.NewNotificationsAsserter(3, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsAsserter = asserters.NewNotificationsAsserter(3, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(asserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -306,7 +308,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsserter := asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).WithCondition(graphql.FormationStatusConditionInProgress)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
 		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -335,7 +337,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).WithCondition(graphql.FormationStatusConditionInProgress)
-		notificationsAsserter = asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
+		notificationsAsserter = asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -457,7 +459,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -515,7 +517,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -748,8 +750,8 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsserter := asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).WithCondition(graphql.FormationStatusConditionReady)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
-		notificationsAsserter2 := asserters.NewNotificationsAsserter(1, assignOperation, app2ID, app1ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, nil, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
+		notificationsAsserter2 := asserters.NewNotificationsAsserter(1, assignOperation, app2ID, app1ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, nil, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithUseItemsStruct(true)
 		op = operations.NewAssignAppToFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationsAsserter, notificationsAsserter2).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -848,7 +850,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithFormationName(formationName)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
 			WithFormationName(formationName)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
 			WithUseItemsStruct(true).
 			WithAssertTrustDetails(true).
 			WithFormationName(formationName).
@@ -912,7 +914,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithFormationName(formationName)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
 			WithFormationName(formationName)
-		notificationsAsserter = asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+		notificationsAsserter = asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
 			WithUseItemsStruct(true).
 			WithAssertTrustDetails(true).
 			WithFormationName(formationName).
@@ -1042,12 +1044,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithExpectNotifications(false).
 			WithTenantID(tnt).
 			WithParentTenantID(tntParentCustomer)
-		notificationsAsserter := asserters.NewNotificationsAsserter(0, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+		notificationsAsserter := asserters.NewNotificationsAsserter(0, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
 			WithUseItemsStruct(true).
 			WithAssertTrustDetails(true).
 			WithFormationName(formationName).
 			WithGQLClient(certSecuredGraphQLClient)
-		notificationsAsserter2 := asserters.NewNotificationsAsserter(0, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+		notificationsAsserter2 := asserters.NewNotificationsAsserter(0, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
 			WithUseItemsStruct(true).
 			WithAssertTrustDetails(true).
 			WithFormationName(formationName).
@@ -1083,7 +1085,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithFormationName(formationName)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).
 			WithFormationName(formationName)
-		notificationsAsserter = asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
+		notificationsAsserter = asserters.NewNotificationsAsserter(1, assignOperation, app1ID, app2ID, localTenantID2, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).
 			WithUseItemsStruct(true).
 			WithAssertTrustDetails(true).
 			WithFormationName(formationName).
@@ -1678,7 +1680,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			})
 		faAsyncAsserter := asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, localTenantID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
+		notificationsAsserter := asserters.NewNotificationsAsserter(1, assignOperation, localTenantID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, &emptyConfig, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationsAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)

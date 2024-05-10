@@ -865,8 +865,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 			})
 		})
 
-		// todo::: check why failing
-		/*t.Run("Fail Processing formation assignments while assigning from formation", func(t *testing.T) {
+		t.Run("Fail Processing formation assignments while assigning from formation", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 			resetShouldFailEndpointFromExternalSvcMock(t, certSecuredHTTPClient)
@@ -972,7 +971,10 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				app1.ID: {
 					app1.ID: fixtures.Assignment{
 						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						},
 					},
 					rtCtx.ID: fixtures.Assignment{
 						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
@@ -985,7 +987,10 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 				rtCtx.ID: {
 					app1.ID: fixtures.Assignment{
 						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-						Operations:       []*fixtures.Operation{fixtures.NewOperation(rtCtx.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+						Operations: []*fixtures.Operation{
+							fixtures.NewOperation(rtCtx.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+							fixtures.NewOperation(rtCtx.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+						},
 					},
 					rtCtx.ID: fixtures.Assignment{
 						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
@@ -1049,7 +1054,7 @@ func TestFormationNotificationsWithRuntimeAndApplicationParticipants(stdT *testi
 
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 0, expectedAssignments)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
-		})*/
+		})
 
 		t.Run("Fail Processing formation assignments while unassigning from formation", func(t *testing.T) {
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
