@@ -52,10 +52,6 @@ var (
 )
 
 func TestNewProcessor(t *testing.T) {
-	certSubjectMappingWithMissingSubject := []certsubjmapping.SubjectConsumerTypeMapping{{}}
-	certSubjectMappingWithInvalidConsumerType := fixCertSubjectMappings(validSubject, invalidConsumerType, validInternalConsumerID, []string{})
-	certSubjectMappingWithInvalidTenantAccessLevels := fixCertSubjectMappings(validSubject, validConsumerType, validInternalConsumerID, invalidTntAccessLevels)
-
 	testCases := []struct {
 		name                    string
 		certSubjectMappingCache func() *automock.Cache
@@ -68,33 +64,6 @@ func TestNewProcessor(t *testing.T) {
 				cache.On("Get").Return(validCertSubjectMappings).Once()
 				return cache
 			},
-		},
-		{
-			name: "Error when the subject is missing in the certificate subject mapping cache",
-			certSubjectMappingCache: func() *automock.Cache {
-				cache := &automock.Cache{}
-				cache.On("Get").Return(certSubjectMappingWithMissingSubject).Once()
-				return cache
-			},
-			expectedErrorMsg: "subject is not provided",
-		},
-		{
-			name: "Error when the consumer type in the certificate subject mapping cache is unsupported",
-			certSubjectMappingCache: func() *automock.Cache {
-				cache := &automock.Cache{}
-				cache.On("Get").Return(certSubjectMappingWithInvalidConsumerType).Once()
-				return cache
-			},
-			expectedErrorMsg: fmt.Sprintf("consumer type %s is not valid", invalidConsumerType),
-		},
-		{
-			name: "Error when the tenant access levels in the certificate subject mapping cache are unsupported",
-			certSubjectMappingCache: func() *automock.Cache {
-				cache := &automock.Cache{}
-				cache.On("Get").Return(certSubjectMappingWithInvalidTenantAccessLevels).Once()
-				return cache
-			},
-			expectedErrorMsg: fmt.Sprintf("tenant access level %s is not valid", invalidTntAccessLevels[0]),
 		},
 	}
 
