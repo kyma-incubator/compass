@@ -1,11 +1,14 @@
 {{- $jobName := (printf "%s-clients-scopes-synchronization" (include "fullname" .)) }}
 {{- $job := (lookup "batch/v1" "Job" .Release.Namespace $jobName) }}
 {{- $currentChecksum := (.Files.Glob .Values.configFile.name ).AsConfig | sha256sum | quote }}
+{{- $currentChecksumScopes := .Values.global.scopes | toYaml | sha256sum | quote }}
 {{- $jobChecksum := "" }}
+{{- $jobChecksumScopes := "" }}
 {{- if not (empty $job) }}
   {{- $jobChecksum = $job.metadata.annotations.configChecksum | quote }}
+  {{- $jobChecksumScopes = $job.metadata.annotations.configChecksumScopes | quote }}
 {{- end}}
-{{- if ne $currentChecksum $jobChecksum }}
+{{- if or (ne $currentChecksum $jobChecksum) (ne $currentChecksumScopes $jobChecksumScopes) }}
 apiVersion: batch/v1
 kind: Job
 metadata:
@@ -19,6 +22,7 @@ metadata:
     "helm.sh/hook-weight": "1"
     "helm.sh/hook-delete-policy": before-hook-creation
     configChecksum: {{ $currentChecksum }}
+    configChecksumScopes: {{ $currentChecksumScopes }}
 spec:
   template:
     metadata:
