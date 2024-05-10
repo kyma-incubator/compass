@@ -3,7 +3,6 @@ package formation_test
 import (
 	"context"
 	"database/sql/driver"
-	"fmt"
 	"regexp"
 	"testing"
 	"time"
@@ -304,10 +303,6 @@ func TestRepository_Update(t *testing.T) {
 		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formations WHERE id = $1`)).
 			WithArgs(FormationID).WillReturnRows(rows)
 
-		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formations SET last_state_change_timestamp = $1 WHERE id = $2`)).
-			WithArgs(defaultTime, FormationID).
-			WillReturnResult(sqlmock.NewResult(-1, 1))
-
 		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formations SET name = ?, state = ?, error = ?, last_state_change_timestamp = ?, last_notification_sent_timestamp = ? WHERE id = ? AND tenant_id = ?`)).
 			WithArgs(testFormationName, readyFormationState, testFormationEmptyError, sqlmock.AnyArg(), &defaultTime, FormationID, TntInternalID).
 			WillReturnResult(sqlmock.NewResult(-1, 1))
@@ -323,43 +318,6 @@ func TestRepository_Update(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
-	})
-
-	t.Run("Error when the formation state is changed and last state change timestamp update fail", func(t *testing.T) {
-		// GIVEN
-		formationModelWithReadyState := fixFormationModel()
-		formationModelWithReadyState.State = model.ReadyFormationState
-
-		formationEntityWithReadyState := fixFormationEntity()
-		formationEntityWithReadyState.State = string(model.ReadyFormationState)
-
-		formation.Now = func() time.Time { return defaultTime }
-
-		emptyCtx := context.TODO()
-		sqlxDB, sqlMock := testdb.MockDatabase(t)
-		defer sqlMock.AssertExpectations(t)
-		ctx := persistence.SaveToContext(emptyCtx, sqlxDB)
-
-		rows := sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, initialFormationState, testFormationEmptyError, &defaultTime, &defaultTime)
-		sqlMock.ExpectQuery(regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formations WHERE id = $1`)).
-			WithArgs(FormationID).WillReturnRows(rows)
-
-		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formations SET last_state_change_timestamp = $1 WHERE id = $2`)).
-			WithArgs(defaultTime, FormationID).
-			WillReturnError(testErr)
-
-		mockConverter := &automock.EntityConverter{}
-		defer mockConverter.AssertExpectations(t)
-		mockConverter.On("ToEntity", formationModelWithReadyState).Return(formationEntityWithReadyState, nil).Once()
-
-		repo := formation.NewRepository(mockConverter)
-
-		// WHEN
-		err := repo.Update(ctx, formationModelWithReadyState)
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), fmt.Sprintf("while updating the last state change timestamp for formation with ID: %s", FormationID))
 	})
 }
 
@@ -391,6 +349,36 @@ func TestRepository_UpdateLastNotificationSentTimestamps(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
+	})
+
+	t.Run("Error when formation's last notification sent timestamp update fail", func(t *testing.T) {
+		// GIVEN
+		formationModelWithReadyState := fixFormationModel()
+		formationModelWithReadyState.State = model.ReadyFormationState
+
+		formationEntityWithReadyState := fixFormationEntity()
+		formationEntityWithReadyState.State = string(model.ReadyFormationState)
+
+		formation.Now = func() time.Time { return defaultTime }
+
+		emptyCtx := context.TODO()
+		sqlxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, sqlxDB)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formations SET last_notification_sent_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, FormationID).
+			WillReturnError(testErr)
+
+		mockConverter := &automock.EntityConverter{}
+		repo := formation.NewRepository(mockConverter)
+
+		// WHEN
+		err := repo.UpdateLastNotificationSentTimestamps(ctx, FormationID)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Unexpected error while executing SQL query")
 	})
 }
 

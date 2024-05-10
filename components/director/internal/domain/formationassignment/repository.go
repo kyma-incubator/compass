@@ -362,38 +362,25 @@ func (r *repository) Update(ctx context.Context, m *model.FormationAssignment) e
 
 	if shouldUpdateLastStateChangeTimestamp(ctx, &oldEntity, newEntity) {
 		log.C(ctx).Debugf("Updating the last state change timestamp for formation assignment with ID: %s", m.ID)
-		if updateErr := r.UpdateLastStateChangeTimestamp(ctx, m.ID); updateErr != nil {
-			return errors.Wrapf(updateErr, "while updating the last state change timestamp for formation assignment with ID: %s", m.ID)
-		}
+		now := Now()
+		newEntity.LastStateChangeTimestamp = &now
 	}
 
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, newEntity)
 }
 
-// UpdateLastStateChangeTimestamp updates the last state change timestamp for the Formation Assignment with the given ID
-func (r *repository) UpdateLastStateChangeTimestamp(ctx context.Context, formationAssignmentID string) error {
-	const updateQuery = "UPDATE %s SET last_state_change_timestamp = $1 WHERE id = $2"
-	errMsg := fmt.Sprintf("while updating the last state change timestamp for formation assignment with ID: %s", formationAssignmentID)
-	return r.updateAssignmentTimestamps(ctx, updateQuery, formationAssignmentID, errMsg)
-}
-
 // UpdateLastNotificationSentTimestamps updates the last notification sent timestamp for the Formation Assignment with the given ID
 func (r *repository) UpdateLastNotificationSentTimestamps(ctx context.Context, formationAssignmentID string) error {
-	const updateQuery = "UPDATE %s SET last_notification_sent_timestamp = $1 WHERE id = $2"
-	errMsg := fmt.Sprintf("while updating the last notification sent timestamp for formation assignment with ID: %s", formationAssignmentID)
-	return r.updateAssignmentTimestamps(ctx, updateQuery, formationAssignmentID, errMsg)
-}
-
-func (r *repository) updateAssignmentTimestamps(ctx context.Context, updateQuery, entityID, errMsg string) error {
 	persist, err := persistence.FromCtx(ctx)
 	if err != nil {
 		return errors.Wrap(err, "while loading persistence from context")
 	}
 
+	const updateQuery = "UPDATE %s SET last_notification_sent_timestamp = $1 WHERE id = $2"
 	stmt := fmt.Sprintf(updateQuery, tableName)
 
-	_, err = persist.ExecContext(ctx, stmt, Now(), entityID)
-	if err = persistence.MapSQLError(ctx, err, resource.FormationAssignment, resource.Update, errMsg); err != nil {
+	_, err = persist.ExecContext(ctx, stmt, Now(), formationAssignmentID)
+	if err = persistence.MapSQLError(ctx, err, resource.FormationAssignment, resource.Update, fmt.Sprintf("while updating the last notification sent timestamp for formation assignment with ID: %s", formationAssignmentID)); err != nil {
 		return err
 	}
 
