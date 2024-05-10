@@ -3,7 +3,6 @@ package formation
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
@@ -45,7 +44,7 @@ type notificationsGenerator interface {
 //
 //go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentRepository interface {
-	Update(ctx context.Context, model *model.FormationAssignment) error
+	UpdateLastNotificationSentTimestamps(ctx context.Context, formationAssignmentID string) error
 }
 
 var emptyFormationAssignment = &webhookdir.FormationAssignment{}
@@ -257,9 +256,8 @@ func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.
 	fa := webhookNotificationReq.GetFormationAssignment()
 	if fa == nil && f != nil {
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation with ID: %s", f.ID)
-		f.SetLastNotificationSentTimestamp(time.Now())
-		if err := ns.formationRepo.Update(ctx, f); err != nil {
-			if webhookNotificationReq.GetOperation() == model.DeleteFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
+		if err := ns.formationRepo.UpdateLastNotificationSentTimestamps(ctx, f.ID); err != nil {
+			if webhookNotificationReq.GetOperation() == model.DeleteFormation && apperrors.IsNotFoundError(err) {
 				return nil
 			}
 			return errors.Wrapf(err, "while updating last notification sent timestamp for formation with ID: %s", f.ID)
@@ -268,12 +266,11 @@ func (ns *notificationsService) updateLastNotificationSentTimestamp(ctx context.
 
 	if fa != nil {
 		log.C(ctx).Infof("Updating the last notification sent timestamp for formation assignment with ID: %s", fa.ID)
-		fa.SetLastNotificationSentTimestamp(time.Now())
-		if err := ns.formationAssignmentRepo.Update(ctx, fa); err != nil {
+		if err := ns.formationAssignmentRepo.UpdateLastNotificationSentTimestamps(ctx, fa.ID); err != nil {
 			// That covers the case when we send two unassign notifications to one participant
 			// and the response of the first notification is returned and processed, which deletes the formation assignment,
 			// while the second notification still hasn't been sent.
-			if webhookNotificationReq.GetOperation() == model.UnassignFormation && (apperrors.IsNotFoundError(err) || apperrors.IsUnauthorizedError(err)) { // the not found error is disguised behind the unauthorized error in case of update
+			if webhookNotificationReq.GetOperation() == model.UnassignFormation && apperrors.IsNotFoundError(err) {
 				return nil
 			}
 			return errors.Wrapf(err, "while updating last notification sent timestamp for formation assignment with ID: %s", fa.ID)

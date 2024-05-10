@@ -19,10 +19,6 @@ type ConstraintEngine struct {
 func (_m *ConstraintEngine) EnforceConstraints(ctx context.Context, location formationconstraint.JoinPointLocation, details formationconstraint.JoinPointDetails, formationTemplateID string) error {
 	ret := _m.Called(ctx, location, details, formationTemplateID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for EnforceConstraints")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, formationconstraint.JoinPointLocation, formationconstraint.JoinPointDetails, string) error); ok {
 		r0 = rf(ctx, location, details, formationTemplateID)
