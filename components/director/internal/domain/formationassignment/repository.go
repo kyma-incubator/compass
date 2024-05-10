@@ -2,7 +2,10 @@ package formationassignment
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
@@ -22,6 +25,9 @@ var (
 	updatableTableColumns = []string{"state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	tenantColumn          = "tenant_id"
+
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
+	Now = time.Now
 )
 
 // EntityConverter converts between the internal model and entity
@@ -355,12 +361,30 @@ func (r *repository) Update(ctx context.Context, m *model.FormationAssignment) e
 	}
 
 	if shouldUpdateLastStateChangeTimestamp(ctx, &oldEntity, newEntity) {
-		log.C(ctx).Debugf("Updating the last state change timestamp for formation assignment with ID: %s", newEntity.ID)
-		now := time.Now()
+		log.C(ctx).Debugf("Updating the last state change timestamp for formation assignment with ID: %s", m.ID)
+		now := Now()
 		newEntity.LastStateChangeTimestamp = &now
 	}
 
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, newEntity)
+}
+
+// UpdateLastNotificationSentTimestamps updates the last notification sent timestamp for the Formation Assignment with the given ID
+func (r *repository) UpdateLastNotificationSentTimestamps(ctx context.Context, formationAssignmentID string) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading persistence from context")
+	}
+
+	const updateQuery = "UPDATE %s SET last_notification_sent_timestamp = $1 WHERE id = $2"
+	stmt := fmt.Sprintf(updateQuery, tableName)
+
+	_, err = persist.ExecContext(ctx, stmt, Now(), formationAssignmentID)
+	if err = persistence.MapSQLError(ctx, err, resource.FormationAssignment, resource.Update, fmt.Sprintf("while updating the last notification sent timestamp for formation assignment with ID: %s", formationAssignmentID)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // Delete deletes a Formation Assignment with given ID

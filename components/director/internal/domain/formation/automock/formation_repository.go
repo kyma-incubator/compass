@@ -187,6 +187,20 @@ func (_m *FormationRepository) Update(ctx context.Context, _a1 *model.Formation)
 	return r0
 }
 
+// UpdateLastNotificationSentTimestamps provides a mock function with given fields: ctx, formationID
+func (_m *FormationRepository) UpdateLastNotificationSentTimestamps(ctx context.Context, formationID string) error {
+	ret := _m.Called(ctx, formationID)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
+		r0 = rf(ctx, formationID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // NewFormationRepository creates a new instance of FormationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewFormationRepository(t interface {
