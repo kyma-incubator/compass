@@ -510,11 +510,6 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 
 			require.Eventually(t, func() bool {
 				appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
-				// webhooks with types - configuration changed and system field discovery
-				//if len(appPageExt.Data[0].Webhooks) == 2 {
-				//	t.Logf("Waiting for application webhook to be deleted")
-				//	return false
-				//}
 
 				if appPageExt.Data[0].BaseURL != nil {
 					t.Log("application webhook was executed and base URL was updated successfully")

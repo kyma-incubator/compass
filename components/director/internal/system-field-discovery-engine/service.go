@@ -99,7 +99,6 @@ func (s *Service) ProcessSaasRegistryApplication(ctx context.Context, appID, ten
 		return err
 	}
 
-	// Region label of app template?
 	region, err := s.getRegionLabelInTx(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "retrieving label with key %q for application with id %q failed", regionLabelKey, appID)
@@ -148,7 +147,9 @@ func (s *Service) getRegionLabelInTx(ctx context.Context, appID string) (string,
 		return "", err
 	}
 
-	//if app.ApplicationTemplateID!=nil
+	if app.ApplicationTemplateID == nil {
+		return "", errors.Errorf("application with id %s does not have application template id", app.ID)
+	}
 	label, err := s.appTemplateSvc.GetLabel(ctx, *app.ApplicationTemplateID, regionLabelKey)
 	if err != nil {
 		log.C(ctx).WithError(err).Errorf("error while getting label with key %q for applicationTemplate with ID %q", regionLabelKey, *app.ApplicationTemplateID)

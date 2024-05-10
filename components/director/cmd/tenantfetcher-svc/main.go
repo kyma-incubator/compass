@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"net/http"
 	"os"
 	"strings"
@@ -503,10 +502,8 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
 		log.C(ctx).Infof("Error while processing operation with id %q. Err: %v", op.ID, errProcess)
-		processingError := &ord.ProcessingError{
-			RuntimeError: &ord.RuntimeError{
-				Message: errProcess.Error(),
-			},
+		processingError := &systemfielddiscoveryengine.ProcessingError{
+			Message: errProcess.Error(),
 		}
 		if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
 			log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)

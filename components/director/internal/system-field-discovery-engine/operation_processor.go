@@ -3,6 +3,7 @@ package systemfielddiscoveryengine
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/data"
 
@@ -14,9 +15,25 @@ import (
 
 // SystemFieldDiscoveryService responsible for the service-layer operations of system field discovery
 //
-//go:generate mockery --name=ORDService --output=automock --outpkg=automock --case=underscore --disable-version-string
+//go:generate mockery --name=SystemFieldDiscoveryService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFieldDiscoveryService interface {
 	ProcessSaasRegistryApplication(ctx context.Context, appID, tenantID string) error
+}
+
+type ProcessingError struct {
+	Message string `json:"message"`
+}
+
+func (p *ProcessingError) Error() string {
+	return p.toJSON()
+}
+
+func (p *ProcessingError) toJSON() string {
+	bytes, err := json.Marshal(p)
+	if err != nil {
+		return fmt.Sprintf(`{"error": "failed to marshal error: %s"}`, err)
+	}
+	return string(bytes)
 }
 
 // OperationsProcessor defines Open Resource Discovery operation processor
