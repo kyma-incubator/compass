@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	FormationTemplateLabelKey   = "e2e-test-formation-template-lbl-key"
-	FormationTemplateLabelValue = "e2e-test-formation-template-lbl-value"
+	FormationTemplateLabelKey   = "e2eTestFormationTemplateLabelKey"
+	FormationTemplateLabelValue = "e2eTestFormationTemplateLabelValue"
 )
 
 func FixFormationTemplateRegisterInput(formationName string) graphql.FormationTemplateRegisterInput {
