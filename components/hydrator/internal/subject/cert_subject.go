@@ -40,7 +40,8 @@ func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmappin
 
 	for _, m := range mappings {
 		if err := m.Validate(); err != nil {
-			return nil, err
+			// in case the subject-to-consumer mapping is invalid, only log an error and continue so the hydrator component can still start
+			log.C(ctx).Errorf("Certificate subject mapping with subject: '%s' is not valid: %s", m.Subject, err.Error())
 		}
 	}
 
