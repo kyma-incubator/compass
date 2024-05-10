@@ -8,7 +8,6 @@ import (
 	"time"
 
 	gqlClient "github.com/kyma-incubator/compass/components/kyma-adapter/internal/gqlclient"
-
 	"github.com/kyma-incubator/compass/components/kyma-adapter/internal/handler"
 
 	"github.com/gorilla/mux"
