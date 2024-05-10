@@ -19,10 +19,6 @@ type WebhookRepository struct {
 func (_m *WebhookRepository) GetByIDAndWebhookType(ctx context.Context, tenant string, objectID string, objectType model.WebhookReferenceObjectType, webhookType model.WebhookType) (*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, objectID, objectType, webhookType)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetByIDAndWebhookType")
-	}
-
 	var r0 *model.Webhook
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.WebhookReferenceObjectType, model.WebhookType) (*model.Webhook, error)); ok {

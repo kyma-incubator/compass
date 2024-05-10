@@ -99,10 +99,6 @@ func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Fo
 func (_m *Service) FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for FinalizeDraftFormation")
-	}
-
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
@@ -180,10 +176,6 @@ func (_m *Service) GetFormationByName(ctx context.Context, formationName string,
 // GetGlobalByID provides a mock function with given fields: ctx, id
 func (_m *Service) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetGlobalByID")
-	}
 
 	var r0 *model.Formation
 	var r1 error
