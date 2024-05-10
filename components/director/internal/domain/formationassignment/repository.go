@@ -26,6 +26,7 @@ var (
 	tableColumns          = []string{"id", "formation_id", "tenant_id", "source", "source_type", "target", "target_type", "state", "value", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
 	tenantColumn          = "tenant_id"
 
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
 	Now = time.Now
 )
 

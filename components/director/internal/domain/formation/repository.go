@@ -25,6 +25,7 @@ var (
 	formationNameColumn   = "name"
 	idTableColumn         = "id"
 
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
 	Now = time.Now
 )
 
