@@ -2,6 +2,7 @@ package apptemplate_test
 
 import (
 	"context"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"testing"
@@ -43,6 +44,7 @@ import (
 const (
 	RegionKey               = "region"
 	AppTemplateProductLabel = "systemRole"
+	SlisFilterLabelKey      = "slisFilter"
 )
 
 func TestResolver_ApplicationTemplate(t *testing.T) {
@@ -449,14 +451,53 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 	modelAppTemplate := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 	modelAppTemplateWithRegionPlaceholder := fixModelApplicationTemplateWithRegionPlaceholders(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
 
+	modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
+	modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter.Labels = fixProductLabelAndSlisFilter(defaultValueForProductLabelWithSlisFilter)
+
+	modelAppTemplateWithProductLabelAndCustomSlisFilter := fixModelApplicationTemplate(testID, testName, fixModelApplicationWebhooks(testWebhookID, testID))
+	modelAppTemplateWithProductLabelAndCustomSlisFilter.Labels = fixProductLabelAndSlisFilter(customValueForProductLabelWithSlisFilter)
+
 	modelAppTemplateWithOrdWebhookInput := fixModelAppTemplateInputWithOrdWebhook(testName, appInputJSONString)
 	modelAppTemplateWithOrdWebhookInput.ID = &testUUID
 	modelAppTemplateInput := fixModelAppTemplateInput(testName, appInputJSONString)
 	modelAppTemplateInput.ID = &testUUID
 
+	modelAppTemplateInputWithProductLabel := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInputWithProductLabel.ID = &testUUID
+	modelAppTemplateInputWithProductLabel.Labels = map[string]interface{}{
+		AppTemplateProductLabel: []interface{}{"role"},
+	}
+
+	modelAppTemplateInputWithProductLabelAndSlisFilter := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInputWithProductLabelAndSlisFilter.ID = &testUUID
+	modelAppTemplateInputWithProductLabelAndSlisFilter.Labels = fixProductLabelAndSlisFilter(customValueForProductLabelWithSlisFilter)
+
+	modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter.ID = &testUUID
+	modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter.Labels = fixProductLabelAndSlisFilter(defaultValueForProductLabelWithSlisFilter)
+
+	modelAppTemplateInputWithProductLabelAndCustomSlisFilter := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInputWithProductLabelAndCustomSlisFilter.ID = &testUUID
+	modelAppTemplateInputWithProductLabelAndCustomSlisFilter.Labels = fixProductLabelAndSlisFilter(customValueForProductLabelWithSlisFilter)
+
 	gqlAppTemplate := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
+
+	gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
+	gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter.Labels = fixProductLabelAndSlisFilter(defaultValueForProductLabelWithSlisFilter)
+
+	gqlAppTemplateWithProductLabelAndCustomSlisFilter := fixGQLAppTemplate(testID, testName, fixGQLApplicationTemplateWebhooks(testWebhookID, testID))
+	gqlAppTemplateWithProductLabelAndCustomSlisFilter.Labels = fixProductLabelAndSlisFilter(customValueForProductLabelWithSlisFilter)
+
 	gqlAppTemplateInput := fixGQLAppTemplateInputWithPlaceholder(testName)
 	gqlAppTemplateInputWithProvider := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+
+	gqlAppTemplateInputWithProviderAndProductLabel := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+	gqlAppTemplateInputWithProviderAndProductLabel.Labels = graphql.Labels{
+		AppTemplateProductLabel: []interface{}{"role"},
+	}
+
+	gqlAppTemplateInputWithProductLabelAndSlisFilter := fixGQLAppTemplateInputWithPlaceholderAndProvider("SAP " + testName)
+	gqlAppTemplateInputWithProductLabelAndSlisFilter.Labels = fixProductLabelAndSlisFilter(customValueForProductLabelWithSlisFilter)
 
 	modelAppTemplateInputWithSelRegLabels := fixModelAppTemplateInput(testName, appInputJSONString)
 	modelAppTemplateInputWithSelRegLabels.ID = &testUUID
@@ -773,6 +814,74 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
 			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
+		},
+		{
+			Name: "Success when providing product label without slis filter - should set default slis filter",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter, modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter.Labels).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{}, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithProviderAndProductLabel).Return(*modelAppTemplateInputWithProductLabel, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter).Return(gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndProductLabel.Webhooks, gqlAppTemplateInputWithProviderAndProductLabel.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
+			CertSubjectMappingSvcFn: UnusedCertSubjMappingSvc,
+			LabelSvcFn:              UnusedLabelService,
+			Ctx:                     ctxWithTokenConsumer,
+			Input:                   gqlAppTemplateInputWithProviderAndProductLabel,
+			ExpectedOutput:          gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter,
+		},
+		{
+			Name: "Success when providing product label with valid slis filter",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				persistTx := &persistenceautomock.PersistenceTx{}
+				persistTx.On("Commit").Return(nil).Once()
+
+				transact := &persistenceautomock.Transactioner{}
+				transact.On("Begin").Return(persistTx, nil).Once()
+				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
+
+				return persistTx, transact
+			},
+			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
+				appTemplateSvc := &automock.ApplicationTemplateService{}
+				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndCustomSlisFilter, modelAppTemplateInputWithProductLabelAndCustomSlisFilter.Labels).Return(modelAppTemplateWithProductLabelAndCustomSlisFilter.ID, nil).Once()
+				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplateWithProductLabelAndCustomSlisFilter, nil).Once()
+				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{}, nil).Once()
+				return appTemplateSvc
+			},
+			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
+				appTemplateConv := &automock.ApplicationTemplateConverter{}
+				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithProductLabelAndSlisFilter).Return(*modelAppTemplateInputWithProductLabelAndSlisFilter, nil).Once()
+				appTemplateConv.On("ToGraphQL", modelAppTemplateWithProductLabelAndCustomSlisFilter).Return(gqlAppTemplateWithProductLabelAndCustomSlisFilter, nil).Once()
+				return appTemplateConv
+			},
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithProductLabelAndSlisFilter.Webhooks, gqlAppTemplateInputWithProductLabelAndSlisFilter.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
+			CertSubjectMappingSvcFn: UnusedCertSubjMappingSvc,
+			LabelSvcFn:              UnusedLabelService,
+			Ctx:                     ctxWithTokenConsumer,
+			Input:                   gqlAppTemplateInputWithProductLabelAndSlisFilter,
+			ExpectedOutput:          gqlAppTemplateWithProductLabelAndCustomSlisFilter,
 		},
 		{
 			Name: "Error when self registered app template already exists for the given self reg labels",
@@ -1995,7 +2104,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			WebhookSvcFn:               UnusedWebhookSvc,
 			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
 			ExpectedOutput:             nil,
-			ExpectedError:              errors.New("application template with name \"bar\" and consumer id \"consumer-id\" not found"),
+			ExpectedError:              fmt.Errorf("application template with name \"bar\" and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id"))),
 		},
 		{
 			Name:                 "Returns error when list application templates by name return more than one application template",
@@ -2334,7 +2443,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			WebhookConvFn:              UnusedWebhookConv,
 			WebhookSvcFn:               UnusedWebhookSvc,
 			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedError:              errors.New("application template with id customTemplateID and consumer id \"consumer-id\" not found"),
+			ExpectedError:              fmt.Errorf("application template with id customTemplateID and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id"))),
 		},
 	}
 
