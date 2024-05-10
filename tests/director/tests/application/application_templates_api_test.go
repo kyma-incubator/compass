@@ -2,6 +2,7 @@ package application
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"testing"
 	"time"
@@ -341,7 +342,7 @@ func TestCreateApplicationTemplate(t *testing.T) {
 		ctx := context.Background()
 		appTemplateName := fixtures.CreateAppTemplateName("app-template-name-invalid")
 		appTemplateInputInvalid := fixtures.FixAppTemplateInputWithDefaultDistinguishLabel(appTemplateName, conf.SubscriptionConfig.SelfRegDistinguishLabelKey, conf.SubscriptionConfig.SelfRegDistinguishLabelValue)
-		appTemplateInputInvalid.Labels[conf.ApplicationTemplateProductLabel] = "test1"
+		appTemplateInputInvalid.Labels[conf.ApplicationTemplateProductLabel] = []string{"test1"}
 
 		appTemplate, err := testctx.Tc.Graphqlizer.ApplicationTemplateInputToGQL(appTemplateInputInvalid)
 		require.NoError(t, err)
@@ -2225,7 +2226,7 @@ func TestRegisterApplicationFromTemplate_DifferentSubaccount(t *testing.T) {
 
 	// THEN
 	require.NotNil(t, err)
-	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id %q not found", appTemplateName, conf.TestProviderSubaccountIDRegion2))
+	require.Contains(t, err.Error(), fmt.Sprintf("application template with name %q and consumer id REDACTED_%x not found", appTemplateName, sha256.Sum256([]byte(conf.TestProviderSubaccountIDRegion2))))
 }
 
 func TestAddWebhookToApplicationTemplateWithTenant(t *testing.T) {

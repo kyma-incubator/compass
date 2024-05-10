@@ -14,8 +14,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/cronjob"
 
-	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
@@ -94,7 +92,9 @@ import (
 	"github.com/vrischmann/envconfig"
 )
 
-const discoverSystemsOpMode = "DISCOVER_SYSTEMS"
+const (
+	discoverSystemsOpMode = "DISCOVER_SYSTEMS"
+)
 
 type config struct {
 	Address           string `envconfig:"default=127.0.0.1:8080"`
@@ -333,7 +333,7 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 		return nil, errors.Wrapf(err, "while creating template renderer")
 	}
 
-	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping, templateRenderer)
+	err = calculateTemplateMappings(ctx, cfg, transact, appTemplateSvc, placeholdersMapping)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while calculating application templates mappings")
 	}
@@ -640,8 +640,8 @@ func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider
 	return provider
 }
 
-func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping, renderer systemfetcher.TemplateRenderer) error {
-	applicationTemplates := make(map[systemfetcher.TemplateMappingKey]systemfetcher.TemplateMapping)
+func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {
+	applicationTemplates := make([]systemfetcher.TemplateMapping, 0)
 
 	tx, err := transact.Begin()
 	if err != nil {
@@ -657,38 +657,35 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 
 	selectFilterProperties := make(map[string]bool, 0)
 	for _, appTemplate := range appTemplates {
-		templateMappingKey := systemfetcher.TemplateMappingKey{}
-
 		labels, err := appTemplateSvc.ListLabels(ctx, appTemplate.ID)
 		if err != nil {
 			return errors.Wrapf(err, "while listing labels for application template with ID %q", appTemplate.ID)
 		}
 
-		regionModel, hasRegionLabel := labels[selfregmanager.RegionLabel]
-		if hasRegionLabel {
-			regionValue, ok := regionModel.Value.(string)
-			if !ok {
-				return errors.Errorf("%s label for Application Template with ID %s is not a string", selfregmanager.RegionLabel, appTemplate.ID)
-			}
-
-			templateMappingKey.Region = regionValue
+		slisFilterLabel, slisFilterLabelExists := labels[systemfetcher.SlisFilterLabelKey]
+		if !slisFilterLabelExists {
+			return errors.Errorf("missing slis filter label for application template with ID %q", appTemplate.ID)
 		}
 
-		systemRoleModel := labels[cfg.TemplateConfig.LabelFilter]
-		appTemplateLblFilterArr, ok := systemRoleModel.Value.([]interface{})
-		if !ok {
-			continue
+		applicationTemplates = append(applicationTemplates, systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels})
+
+		productIDFilterMappings := make([]systemfetcher.ProductIDFilterMapping, 0)
+
+		slisFilterLabelJSON, err := json.Marshal(slisFilterLabel.Value)
+		if err != nil {
+			return err
 		}
 
-		for _, systemRoleValue := range appTemplateLblFilterArr {
-			systemRoleStrValue, ok := systemRoleValue.(string)
-			if !ok {
-				continue
+		err = json.Unmarshal(slisFilterLabelJSON, &productIDFilterMappings)
+		if err != nil {
+			return err
+		}
+
+		for _, mapping := range productIDFilterMappings {
+			for _, filter := range mapping.Filter {
+				topParent := getTopParentFromJSONPath(filter.Key)
+				selectFilterProperties[topParent] = true
 			}
-
-			templateMappingKey.Label = systemRoleStrValue
-
-			applicationTemplates[templateMappingKey] = systemfetcher.TemplateMapping{AppTemplate: appTemplate, Labels: labels, Renderer: renderer}
 		}
 
 		addPropertiesFromAppTemplatePlaceholders(selectFilterProperties, appTemplate.Placeholders)
@@ -707,10 +704,9 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 }
 
 func getTopParentFromJSONPath(jsonPath string) string {
-	prefix := "$."
 	infix := "."
 
-	topParent := strings.TrimPrefix(jsonPath, prefix)
+	topParent := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
 	firstInfixIndex := strings.Index(topParent, infix)
 	if firstInfixIndex == -1 {
 		return topParent
