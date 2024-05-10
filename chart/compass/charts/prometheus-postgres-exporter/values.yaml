@@ -345,6 +345,46 @@ config:
         - quantity:
             usage: "COUNTER"
             description: "Total number of runtimes in table"
+    
+    compass_system_fetcher_operations_total:
+      query: "SELECT COUNT(ID) as quantity FROM operation where op_type = 'SYSTEM_FETCHING';"
+      master: true
+      metrics:
+        - quantity:
+            usage: "COUNTER"
+            description: "Total number of system fetching operations in table"
+    
+    compass_system_fetcher_operations_failed:
+      query: "SELECT COUNT(ID) as quantity FROM operation where op_type = 'SYSTEM_FETCHING' and status = 'FAILED';"
+      master: true
+      metrics:
+        - quantity:
+            usage: "COUNTER"
+            description: "Failed system fetching operations in table"
+    
+    compass_system_fetcher_operations_completed:
+      query: "SELECT COUNT(ID) as quantity FROM operation where op_type = 'SYSTEM_FETCHING' and status = 'COMPLETED';"
+      master: true
+      metrics:
+        - quantity:
+            usage: "COUNTER"
+            description: "Completed system fetching operations in table"
+    
+    compass_system_fetcher_operations_scheduled:
+      query: "SELECT COUNT(ID) as quantity FROM operation where op_type = 'SYSTEM_FETCHING' and status = 'SCHEDULED';"
+      master: true
+      metrics:
+        - quantity:
+            usage: "COUNTER"
+            description: "Scheduled system fetching operations in table"
+    
+    compass_system_fetcher_operations_in_progress:
+      query: "SELECT COUNT(ID) as quantity FROM operation where op_type = 'SYSTEM_FETCHING' and status = 'IN_PROGRESS';"
+      master: true
+      metrics:
+        - quantity:
+            usage: "COUNTER"
+            description: "In progress system fetching operations in table"
 
 nodeSelector: {}
 
