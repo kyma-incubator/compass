@@ -93,6 +93,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 		LabelDefRepositoryFn                     func() *automock.LabelDefRepository
 		LabelDefServiceFn                        func() *automock.LabelDefService
 		StatusServiceFn                          func() *automock.StatusService
+		AssignmentOperationServiceFn             func() *automock.AssignmentOperationService
 		ExpectedErrMessage                       string
 	}{
 		{
@@ -144,6 +145,14 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				repo := &automock.WebhookRepository{}
 				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
 				return repo
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				return svc
 			},
 		},
 		{
@@ -209,6 +218,14 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			StatusServiceFn: func() *automock.StatusService {
 				svc := &automock.StatusService{}
 				svc.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), fixFormationModelWithState(model.ReadyFormationState), model.CreateFormation).Return(nil).Once()
+				return svc
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				return svc
 			},
 		},
@@ -408,6 +425,11 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				statusService = testCase.StatusServiceFn()
 			}
 
+			assignmentOperationSvc := &automock.AssignmentOperationService{}
+			if testCase.AssignmentOperationServiceFn != nil {
+				assignmentOperationSvc = testCase.AssignmentOperationServiceFn()
+			}
+
 			assignmentsBeforeModifications := make(map[string]*model.FormationAssignment)
 			for _, a := range testCase.FormationAssignments {
 				assignmentsBeforeModifications[a.ID] = a.Clone()
@@ -418,7 +440,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				}
 			}()
 
-			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, nil, statusService)
+			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, nil, statusService, assignmentOperationSvc)
 
 			// WHEN
 			_, err := svc.FinalizeDraftFormation(ctx, FormationID)
@@ -431,13 +453,12 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			//todo assert persist and transact
-			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService, persist, transact)
+			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService, persist, transact, assignmentOperationSvc)
 		})
 	}
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		_, err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID, false)
 		require.Contains(t, err.Error(), "cannot read tenant from context")
 	})

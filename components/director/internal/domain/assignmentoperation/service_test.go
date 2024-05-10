@@ -80,7 +80,7 @@ func TestService_Create(t *testing.T) {
 	}
 }
 
-func TestService_Finis(t *testing.T) {
+func TestService_Finish(t *testing.T) {
 	ctx := context.TODO()
 
 	testErr := errors.New("test error")
@@ -92,9 +92,8 @@ func TestService_Finis(t *testing.T) {
 	testCases := []struct {
 		Name  string
 		Input struct {
-			assignmentID  string
-			formationID   string
-			operationType model.AssignmentOperationType
+			assignmentID string
+			formationID  string
 		}
 		AssignmentOperationRepo func() *automock.AssignmentOperationRepository
 		ExpectedErrorMsg        string
@@ -102,17 +101,15 @@ func TestService_Finis(t *testing.T) {
 		{
 			Name: "Success",
 			Input: struct {
-				assignmentID  string
-				formationID   string
-				operationType model.AssignmentOperationType
+				assignmentID string
+				formationID  string
 			}{
-				assignmentID:  assignmentID,
-				formationID:   formationID,
-				operationType: operationType,
+				assignmentID: assignmentID,
+				formationID:  formationID,
 			},
 			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
 				repo := &automock.AssignmentOperationRepository{}
-				repo.On("GetLatestOperation", ctx, assignmentID, formationID, operationType).Return(fixAssignmentOperationModel(), nil).Once()
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(fixAssignmentOperationModel(), nil).Once()
 				repo.On("Update", ctx, assignmentOperationModel).Return(nil).Once()
 				return repo
 			},
@@ -120,17 +117,15 @@ func TestService_Finis(t *testing.T) {
 		{
 			Name: "Error when updating assignment operation",
 			Input: struct {
-				assignmentID  string
-				formationID   string
-				operationType model.AssignmentOperationType
+				assignmentID string
+				formationID  string
 			}{
-				assignmentID:  assignmentID,
-				formationID:   formationID,
-				operationType: operationType,
+				assignmentID: assignmentID,
+				formationID:  formationID,
 			},
 			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
 				repo := &automock.AssignmentOperationRepository{}
-				repo.On("GetLatestOperation", ctx, assignmentID, formationID, operationType).Return(fixAssignmentOperationModel(), nil).Once()
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(fixAssignmentOperationModel(), nil).Once()
 				repo.On("Update", ctx, assignmentOperationModel).Return(testErr).Once()
 				return repo
 			},
@@ -139,20 +134,18 @@ func TestService_Finis(t *testing.T) {
 		{
 			Name: "Error when getting assignment operation",
 			Input: struct {
-				assignmentID  string
-				formationID   string
-				operationType model.AssignmentOperationType
+				assignmentID string
+				formationID  string
 			}{
-				assignmentID:  assignmentID,
-				formationID:   formationID,
-				operationType: operationType,
+				assignmentID: assignmentID,
+				formationID:  formationID,
 			},
 			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
 				repo := &automock.AssignmentOperationRepository{}
-				repo.On("GetLatestOperation", ctx, assignmentID, formationID, operationType).Return(nil, testErr).Once()
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(nil, testErr).Once()
 				return repo
 			},
-			ExpectedErrorMsg: fmt.Sprintf("while getting the latest operation for assignment with ID: %s, formation with ID: %s and type: %s", assignmentID, formationID, operationType),
+			ExpectedErrorMsg: fmt.Sprintf("while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID),
 		},
 	}
 
@@ -167,7 +160,7 @@ func TestService_Finis(t *testing.T) {
 
 			// WHEN
 			input := testCase.Input
-			err := svc.Finish(ctx, input.assignmentID, input.formationID, input.operationType)
+			err := svc.Finish(ctx, input.assignmentID, input.formationID)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -193,10 +186,9 @@ func TestService_Update(t *testing.T) {
 	testCases := []struct {
 		Name  string
 		Input struct {
-			assignmentID  string
-			formationID   string
-			operationType model.AssignmentOperationType
-			newTrigger    model.OperationTrigger
+			assignmentID string
+			formationID  string
+			newTrigger   model.OperationTrigger
 		}
 		AssignmentOperationRepo func() *automock.AssignmentOperationRepository
 		ExpectedErrorMsg        string
@@ -204,19 +196,17 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Success",
 			Input: struct {
-				assignmentID  string
-				formationID   string
-				operationType model.AssignmentOperationType
-				newTrigger    model.OperationTrigger
+				assignmentID string
+				formationID  string
+				newTrigger   model.OperationTrigger
 			}{
-				assignmentID:  assignmentID,
-				formationID:   formationID,
-				operationType: operationType,
-				newTrigger:    newOperationTrigger,
+				assignmentID: assignmentID,
+				formationID:  formationID,
+				newTrigger:   newOperationTrigger,
 			},
 			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
 				repo := &automock.AssignmentOperationRepository{}
-				repo.On("GetLatestOperation", ctx, assignmentID, formationID, operationType).Return(fixAssignmentOperationModelWithoutFinishedAt(), nil).Once()
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(fixAssignmentOperationModelWithoutFinishedAt(), nil).Once()
 				repo.On("Update", ctx, assignmentOperationModel).Return(nil).Once()
 				return repo
 			},
@@ -224,19 +214,17 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Error when updating assignment operation",
 			Input: struct {
-				assignmentID  string
-				formationID   string
-				operationType model.AssignmentOperationType
-				newTrigger    model.OperationTrigger
+				assignmentID string
+				formationID  string
+				newTrigger   model.OperationTrigger
 			}{
-				assignmentID:  assignmentID,
-				formationID:   formationID,
-				operationType: operationType,
-				newTrigger:    newOperationTrigger,
+				assignmentID: assignmentID,
+				formationID:  formationID,
+				newTrigger:   newOperationTrigger,
 			},
 			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
 				repo := &automock.AssignmentOperationRepository{}
-				repo.On("GetLatestOperation", ctx, assignmentID, formationID, operationType).Return(fixAssignmentOperationModelWithoutFinishedAt(), nil).Once()
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(fixAssignmentOperationModelWithoutFinishedAt(), nil).Once()
 				repo.On("Update", ctx, assignmentOperationModel).Return(testErr).Once()
 				return repo
 			},
@@ -245,22 +233,20 @@ func TestService_Update(t *testing.T) {
 		{
 			Name: "Error when getting assignment operation",
 			Input: struct {
-				assignmentID  string
-				formationID   string
-				operationType model.AssignmentOperationType
-				newTrigger    model.OperationTrigger
+				assignmentID string
+				formationID  string
+				newTrigger   model.OperationTrigger
 			}{
-				assignmentID:  assignmentID,
-				formationID:   formationID,
-				operationType: operationType,
-				newTrigger:    newOperationTrigger,
+				assignmentID: assignmentID,
+				formationID:  formationID,
+				newTrigger:   newOperationTrigger,
 			},
 			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
 				repo := &automock.AssignmentOperationRepository{}
-				repo.On("GetLatestOperation", ctx, assignmentID, formationID, operationType).Return(nil, testErr).Once()
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(nil, testErr).Once()
 				return repo
 			},
-			ExpectedErrorMsg: fmt.Sprintf("while getting the latest operation for assignment with ID: %s, formation with ID: %s and type: %s", assignmentID, formationID, operationType),
+			ExpectedErrorMsg: fmt.Sprintf("while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID),
 		},
 	}
 
@@ -275,7 +261,7 @@ func TestService_Update(t *testing.T) {
 
 			// WHEN
 			input := testCase.Input
-			err := svc.Update(ctx, input.assignmentID, input.formationID, input.operationType, input.newTrigger)
+			err := svc.Update(ctx, input.assignmentID, input.formationID, input.newTrigger)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

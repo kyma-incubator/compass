@@ -64,13 +64,12 @@ func (r *repository) Create(ctx context.Context, item *model.AssignmentOperation
 	return r.creator.Create(ctx, r.conv.ToEntity(item))
 }
 
-func (r *repository) GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string, operationType model.AssignmentOperationType) (*model.AssignmentOperation, error) {
+func (r *repository) GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string) (*model.AssignmentOperation, error) {
 	var entity Entity
 
 	conditions := repo.Conditions{
 		repo.NewEqualCondition("formation_assignment_id", formationAssignmentID),
 		repo.NewEqualCondition("formation_id", formationID),
-		repo.NewEqualCondition("type", string(operationType)),
 	}
 	// todo may have to add limit
 	if err := r.getter.GetGlobal(ctx, conditions, repo.OrderByParams{repo.NewDescOrderBy(startedAtColumn)}, &entity); err != nil {

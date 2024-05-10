@@ -50,9 +50,9 @@ func (_m *AssignmentOperationRepository) DeleteByIDs(ctx context.Context, ids []
 	return r0
 }
 
-// GetLatestOperation provides a mock function with given fields: ctx, formationAssignmentID, formationID, operationType
-func (_m *AssignmentOperationRepository) GetLatestOperation(ctx context.Context, formationAssignmentID string, formationID string, operationType model.AssignmentOperationType) (*model.AssignmentOperation, error) {
-	ret := _m.Called(ctx, formationAssignmentID, formationID, operationType)
+// GetLatestOperation provides a mock function with given fields: ctx, formationAssignmentID, formationID
+func (_m *AssignmentOperationRepository) GetLatestOperation(ctx context.Context, formationAssignmentID string, formationID string) (*model.AssignmentOperation, error) {
+	ret := _m.Called(ctx, formationAssignmentID, formationID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GetLatestOperation")
@@ -60,19 +60,19 @@ func (_m *AssignmentOperationRepository) GetLatestOperation(ctx context.Context,
 
 	var r0 *model.AssignmentOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.AssignmentOperationType) (*model.AssignmentOperation, error)); ok {
-		return rf(ctx, formationAssignmentID, formationID, operationType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.AssignmentOperation, error)); ok {
+		return rf(ctx, formationAssignmentID, formationID)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.AssignmentOperationType) *model.AssignmentOperation); ok {
-		r0 = rf(ctx, formationAssignmentID, formationID, operationType)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.AssignmentOperation); ok {
+		r0 = rf(ctx, formationAssignmentID, formationID)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.AssignmentOperation)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, model.AssignmentOperationType) error); ok {
-		r1 = rf(ctx, formationAssignmentID, formationID, operationType)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, formationAssignmentID, formationID)
 	} else {
 		r1 = ret.Error(1)
 	}

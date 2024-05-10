@@ -44,9 +44,7 @@ type formationAssignmentStatusService interface {
 //go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
-	Finish(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType) error
-	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
-	DeleteByIDs(ctx context.Context, ids []string) error
+	Finish(ctx context.Context, assignmentID, formationID string) error
 }
 
 type malformedRequest struct {
@@ -305,7 +303,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 
 	if fa.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("Finish %s Operation for assignment with ID: %s during status report", model.Assign, fa.ID)
-		if finishOpErr := h.assignmentOperationService.Finish(ctx, fa.ID, fa.FormationID, model.Assign); finishOpErr != nil {
+		if finishOpErr := h.assignmentOperationService.Finish(ctx, fa.ID, fa.FormationID); finishOpErr != nil {
 			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation for formation assignment with ID: %q", model.Assign, fa.ID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return

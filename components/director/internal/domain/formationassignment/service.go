@@ -644,7 +644,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
 
-		if err := s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID, model.FromFormationOperationType(mappingPair.Operation)); err != nil {
+		if err := s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID); err != nil {
 			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s that has no notifications", model.Assign, assignment.ID)
 		}
 
@@ -702,7 +702,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 
 	if assignment.State == string(model.ReadyAssignmentState) {
-		if err = s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID, model.FromFormationOperationType(mappingPair.Operation)); err != nil {
+		if err = s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID); err != nil {
 			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s during SYNC processing", model.FromFormationOperationType(mappingPair.Operation), assignment.ID)
 		}
 	}

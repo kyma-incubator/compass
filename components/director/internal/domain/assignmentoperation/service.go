@@ -16,7 +16,7 @@ type AssignmentOperationRepository interface {
 	Create(ctx context.Context, item *model.AssignmentOperation) error
 	Update(ctx context.Context, m *model.AssignmentOperation) error
 	DeleteByIDs(ctx context.Context, ids []string) error
-	GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string, operationType model.AssignmentOperationType) (*model.AssignmentOperation, error)
+	GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string) (*model.AssignmentOperation, error)
 	ListForFormationAssignmentIDs(ctx context.Context, assignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 }
 
@@ -57,10 +57,10 @@ func (s *service) Create(ctx context.Context, in *model.AssignmentOperationInput
 }
 
 // Finish finishes the Assignment Operation
-func (s *service) Finish(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType) error {
-	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID, operationType)
+func (s *service) Finish(ctx context.Context, assignmentID, formationID string) error {
+	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s and type: %s", assignmentID, formationID, operationType)
+		return errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID)
 	}
 
 	log.C(ctx).Debugf("Updating the finished at timestamp for assignment operation with ID: %s", operation.ID)
@@ -76,10 +76,10 @@ func (s *service) Finish(ctx context.Context, assignmentID, formationID string, 
 }
 
 // Update updates the Assignment Operation's triggered_by field with the new trigger and sets the started_at timestamp to the current time
-func (s *service) Update(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType, newTrigger model.OperationTrigger) error {
-	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID, operationType)
+func (s *service) Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error {
+	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s and type: %s", assignmentID, formationID, operationType)
+		return errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID)
 	}
 
 	log.C(ctx).Debugf("Updating the finished at timestamp for assignment operation with ID: %s", operation.ID)

@@ -32,18 +32,6 @@ func fixAssignmentOperationInput() *model.AssignmentOperationInput {
 	}
 }
 
-func fixAssignmentOperationModelWithID(id string) *model.AssignmentOperation {
-	return &model.AssignmentOperation{
-		ID:                    id,
-		Type:                  operationType,
-		FormationAssignmentID: assignmentID,
-		FormationID:           formationID,
-		TriggeredBy:           operationTrigger,
-		StartedAtTimestamp:    &defaultTime,
-		FinishedAtTimestamp:   &defaultTime,
-	}
-}
-
 func fixAssignmentOperationModel() *model.AssignmentOperation {
 	return fixAssignmentOperationModelWithAssignmentID(assignmentID)
 }

@@ -163,8 +163,8 @@ type asaEngine interface {
 //go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
-	Finish(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType) error
-	Update(ctx context.Context, assignmentID, formationID string, operationType model.AssignmentOperationType, newTrigger model.OperationTrigger) error
+	Finish(ctx context.Context, assignmentID, formationID string) error
+	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
 	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 	DeleteByIDs(ctx context.Context, ids []string) error
 }
@@ -1341,7 +1341,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
-				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, model.Unassign, assignmentOperationTriggeredBy); err != nil {
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
 					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by resync", model.Unassign, faClone.ID)
 				}
 			}
@@ -1352,7 +1352,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
-				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, model.Assign, assignmentOperationTriggeredBy); err != nil {
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
 					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by resync", model.Assign, faClone.ID)
 				}
 			}

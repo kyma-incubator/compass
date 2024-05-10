@@ -100,6 +100,12 @@ const (
 	FormationAssignmentTargetType  = "FormationAssignmentTargetType"
 	FormationAssignmentState       = "FormationAssignmentState"
 
+	// Assignment Operation constants
+	AssignmentOperationID  = "AssignmentOperationID"
+	AssignmentOperation2ID = "AssignmentOperation2ID"
+	AssignmentOperation3ID = "AssignmentOperation3ID"
+	AssignmentOperation4ID = "AssignmentOperation4ID"
+
 	// Other constants
 	ErrMsg          = "some error"
 	runtimeType     = "runtimeType"
@@ -1409,6 +1415,18 @@ func fixGqlFormation() *graphql.Formation {
 		State:                         string(model.InitialFormationState),
 		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
 		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
+	}
+}
+
+func fixAssignmentOperationModel(id, assignmentId string, operationType model.AssignmentOperationType, operationTrigger model.OperationTrigger) *model.AssignmentOperation {
+	return &model.AssignmentOperation{
+		ID:                    id,
+		Type:                  operationType,
+		FormationAssignmentID: assignmentId,
+		FormationID:           FormationID,
+		TriggeredBy:           operationTrigger,
+		StartedAtTimestamp:    &defaultTime,
+		FinishedAtTimestamp:   &defaultTime,
 	}
 }
 

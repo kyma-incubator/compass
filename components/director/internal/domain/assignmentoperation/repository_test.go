@@ -43,8 +43,8 @@ func TestRepository_GetLatestOperation(t *testing.T) {
 		MethodName: "GetLatestOperation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE formation_assignment_id = $1 AND formation_id = $2 AND type = $3 ORDER BY started_at_timestamp DESC`),
-				Args:     []driver.Value{assignmentID, formationID, operationType},
+				Query:    regexp.QuoteMeta(`SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE formation_assignment_id = $1 AND formation_id = $2 ORDER BY started_at_timestamp DESC`),
+				Args:     []driver.Value{assignmentID, formationID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationID, operationType, assignmentID, formationID, operationTrigger, &defaultTime, &defaultTime)}
@@ -60,7 +60,7 @@ func TestRepository_GetLatestOperation(t *testing.T) {
 		RepoConstructorFunc:       assignmentOperation.NewRepository,
 		ExpectedModelEntity:       fixAssignmentOperationModel(),
 		ExpectedDBEntity:          fixAssignmentOperationEntity(),
-		MethodArgs:                []interface{}{assignmentID, formationID, operationType},
+		MethodArgs:                []interface{}{assignmentID, formationID},
 		DisableConverterErrorTest: true,
 	}
 
@@ -85,11 +85,11 @@ func TestRepository_ListByFormationIDs(t *testing.T) {
 		Name: "List Assignments Operations by Formation Assignment IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`(SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE id = $1 ORDER BY formation_assignment_id ASC, started_at_timestamp DESC, id DESC LIMIT $2 OFFSET $3)
+				Query: regexp.QuoteMeta(`(SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE formation_assignment_id = $1 ORDER BY formation_assignment_id ASC, started_at_timestamp DESC LIMIT $2 OFFSET $3)
 				UNION 
-				(SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE id = $4 ORDER BY formation_assignment_id ASC, started_at_timestamp DESC, id DESC LIMIT $5 OFFSET $6)
+				(SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE formation_assignment_id = $4 ORDER BY formation_assignment_id ASC, started_at_timestamp DESC LIMIT $5 OFFSET $6)
 				UNION
-				(SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE id = $7 ORDER BY formation_assignment_id ASC, started_at_timestamp DESC, id DESC LIMIT $8 OFFSET $9)`),
+				(SELECT id, type, formation_assignment_id, formation_id, triggered_by, started_at_timestamp, finished_at_timestamp FROM public.assignment_operations WHERE formation_assignment_id = $7 ORDER BY formation_assignment_id ASC, started_at_timestamp DESC LIMIT $8 OFFSET $9)`),
 				Args:     []driver.Value{emptyPageFAID, pageSize, 0, onePageFAID, pageSize, 0, multiplePageFAID, pageSize, 0},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -100,7 +100,7 @@ func TestRepository_ListByFormationIDs(t *testing.T) {
 				},
 			},
 			{
-				Query:    regexp.QuoteMeta(`SELECT id AS id, COUNT(*) AS total_count FROM public.assignment_operations WHERE id IN ($1, $2, $3) GROUP BY id ORDER BY id ASC`),
+				Query:    regexp.QuoteMeta(`SELECT formation_assignment_id AS id, COUNT(*) AS total_count FROM public.assignment_operations WHERE formation_assignment_id IN ($1, $2, $3) GROUP BY formation_assignment_id ORDER BY formation_assignment_id ASC`),
 				Args:     []driver.Value{emptyPageFAID, onePageFAID, multiplePageFAID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
