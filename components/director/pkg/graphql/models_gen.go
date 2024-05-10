@@ -451,11 +451,13 @@ type CertificateOAuthCredentialDataInput struct {
 }
 
 type CertificateSubjectMapping struct {
-	ID                 string   `json:"id"`
-	Subject            string   `json:"subject"`
-	ConsumerType       string   `json:"consumerType"`
-	InternalConsumerID *string  `json:"internalConsumerID,omitempty"`
-	TenantAccessLevels []string `json:"tenantAccessLevels"`
+	ID                 string     `json:"id"`
+	Subject            string     `json:"subject"`
+	ConsumerType       string     `json:"consumerType"`
+	InternalConsumerID *string    `json:"internalConsumerID,omitempty"`
+	TenantAccessLevels []string   `json:"tenantAccessLevels"`
+	CreatedAt          Timestamp  `json:"createdAt"`
+	UpdatedAt          *Timestamp `json:"updatedAt,omitempty"`
 }
 
 type CertificateSubjectMappingInput struct {
