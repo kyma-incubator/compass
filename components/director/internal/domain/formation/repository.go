@@ -2,7 +2,10 @@ package formation
 
 import (
 	"context"
+	"fmt"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -21,6 +24,9 @@ var (
 	tenantColumn          = "tenant_id"
 	formationNameColumn   = "name"
 	idTableColumn         = "id"
+
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
+	Now = time.Now
 )
 
 // EntityConverter converts between the internal model and entity
@@ -181,12 +187,30 @@ func (r *repository) Update(ctx context.Context, model *model.Formation) error {
 
 	if retrievedEntity.State != newEntity.State {
 		log.C(ctx).Debugf("State of formation with ID: %s was changed from: %s to: %s, updating the last state change timestamp", newEntity.ID, retrievedEntity.State, newEntity.State)
-		now := time.Now()
+		now := Now()
 		newEntity.LastStateChangeTimestamp = &now
 	}
 
 	log.C(ctx).Debugf("Updating formation with ID: %q and name: %q...", newEntity.ID, newEntity.Name)
 	return r.updater.UpdateSingleGlobal(ctx, newEntity)
+}
+
+// UpdateLastNotificationSentTimestamps updates the last notification sent timestamp for a Formation with given ID
+func (r *repository) UpdateLastNotificationSentTimestamps(ctx context.Context, formationID string) error {
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while loading persistence from context")
+	}
+
+	const updateQuery = "UPDATE %s SET last_notification_sent_timestamp = $1 WHERE id = $2"
+	stmt := fmt.Sprintf(updateQuery, tableName)
+
+	_, err = persist.ExecContext(ctx, stmt, Now(), formationID)
+	if err = persistence.MapSQLError(ctx, err, resource.FormationAssignment, resource.Update, fmt.Sprintf("while updating the last notification sent timestamp for formation with ID: %s", formationID)); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // DeleteByName deletes a Formation with given name

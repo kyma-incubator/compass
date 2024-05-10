@@ -5,6 +5,7 @@ import (
 	"database/sql/driver"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 	"github.com/stretchr/testify/require"
@@ -551,13 +552,15 @@ func TestRepository_Update(t *testing.T) {
 
 	suite.Run(t)
 
-	t.Run("Success when the formation assignment state is changed and timestamp is updated", func(t *testing.T) {
+	t.Run("Success when the formation assignment state is changed and last state change timestamp is updated", func(t *testing.T) {
 		// GIVEN
 		faModelWithReadyState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
 		faModelWithReadyState.State = readyAssignmentState
 
 		faEntityWithReadyState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
 		faEntityWithReadyState.State = readyAssignmentState
+
+		formationassignment.Now = func() time.Time { return defaultTime }
 
 		slqxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
@@ -592,6 +595,8 @@ func TestRepository_Update(t *testing.T) {
 		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
 		faEntityWithConfigPendingState.State = configPendingAssignmentState
 
+		formationassignment.Now = func() time.Time { return defaultTime }
+
 		slqxDB, sqlMock := testdb.MockDatabase(t)
 		defer sqlMock.AssertExpectations(t)
 		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
@@ -615,6 +620,65 @@ func TestRepository_Update(t *testing.T) {
 
 		// THEN
 		require.NoError(t, err)
+	})
+}
+
+func TestRepository_UpdateLastNotificationSentTimestamps(t *testing.T) {
+	t.Run("Success when updating formation assignment last notification sent timestamp", func(t *testing.T) {
+		// GIVEN
+		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithConfigPendingState.State = configPendingAssignmentState
+
+		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithConfigPendingState.State = configPendingAssignmentState
+
+		formationassignment.Now = func() time.Time { return defaultTime }
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_notification_sent_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, TestID).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		mockConverter := &automock.EntityConverter{}
+		r := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := r.UpdateLastNotificationSentTimestamps(ctx, TestID)
+
+		// THEN
+		require.NoError(t, err)
+	})
+
+	t.Run("Error when formation assignment's last notification sent timestamp update fail", func(t *testing.T) {
+		// GIVEN
+		faModelWithConfigPendingState := fixFormationAssignmentModelWithConfigAndError(TestConfigValueRawJSON, TestErrorValueRawJSON)
+		faModelWithConfigPendingState.State = configPendingAssignmentState
+
+		faEntityWithConfigPendingState := fixFormationAssignmentEntityWithConfigurationAndError(TestConfigValueStr, TestErrorValueStr)
+		faEntityWithConfigPendingState.State = configPendingAssignmentState
+
+		formationassignment.Now = func() time.Time { return defaultTime }
+
+		slqxDB, sqlMock := testdb.MockDatabase(t)
+		defer sqlMock.AssertExpectations(t)
+		ctx := persistence.SaveToContext(emptyCtx, slqxDB)
+
+		sqlMock.ExpectExec(regexp.QuoteMeta(`UPDATE public.formation_assignments SET last_notification_sent_timestamp = $1 WHERE id = $2`)).
+			WithArgs(defaultTime, TestID).
+			WillReturnError(testErr)
+
+		mockConverter := &automock.EntityConverter{}
+		r := formationassignment.NewRepository(mockConverter)
+
+		// WHEN
+		err := r.UpdateLastNotificationSentTimestamps(ctx, TestID)
+
+		// THEN
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "Unexpected error while executing SQL query")
 	})
 }
 
