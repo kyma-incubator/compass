@@ -38,6 +38,8 @@ func (c *converter) ToGraphQL(in *model.CertSubjectMapping) *graphql.Certificate
 		ConsumerType:       in.ConsumerType,
 		InternalConsumerID: in.InternalConsumerID,
 		TenantAccessLevels: in.TenantAccessLevels,
+		CreatedAt:          graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:          graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
 	}
 }
 
@@ -96,5 +98,7 @@ func (c *converter) FromEntity(e *Entity) (*model.CertSubjectMapping, error) {
 		ConsumerType:       e.ConsumerType,
 		InternalConsumerID: e.InternalConsumerID,
 		TenantAccessLevels: unmarshalledTntAccessLevels,
+		CreatedAt:          e.CreatedAt,
+		UpdatedAt:          e.UpdatedAt,
 	}, nil
 }
