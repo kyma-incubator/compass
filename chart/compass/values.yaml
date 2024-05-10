@@ -175,7 +175,7 @@ global:
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3865"
+      version: "PR-3869"
       name: compass-director
     hydrator:
       dir: dev/incubator/
@@ -211,7 +211,7 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3857"
+      version: "PR-3869"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
@@ -228,7 +228,7 @@ global:
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3849"
+      version: "PR-3869"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
