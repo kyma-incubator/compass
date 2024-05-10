@@ -1539,42 +1539,9 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 	return nil
 }
 
+// GetScenariosFromMatchingASAs returns the scenarios from the ASAs that match the objectID and objectType
 func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
 	return s.asaEngine.GetScenariosFromMatchingASAs(ctx, objectID, objType)
-}
-
-// MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
-// with all the scenarios that should be assigned based on ASAs.
-func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	scenariosFromAssignments, err := s.asaEngine.GetScenariosFromMatchingASAs(ctx, runtimeID, graphql.FormationObjectTypeRuntime)
-	scenariosSet := make(map[string]struct{}, len(scenariosFromAssignments))
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
-	}
-
-	for _, scenario := range scenariosFromAssignments {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
-
-	if isScenarioLabelInInput {
-		scenarioLabels, err := label.ValueToStringsSlice(scenariosFromInput)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting scenarios label to a string slice")
-		}
-
-		for _, scenario := range scenarioLabels {
-			scenariosSet[scenario] = struct{}{}
-		}
-	}
-
-	scenarios := make([]interface{}, 0, len(scenariosSet))
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-	return scenarios, nil
 }
 
 func (s *service) SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {

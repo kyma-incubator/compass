@@ -64,29 +64,29 @@ func (_m *FormationService) DeleteAutomaticScenarioAssignment(ctx context.Contex
 	return r0
 }
 
-// MergeScenariosFromInputLabelsAndAssignments provides a mock function with given fields: ctx, inputLabels, runtimeID
-func (_m *FormationService) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	ret := _m.Called(ctx, inputLabels, runtimeID)
+// GetScenariosFromMatchingASAs provides a mock function with given fields: ctx, objectID, objType
+func (_m *FormationService) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
+	ret := _m.Called(ctx, objectID, objType)
 
 	if len(ret) == 0 {
-		panic("no return value specified for MergeScenariosFromInputLabelsAndAssignments")
+		panic("no return value specified for GetScenariosFromMatchingASAs")
 	}
 
-	var r0 []interface{}
+	var r0 []string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) ([]interface{}, error)); ok {
-		return rf(ctx, inputLabels, runtimeID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) ([]string, error)); ok {
+		return rf(ctx, objectID, objType)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) []interface{}); ok {
-		r0 = rf(ctx, inputLabels, runtimeID)
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
+		r0 = rf(ctx, objectID, objType)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]interface{})
+			r0 = ret.Get(0).([]string)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, string) error); ok {
-		r1 = rf(ctx, inputLabels, runtimeID)
+	if rf, ok := ret.Get(1).(func(context.Context, string, graphql.FormationObjectType) error); ok {
+		r1 = rf(ctx, objectID, objType)
 	} else {
 		r1 = ret.Error(1)
 	}
