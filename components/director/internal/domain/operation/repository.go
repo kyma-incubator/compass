@@ -153,7 +153,7 @@ func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (b
 // DeleteOperations deletes the operations.
 func (r *pgRepository) DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
 	log.C(ctx).Debug("Deleting Operations")
-	equalCondition := repo.NewEqualCondition("status", "COMPLETED")
+	equalCondition := repo.NewEqualCondition("status", model.OperationStatusCompleted.ToString())
 	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
 	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{equalCondition, equalTypeCondition, dateCondition})

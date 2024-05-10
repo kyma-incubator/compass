@@ -20,7 +20,6 @@ import (
 	"context"
 	"crypto/tls"
 	"fmt"
-	"github.com/davecgh/go-spew/spew"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -198,7 +197,6 @@ func main() {
 		shutdownMainSrv()
 	}()
 
-	spew.Dump("ParallelOperationProcessors: ", cfg.ParallelOperationProcessors)
 	for i := 0; i < cfg.ParallelOperationProcessors; i++ {
 		go func(ctx context.Context, opManager *operationsmanager.OperationsManager, opProcessor *systemfielddiscoveryengine.OperationsProcessor, executorIndex int) {
 			for {
@@ -229,7 +227,7 @@ func main() {
 	}
 
 	go func() {
-		if err := saasRegistryOperationsManager.StartRescheduleOperationsJob(ctx, []string{"COMPLETED"}); err != nil {
+		if err := saasRegistryOperationsManager.StartRescheduleOperationsJob(ctx, []string{model.OperationStatusCompleted.ToString()}); err != nil {
 			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
 			cancel()
 		}
@@ -496,12 +494,11 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	op, errGetOperation := opManager.GetOperation(ctx)
 	if errGetOperation != nil {
 		if apperrors.IsNoScheduledOperationsError(errGetOperation) {
-			log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", errGetOperation)
+			log.C(ctx).Infof("There are no scheduled operations for processing. Err: %v", errGetOperation)
 			return "", nil
-		} else {
-			log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
-			return "", errGetOperation
 		}
+		log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
+		return "", errGetOperation
 	}
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {

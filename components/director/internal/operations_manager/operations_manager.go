@@ -214,8 +214,8 @@ func (om *OperationsManager) StartDeleteOperationsJob(ctx context.Context) error
 			if err := om.opSvc.DeleteOperations(ctx, om.opType, om.cfg.OperationDeletePeriod); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of DeleteOperationsJob %v", err)
 			}
-			err = tx.Commit()
-			if err != nil {
+
+			if err = tx.Commit(); err != nil {
 				log.C(jobCtx).Errorf("Error during committing transaction at DeleteOperationsJob %v", err)
 			}
 

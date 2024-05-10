@@ -43,7 +43,11 @@ func (c *SystemFieldDiscoveryEngineClient) SetHTTPClient(client *http.Client) {
 }
 
 // Discover calls system field discovery API
-func (c *SystemFieldDiscoveryEngineClient) Discover(ctx context.Context, appID, tenantID, registry string) error {
+func (c *SystemFieldDiscoveryEngineClient) Discover(ctx context.Context, appID, tenantID string, registry systemfielddiscoveryengine.SystemFieldDiscoveryRegistry) error {
+	if registry != systemfielddiscoveryengine.SystemFieldDiscoverySaaSRegistry {
+		return errors.Errorf("unsupported registry")
+	}
+
 	data := systemfielddiscoveryengine.SystemFieldDiscoveryResources{
 		ApplicationID: appID,
 		TenantID:      tenantID,
@@ -54,10 +58,7 @@ func (c *SystemFieldDiscoveryEngineClient) Discover(ctx context.Context, appID, 
 	}
 
 	body := bytes.NewBuffer(marshalledData)
-	req := &http.Request{}
-	if registry == "saas-registry" {
-		req, err = http.NewRequestWithContext(ctx, http.MethodPost, c.cfg.SystemFieldDiscoveryEngineSaaSRegistryAPI, body)
-	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.cfg.SystemFieldDiscoveryEngineSaaSRegistryAPI, body)
 	if err != nil {
 		return errors.Wrap(err, "while creating request to system field discovery")
 	}

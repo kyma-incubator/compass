@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 
 	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	systemfielddiscoveryapiclient "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
@@ -17,7 +18,6 @@ import (
 
 const (
 	subscriptionIDKey = "subscriptionGUID"
-	saasRegistry      = "saas-registry"
 )
 
 // DependentServiceInstanceInfo represents the dependent service instance info object in a subscription payload.
@@ -138,8 +138,8 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q", appID)
 		}
 		if systemFieldDiscoveryValue {
-			if err := r.systemFieldDiscoveryClient.Discover(ctx, appID, consumerTenantID, saasRegistry); err != nil {
-				log.C(ctx).WithError(err).Errorf("Error while calling discover API with AppID %q, tenantID %q, and registry %q", appID, consumerTenantID, saasRegistry)
+			if err := r.systemFieldDiscoveryClient.Discover(ctx, appID, consumerTenantID, systemfielddiscoveryengine.SystemFieldDiscoverySaaSRegistry); err != nil {
+				log.C(ctx).WithError(err).Errorf("Error while calling discover API with AppID %q, tenantID %q, and registry %q", appID, consumerTenantID, systemfielddiscoveryengine.SystemFieldDiscoverySaaSRegistry.ToString())
 			}
 		}
 	}

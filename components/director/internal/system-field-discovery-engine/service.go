@@ -18,8 +18,19 @@ import (
 	"github.com/pkg/errors"
 )
 
+// SystemFieldDiscoveryRegistry defines the system field discovery registry
+type SystemFieldDiscoveryRegistry string
+
+// ToString converts the system field discovery registry type to string
+func (sfd SystemFieldDiscoveryRegistry) ToString() string {
+	return string(sfd)
+}
+
 const (
 	regionLabelKey = "region"
+
+	// SystemFieldDiscoverySaaSRegistry system field discovery registry of type saas registry
+	SystemFieldDiscoverySaaSRegistry SystemFieldDiscoveryRegistry = "saas-registry"
 )
 
 // subscription represents subscription object in a saas-manager response payload.
@@ -37,7 +48,6 @@ type subscriptionsResponse struct {
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
 	UpdateBaseURLAndReadyState(ctx context.Context, appID, baseURL string, ready bool) error
-	//GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error)
 	Get(ctx context.Context, id string) (*model.Application, error)
 }
 
@@ -210,8 +220,6 @@ func (s *Service) processSubscription(ctx context.Context, subscription subscrip
 	}
 	defer s.transact.RollbackUnlessCommitted(ctx, tx)
 	ctx = persistence.SaveToContext(ctx, tx)
-
-	//todo: tenant must already be in the context
 
 	if err := s.appSvc.UpdateBaseURLAndReadyState(ctx, appID, subscription.AppURL, true); err != nil {
 		return false, errors.Wrapf(err, "failed to update base url and ready state for app with id %q", appID)

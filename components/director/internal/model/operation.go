@@ -19,6 +19,10 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+func (os OperationStatus) ToString() string {
+	return string(os)
+}
+
 // OperationType defines supported operation types
 type OperationType string
 
