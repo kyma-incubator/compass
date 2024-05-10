@@ -1421,18 +1421,6 @@ func fixGqlFormation() *graphql.Formation {
 	}
 }
 
-func fixAssignmentOperationModel(id, assignmentId string, operationType model.AssignmentOperationType, operationTrigger model.OperationTrigger) *model.AssignmentOperation {
-	return &model.AssignmentOperation{
-		ID:                    id,
-		Type:                  operationType,
-		FormationAssignmentID: assignmentId,
-		FormationID:           FormationID,
-		TriggeredBy:           operationTrigger,
-		StartedAtTimestamp:    &defaultTime,
-		FinishedAtTimestamp:   &defaultTime,
-	}
-}
-
 func fixGqlFormationAssignment(state string, configValue *string) *graphql.FormationAssignment {
 	return &graphql.FormationAssignment{
 		ID:         FormationAssignmentID,

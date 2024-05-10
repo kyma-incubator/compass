@@ -4042,7 +4042,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -4611,7 +4611,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(testFormation, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {

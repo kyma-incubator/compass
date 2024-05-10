@@ -1,4 +1,4 @@
-package assignmentOperation_test
+package assignmentoperation_test
 
 import (
 	assignmentOperation "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"

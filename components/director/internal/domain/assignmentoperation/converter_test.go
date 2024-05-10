@@ -1,4 +1,4 @@
-package assignmentOperation_test
+package assignmentoperation_test
 
 import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
@@ -10,7 +10,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-var converter = assignmentOperation.NewConverter()
+var converter = assignmentoperation.NewConverter()
 
 func TestToGraphQL(t *testing.T) {
 	testCases := []struct {
@@ -79,7 +79,7 @@ func TestConverter_ToEntity(t *testing.T) {
 	testCases := []struct {
 		Name           string
 		Input          *model.AssignmentOperation
-		Expected       *assignmentOperation.Entity
+		Expected       *assignmentoperation.Entity
 		ExpectedErrMsg string
 	}{
 		{
@@ -106,7 +106,7 @@ func TestConverter_ToEntity(t *testing.T) {
 func TestConverter_FromEntity(t *testing.T) {
 	testCases := []struct {
 		Name           string
-		Input          *assignmentOperation.Entity
+		Input          *assignmentoperation.Entity
 		Expected       *model.AssignmentOperation
 		ExpectedErrMsg string
 	}{

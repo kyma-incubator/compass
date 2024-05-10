@@ -2104,7 +2104,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInInitialState).Return(formationAssignmentInputs, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInInitialState).Return(formationAssignmentInputs, nil).Once()
 				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(assignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2156,7 +2156,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInDraftState).Return(formationAssignmentInputs, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInDraftState).Return(formationAssignmentInputs, nil).Once()
 				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(assignments, nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2234,7 +2234,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			},
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
-				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignmentInputs, nil).Once()
+				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignmentInputs, nil).Once()
 				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(assignments, nil).Once()
 				formationAssignmentSvc.On("DeleteAssignmentsForObjectID", txtest.CtxWithDBMatcher(), fixUUID(), ApplicationID).Return(nil).Once()
 				return formationAssignmentSvc

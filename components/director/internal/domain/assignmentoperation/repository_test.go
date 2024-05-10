@@ -1,4 +1,4 @@
-package assignmentOperation_test
+package assignmentoperation_test
 
 import (
 	"database/sql/driver"
@@ -26,7 +26,7 @@ func TestRepository_Create(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		RepoConstructorFunc:       assignmentOperation.NewRepository,
+		RepoConstructorFunc:       assignmentoperation.NewRepository,
 		ModelEntity:               fixAssignmentOperationModel(),
 		DBEntity:                  fixAssignmentOperationEntity(),
 		NilModelEntity:            nilAssignmentOperationModel,
@@ -57,7 +57,7 @@ func TestRepository_GetLatestOperation(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		RepoConstructorFunc:       assignmentOperation.NewRepository,
+		RepoConstructorFunc:       assignmentoperation.NewRepository,
 		ExpectedModelEntity:       fixAssignmentOperationModel(),
 		ExpectedDBEntity:          fixAssignmentOperationEntity(),
 		MethodArgs:                []interface{}{assignmentID, formationID},
@@ -152,7 +152,7 @@ func TestRepository_ListByFormationIDs(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		RepoConstructorFunc:       assignmentOperation.NewRepository,
+		RepoConstructorFunc:       assignmentoperation.NewRepository,
 		MethodArgs:                []interface{}{[]string{emptyPageFAID, onePageFAID, multiplePageFAID}, pageSize, cursor},
 		MethodName:                "ListForFormationAssignmentIDs",
 		DisableConverterErrorTest: true,
@@ -177,7 +177,7 @@ func TestRepository_Update(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		RepoConstructorFunc:       assignmentOperation.NewRepository,
+		RepoConstructorFunc:       assignmentoperation.NewRepository,
 		ModelEntity:               fixAssignmentOperationModel(),
 		DBEntity:                  fixAssignmentOperationEntity(),
 		NilModelEntity:            nilAssignmentOperationModel,
@@ -200,7 +200,7 @@ func TestRepository_DeleteByIDs(t *testing.T) {
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
 		},
-		RepoConstructorFunc: assignmentOperation.NewRepository,
+		RepoConstructorFunc: assignmentoperation.NewRepository,
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},

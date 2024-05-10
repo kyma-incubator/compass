@@ -66,6 +66,7 @@ type AssignmentOperationPage struct {
 	TotalCount int
 }
 
+// FromFormationOperationType converts FormationOperation to AssignmentOperationType
 func FromFormationOperationType(op FormationOperation) AssignmentOperationType {
 	switch op {
 	case AssignFormation:

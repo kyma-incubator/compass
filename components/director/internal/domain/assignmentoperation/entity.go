@@ -1,4 +1,4 @@
-package assignmentOperation
+package assignmentoperation
 
 import (
 	"time"

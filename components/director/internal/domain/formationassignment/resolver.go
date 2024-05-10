@@ -182,6 +182,7 @@ func (r *Resolver) AssignmentOperations(ctx context.Context, obj *graphql.Format
 	return dataloader.FormationAssignmentFor(ctx).AssignmentOperationByID.Load(param)
 }
 
+// AssignmentOperationsDataLoader is a dataloader for the Operation entity of the formation assignment
 func (r *Resolver) AssignmentOperationsDataLoader(keys []dataloader.ParamAssignmentOperation) ([]*graphql.AssignmentOperationPage, []error) {
 	if len(keys) == 0 {
 		return nil, []error{apperrors.NewInternalError("No Formation Assignments found")}
@@ -225,7 +226,6 @@ func (r *Resolver) AssignmentOperationsDataLoader(keys []dataloader.ParamAssignm
 
 	result := make([]*graphql.AssignmentOperationPage, 0, len(assignmentOperationsPages))
 	for _, page := range assignmentOperationsPages {
-
 		operations := r.assignmentOperationConverter.MultipleToGraphQL(page.Data)
 
 		result = append(result, &graphql.AssignmentOperationPage{Data: operations, TotalCount: page.TotalCount, PageInfo: &graphql.PageInfo{

@@ -2283,6 +2283,31 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 				},
 				Operation: model.AssignFormation,
 			},
+			AssignmentOperationSvc: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(nil).Once()
+				return svc
+			},
+		},
+		{
+			Name:    "Error: ready state assignment when assignment is already in ready state but finishing operation fails",
+			Context: ctxWithTenant,
+			FormationAssignmentPairWithOperation: &formationassignment.AssignmentMappingPairWithOperation{
+				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+						Request:             nil,
+						FormationAssignment: fixFormationAssignmentModelWithIDAndTenantID(readyStateAssignment),
+					},
+					ReverseAssignmentReqMapping: nil,
+				},
+				Operation: model.AssignFormation,
+			},
+			AssignmentOperationSvc: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(testErr).Once()
+				return svc
+			},
+			ExpectedErrorMsg: fmt.Sprintf("while finishing %s Operation for assignment with ID:", model.Assign),
 		},
 		{
 			Name:    "Success: ready state assignment with no request",
@@ -2305,7 +2330,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			AssignmentOperationSvc: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
-				svc.On("Finish", ctxWithTenant, TestID, formation.ID).Return(nil).Once()
+				svc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(nil).Once()
 				return svc
 			},
 		},
@@ -2330,7 +2355,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			AssignmentOperationSvc: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
-				svc.On("Finish", ctxWithTenant, TestID, formation.ID).Return(nil).Once()
+				svc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(nil).Once()
 				return svc
 			},
 		},
@@ -2349,13 +2374,13 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 			},
 			FormationAssignmentRepo: func() *automock.FormationAssignmentRepository {
 				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Exists", ctxWithTenant, TestID, TestTenantID).Return(true, nil).Once()
-				repo.On("Update", ctxWithTenant, readyStateAssignment).Return(nil).Once()
+				repo.On("Exists", ctxWithTenantAndLoggerMatcher(), TestID, TestTenantID).Return(true, nil).Once()
+				repo.On("Update", ctxWithTenantAndLoggerMatcher(), readyStateAssignment).Return(nil).Once()
 				return repo
 			},
 			AssignmentOperationSvc: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
-				svc.On("Finish", ctxWithTenant, TestID, formation.ID).Return(testErr).Once()
+				svc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(testErr).Once()
 				return svc
 			},
 			ExpectedErrorMsg: fmt.Sprintf("while finishing ASSIGN Operation for assignment with ID: %s that has no notifications:", TestID),
@@ -3259,7 +3284,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenantAndLoggerMatcher(), assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
 
 		assignmentOperationSvc := &automock.AssignmentOperationService{}
-		assignmentOperationSvc.On("Finish", ctxWithTenant, TestID, formation.ID).Return(nil).Twice()
+		assignmentOperationSvc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(nil)
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, assignmentOperationSvc, lblSvc, formationRepo, statusServiceMock, rtmTypeLabelKey, appTypeLabelKey)
 
@@ -3292,7 +3317,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		notificationSvc := &automock.NotificationService{}
 		extendedReqWithReverseFA := fixExtendedFormationAssignmentNotificationReq(mappingRequest, initialStateAssignment)
 		extendedReqWithReverseFA.ReverseFormationAssignment = reverseInitialStateAssignment
-		notificationSvc.On("SendNotification", ctxWithTenant, extendedReqWithReverseFA).Return(&webhook.Response{
+		notificationSvc.On("SendNotification", ctxWithTenantAndLoggerMatcher(), extendedReqWithReverseFA).Return(&webhook.Response{
 			Config:               &config,
 			SuccessStatusCode:    &ok,
 			IncompleteStatusCode: &incomplete,
@@ -3319,22 +3344,22 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		}
 
 		lblSvc := &automock.LabelService{}
-		lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
+		lblSvc.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TestTenantID, &model.LabelInput{
 			Key:        appTypeLabelKey,
 			ObjectID:   TestTarget,
 			ObjectType: model.ApplicationLabelableObject,
 		}).Return(appLbl, nil).Once()
-		lblSvc.On("GetLabel", ctxWithTenant, TestTenantID, &model.LabelInput{
+		lblSvc.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TestTenantID, &model.LabelInput{
 			Key:        appTypeLabelKey,
 			ObjectID:   TestSource,
 			ObjectType: model.ApplicationLabelableObject,
 		}).Return(appLbl, nil).Once()
 
 		formationRepo := &automock.FormationRepository{}
-		formationRepo.On("Get", ctxWithTenant, TestFormationID, TestTenantID).Return(formation, nil).Times(2)
+		formationRepo.On("Get", ctxWithTenantAndLoggerMatcher(), TestFormationID, TestTenantID).Return(formation, nil).Times(2)
 
 		faStatusService := &automock.StatusService{}
-		faStatusService.On("UpdateWithConstraints", ctxWithTenant, notificationReportWithConfig, initialStateAssignment, assignOperation).Return(nil).Once()
+		faStatusService.On("UpdateWithConstraints", ctxWithTenantAndLoggerMatcher(), notificationReportWithConfig, initialStateAssignment, assignOperation).Return(nil).Once()
 
 		statusServiceMock := StatusServiceMock{}
 		statusServiceMock.updateWithConstraints = func(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error {
@@ -3343,10 +3368,10 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 
 		faNotificationSvc := &automock.FaNotificationService{}
 		assignmentMapping := fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(initialStateAssignment, reverseInitialStateAssignment, mappingRequest, reverseMappingRequest)
-		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenant, assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
+		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenantAndLoggerMatcher(), assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFA, nil).Once()
 
 		assignmentOperationSvc := &automock.AssignmentOperationService{}
-		assignmentOperationSvc.On("Finish", ctxWithTenant, TestID, formation.ID).Return(testErr).Once()
+		assignmentOperationSvc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(testErr).Once()
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, assignmentOperationSvc, lblSvc, formationRepo, statusServiceMock, rtmTypeLabelKey, appTypeLabelKey)
 
@@ -3452,7 +3477,7 @@ func TestService_ProcessFormationAssignmentPair(t *testing.T) {
 		faNotificationSvc.On("GenerateFormationAssignmentNotificationExt", ctxWithTenantAndLoggerMatcher(), assignmentMapping.AssignmentReqMapping, assignmentMapping.ReverseAssignmentReqMapping, model.AssignFormation).Return(extendedReqWithReverseFAForReverseNotification, nil).Once()
 
 		assignmentOperationSvc := &automock.AssignmentOperationService{}
-		assignmentOperationSvc.On("Finish", ctxWithTenant, TestID, formation.ID).Return(nil).Once()
+		assignmentOperationSvc.On("Finish", ctxWithTenantAndLoggerMatcher(), TestID, formation.ID).Return(nil).Once()
 
 		svc := formationassignment.NewService(repo, nil, nil, nil, nil, notificationSvc, faNotificationSvc, assignmentOperationSvc, lblSvc, formationRepo, statusServiceMock, rtmTypeLabelKey, appTypeLabelKey)
 

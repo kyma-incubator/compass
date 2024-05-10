@@ -1,4 +1,4 @@
-package assignmentOperation_test
+package assignmentoperation_test
 
 import (
 	"context"

@@ -1,4 +1,4 @@
-package assignmentOperation
+package assignmentoperation
 
 import (
 	"context"
@@ -48,7 +48,7 @@ func (s *service) Create(ctx context.Context, in *model.AssignmentOperationInput
 	now := time.Now()
 	assignmentOp.StartedAtTimestamp = &now
 
-	log.C(ctx).Infof("Creating assignemnt operation for formation assignment %s in formation %s with type %s, triggered by %s ", in.FormationAssignmentID, in.FormationID, in.Type, in.TriggeredBy)
+	log.C(ctx).Infof("Creating assignment operation for formation assignment %s in formation %s with type %s, triggered by %s ", in.FormationAssignmentID, in.FormationID, in.Type, in.TriggeredBy)
 	if err := s.repo.Create(ctx, assignmentOp); err != nil {
 		return "", errors.Wrapf(err, "while creating assignment operation for formation assignment %s in formation %s with type %s, triggered by %s", in.FormationAssignmentID, in.FormationID, in.Type, in.TriggeredBy)
 	}

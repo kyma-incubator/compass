@@ -12,17 +12,20 @@ import (
 
 const loadersKeyForAssignmentOperation contextKey = "dataloadersAssignmentOperation"
 
+// AssignmentOperationLoaders missing godoc
 type AssignmentOperationLoaders struct {
 	AssignmentOperationByID AssignmentOperationLoader
 }
 
+// ParamAssignmentOperation missing godoc
 type ParamAssignmentOperation struct {
-	ID     string
-	First  *int
-	After  *graphql.PageCursor
-	Ctx    context.Context
+	ID    string
+	First *int
+	After *graphql.PageCursor
+	Ctx   context.Context
 }
 
+// HandlerAssignmentOperation missing godoc
 func HandlerAssignmentOperation(fetchFunc func(keys []ParamAssignmentOperation) ([]*graphql.AssignmentOperationPage, []error), maxBatch int, wait time.Duration) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -39,7 +42,7 @@ func HandlerAssignmentOperation(fetchFunc func(keys []ParamAssignmentOperation) 
 	}
 }
 
+// FormationAssignmentFor missing godoc
 func FormationAssignmentFor(ctx context.Context) *AssignmentOperationLoaders {
 	return ctx.Value(loadersKeyForAssignmentOperation).(*AssignmentOperationLoaders)
 }
-

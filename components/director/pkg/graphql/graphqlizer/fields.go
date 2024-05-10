@@ -239,6 +239,7 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 	`, fp.Page(fp.ForAssignmentOperation()))
 }
 
+// ForAssignmentOperation missing godoc
 func (fp *GqlFieldsProvider) ForAssignmentOperation() string {
 	return `
 			id
