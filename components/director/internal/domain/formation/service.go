@@ -886,7 +886,7 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
 func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (f *model.Formation, err error) {
-	log.C(ctx).Infof("Unassigning object with ID: %q of type: %q from formation %q", objectID, objectType, formation.Name)
+	log.C(ctx).Infof("Unassigning object with ID: %q of type: %q from formation %q, should ignore ASA: %v", objectID, objectType, formation.Name, ignoreASA)
 
 	if !isObjectTypeAllowed(objectType) {
 		return nil, fmt.Errorf("unknown formation type %s", objectType)

@@ -900,7 +900,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 			return err
 		}
 
-		if err := r.formationSvc.RemoveAssignedScenarios(ctx, assignments); err != nil {
+		if err := r.formationSvc.RemoveAssignedScenarios(ctxWithParentTenant, assignments); err != nil {
 			return errors.Wrap(err, "while removing assigned scenarios")
 		}
 	}
