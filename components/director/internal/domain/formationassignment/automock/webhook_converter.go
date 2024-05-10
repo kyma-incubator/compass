@@ -18,10 +18,6 @@ type WebhookConverter struct {
 func (_m *WebhookConverter) ToGraphQL(in *model.Webhook) (*graphql.Webhook, error) {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
-
 	var r0 *graphql.Webhook
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.Webhook) (*graphql.Webhook, error)); ok {
