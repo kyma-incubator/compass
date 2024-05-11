@@ -3,9 +3,10 @@ package domain
 import (
 	"context"
 	"fmt"
-	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"net/http"
 	"net/url"
+
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 

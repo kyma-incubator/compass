@@ -1,8 +1,9 @@
 package assignmentoperation_test
 
 import (
-	"github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	"github.com/stretchr/testify/require"
 

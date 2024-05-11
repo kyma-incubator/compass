@@ -1,8 +1,9 @@
 package model
 
 import (
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
 // AssignmentOperationType describes possible assignment operation types - assign, unassign

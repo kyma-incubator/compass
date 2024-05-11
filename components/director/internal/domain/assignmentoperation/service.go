@@ -2,11 +2,12 @@ package assignmentoperation
 
 import (
 	"context"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
-	"time"
 )
 
 // AssignmentOperationRepository represents the Assignment Operation repository layer

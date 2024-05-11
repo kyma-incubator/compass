@@ -1,11 +1,12 @@
 package assignmentoperation_test
 
 import (
+	"time"
+
 	assignmentOperation "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
-	"time"
 )
 
 const ()

@@ -2,6 +2,7 @@ package resync
 
 import (
 	"context"
+
 	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"

@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"net/http"
 	"os"
 	"strings"
+
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/time"
 

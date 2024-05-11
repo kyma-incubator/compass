@@ -5,11 +5,12 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
-	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"net"
 	"net/http"
 	"os"
 	"time"
+
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
 

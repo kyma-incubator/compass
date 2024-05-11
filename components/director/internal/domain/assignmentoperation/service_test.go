@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"testing"
+
 	assignmentOperation "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestService_Create(t *testing.T) {

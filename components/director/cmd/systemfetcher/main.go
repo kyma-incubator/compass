@@ -4,12 +4,13 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
-	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 	"net/http"
 	"os"
 	"strings"
 	"sync"
 	"time"
+
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
