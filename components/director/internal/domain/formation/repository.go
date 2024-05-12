@@ -190,7 +190,7 @@ func (r *repository) ListByIDs(ctx context.Context, formationIDs []string) ([]*m
 	return items, nil
 }
 
-// todo~~
+// ListObjectIDsOfTypeForFormations returns all object IDs of type `objectType` for Formations with names in `formationNames`
 func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
 	if len(formationNames) == 0{
 		return nil, nil
@@ -202,12 +202,8 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 	}
 
 	var objectIDs []string
-// todo ~~ optimize for single formation name + look at the error in case of error when selecting
 	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
-	args, ok := inCond.GetQueryArgs()
-	if !ok {
-		// todo ~~ return nil,
-	}
+	args, _ := inCond.GetQueryArgs()
 
 	args = append(args, tenantID, objectType)
 	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormation, inCond.GetQueryPart())

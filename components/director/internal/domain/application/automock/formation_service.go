@@ -76,12 +76,12 @@ func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectI
 	return r0, r1
 }
 
-// ListObjectIDsOfTypeForFormation provides a mock function with given fields: ctx, tenantID, formationNames, objectType
-func (_m *FormationService) ListObjectIDsOfTypeForFormation(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+// ListObjectIDsOfTypeForFormations provides a mock function with given fields: ctx, tenantID, formationNames, objectType
+func (_m *FormationService) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
 	ret := _m.Called(ctx, tenantID, formationNames, objectType)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ListObjectIDsOfTypeForFormation")
+		panic("no return value specified for ListObjectIDsOfTypeForFormations")
 	}
 
 	var r0 []string

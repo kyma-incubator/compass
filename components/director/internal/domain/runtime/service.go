@@ -3,6 +3,7 @@ package runtime
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"strings"
 	"time"
@@ -40,7 +41,7 @@ type runtimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Create(ctx context.Context, tenant string, item *model.Runtime) error
 	Update(ctx context.Context, tenant string, item *model.Runtime) error
@@ -136,7 +137,7 @@ func NewService(repo runtimeRepository,
 }
 
 // List missing godoc
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -146,7 +147,24 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)
+	runtimeIDs, labelFiltersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, rtmTenant, filters)
+	if err != nil {
+		return nil, err
+	}
+
+	if runtimeIDs != nil {
+			return &model.RuntimePage{
+				Data:       []*model.Runtime{},
+				TotalCount: 0,
+				PageInfo: &pagination.Page{
+					StartCursor: cursor,
+					EndCursor:   "",
+					HasNextPage: false,
+				},
+			}, nil
+		}
+
+	return s.repo.List(ctx, rtmTenant, runtimeIDs, labelFiltersWithoutScenarioFilter, pageSize, cursor)
 }
 
 // Get missing godoc
@@ -780,4 +798,29 @@ func convertLabelValue(value interface{}) (string, error) {
 		return "", errors.New("expected single value for label")
 	}
 	return values[0], nil
+}
+
+func (s *service)removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter)([]string, []*labelfilter.LabelFilter, error){
+	var runtimeIDsInScenarios = make([]string, 0)
+	filtersWithoutScenarioFilter := make([]*labelfilter.LabelFilter, 0, len(filters))
+	for i, labelFilter := range filters {
+		if labelFilter.Key == model.ScenariosKey {
+			formationNamesInterface, err := label.ExtractValueFromJSONPath(*labelFilter.Query)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
+			}
+
+			formationNames, err := label.ValueToStringsSlice(formationNamesInterface)
+			if err != nil {
+				return nil, nil, errors.Wrap(err, "while converting formation names to strings")
+			}
+
+			runtimeIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, formationNames, model.FormationAssignmentTypeRuntime)
+			if err != nil {
+				return nil, nil, errors.Wrapf(err, "while getting runtime IDs for formations %v", formationNames)
+			}
+		}
+		filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
+	}
+	return runtimeIDsInScenarios, filtersWithoutScenarioFilter, nil
 }
