@@ -542,46 +542,10 @@ func (r *pgRepository) ListGlobal(ctx context.Context, pageSize int, cursor stri
 		PageInfo:   page}, nil
 }
 
-// ListByScenarios missing godoc
-func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
+func (r *pgRepository) ListByIDs(ctx context.Context, tenant uuid.UUID, applicationIDs []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 
-	// Scenarios query part
-	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
-	for _, scenarioValue := range scenarios {
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
-	}
-
-	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.ApplicationLabelableObject, label.UnionSet, tenant, scenariosFilters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating scenarios filter query")
-	}
-
-	// Application Hide query part
-	var appHideFilters []*labelfilter.LabelFilter
-	for key, values := range hidingSelectors {
-		for _, value := range values {
-			appHideFilters = append(appHideFilters, labelfilter.NewForKeyWithQuery(key, fmt.Sprintf(`"%s"`, value)))
-		}
-	}
-
-	appHideSubquery, appHideArgs, err := label.FilterSubquery(model.ApplicationLabelableObject, label.ExceptSet, tenant, appHideFilters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating scenarios filter query")
-	}
-
-	// Combining both queries
-	combinedQuery := scenariosSubquery + appHideSubquery
-	combinedArgs := append(scenariosArgs, appHideArgs...)
-
-	var conditions repo.Conditions
-	if combinedQuery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", combinedQuery, combinedArgs))
-	}
-
-	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant.String(), pageSize, cursor, "id", &appsCollection, conditions...)
-
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant.String(), pageSize, cursor, "id", &appsCollection, repo.NewInConditionForStringValues("id", applicationIDs))
 	if err != nil {
 		return nil, err
 	}
@@ -597,7 +561,6 @@ func (r *pgRepository) ListByScenarios(ctx context.Context, tenant uuid.UUID, sc
 		TotalCount: totalCount,
 		PageInfo:   page}, nil
 }
-
 // ListByScenariosNoPaging lists all applications that are in any of the given scenarios
 func (r *pgRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
 	tenantUUID, err := uuid.Parse(tenant)

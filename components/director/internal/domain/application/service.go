@@ -77,7 +77,7 @@ type ApplicationRepository interface {
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error)
-	ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error)
+	ListByIDs(ctx context.Context, tenant uuid.UUID, applicationIDs []string, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
 	ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error)
 	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
@@ -154,16 +154,8 @@ type UIDService interface {
 	Generate() string
 }
 
-// ApplicationHideCfgProvider missing godoc
-//
-//go:generate mockery --name=ApplicationHideCfgProvider --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ApplicationHideCfgProvider interface {
-	GetApplicationHideSelectors() (map[string][]string, error)
-}
-
 type service struct {
 	appNameNormalizer  normalizer.Normalizator
-	appHideCfgProvider ApplicationHideCfgProvider
 
 	appRepo       ApplicationRepository
 	webhookRepo   WebhookRepository
@@ -183,10 +175,9 @@ type service struct {
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider ApplicationHideCfgProvider, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelService LabelService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string, ordWebhookMapping []ORDWebhookMapping) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, app ApplicationRepository, webhook WebhookRepository, runtimeRepo RuntimeRepository, labelRepo LabelRepository, intSystemRepo IntegrationSystemRepository, labelService LabelService, bndlService BundleService, uidService UIDService, formationService FormationService, selfRegisterDistinguishLabelKey string, ordWebhookMapping []ORDWebhookMapping) *service {
 	return &service{
 		appNameNormalizer:               appNameNormalizer,
-		appHideCfgProvider:              appHideCfgProvider,
 		appRepo:                         app,
 		webhookRepo:                     webhook,
 		runtimeRepo:                     runtimeRepo,
@@ -298,23 +289,12 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, apperrors.NewInvalidDataError("runtime does not exist")
 	}
 
-	scenariosLabel, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
+	formationsForRuntime, err := s.formationService.ListFormationsForObject(ctx, runtimeID.String())
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return &model.ApplicationPage{
-				Data:       []*model.Application{},
-				PageInfo:   &pagination.Page{},
-				TotalCount: 0,
-			}, nil
-		}
-		return nil, errors.Wrap(err, "while getting scenarios for runtime")
+		return nil, errors.Wrapf(err, "while listing formation for runtime with ID: %q", runtimeID.String())
 	}
 
-	scenarios, err := label.ValueToStringsSlice(scenariosLabel.Value)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting scenarios labels")
-	}
-	if len(scenarios) == 0 {
+	if len(formationsForRuntime) == 0 {
 		return &model.ApplicationPage{
 			Data:       []*model.Application{},
 			TotalCount: 0,
@@ -326,12 +306,17 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		}, nil
 	}
 
-	hidingSelectors, err := s.appHideCfgProvider.GetApplicationHideSelectors()
-	if err != nil {
-		return nil, errors.Wrap(err, "while getting application hide selectors from config")
+	formationNames := make([]string, 0, len(formationsForRuntime))
+	for _, formation := range formationsForRuntime {
+		formationNames = append(formationNames, formation.Name)
 	}
 
-	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor, hidingSelectors)
+	applicationIDs, err := s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, model.FormationAssignmentTypeApplication)
+	if err != nil {
+		return nil, err
+	}
+
+	return s.appRepo.ListByIDs(ctx, tenantUUID, applicationIDs, pageSize, cursor)
 }
 
 // Get missing godoc
