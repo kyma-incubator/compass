@@ -49,18 +49,18 @@ type FormationAssignmentRepository interface {
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 }
 
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 }
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 }
 
 //go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -426,18 +426,18 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 // For the second assignment the source and target are swapped.
 //
 // In case of objectType==RUNTIME_CONTEXT formationAssignments for the object and it's parent runtime are not generated.
-func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error) {
-	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
+func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, applicationsInFormation, runtimesInFormation, runtimeContextsInFormation []string, formation *model.Formation) ([]*model.FormationAssignmentInput, error) {
+	applications, err := s.applicationRepository.ListAllByIDs(ctx, tnt, applicationsInFormation)
 	if err != nil {
 		return nil, err
 	}
 
-	runtimes, err := s.runtimeRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
+	runtimes, err := s.runtimeRepo.ListByIDs(ctx, tnt, runtimesInFormation)
 	if err != nil {
 		return nil, err
 	}
 
-	runtimeContexts, err := s.runtimeContextRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
+	runtimeContexts, err := s.runtimeContextRepo.ListByIDs(ctx, tnt, runtimeContextsInFormation)
 	if err != nil {
 		return nil, err
 	}

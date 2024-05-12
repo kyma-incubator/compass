@@ -5,8 +5,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/log"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/webhook"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,7 +14,7 @@ import (
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 }
 
 //go:generate mockery --exported --name=applicationTemplateRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -28,7 +26,6 @@ type applicationTemplateRepository interface {
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 }
 
@@ -36,7 +33,7 @@ type runtimeRepository interface {
 type runtimeContextRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error)
 }
 
 //go:generate mockery --exported --name=labelInputBuilder --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -67,8 +64,8 @@ type DataInputBuilder interface {
 	PrepareRuntimeWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, error)
 	PrepareRuntimeContextWithLabels(ctx context.Context, tenant, runtimeCtxID string) (*webhook.RuntimeContextWithLabels, error)
 	PrepareRuntimeAndRuntimeContextWithLabels(ctx context.Context, tenant, runtimeID string) (*webhook.RuntimeWithLabels, *webhook.RuntimeContextWithLabels, error)
-	PrepareRuntimesAndRuntimeContextsMappingsInFormation(ctx context.Context, tenant string, scenario string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error)
-	PrepareApplicationMappingsInFormation(ctx context.Context, tenant string, scenario string) (map[string]*webhook.ApplicationWithLabels, map[string]*webhook.ApplicationTemplateWithLabels, error)
+	PrepareRuntimesAndRuntimeContextsMappingsInFormation(ctx context.Context, tenant string, runtimesInFormationIDs, runtimeContextsInFormationIDs []string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error)
+	PrepareApplicationMappingsInFormation(ctx context.Context, tenant string, applicationsInFormationIDs []string) (map[string]*webhook.ApplicationWithLabels, map[string]*webhook.ApplicationTemplateWithLabels, error)
 }
 
 // WebhookDataInputBuilder take cares to get and build different webhook input data such as application, runtime, runtime contexts
@@ -241,15 +238,15 @@ func (b *WebhookDataInputBuilder) PrepareRuntimeAndRuntimeContextWithLabels(ctx 
 // PrepareRuntimesAndRuntimeContextsMappingsInFormation constructs:
 // map from runtime ID to RuntimeWithLabels with entries for each runtime part of the formation and for each runtime whose child runtime context is part of the formation
 // map from parent runtime ID to RuntimeContextWithLabels with entries for all runtime contexts part of the formation.
-func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation(ctx context.Context, tenant string, scenario string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error) {
-	runtimesInFormation, err := b.runtimeRepo.ListByScenarios(ctx, tenant, []string{scenario})
+func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFormation(ctx context.Context, tenant string, runtimesInFormationIDs, runtimeContextsInFormationIDs []string) (map[string]*webhook.RuntimeWithLabels, map[string]*webhook.RuntimeContextWithLabels, error) {
+	runtimesInFormation, err := b.runtimeRepo.ListByIDs(ctx, tenant, runtimesInFormationIDs)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while listing runtimes in scenario %s", scenario)
+		return nil, nil, errors.Wrapf(err, "while listing runtimes with IDs %v", runtimesInFormationIDs)
 	}
 
-	runtimeContextsInFormation, err := b.runtimeContextRepo.ListByScenarios(ctx, tenant, []string{scenario})
+	runtimeContextsInFormation, err := b.runtimeContextRepo.ListByIDs(ctx, tenant, runtimeContextsInFormationIDs)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while listing runtime contexts in scenario %s", scenario)
+		return nil, nil, errors.Wrapf(err, "while listing runtime contexts withIDs %v", runtimeContextsInFormationIDs)
 	}
 
 	runtimeContextsIDs := make([]string, 0, len(runtimeContextsInFormation))
@@ -262,7 +259,7 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 	// the parent runtime of the runtime context may not be in the formation - that's why we list them separately
 	parentRuntimesOfRuntimeContextsInFormation, err := b.runtimeRepo.ListByIDs(ctx, tenant, parentRuntimeIDs)
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while listing parent runtimes of runtime contexts in scenario %s", scenario)
+		return nil, nil, errors.Wrapf(err, "while listing parent runtimes of runtime contexts withIDs %v", runtimeContextsInFormationIDs)
 	}
 
 	runtimes := append(runtimesInFormation, parentRuntimesOfRuntimeContextsInFormation...)
@@ -321,15 +318,14 @@ func (b *WebhookDataInputBuilder) PrepareRuntimesAndRuntimeContextsMappingsInFor
 // PrepareApplicationMappingsInFormation constructs:
 // map from application ID to ApplicationWithLabels with entries for each application part of the formation
 // map from applicationTemplate ID to ApplicationTemplateWithLabels with entries for each application template whose child application is part of the formation
-func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx context.Context, tenant string, scenario string) (map[string]*webhook.ApplicationWithLabels, map[string]*webhook.ApplicationTemplateWithLabels, error) {
-	applicationsToBeNotifiedFor, err := b.applicationRepository.ListByScenariosNoPaging(ctx, tenant, []string{scenario})
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "while listing applications in formation %s", scenario)
+func (b *WebhookDataInputBuilder) PrepareApplicationMappingsInFormation(ctx context.Context, tenant string, applicationsInFomrationIDs []string) (map[string]*webhook.ApplicationWithLabels, map[string]*webhook.ApplicationTemplateWithLabels, error) {
+	if len(applicationsInFomrationIDs) == 0 {
+		return make(map[string]*webhook.ApplicationWithLabels, 0), make(map[string]*webhook.ApplicationTemplateWithLabels, 0), nil
 	}
 
-	if len(applicationsToBeNotifiedFor) == 0 {
-		log.C(ctx).Infof("There are no applications in scenario %s.", scenario)
-		return make(map[string]*webhook.ApplicationWithLabels, 0), make(map[string]*webhook.ApplicationTemplateWithLabels, 0), nil
+	applicationsToBeNotifiedFor, err := b.applicationRepository.ListAllByIDs(ctx, tenant, applicationsInFomrationIDs)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "while listing applications with IDs %v", applicationsInFomrationIDs)
 	}
 
 	applicationsToBeNotifiedForIDs := make([]string, 0, len(applicationsToBeNotifiedFor))

@@ -45,7 +45,6 @@ type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
@@ -91,7 +90,7 @@ type FormationTemplateRepository interface {
 //
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
-	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
+	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, applicationsInFormation, runtimesInFormation, runtimeContextsInFormation []string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
 	GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error)
 	PrepareDetailsForNotificationStatusReturned(ctx context.Context, formation *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
@@ -295,7 +294,7 @@ func (s *service) listFormationsForObject(ctx context.Context, objectID string, 
 	return listFormations(ctx, uniqueFormationIDs)
 }
 
-func (s *service) ListObjectIDsOfTypeForFormation(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+func (s *service) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
 	return s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, objectType)
 }
 
@@ -600,11 +599,24 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, err
 		}
 
+		applicationIDs, err := s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationFromDB.Name}, model.FormationAssignmentTypeApplication)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while listing application IDs for formation with name %q", formationFromDB.Name)
+		}
+		runtimeIDs, err := s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationFromDB.Name}, model.FormationAssignmentTypeRuntime)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while listing runtime IDs for formation with name %q", formationFromDB.Name)
+		}
+		runtimeContextIDs, err := s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationFromDB.Name}, model.FormationAssignmentTypeRuntimeContext)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while listing runtime context IDs for formation with name %q", formationFromDB.Name)
+		}
+
 		// The defer statement after the formation assignment persistence depends on the value of the variable err.
 		// If 'err' is used for the name of the returned error, a new variable that shadows the 'err' variable from the outer scope
 		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the 'err' variable in the same scope
 		// which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
-		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, applicationIDs, runtimeIDs, runtimeContextIDs, formationFromDB)
 		if terr != nil {
 			return nil, terr
 		}
@@ -656,7 +668,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return ft.formation, nil
 		}
 
-		requests, terr := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		requests, terr := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, applicationIDs, runtimeIDs, runtimeContextIDs, formationFromDB, model.AssignFormation, objectType)
 		err = terr
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
@@ -1043,7 +1055,23 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	transactionCtx := persistence.SaveToContext(ctx, tx)
 	defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-	requests, nerr := s.notificationsService.GenerateFormationAssignmentNotifications(transactionCtx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+	applicationIDs, nerr := s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationFromDB.Name}, model.FormationAssignmentTypeApplication)
+	err = nerr
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing application IDs for formation with name %q", formationFromDB.Name)
+	}
+	runtimeIDs, nerr := s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationFromDB.Name}, model.FormationAssignmentTypeRuntime)
+	err = nerr
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing runtime IDs for formation with name %q", formationFromDB.Name)
+	}
+	runtimeContextIDs, nerr := s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationFromDB.Name}, model.FormationAssignmentTypeRuntimeContext)
+	err = nerr
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing runtime context IDs for formation with name %q", formationFromDB.Name)
+	}
+
+	requests, nerr := s.notificationsService.GenerateFormationAssignmentNotifications(transactionCtx, tnt, objectID, applicationIDs, runtimeIDs, runtimeContextIDs, formationFromDB, model.UnassignFormation, objectType)
 	err = nerr
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {

@@ -17,6 +17,10 @@ type FormationAssignmentRepository struct {
 func (_m *FormationAssignmentRepository) UpdateLastNotificationSentTimestamps(ctx context.Context, formationAssignmentID string) error {
 	ret := _m.Called(ctx, formationAssignmentID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, formationAssignmentID)

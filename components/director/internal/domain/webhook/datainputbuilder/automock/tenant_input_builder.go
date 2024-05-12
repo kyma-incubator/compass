@@ -21,6 +21,10 @@ type TenantInputBuilder struct {
 func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Context, tenant string, labels map[string]string) (*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, tenant, labels)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantForApplicationTemplate")
+	}
+
 	var r0 *webhook.TenantWithLabels
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) (*webhook.TenantWithLabels, error)); ok {
@@ -46,6 +50,10 @@ func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Contex
 // GetTenantForObject provides a mock function with given fields: ctx, objectID, resourceType
 func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, objectID, resourceType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantForObject")
+	}
 
 	var r0 *webhook.TenantWithLabels
 	var r1 error
@@ -73,6 +81,10 @@ func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID s
 func (_m *TenantInputBuilder) GetTenantsForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, tenant, labels, objectIDs)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantsForApplicationTemplates")
+	}
+
 	var r0 map[string]*webhook.TenantWithLabels
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) (map[string]*webhook.TenantWithLabels, error)); ok {
@@ -98,6 +110,10 @@ func (_m *TenantInputBuilder) GetTenantsForApplicationTemplates(ctx context.Cont
 // GetTenantsForObjects provides a mock function with given fields: ctx, tenant, objectIDs, resourceType
 func (_m *TenantInputBuilder) GetTenantsForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, tenant, objectIDs, resourceType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantsForObjects")
+	}
 
 	var r0 map[string]*webhook.TenantWithLabels
 	var r1 error

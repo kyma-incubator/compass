@@ -19,6 +19,10 @@ type RuntimeContextRepository struct {
 func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
 	var r0 *model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
@@ -45,6 +49,10 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant string, runtimeID string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, runtimeID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByRuntimeID")
+	}
+
 	var r0 *model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.RuntimeContext, error)); ok {
@@ -67,17 +75,21 @@ func (_m *RuntimeContextRepository) GetByRuntimeID(ctx context.Context, tenant s
 	return r0, r1
 }
 
-// ListByScenarios provides a mock function with given fields: ctx, tenant, scenarios
-func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error) {
-	ret := _m.Called(ctx, tenant, scenarios)
+// ListByIDs provides a mock function with given fields: ctx, tenant, ids
+func (_m *RuntimeContextRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error) {
+	ret := _m.Called(ctx, tenant, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByIDs")
+	}
 
 	var r0 []*model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.RuntimeContext, error)); ok {
-		return rf(ctx, tenant, scenarios)
+		return rf(ctx, tenant, ids)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.RuntimeContext); ok {
-		r0 = rf(ctx, tenant, scenarios)
+		r0 = rf(ctx, tenant, ids)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.RuntimeContext)
@@ -85,7 +97,7 @@ func (_m *RuntimeContextRepository) ListByScenarios(ctx context.Context, tenant 
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = rf(ctx, tenant, scenarios)
+		r1 = rf(ctx, tenant, ids)
 	} else {
 		r1 = ret.Error(1)
 	}

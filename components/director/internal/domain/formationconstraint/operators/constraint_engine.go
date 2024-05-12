@@ -61,6 +61,7 @@ type systemAuthService interface {
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationRepository interface {
 	ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 }
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -72,7 +73,7 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }

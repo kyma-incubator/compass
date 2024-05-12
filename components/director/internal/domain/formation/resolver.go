@@ -55,7 +55,7 @@ type formationAssignmentService interface {
 	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
-	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, applicationsInFormation, runtimesInFormation, runtimeContextsInFormation []string, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
 	PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)

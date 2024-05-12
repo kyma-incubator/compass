@@ -19,6 +19,10 @@ type ApplicationTemplateRepository struct {
 func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.ApplicationTemplate
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
@@ -44,6 +48,10 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 // ListByIDs provides a mock function with given fields: ctx, ids
 func (_m *ApplicationTemplateRepository) ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByIDs")
+	}
 
 	var r0 []*model.ApplicationTemplate
 	var r1 error

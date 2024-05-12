@@ -19,6 +19,10 @@ type CertSubjectInputBuilder struct {
 func (_m *CertSubjectInputBuilder) GetTrustDetailsForObject(ctx context.Context, objectID string) (*webhook.TrustDetails, error) {
 	ret := _m.Called(ctx, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTrustDetailsForObject")
+	}
+
 	var r0 *webhook.TrustDetails
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*webhook.TrustDetails, error)); ok {
@@ -44,6 +48,10 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObject(ctx context.Context,
 // GetTrustDetailsForObjects provides a mock function with given fields: ctx, objectIDs
 func (_m *CertSubjectInputBuilder) GetTrustDetailsForObjects(ctx context.Context, objectIDs []string) (map[string]*webhook.TrustDetails, error) {
 	ret := _m.Called(ctx, objectIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetTrustDetailsForObjects")
+	}
 
 	var r0 map[string]*webhook.TrustDetails
 	var r1 error
