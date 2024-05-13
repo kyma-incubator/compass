@@ -19,6 +19,18 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+// OperationErrorSeverity defines operation's error severity
+type OperationErrorSeverity string
+
+const (
+	// OperationErrorSeverityError scheduled operation status
+	OperationErrorSeverityError OperationErrorSeverity = "Error"
+	// OperationErrorSeverityWarning in progress operation status
+	OperationErrorSeverityWarning OperationErrorSeverity = "Warning"
+	// OperationErrorSeverityInfo completed operation status
+	OperationErrorSeverityInfo OperationErrorSeverity = "Info"
+)
+
 // OperationType defines supported operation types
 type OperationType string
 
@@ -31,14 +43,15 @@ const (
 
 // Operation represents an Operation
 type Operation struct {
-	ID        string
-	OpType    OperationType
-	Status    OperationStatus
-	Data      json.RawMessage
-	Error     json.RawMessage
-	Priority  int
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
+	ID            string
+	OpType        OperationType
+	Status        OperationStatus
+	Data          json.RawMessage
+	Error         json.RawMessage
+	ErrorSeverity OperationErrorSeverity
+	Priority      int
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
 }
 
 // OperationInput represents an OperationInput

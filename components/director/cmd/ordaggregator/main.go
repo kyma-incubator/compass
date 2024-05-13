@@ -503,15 +503,40 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
 				return op.ID, errMarkAsFailed
 			}
+
+			if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityError); errSetErrorSeverity != nil {
+				log.C(ctx).Errorf("Error while setting operation error severity with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityError, errSetErrorSeverity)
+				return op.ID, errSetErrorSeverity
+			}
 			return op.ID, processingError
 		}
 
-		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0 && validationErrorsWithErrorSeverityExist(processingError.ValidationErrors)) {
-			if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
-				log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
-				return op.ID, errMarkAsFailed
+		if processingError.RuntimeError != nil || (len(processingError.ValidationErrors) > 0) {
+			if validationErrorsWithSeverityExist(processingError.ValidationErrors, ord.ErrorSeverity) {
+				if errMarkAsFailed := opManager.MarkOperationFailed(ctx, op.ID, processingError); errMarkAsFailed != nil {
+					log.C(ctx).Errorf("Error while marking operation with id %q as failed. Err: %v", op.ID, errMarkAsFailed)
+					return op.ID, errMarkAsFailed
+				}
+
+				if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityError); errSetErrorSeverity != nil {
+					log.C(ctx).Errorf("Error while setting operation error severity with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityError, errSetErrorSeverity)
+					return op.ID, errSetErrorSeverity
+				}
+
+				return op.ID, processingError
 			}
-			return op.ID, processingError
+
+			if validationErrorsWithSeverityExist(processingError.ValidationErrors, ord.WarningSeverity) {
+				if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityWarning); errSetErrorSeverity != nil {
+					log.C(ctx).Errorf("Error while setting operation error severity with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityWarning, errSetErrorSeverity)
+					return op.ID, errSetErrorSeverity
+				}
+			} else if validationErrorsWithSeverityExist(processingError.ValidationErrors, ord.InfoSeverity) {
+				if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityInfo); errSetErrorSeverity != nil {
+					log.C(ctx).Errorf("Error while setting operation error severity with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityInfo, errSetErrorSeverity)
+					return op.ID, errSetErrorSeverity
+				}
+			}
 		}
 
 		if errMarkAsCompleted := opManager.MarkOperationCompleted(ctx, op.ID, processingError); errMarkAsCompleted != nil {
@@ -528,9 +553,9 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	return op.ID, nil
 }
 
-func validationErrorsWithErrorSeverityExist(errors []*ord.ValidationError) bool {
+func validationErrorsWithSeverityExist(errors []*ord.ValidationError, severity string) bool {
 	for _, e := range errors {
-		if e.Severity == ord.ErrorSeverity {
+		if e.Severity == severity {
 			return true
 		}
 	}
