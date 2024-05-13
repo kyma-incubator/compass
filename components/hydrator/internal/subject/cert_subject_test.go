@@ -40,8 +40,6 @@ var (
 	validConsumerType       = string(consumer.IntegrationSystem)
 	validInternalConsumerID = "3bfbb60f-d67d-4657-8f9e-2d73a6b24a10"
 	validTntAccessLevels    = []string{string(tenantEntity.Account)}
-	invalidConsumerType     = "invalidConsumerType"
-	invalidTntAccessLevels  = []string{"invalidAccessLevel"}
 
 	validCertSubjectMappings                     = fixCertSubjectMappings(validSubject, validConsumerType, validInternalConsumerID, validTntAccessLevels)
 	validCertSubjectMappingsMultipleOU           = fixCertSubjectMappings(subjectMappingOUSeparatedWithPlus, validConsumerType, validInternalConsumerID, validTntAccessLevels)
@@ -52,10 +50,6 @@ var (
 )
 
 func TestNewProcessor(t *testing.T) {
-	certSubjectMappingWithMissingSubject := []certsubjmapping.SubjectConsumerTypeMapping{{}}
-	certSubjectMappingWithInvalidConsumerType := fixCertSubjectMappings(validSubject, invalidConsumerType, validInternalConsumerID, []string{})
-	certSubjectMappingWithInvalidTenantAccessLevels := fixCertSubjectMappings(validSubject, validConsumerType, validInternalConsumerID, invalidTntAccessLevels)
-
 	testCases := []struct {
 		name                    string
 		certSubjectMappingCache func() *automock.Cache
@@ -69,47 +63,17 @@ func TestNewProcessor(t *testing.T) {
 				return cache
 			},
 		},
-		{
-			name: "Error when the subject is missing in the certificate subject mapping cache",
-			certSubjectMappingCache: func() *automock.Cache {
-				cache := &automock.Cache{}
-				cache.On("Get").Return(certSubjectMappingWithMissingSubject).Once()
-				return cache
-			},
-			expectedErrorMsg: "subject is not provided",
-		},
-		{
-			name: "Error when the consumer type in the certificate subject mapping cache is unsupported",
-			certSubjectMappingCache: func() *automock.Cache {
-				cache := &automock.Cache{}
-				cache.On("Get").Return(certSubjectMappingWithInvalidConsumerType).Once()
-				return cache
-			},
-			expectedErrorMsg: fmt.Sprintf("consumer type %s is not valid", invalidConsumerType),
-		},
-		{
-			name: "Error when the tenant access levels in the certificate subject mapping cache are unsupported",
-			certSubjectMappingCache: func() *automock.Cache {
-				cache := &automock.Cache{}
-				cache.On("Get").Return(certSubjectMappingWithInvalidTenantAccessLevels).Once()
-				return cache
-			},
-			expectedErrorMsg: fmt.Sprintf("tenant access level %s is not valid", invalidTntAccessLevels[0]),
-		},
 	}
 
 	for _, ts := range testCases {
 		t.Run(ts.name, func(t *testing.T) {
 			cache := ts.certSubjectMappingCache()
 			defer mock.AssertExpectationsForObjects(t, cache)
-			p, err := subject.NewProcessor(ctx, cache, "testOUPattern", "testOURegionPattern")
+			p := subject.NewProcessor(ctx, cache, "testOUPattern", "testOURegionPattern")
 
 			if len(ts.expectedErrorMsg) > 0 {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), ts.expectedErrorMsg)
 				require.Nil(t, p)
 			} else {
-				require.NoError(t, err)
 				require.NotEmpty(t, p)
 			}
 		})
@@ -124,8 +88,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(validCertSubjectMappings).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubject)
 		require.Equal(t, validInternalConsumerID, res)
@@ -136,8 +99,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(certSubjectMappingsWithoutInternalConsumerID).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
 		require.Equal(t, expectedID, res)
@@ -148,8 +110,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(emptyMappings).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
 		require.Equal(t, expectedID, res)
@@ -160,8 +121,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(certSubjectMappingWithNotMatchingSubject).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
 		require.Equal(t, expectedID, res)
@@ -172,8 +132,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(certSubjectMappingWithNotMatchingSubject).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "Region")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "Region")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithRegion)
 		require.Equal(t, expectedID, res)
@@ -241,8 +200,7 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			cache := testCase.CertCacheFn()
 
-			p, err := subject.NewProcessor(ctx, cache, "", "")
-			require.NoError(t, err)
+			p := subject.NewProcessor(ctx, cache, "", "")
 
 			extra := p.AuthSessionExtraFromSubjectFunc()(ctx, testCase.Subject)
 			if testCase.ExpectedExtra != nil {
