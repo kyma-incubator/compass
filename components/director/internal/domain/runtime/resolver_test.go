@@ -824,7 +824,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			FormationsSvcFn:  UnusedFormationService,
 			AsaEngineFn: func() *automock.AsaEngine {
 				asaEngine := &automock.AsaEngine{}
-				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
 				return asaEngine
 			},
 			InputID:         "foo",
@@ -889,7 +889,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			AsaEngineFn: func() *automock.AsaEngine {
 				asaEngine := &automock.AsaEngine{}
-				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
 				return asaEngine
 			},
 			InputID:         "foo",
@@ -957,7 +957,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			AsaEngineFn: func() *automock.AsaEngine {
 				asaEngine := &automock.AsaEngine{}
-				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
 				return asaEngine
 			},
 			InputID:         "foo",
@@ -1077,7 +1077,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			AsaEngineFn: func() *automock.AsaEngine {
 				asaEngine := &automock.AsaEngine{}
-				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
 				return asaEngine
 			},
 			InputID:         "foo",
@@ -1162,7 +1162,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			AsaEngineFn: func() *automock.AsaEngine {
 				asaEngine := &automock.AsaEngine{}
-				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
 				return asaEngine
 			},
 			InputID:         "foo",
@@ -1316,7 +1316,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			AsaEngineFn: func() *automock.AsaEngine {
 				asaEngine := &automock.AsaEngine{}
-				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
 				return asaEngine
 			},
 			InputID:         "foo",
