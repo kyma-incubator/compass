@@ -14,7 +14,6 @@ import (
 	"github.com/google/uuid"
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
-	labelPkg "github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
@@ -73,7 +72,7 @@ type formationService interface {
 	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
-	RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	UnassignFormationsComingFromASA(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 }
 
 // RuntimeConverter missing godoc
@@ -171,6 +170,11 @@ type tenantSvc interface {
 	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
+//go:generate mockery --exported --name=asaEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
+type asaEngine interface {
+	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
+}
+
 // Resolver missing godoc
 type Resolver struct {
 	transact                  persistence.Transactioner
@@ -192,13 +196,14 @@ type Resolver struct {
 	fetcher                   TenantFetcher
 	formationSvc              formationService
 	tenantSvc                 tenantSvc
+	asaEngine                 asaEngine
 }
 
 // NewResolver missing godoc
 func NewResolver(transact persistence.Transactioner, runtimeService RuntimeService, scenarioAssignmentService ScenarioAssignmentService,
 	sysAuthSvc SystemAuthService, oAuthSvc OAuth20Service, conv RuntimeConverter, sysAuthConv SystemAuthConverter,
 	eventingSvc EventingService, bundleInstanceAuthSvc BundleInstanceAuthService, selfRegManager SelfRegisterManager,
-	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher, formationSvc formationService, tenantSvc tenantSvc) *Resolver {
+	uidService uidService, subscriptionSvc SubscriptionService, runtimeContextService RuntimeContextService, runtimeContextConverter RuntimeContextConverter, webhookService WebhookService, webhookConverter WebhookConverter, fetcher TenantFetcher, formationSvc formationService, tenantSvc tenantSvc, asaEngine asaEngine) *Resolver {
 	return &Resolver{
 		transact:                  transact,
 		runtimeService:            runtimeService,
@@ -219,6 +224,7 @@ func NewResolver(transact persistence.Transactioner, runtimeService RuntimeServi
 		fetcher:                   fetcher,
 		formationSvc:              formationSvc,
 		tenantSvc:                 tenantSvc,
+		asaEngine:                 asaEngine,
 	}
 }
 
@@ -506,7 +512,7 @@ func (r *Resolver) DeleteRuntime(ctx context.Context, id string) (*graphql.Runti
 		return nil, err
 	}
 
-	if err = r.deleteAssociatedScenarioAssignments(ctx, runtime.ID); err != nil {
+	if err = r.unassignAssociatedFormationsComingFromASA(ctx, runtime.ID); err != nil {
 		return nil, err
 	}
 
@@ -860,9 +866,9 @@ func (r *Resolver) EventingConfiguration(ctx context.Context, obj *graphql.Runti
 	return eventing.RuntimeEventingConfigurationToGraphQL(eventingCfg), nil
 }
 
-// deleteAssociatedScenarioAssignments ensures that scenario assignments which are responsible for creation of certain runtime labels are deleted,
-// if runtime doesn't have the scenarios label or is part of a scenario for which no scenario assignment exists => noop
-func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runtimeID string) error {
+// unassignAssociatedFormationsComingFromASA unassigns formations coming from ASA for all parent tenants for the given runtimeID.
+// Associated assignments are in the parent tenant because the runtime is assigned there but the runtime itself is in the subaccount tenant.
+func (r *Resolver) unassignAssociatedFormationsComingFromASA(ctx context.Context, runtimeID string) error {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return err
@@ -876,19 +882,9 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 	for _, parentTenantID := range tntMapping.Parents {
 		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
 
-		scenariosLbl, err := r.runtimeService.GetLabel(ctxWithParentTenant, runtimeID, model.ScenariosKey)
-		notFound := apperrors.IsNotFoundError(err)
-		if err != nil && !notFound {
-			return err
-		}
-
-		if notFound {
-			return nil
-		}
-
-		scenarios, err := labelPkg.ValueToStringsSlice(scenariosLbl.Value)
+		scenarios, err := r.asaEngine.GetScenariosFromMatchingASAs(ctx, runtimeID, graphql.FormationObjectTypeRuntime)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "while getting scenarios from ASA")
 		}
 
 		if len(scenarios) == 0 {
@@ -900,7 +896,7 @@ func (r *Resolver) deleteAssociatedScenarioAssignments(ctx context.Context, runt
 			return err
 		}
 
-		if err := r.formationSvc.RemoveAssignedScenarios(ctxWithParentTenant, assignments); err != nil {
+		if err := r.formationSvc.UnassignFormationsComingFromASA(ctxWithParentTenant, assignments); err != nil {
 			return errors.Wrap(err, "while removing assigned scenarios")
 		}
 	}

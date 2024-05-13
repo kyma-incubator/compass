@@ -122,9 +122,9 @@ func (r *repository) ListForScenarioNames(ctx context.Context, tenantID string, 
 		scenarioConditions = append(scenarioConditions, repo.NewEqualCondition(scenarioColumn, name))
 	}
 
-	conditions := repo.Or(repo.ConditionTreesFromConditions(scenarioConditions)...)
+	condition := repo.NewInConditionForStringValues(scenarioColumn, scenarioNames)
 
-	if err := r.conditionLister.ListConditionTree(ctx, resource.AutomaticScenarioAssigment, tenantID, &collection, conditions); err != nil {
+	if err := r.lister.List(ctx, resource.AutomaticScenarioAssigment, tenantID, &collection, condition); err != nil {
 		return nil, errors.Wrapf(err, "while getting automatic scenario assignments for scenario names: %v", scenarioNames)
 	}
 

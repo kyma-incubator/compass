@@ -62,20 +62,6 @@ func (_m *FormationService) MergeScenariosFromInputLabelsAndAssignments(ctx cont
 	return r0, r1
 }
 
-// RemoveAssignedScenarios provides a mock function with given fields: ctx, in
-func (_m *FormationService) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(ctx, in)
-
-	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*model.AutomaticScenarioAssignment) error); ok {
-		r0 = rf(ctx, in)
-	} else {
-		r0 = ret.Error(0)
-	}
-
-	return r0
-}
-
 // UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation, ignoreASA
 func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation, ignoreASA)
@@ -97,6 +83,20 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 	}
 
 	return r0, r1
+}
+
+// UnassignFormationsComingFromASA provides a mock function with given fields: ctx, in
+func (_m *FormationService) UnassignFormationsComingFromASA(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	ret := _m.Called(ctx, in)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.AutomaticScenarioAssignment) error); ok {
+		r0 = rf(ctx, in)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
 }
 
 type mockConstructorTestingTNewFormationService interface {

@@ -131,7 +131,7 @@ func TestRepository_ListForScenarioNames(t *testing.T) {
 		MethodName: "ListForScenarioNames",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT scenario, tenant_id, target_tenant_id FROM public.automatic_scenario_assignments WHERE (tenant_id = $1 AND (scenario = $2 OR scenario = $3))`),
+				Query:    regexp.QuoteMeta(`SELECT scenario, tenant_id, target_tenant_id FROM public.automatic_scenario_assignments WHERE tenant_id = $1 AND scenario IN ($2, $3)`),
 				Args:     []driver.Value{tenantID, scenarioNames[0], scenarioNames[1]},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

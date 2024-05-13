@@ -595,7 +595,7 @@ func TestResolver_CreateRuntime(t *testing.T) {
 
 			defer mock.AssertExpectationsForObjects(t, svc, converter, transact, persistTx, selfRegManager, fetcher, tenantSvc)
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, fetcher, nil, tenantSvc)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, fetcher, nil, tenantSvc, nil)
 
 			// WHEN
 			result, err := resolver.RegisterRuntime(ctx, testCase.Input)
@@ -725,7 +725,7 @@ func TestResolver_UpdateRuntime(t *testing.T) {
 			selfRegMng := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegMng, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.UpdateRuntime(context.TODO(), testCase.RuntimeID, testCase.Input)
@@ -747,7 +747,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 	labelNotFoundErr := apperrors.NewNotFoundError(resource.Label, "")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 	testAuths := fixOAuths()
-	emptyScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{}}
 	singleScenarioLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0"}}
 	multiScenariosLabel := &model.Label{Key: model.ScenariosKey, Value: []interface{}{"scenario-0", "scenario-1", "scenario-2", "scenario-3"}}
 
@@ -772,6 +771,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 		SelfRegManagerFn        func() *automock.SelfRegisterManager
 		FormationsSvcFn         func() *automock.FormationService
 		TenantSvcFn             func() *automock.TenantSvc
+		AsaEngineFn             func() *automock.AsaEngine
 		InputID                 string
 		ExpectedRuntime         *graphql.Runtime
 		ExpectedErr             error
@@ -784,7 +784,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -823,9 +822,14 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn:  UnusedFormationService,
-			InputID:          "foo",
-			ExpectedRuntime:  gqlRuntime,
-			ExpectedErr:      nil,
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				return asaEngine
+			},
+			InputID:         "foo",
+			ExpectedRuntime: gqlRuntime,
+			ExpectedErr:     nil,
 		},
 		{
 			Name:    "Success for self registered runtime",
@@ -844,7 +848,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
 				return svc
@@ -883,6 +886,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc := &automock.TenantSvc{}
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
+			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				return asaEngine
 			},
 			InputID:         "foo",
 			ExpectedRuntime: gqlRuntime,
@@ -908,7 +916,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, nil).Once()
 				svc.On("GetLabel", contextParam, "foo", RegionKey).Return(&model.Label{Value: testRegion}, nil).Once()
 				return svc
@@ -947,6 +954,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc := &automock.TenantSvc{}
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
+			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				return asaEngine
 			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
@@ -1029,7 +1041,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(testErr).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -1063,6 +1074,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc := &automock.TenantSvc{}
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
+			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				return asaEngine
 			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
@@ -1113,7 +1129,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, modelRuntime.ID).Return(nil)
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -1144,6 +1159,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc := &automock.TenantSvc{}
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
+			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				return asaEngine
 			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
@@ -1263,7 +1283,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, labelNotFoundErr).Once()
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -1295,18 +1314,22 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
 			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil)
+				return asaEngine
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
 		},
 		{
-			Name:            "Returns error when listing scenarios label",
+			Name:            "Returns error when getting scenarios from matching ASAs",
 			Context:         fixContextWithTenant(tenantID, ""),
 			TransactionerFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(nil, testErr)
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -1330,6 +1353,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
 			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, testErr).Once()
+				return asaEngine
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
@@ -1341,7 +1369,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(emptyScenariosLabel, nil)
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
@@ -1376,6 +1403,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
 			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(nil, nil).Once()
+				return asaEngine
+			},
 			InputID:         "foo",
 			ExpectedRuntime: gqlRuntime,
 			ExpectedErr:     nil,
@@ -1387,7 +1419,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -1415,6 +1446,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
 			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(singleScenariosLabelValue, nil).Once()
+				return asaEngine
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
@@ -1426,7 +1462,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
@@ -1459,13 +1494,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("RemoveAssignedScenarios", contextParam, []*model.AutomaticScenarioAssignment{}).Return(nil)
+				formationSvc.On("UnassignFormationsComingFromASA", contextParam, []*model.AutomaticScenarioAssignment{}).Return(nil)
 				return formationSvc
 			},
 			TenantSvcFn: func() *automock.TenantSvc {
 				tntSvc := &automock.TenantSvc{}
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
+			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(singleScenariosLabelValue, nil).Once()
+				return asaEngine
 			},
 			InputID:         "foo",
 			ExpectedRuntime: gqlRuntime,
@@ -1478,7 +1518,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(singleScenarioLabel, nil)
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				return svc
 			},
@@ -1489,7 +1528,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			},
 			FormationsSvcFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("RemoveAssignedScenarios", contextParam, singleScenarioAssignments).Return(testErr)
+				svc.On("UnassignFormationsComingFromASA", contextParam, singleScenarioAssignments).Return(testErr)
 				return svc
 			},
 			ConverterFn: UnusedRuntimeConverter,
@@ -1510,6 +1549,11 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
 			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(singleScenariosLabelValue, nil).Once()
+				return asaEngine
+			},
 			InputID:         "foo",
 			ExpectedRuntime: nil,
 			ExpectedErr:     testErr,
@@ -1521,7 +1565,6 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			ServiceFn: func() *automock.RuntimeService {
 				svc := &automock.RuntimeService{}
 				svc.On("Get", contextParam, "foo").Return(modelRuntime, nil).Once()
-				svc.On("GetLabel", contextParam, "foo", model.ScenariosKey).Return(multiScenariosLabel, nil)
 				svc.On("GetLabel", contextParam, "foo", rtmtest.TestDistinguishLabel).Return(nil, labelNotFoundErr).Once()
 				svc.On("Delete", contextParam, "foo").Return(nil).Once()
 				return svc
@@ -1554,13 +1597,18 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			SelfRegManagerFn: rtmtest.SelfRegManagerThatDoesNotCleanup,
 			FormationsSvcFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("RemoveAssignedScenarios", contextParam, multiScenarioAssignments).Return(nil)
+				formationSvc.On("UnassignFormationsComingFromASA", contextParam, multiScenarioAssignments).Return(nil)
 				return formationSvc
 			},
 			TenantSvcFn: func() *automock.TenantSvc {
 				tntSvc := &automock.TenantSvc{}
 				tntSvc.On("GetTenantByID", contextParam, tenantID).Return(&model.BusinessTenantMapping{ID: tenantID, Parents: []string{parentTenantID}}, nil)
 				return tntSvc
+			},
+			AsaEngineFn: func() *automock.AsaEngine {
+				asaEngine := &automock.AsaEngine{}
+				asaEngine.On("GetScenariosFromMatchingASAs", contextParam, modelRuntime.ID, graphql.FormationObjectTypeRuntime).Return(multiScenariosLabelValue, nil).Once()
+				return asaEngine
 			},
 			InputID:         "foo",
 			ExpectedRuntime: gqlRuntime,
@@ -1582,6 +1630,10 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 			if testCase.TenantSvcFn != nil {
 				tenantSvc = testCase.TenantSvcFn()
 			}
+			asaEngine := &automock.AsaEngine{}
+			if testCase.AsaEngineFn != nil {
+				asaEngine = testCase.AsaEngineFn()
+			}
 			uuidSvc := &automock.UidService{}
 
 			ctx := context.TODO()
@@ -1589,7 +1641,7 @@ func TestResolver_DeleteRuntime(t *testing.T) {
 				ctx = testCase.Context
 			}
 
-			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil, nil, nil, nil, nil, nil, formationSvc, tenantSvc)
+			resolver := runtime.NewResolver(transact, svc, scenarioAssignmentSvc, sysAuthSvc, oAuth20Svc, converter, nil, nil, bundleInstanceAuthSvc, selfRegisterManager, uuidSvc, nil, nil, nil, nil, nil, nil, formationSvc, tenantSvc, asaEngine)
 
 			// WHEN
 			result, err := resolver.DeleteRuntime(ctx, testCase.InputID)
@@ -1698,7 +1750,7 @@ func TestResolver_Runtime(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Runtime(context.TODO(), testCase.InputID)
@@ -1800,7 +1852,7 @@ func TestResolver_Runtimes(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Runtimes(context.TODO(), testCase.InputLabelFilters, testCase.InputFirst, testCase.InputAfter)
@@ -1905,7 +1957,7 @@ func TestResolver_RuntimeByTokenIssuer(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.RuntimeByTokenIssuer(context.TODO(), testCase.InputID)
@@ -2011,7 +2063,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.SetRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey, testCase.InputValue)
@@ -2025,7 +2077,7 @@ func TestResolver_SetRuntimeLabel(t *testing.T) {
 	}
 
 	t.Run("Returns error when Label input validation failed", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.SetRuntimeLabel(context.TODO(), "", "", "")
@@ -2136,7 +2188,7 @@ func TestResolver_DeleteRuntimeLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, converter, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.DeleteRuntimeLabel(context.TODO(), testCase.InputRuntimeID, testCase.InputKey)
@@ -2250,7 +2302,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), gqlRuntime)
@@ -2263,7 +2315,7 @@ func TestResolver_Webhooks(t *testing.T) {
 		})
 	}
 	t.Run("Returns error when Runtime object is missing", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.Webhooks(context.TODO(), nil)
 		// THEN
@@ -2402,7 +2454,7 @@ func TestResolver_Labels(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlRuntime, testCase.InputKey)
@@ -2510,7 +2562,7 @@ func TestResolver_GetLabel(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, svc, nil, nil, nil, nil, nil, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.GetLabel(context.TODO(), runtimeID, labelKey)
@@ -2644,7 +2696,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.RuntimeContext(context.TODO(), testCase.Runtime, testCase.InputID)
@@ -2657,7 +2709,7 @@ func TestResolver_RuntimeContext(t *testing.T) {
 		})
 	}
 	t.Run("Returns error when Runtime object is missing", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.RuntimeContext(context.TODO(), nil, "foo")
 		// THEN
@@ -2783,7 +2835,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 			svc := testCase.ServiceFn()
 			converter := testCase.ConverterFn()
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, svc, converter, nil, nil, nil, nil, nil, nil)
 			firstRuntimeParams := dataloader.ParamRuntimeContext{ID: firstRuntimeID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			secondRuntimeParams := dataloader.ParamRuntimeContext{ID: secondRuntimeID, Ctx: context.TODO(), First: &first, After: &gqlAfter}
 			keys := []dataloader.ParamRuntimeContext{firstRuntimeParams, secondRuntimeParams}
@@ -2800,7 +2852,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 	}
 
 	t.Run("Returns error when there are no Runtimes", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.RuntimeContextsDataLoader([]dataloader.ParamRuntimeContext{})
 		// THEN
@@ -2812,7 +2864,7 @@ func TestResolver_RuntimeContexts(t *testing.T) {
 		firstRuntimeParams := dataloader.ParamRuntimeContext{ID: firstRuntimeID, Ctx: context.TODO(), First: nil, After: &gqlAfter}
 		keys := []dataloader.ParamRuntimeContext{firstRuntimeParams}
 
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 		// WHEN
 		_, err := resolver.RuntimeContextsDataLoader(keys)
 		// THEN
@@ -2930,7 +2982,7 @@ func TestResolver_Auths(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, sysAuthSvc, nil, nil, sysAuthConv, nil, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.Auths(ctx, parentRuntime)
@@ -2949,7 +3001,7 @@ func TestResolver_Auths(t *testing.T) {
 	}
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.Auths(context.TODO(), nil)
@@ -3042,7 +3094,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 			selfRegManager := testCase.SelfRegManagerFn()
 			uuidSvc := &automock.UidService{}
 
-			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil)
+			resolver := runtime.NewResolver(transact, nil, nil, nil, nil, nil, nil, eventingSvc, nil, selfRegManager, uuidSvc, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 			// WHEN
 			result, err := resolver.EventingConfiguration(ctx, gqlRuntime)
@@ -3062,7 +3114,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object ID is not a valid UUID", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(ctx, &graphql.Runtime{ID: "abc"})
@@ -3075,7 +3127,7 @@ func TestResolver_EventingConfiguration(t *testing.T) {
 
 	t.Run("Error when parent object is nil", func(t *testing.T) {
 		// GIVEN
-		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+		resolver := runtime.NewResolver(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
 		result, err := resolver.EventingConfiguration(context.TODO(), nil)

@@ -2904,7 +2904,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			AsaEngineFN: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.Mock.On("RemoveAssignedScenario", ctx, fixModel(testFormationName), mock.Anything).Return(nil).Once()
+				engine.Mock.On("UnassignFormationComingFromASA", ctx, fixModel(testFormationName), mock.Anything).Return(nil).Once()
 				return engine
 			},
 			InputASA:    fixModel(testFormationName),
@@ -2931,7 +2931,7 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 			},
 			AsaEngineFN: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.Mock.On("RemoveAssignedScenario", ctx, fixModel(testFormationName), mock.Anything).Return(testErr).Once()
+				engine.Mock.On("UnassignFormationComingFromASA", ctx, fixModel(testFormationName), mock.Anything).Return(testErr).Once()
 				return engine
 			},
 			InputASA:           fixModel(testFormationName),
