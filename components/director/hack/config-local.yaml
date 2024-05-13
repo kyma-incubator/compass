@@ -212,6 +212,7 @@ clientCredentialsRegistrationScopes:
   super_admin:
     - "application:read"
     - "application:write"
+    - "application_global:read"
     - "application_template:read"
     - "application_template:write"
     - "integration_system:read"

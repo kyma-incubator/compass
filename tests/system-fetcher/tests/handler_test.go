@@ -60,11 +60,13 @@ const (
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"baseUrl": "",
+        "%s": "val1",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}`
 	defaultMockSystems = `[{
 		"systemNumber": "1",
@@ -79,7 +81,8 @@ const (
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -87,12 +90,14 @@ const (
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type2",
+        "%s": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`
 
 	singleMockSystem = `[{
@@ -108,13 +113,50 @@ const (
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`
 
-	nameLabelKey           = "displayName"
-	namePlaceholder        = "name"
-	displayNamePlaceholder = "display-name"
-	regionLabelKey         = "region"
+	mockSystemsWithAdditionalProperties = `[{
+		"systemNumber": "1",
+		"displayName": "name1",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type1",
+		"%s": "val1",
+		"baseUrl": "",
+        "systemId": "system-id-1",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
+	},{
+		"systemNumber": "2",
+		"displayName": "name2",
+		"productDescription": "description",
+		"productId": "XXX",
+		"ppmsProductVersionId": "12345",
+		"type": "type2",
+        "%s": "val1",
+		"baseUrl": "",
+		"infrastructureProvider": "",
+		"additionalUrls": {"mainUrl":"http://mainurl.com"},
+		"additionalAttributes": {},
+		"businessTypeId": "tbtID",
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
+	}]`
+
+	nameLabelKey            = "displayName"
+	namePlaceholder         = "name"
+	displayNamePlaceholder  = "display-name"
+	regionLabelKey          = "region"
+	dataCenterLabelKey      = "dataCenter"
+	applicationTypeLabelKey = "applicationType"
+	slisFilterLabelKey      = "slisFilter"
 )
 
 var (
@@ -125,7 +167,7 @@ var (
 
 func TestSystemFetcherSuccess(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -160,10 +202,10 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	description1 := "name1"
-	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -175,16 +217,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
-		},
-		{
-			Application: directorSchema.Application{
-				Name:         "name2",
-				Description:  &description2,
-				BaseURL:      &baseUrl,
-				SystemNumber: str.Ptr("2"),
-			},
-			Labels: applicationLabels("name2", "", "", false, ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ"),
 		},
 	}
 
@@ -204,7 +237,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 
 func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultCustomerTenantID())
 	defer cleanupMockSystems(t)
 
@@ -239,10 +272,9 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultCustomerTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultCustomerTenantID(), 2)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultCustomerTenantID(), 1)
 
 	description1 := "name1"
-	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -254,16 +286,7 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
-		},
-		{
-			Application: directorSchema.Application{
-				Name:         "name2",
-				Description:  &description2,
-				BaseURL:      &baseUrl,
-				SystemNumber: str.Ptr("2"),
-			},
-			Labels: applicationLabels("name2", "", "", false, ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ"),
 		},
 	}
 
@@ -282,8 +305,31 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 }
 
 func TestSystemFetcherOnNewGASuccess(t *testing.T) {
-	gaExternalID := tenant.TestTenants.GetIDByName(t, tenant.TestSystemFetcherOnNewGAName)
 	ctx := context.TODO()
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
+
+	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID))
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+	require.NoError(t, err)
+	require.NotEmpty(t, template.ID)
+
+	gaExternalID := tenant.TestTenants.GetIDByName(t, tenant.TestSystemFetcherOnNewGAName)
+
 	mockSystems := []byte(fmt.Sprintf(singleMockSystem, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, gaExternalID)
 	defer cleanupMockSystems(t)
@@ -299,7 +345,7 @@ func TestSystemFetcherOnNewGASuccess(t *testing.T) {
 		LicenseType:    str.Ptr("LICENSETYPE"),
 	}
 
-	err := fixtures.WriteTenant(t, ctx, directorInternalGQLClient, tenantInput)
+	err = fixtures.WriteTenant(t, ctx, directorInternalGQLClient, tenantInput)
 	assert.NoError(t, err)
 	defer cleanupTenant(t, ctx, directorInternalGQLClient, gaExternalID)
 
@@ -344,7 +390,8 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -358,7 +405,8 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -401,7 +449,7 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -412,7 +460,7 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, ""),
+			Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -426,7 +474,7 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 
 func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -453,7 +501,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplateWithoutWebhooksWithSystemRole(appTemplateName2, intSys.ID, []string{"val2"})
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
@@ -463,11 +511,12 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
 
 	description1 := "name1"
-	description2 := "description"
+	description2 := "name2"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
+
 				Name:                  "name1",
 				Description:           &description1,
 				BaseURL:               &baseUrl,
@@ -475,16 +524,18 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10"),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ"),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:         "name2",
-				Description:  &description2,
-				BaseURL:      &baseUrl,
-				SystemNumber: str.Ptr("2"),
+				Name:                  "name2",
+				Description:           &description2,
+				BaseURL:               &baseUrl,
+				ApplicationTemplateID: &template2.ID,
+				SystemNumber:          str.Ptr("2"),
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", "", "", false, ""),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -521,7 +572,8 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -529,13 +581,15 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 		"productId": "XXX",
 		"ppmsProductVersionId": "12345",
 		"type": "type2",
+        "%s": "val2",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
-	}]`, cfg.SystemInformationSourceKey))
+		"businessTypeDescription": "tbt description name",
+        "regionId": "XYZ"
+	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -562,7 +616,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	require.NotEmpty(t, template.ID)
 
 	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplateWithoutWebhooks(appTemplateName2, intSys.ID)
+	appTemplateInput2 := fixApplicationTemplateWithoutWebhooksWithSystemRole(appTemplateName2, intSys.ID, []string{"val2"})
 	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
@@ -572,7 +626,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
 
 	description1 := "name1"
-	description2 := "description"
+	description2 := "name2"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
 			Application: directorSchema.Application{
@@ -582,15 +636,17 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ"),
 		},
 		{
 			Application: directorSchema.Application{
-				Name:         "name2",
-				Description:  &description2,
-				SystemNumber: str.Ptr("2"),
+				Name:                  "name2",
+				Description:           &description2,
+				ApplicationTemplateID: &template2.ID,
+				SystemNumber:          str.Ptr("2"),
+				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", "", "", false, ""),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -627,19 +683,13 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
 	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
-	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
-	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
+	appTemplateName1 := fixtures.CreateAppTemplateName("temp2")
+	appTemplateInput1 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID)
+	appTemplateInput1.Webhooks = append(appTemplateInput1.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
+	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput1)
 	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
 	require.NoError(t, err)
 	require.NotEmpty(t, template2.ID)
-
-	appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
-	template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplate(appTemplateName1, intSys.ID))
-	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
-	require.NoError(t, err)
-	require.NotEmpty(t, template.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
 	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), cfg.SystemFetcherPageSize)
@@ -660,7 +710,7 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	if expectedCount > 1 {
 		expectedCount++
 	}
-	expectedApps := getFixExpectedMockSystems(expectedCount, description)
+	expectedApps := getFixExpectedMockSystems(expectedCount, template2.ID, template2.Name, intSys.ID, description)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
@@ -683,41 +733,36 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 	ctx := context.TODO()
 	tenants := []string{tenant.TestTenants.GetDefaultTenantID(), tenant.TestTenants.GetDefaultCustomerTenantID()}
-	tenantNames := []string{"def", "cus"}
-	for index, tenantID := range tenants {
-		setMultipleMockSystemsResponses(t, tenantID)
-		defer cleanupMockSystems(t)
+	tenantName1 := "default"
+	tenant1 := tenant.TestTenants.GetDefaultTenantID()
 
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, fmt.Sprintf("int-sys-%s", tenantNames[index]))
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+	setMultipleMockSystemsResponses(t, tenant1)
+	defer cleanupMockSystems(t)
 
-		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
-		require.NotEmpty(t, intSysAuth)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, fmt.Sprintf("int-sys-%s", tenantName1))
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
 
-		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
-		require.True(t, ok)
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
-		t.Log("Issue a Hydra token with Client Credentials")
-		accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
-		oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
 
-		appTemplateName2 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp2%s", tenantNames[index]))
-		appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
-		appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-		template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantID, appTemplateInput2)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantID, template2)
-		require.NoError(t, err)
-		require.NotEmpty(t, template2.ID)
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
 
-		appTemplateName1 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp1%s", tenantNames[index]))
-		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenantID, fixApplicationTemplate(appTemplateName1, intSys.ID))
-		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenantID, template)
-		require.NoError(t, err)
-		require.NotEmpty(t, template.ID)
-	}
+	appTemplateName1 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp1%s", tenantName1))
+	appTemplateInput1 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID)
+	appTemplateInput1.Webhooks = append(appTemplateInput1.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
+	template1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant1, appTemplateInput1)
+	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant1, template1)
+	require.NoError(t, err)
+	require.NotEmpty(t, template1.ID)
+
 	for _, tenantID := range tenants {
 		triggerSync(t, tenantID)
 	}
@@ -741,7 +786,7 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 		if expectedCount > 1 {
 			expectedCount++
 		}
-		expectedApps := getFixExpectedMockSystems(expectedCount, description)
+		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID, description)
 		actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 		for _, app := range resp.Data {
 			actualApps = append(actualApps, directorSchema.ApplicationExt{
@@ -776,7 +821,8 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -789,7 +835,8 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -827,11 +874,10 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 	triggerSync(t, tenant.TestTenants.GetSystemFetcherTenantID())
 
 	description1 := "name1"
-	description2 := "description"
 	baseUrl := "http://mainurl.com"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -843,16 +889,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
-		},
-		{
-			Application: directorSchema.Application{
-				Name:         "name2",
-				Description:  &description2,
-				BaseURL:      &baseUrl,
-				SystemNumber: str.Ptr("2"),
-			},
-			Labels: applicationLabels("name2", "", "", false, ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -877,12 +914,14 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"ppmsProductVersionId": "12345",
 		"type": "type1",
 		"%s": "val1",
+        "systemId": "id",
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -896,7 +935,8 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, region1, cfg.SystemInformationSourceKey, region2))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -945,7 +985,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, region1),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, region1, "XYZ"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -956,7 +996,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2, "XYZ"),
 		},
 	}
 
@@ -986,7 +1026,8 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1000,7 +1041,8 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
 		"additionalAttributes": {"systemSCPLandscapeID":"%s"},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, region1, cfg.SystemInformationSourceKey, region1))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
@@ -1040,6 +1082,181 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
 
+func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
+	ctx := context.TODO()
+
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
+
+	t.Run("Save 1 system from system payload that has systemId matching with the app template slis filter value", func(t *testing.T) {
+		mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+		setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+		defer cleanupMockSystems(t)
+		appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+		labels := map[string]interface{}{
+			cfg.TemplateLabelFilter: []interface{}{"val1"},
+			slisFilterLabelKey: []map[string]interface{}{
+				{
+					"productId": "val1",
+					"filter": []map[string]interface{}{
+						{
+							"key":       "$.systemId",
+							"value":     []string{"system-id-1"},
+							"operation": "include",
+						},
+					},
+				},
+			},
+		}
+
+		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, labels))
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+		require.NoError(t, err)
+		require.NotEmpty(t, template.ID)
+
+		triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+		waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
+
+		description1 := "name1"
+		baseUrl := "http://mainurl.com"
+		expectedApps := []directorSchema.ApplicationExt{
+			{
+				Application: directorSchema.Application{
+					Name:                  "name1",
+					Description:           &description1,
+					BaseURL:               &baseUrl,
+					ApplicationTemplateID: &template.ID,
+					SystemNumber:          str.Ptr("1"),
+					IntegrationSystemID:   &intSys.ID,
+				},
+				Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ"),
+			},
+		}
+
+		resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+		for _, app := range resp.Data {
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+
+		req := fixtures.FixGetApplicationBySystemNumberRequest("1")
+		var appResp directorSchema.ApplicationExt
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+		require.NoError(t, err)
+		require.Equal(t, "name1", appResp.Name)
+
+		require.ElementsMatch(t, expectedApps, actualApps)
+	})
+	t.Run("Save 1 system from system payload that satisfies the exclude filter", func(t *testing.T) {
+		mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+		setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+		defer cleanupMockSystems(t)
+		appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+		labels := map[string]interface{}{
+			cfg.TemplateLabelFilter: []interface{}{"val1"},
+			slisFilterLabelKey: []map[string]interface{}{
+				{
+					"productId": "val1",
+					"filter": []map[string]interface{}{
+						{
+							"key":       "$.additionalAttributes.systemSCPLandscapeID",
+							"value":     []string{"cf-eu10"},
+							"operation": "exclude",
+						},
+					},
+				},
+			},
+		}
+
+		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, labels))
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+		require.NoError(t, err)
+		require.NotEmpty(t, template.ID)
+
+		triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+		waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
+
+		description2 := "name2"
+		baseUrl := "http://mainurl.com"
+		expectedApps := []directorSchema.ApplicationExt{
+			{
+				Application: directorSchema.Application{
+					Name:                  "name2",
+					Description:           &description2,
+					BaseURL:               &baseUrl,
+					ApplicationTemplateID: &template.ID,
+					SystemNumber:          str.Ptr("2"),
+					IntegrationSystemID:   &intSys.ID,
+				},
+				Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, "", "XYZ"),
+			},
+		}
+
+		resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+		for _, app := range resp.Data {
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+
+		req := fixtures.FixGetApplicationBySystemNumberRequest("2")
+		var appResp directorSchema.ApplicationExt
+		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp)
+		require.NoError(t, err)
+		require.Equal(t, "name2", appResp.Name)
+
+		require.ElementsMatch(t, expectedApps, actualApps)
+	})
+	t.Run("Save 0 systems from system payload because the slis filter is not satisfied", func(t *testing.T) {
+		mockSystems := []byte(fmt.Sprintf(mockSystemsWithAdditionalProperties, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
+		setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
+		defer cleanupMockSystems(t)
+		appTemplateName1 := fixtures.CreateAppTemplateName("temp1")
+		labels := map[string]interface{}{
+			cfg.TemplateLabelFilter: []interface{}{"val1"},
+			slisFilterLabelKey: []map[string]interface{}{
+				{
+					"productId": "val1",
+					"filter": []map[string]interface{}{
+						{
+							"key":       "$.type",
+							"value":     []string{"type4", "type5"},
+							"operation": "include",
+						},
+					},
+				},
+			},
+		}
+
+		template, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), fixApplicationTemplateWithSystemRoleAndSlisFilter(appTemplateName1, intSys.ID, labels))
+		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template)
+		require.NoError(t, err)
+		require.NotEmpty(t, template.ID)
+
+		triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
+		waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 0)
+
+		expectedApps := []directorSchema.ApplicationExt{}
+
+		resp, actualApps := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
+		for _, app := range resp.Data {
+			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+
+		require.ElementsMatch(t, expectedApps, actualApps)
+	})
+}
+
 // fail
 func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	ctx := context.TODO()
@@ -1057,7 +1274,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1070,7 +1288,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "3",
 		"displayName": "name1",
@@ -1083,7 +1302,8 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1120,10 +1340,9 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 3)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	description1 := "name1"
-	description2 := "description"
 
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -1134,23 +1353,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
-		},
-		{
-			Application: directorSchema.Application{
-				Name:         "name2",
-				Description:  &description2,
-				SystemNumber: str.Ptr("2"),
-			},
-			Labels: applicationLabels("name2", "", "", false, ""),
-		},
-		{
-			Application: directorSchema.Application{
-				Name:         "name1",
-				Description:  &description2,
-				SystemNumber: str.Ptr("3"),
-			},
-			Labels: applicationLabels("name1", "", "", false, ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -1193,7 +1396,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1206,7 +1410,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}, {
 		"systemNumber": "3",
 		"displayName": "name3",
@@ -1219,7 +1424,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1255,7 +1461,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 3)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
@@ -1263,7 +1469,6 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	require.NoError(t, err)
 
 	description1 := "name1"
-	description2 := "description"
 	description3 := "name3"
 	expectedApps := []directorSchema.ApplicationExt{
 		{
@@ -1273,14 +1478,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, ""),
-		},
-		{
-			Application: directorSchema.Application{
-				Name:        "name2",
-				Description: &description2,
-			},
-			Labels: applicationLabels("name2", "", "", false, ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -1289,7 +1487,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				ApplicationTemplateID: &template2.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true, ""),
+			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true, "", "XYZ"),
 		},
 	}
 
@@ -1323,7 +1521,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			"lifecycleStatus": "DELETED"
 		},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	},{
 		"systemNumber": "2",
 		"displayName": "name2",
@@ -1336,7 +1535,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 		"additionalUrls": {},
 		"additionalAttributes": {},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}, {
 		"systemNumber": "3",
 		"displayName": "name3",
@@ -1351,7 +1551,8 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 			"lifecycleStatus": "DELETED"
 		},
 		"businessTypeId": "tbtID",
-		"businessTypeDescription": "tbt description name"
+		"businessTypeDescription": "tbt description name",
+		"regionId": "XYZ"
 	}]`, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
@@ -1372,7 +1573,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	fixtures.UnregisterAsyncApplicationInTenant(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), idToDelete)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	testPkg.UnlockWebhook(t, testPkg.BuildOperationFullPath(cfg.ExternalSvcMockURL+"/"))
 
@@ -1384,15 +1585,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp2)
 	require.NoError(t, err)
 
-	expectedApps = []directorSchema.ApplicationExt{
-		{
-			Application: directorSchema.Application{
-				Name:        "name2",
-				Description: &description2,
-			},
-			Labels: applicationLabels("name2", "", "", false, ""),
-		},
-	}
+	expectedApps = []directorSchema.ApplicationExt{}
 
 	actualApps = make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp2.Data {
@@ -1413,7 +1606,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	ctx := context.TODO()
-	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey))
+	mockSystems := []byte(fmt.Sprintf(defaultMockSystems, cfg.SystemInformationSourceKey, cfg.SystemInformationSourceKey))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -1441,17 +1634,8 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template.ID)
 
-	appTemplateName2 := fixtures.CreateAppTemplateName("temp2")
-	t.Logf("Create Application Template with name %s", appTemplateName2)
-	appTemplateInput2 := fixApplicationTemplate(appTemplateName2, intSys.ID)
-	appTemplateInput2.Webhooks = append(appTemplateInput2.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-	template2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput2)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), template2)
-	require.NoError(t, err)
-	require.NotEmpty(t, template2.ID)
-
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	resp, _ := retrieveAppsForTenant(t, ctx, tenant.TestTenants.GetDefaultTenantID())
 	for _, app := range resp.Data {
@@ -1464,12 +1648,6 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp1)
 	require.NoError(t, err)
 
-	t.Log("Get Application with system number 2")
-	req = fixtures.FixGetApplicationBySystemNumberRequest("2")
-	var appResp2 directorSchema.ApplicationExt
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp2)
-	require.NoError(t, err)
-
 	// Update the Applications with a CONNECTED status condition
 	connectedStatus := directorSchema.ApplicationStatusConditionConnected
 	updateInput := fixtures.FixSampleApplicationUpdateInput("after")
@@ -1479,7 +1657,6 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	require.NoError(t, err)
 
 	requestUpdateApp1 := fixtures.FixUpdateApplicationRequest(appResp1.ID, updateInputGQL)
-	requestUpdateApp2 := fixtures.FixUpdateApplicationRequest(appResp2.ID, updateInputGQL)
 
 	t.Log("Update Application with system number 1")
 	updatedApp1 := directorSchema.ApplicationExt{}
@@ -1487,17 +1664,11 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, updatedApp1.Status.Condition.String(), connectedStatus.String())
 
-	t.Log("Update Application with system number 2")
-	updatedApp2 := directorSchema.ApplicationExt{}
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, requestUpdateApp2, &updatedApp2)
-	require.NoError(t, err)
-	require.Equal(t, updatedApp2.Status.Condition.String(), connectedStatus.String())
-
 	// setup mock systems for second job run
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 2)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), 1)
 
 	// Assert the previously updated Applications still contain their updated StatusCondition
 	t.Log("Get Application with system number 1")
@@ -1505,13 +1676,7 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp1)
 	require.NoError(t, err)
 
-	t.Log("Get Application with system number 2")
-	req = fixtures.FixGetApplicationBySystemNumberRequest("2")
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &appResp2)
-	require.NoError(t, err)
-
 	require.Equal(t, connectedStatus.String(), appResp1.Status.Condition.String())
-	require.Equal(t, connectedStatus.String(), appResp2.Status.Condition.String())
 }
 
 func triggerSync(t *testing.T, tenantID string) {
@@ -1624,7 +1789,7 @@ func getFixMockSystemsJSON(count, startingNumber int) string {
 	result := "["
 	for i := 0; i < count; i++ {
 		systemNumber := startingNumber + i
-		result = result + fmt.Sprintf(mockSystemFormat, systemNumber, systemNumber)
+		result = result + fmt.Sprintf(mockSystemFormat, systemNumber, systemNumber, cfg.SystemInformationSourceKey)
 		if i < count-1 {
 			result = result + ","
 		}
@@ -1632,17 +1797,19 @@ func getFixMockSystemsJSON(count, startingNumber int) string {
 	return result + "]"
 }
 
-func getFixExpectedMockSystems(count int, description string) []directorSchema.ApplicationExt {
+func getFixExpectedMockSystems(count int, templateID, templateName, intSysID, description string) []directorSchema.ApplicationExt {
 	result := make([]directorSchema.ApplicationExt, count)
 	for i := 0; i < count; i++ {
 		systemName := fmt.Sprintf("name%d", i)
 		result[i] = directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
-				Name:         systemName,
-				Description:  &description,
-				SystemNumber: str.Ptr(fmt.Sprintf("%d", i)),
+				Name:                  systemName,
+				Description:           &systemName,
+				ApplicationTemplateID: &templateID,
+				IntegrationSystemID:   &intSysID,
+				SystemNumber:          str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, "", "", false, ""),
+			Labels: applicationLabels(systemName, templateName, intSysID, true, "", "XYZ"),
 		}
 	}
 	return result
@@ -1669,7 +1836,7 @@ func cleanupMockSystems(t *testing.T) {
 	log.D().Info("Successfully reset mock systems")
 }
 
-func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool, regionLabel string) directorSchema.Labels {
+func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool, regionLabel, dataCenterLabel string) directorSchema.Labels {
 	labels := directorSchema.Labels{
 		"managed":                "true",
 		"name":                   fmt.Sprintf("mp-%s", name),
@@ -1682,11 +1849,15 @@ func applicationLabels(name, appTemplateName, integrationSystemID string, fromTe
 
 	if fromTemplate {
 		labels[nameLabelKey] = name
-		labels["applicationType"] = appTemplateName
+		labels[applicationTypeLabelKey] = appTemplateName
 	}
 
 	if len(regionLabel) > 0 {
 		labels[regionLabelKey] = regionLabel
+	}
+
+	if len(dataCenterLabel) > 0 {
+		labels[dataCenterLabelKey] = dataCenterLabel
 	}
 
 	return labels
@@ -1783,6 +1954,25 @@ func fixApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles
 func fixRegionalApplicationTemplateWithSystemRoles(name, intSystemID string, systemRoles []interface{}, region string) directorSchema.ApplicationTemplateInput {
 	appTemplateInput := fixRegionalApplicationTemplate(name, intSystemID, region)
 	appTemplateInput.Labels[cfg.TemplateLabelFilter] = systemRoles
+	appTemplateInput.Labels[slisFilterLabelKey] = []map[string]interface{}{
+		{
+			"productId": systemRoles[0],
+			"filter": []map[string]interface{}{
+				{
+					"key":       "$.additionalAttributes.systemSCPLandscapeID",
+					"value":     []string{region},
+					"operation": "include",
+				},
+			},
+		},
+	}
+
+	return appTemplateInput
+}
+
+func fixApplicationTemplateWithSystemRoleAndSlisFilter(name, intSystemID string, labels map[string]interface{}) directorSchema.ApplicationTemplateInput {
+	appTemplateInput := fixApplicationTemplate(name, intSystemID)
+	appTemplateInput.Labels = labels
 
 	return appTemplateInput
 }

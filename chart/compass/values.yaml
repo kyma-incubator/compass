@@ -163,47 +163,47 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3741"
+      version: "PR-3787"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
-      version: "PR-3751"
+      version: "PR-3787"
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3742"
+      version: "PR-3787"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
-      version: "PR-3793"
+      version: "PR-3868"
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3717"
+      version: "PR-3868"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3815"
+      version: "PR-3831"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
-      version: "PR-3719"
+      version: "PR-3868"
       name: compass-kyma-adapter
     instance_creator:
       dir: dev/incubator/
-      version: "PR-3792"
+      version: "PR-3868"
       name: compass-instance-creator
     default_tenant_mapping_handler:
       dir: dev/incubator/
-      version: "PR-3713"
+      version: "PR-3868"
       name: compass-default-tenant-mapping-handler
     gateway:
-      dir: prod/incubator/
-      version: "v20240314-5adad565"
+      dir: dev/incubator/
+      version: "PR-3787"
       name: compass-gateway
     operations_controller:
       dir: dev/incubator/
-      version: "PR-3744"
+      version: "PR-3787"
       name: compass-operations-controller
     ord_service:
       dir: dev/incubator/
@@ -211,11 +211,11 @@ global:
       name: compass-ord-service
     schema_migrator:
       dir: dev/incubator/
-      version: "PR-3785"
+      version: "PR-3859"
       name: compass-schema-migrator
     system_broker:
       dir: dev/incubator/
-      version: "PR-3718"
+      version: "PR-3787"
       name: compass-system-broker
     certs_setup_job:
       containerRegistry:
@@ -224,15 +224,11 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3771"
+      version: "PR-3787"
       name: compass-external-services-mock
-    console:
-      dir: prod/incubator/
-      version: "v20230421-e8840c18"
-      name: compass-console
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3793"
+      version: "PR-3849"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
@@ -552,6 +548,7 @@ global:
         remove:
           - "Client-Id-From-Token"
           - "Client-Id-From-Certificate"
+          - "Subject-From-Certificate"
           - "Client-Certificate-Hash"
           - "Certificate-Data"
   hydrator:
@@ -755,17 +752,13 @@ global:
     port: 4455
     timeout_ms: 120000
     ns_adapter_timeout_ms: 3600000
+    auth:
+      idpHost: ""
+      path: "/oauth2/certs"
     idTokenConfig:
-      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}"}'
+      claims: '{"scopes": "{{ print .Extra.scope }}","tenant": "{{ .Extra.tenant }}", "consumerID": "{{ print .Extra.consumerID}}", "consumerType": "{{ print .Extra.consumerType }}", "flow": "{{ print .Extra.flow }}", "onBehalfOf": "{{ print .Extra.onBehalfOf }}", "region": "{{ print .Extra.region }}", "tokenClientID": "{{ print .Extra.tokenClientID }}", "subject": "{{ print .Extra.subject }}"}'
       internalClaims: '{"scopes": "application:read application:write application.webhooks:read application.application_template:read application_template.webhooks:read webhooks.auth:read runtime:write runtime:read tenant:read tenant:write tenant_subscription:write ory_internal fetch_tenant application_template:read destinations_sensitive_data:read destinations:sync ord_aggregator:sync system_fetcher:sync certificate_subject_mapping:read certificate_subject_mapping:write bundle_instance_auth:write bundle.instance_auths:read","tenant":"{ {{ if .Header.Tenant }} \"consumerTenant\":\"{{ print (index .Header.Tenant 0) }}\", {{ end }} \"externalTenant\":\"\"}", "consumerType": "Internal Component", "flow": "Internal"}'
     mutators:
-      runtimeMappingService:
-        config:
-          api:
-            url: http://compass-hydrator.compass-system.svc.cluster.local:3000/hydrators/runtime-mapping
-            retry:
-              give_up_after: 6s
-              max_delay: 2000ms
       authenticationMappingServices:
         nsadapter:
           cfg:
@@ -855,14 +848,6 @@ global:
             retry:
               give_up_after: 6s
               max_delay: 2000ms
-  cockpit:
-    auth:
-      allowedConnectSrc: "https://*.ondemand.com"
-      secretName: "cockpit-auth-secret"
-      idpHost: ""
-      clientID: ""
-      scopes: "openid profile email"
-      path: "/oauth2/certs"
   destinationFetcher:
     manageSecrets: true
     host: compass-destination-fetcher.compass-system.svc.cluster.local
@@ -1127,8 +1112,8 @@ global:
     appTemplatesProductLabel: "systemRole"
     systemSourceKey: "prop"
     appTemplates: []
-    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "$.displayName" }, { "placeholder_name": "display-name", "system_key": "$.displayName" }, { "placeholder_name": "systemNumber", "system_key": "$.systemNumber" }, { "placeholder_name": "productId", "system_key": "$.productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "$.ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "$.additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "description", "system_key": "$.productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "$.additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "$.infrastructureProvider", "optional": true } ]'
-    templateOverrideApplicationInput: '{"name": "{{name}}","description": "{{description}}","providerName": "{{providerName}}","statusCondition": "INITIAL","systemNumber": "{{systemNumber}}","labels": {"managed": "true","productId": "{{productId}}","ppmsProductVersionId": "{{ppmsProductVersionId}}","region": "{{region}}"},"baseUrl": "{{baseUrl}}"}'
+    templatePlaceholderToSystemKeyMappings: '[ { "placeholder_name": "name", "system_key": "$.displayName" }, { "placeholder_name": "display-name", "system_key": "$.displayName" }, { "placeholder_name": "systemNumber", "system_key": "$.systemNumber" }, { "placeholder_name": "productId", "system_key": "$.productId" }, { "placeholder_name": "ppmsProductVersionId", "system_key": "$.ppmsProductVersionId", "optional": true }, { "placeholder_name": "region", "system_key": "$.additionalAttributes.systemSCPLandscapeID", "optional": true }, { "placeholder_name": "dataCenterId", "system_key": "$.regionId", "optional": true }, { "placeholder_name": "description", "system_key": "$.productDescription", "optional": true }, { "placeholder_name": "baseUrl", "system_key": "$.additionalUrls.mainUrl", "optional": true }, { "placeholder_name": "providerName", "system_key": "$.infrastructureProvider", "optional": true } ]'
+    templateOverrideApplicationInput: '{ "name": "{{name}}", "description": "{{description}}", "providerName": "{{providerName}}", "statusCondition": "INITIAL", "systemNumber": "{{systemNumber}}", "labels": { "managed": "true", "productId": "{{productId}}", "ppmsProductVersionId": "{{ppmsProductVersionId}}", "region": "{{region}}", "dataCenter": "{{dataCenterId}}" }, "baseUrl": "{{baseUrl}}" }'
     http:
       client:
         skipSSLValidation: false
@@ -1502,6 +1487,10 @@ global:
         - "webhooks.auth:read"
         - "certificate_subject_mapping:write"
         - "certificate_subject_mapping:read"
+      application_provider:
+        - "application_template:read"
+        - "application_template:write"
+        - "application_template.webhooks:read"
       managed_application_consumer: []
       formation_viewer:
         - "formation:read"
@@ -1516,6 +1505,7 @@ global:
         - "formation:global_read"
       tenant_discovery_operator:
         - "application:read"
+        - "application_global:read"
       instance_creator:
         - "application_template:read"
         - "formation:read"
@@ -1585,6 +1575,7 @@ global:
       super_admin:
         - "application:read"
         - "application:write"
+        - "application_global:read"
         - "application.local_tenant_id:write"
         - "application_template:read"
         - "application_template:write"

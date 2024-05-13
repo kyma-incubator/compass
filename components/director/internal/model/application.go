@@ -223,3 +223,16 @@ type ApplicationWithLabel struct {
 	App      *Application
 	SccLabel *Label
 }
+
+// ApplicationWithTenants represents an application with its associated tenants.
+type ApplicationWithTenants struct {
+	Application Application
+	Tenants     []*BusinessTenantMapping
+}
+
+// ApplicationWithTenantsPage represents a page containing an array of applications with their associated tenants.
+type ApplicationWithTenantsPage struct {
+	Data       []*ApplicationWithTenants
+	PageInfo   *pagination.Page
+	TotalCount int
+}

@@ -91,7 +91,7 @@ func NewHandler(smClient Client, mtlsHTTPClient mtlsHTTPClient, connector persis
 }
 
 // HandlerFunc is the implementation of InstanceCreatorHandler
-func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
+func (i *InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Request) {
 	ctx := log.ContextWithLogger(r.Context(), log.LoggerWithCorrelationID(r))
 
 	log.C(ctx).Info("Instance Creator Handler was hit...")
@@ -109,6 +109,7 @@ func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Reque
 		}
 		return
 	}
+	log.C(ctx).Info(reqBody.String())
 
 	log.C(ctx).Info("Validating tenant mapping request body...")
 	if err := reqBody.Validate(); err != nil {
@@ -117,22 +118,23 @@ func (i InstanceCreatorHandler) HandlerFunc(w http.ResponseWriter, r *http.Reque
 	}
 
 	correlationID := correlation.CorrelationIDFromContext(ctx)
-
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
 	// respond with 202 to the UCL call
 	httputils.Respond(w, http.StatusAccepted)
 
 	log.C(ctx).Info("Instance Creator Handler handles instances...")
-	go i.handleInstances(correlationID, &reqBody, uclStatusAPIUrl)
+	go i.handleInstances(correlationID, traceID, spanID, parentSpanID, &reqBody, uclStatusAPIUrl)
 }
 
-func (i *InstanceCreatorHandler) handleInstances(correlationID string, reqBody *tenantmapping.Body, statusAPIURL string) {
+func (i *InstanceCreatorHandler) handleInstances(correlationID, traceID, spanID, parentSpanID string, reqBody *tenantmapping.Body, statusAPIURL string) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	if reqBody.Context.Operation == assignOperation {
@@ -426,7 +428,7 @@ func (i *InstanceCreatorHandler) handleUnassign(ctx context.Context, reqBody *te
 // Core Instance Deletion Logic
 func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, reqBody *tenantmapping.Body, statusAPIURL string) {
 	assignmentID := reqBody.ReceiverTenant.AssignmentID
-	region := reqBody.ReceiverTenant.Region
+	region := reqBody.ReceiverTenant.DeploymentRegion
 	subaccount := reqBody.ReceiverTenant.SubaccountID
 	labels := map[string][]string{assignmentIDKey: {assignmentID}}
 
@@ -485,7 +487,7 @@ func (i *InstanceCreatorHandler) handleInstanceDeletion(ctx context.Context, req
 }
 
 func (i *InstanceCreatorHandler) createServiceInstances(ctx context.Context, reqBody *tenantmapping.Body, serviceInstancesRaw string, assignedTenantConfiguration json.RawMessage, pathToServiceInstances string) (json.RawMessage, error) {
-	region := reqBody.ReceiverTenant.Region
+	region := reqBody.ReceiverTenant.DeploymentRegion
 	subaccount := reqBody.ReceiverTenant.SubaccountID
 
 	serviceInstancesArray := gjson.Parse(serviceInstancesRaw).Array()

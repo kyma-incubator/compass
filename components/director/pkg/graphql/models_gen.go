@@ -194,6 +194,19 @@ type ApplicationUpdateInput struct {
 	LocalTenantID        *string                     `json:"localTenantID,omitempty"`
 }
 
+type ApplicationWithTenants struct {
+	Application *Application `json:"application,omitempty"`
+	Tenants     []*Tenant    `json:"tenants,omitempty"`
+}
+
+type ApplicationWithTenantsPage struct {
+	Data       []*ApplicationWithTenants `json:"data"`
+	PageInfo   *PageInfo                 `json:"pageInfo"`
+	TotalCount int                       `json:"totalCount"`
+}
+
+func (ApplicationWithTenantsPage) IsPageable() {}
+
 type AspectAPIDefinitionInput struct {
 	OrdID string `json:"ordId"`
 }
@@ -420,11 +433,13 @@ type CertificateOAuthCredentialDataInput struct {
 }
 
 type CertificateSubjectMapping struct {
-	ID                 string   `json:"id"`
-	Subject            string   `json:"subject"`
-	ConsumerType       string   `json:"consumerType"`
-	InternalConsumerID *string  `json:"internalConsumerID,omitempty"`
-	TenantAccessLevels []string `json:"tenantAccessLevels"`
+	ID                 string     `json:"id"`
+	Subject            string     `json:"subject"`
+	ConsumerType       string     `json:"consumerType"`
+	InternalConsumerID *string    `json:"internalConsumerID,omitempty"`
+	TenantAccessLevels []string   `json:"tenantAccessLevels"`
+	CreatedAt          Timestamp  `json:"createdAt"`
+	UpdatedAt          *Timestamp `json:"updatedAt,omitempty"`
 }
 
 type CertificateSubjectMappingInput struct {

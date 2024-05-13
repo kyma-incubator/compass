@@ -242,15 +242,6 @@ func InvalidateSystemAuthOneTimeTokenQuery(authID string) string {
 		}`, authID)
 }
 
-func RuntimeByTokenIssuerQuery(issuer string) string {
-	return fmt.Sprintf(`query {
-		result: runtimeByTokenIssuer(issuer: "%s") {
-			id
-    		name
-	  	}
-	}`, issuer)
-}
-
 func ListCertificateSubjectMappingsQuery(first int, after string) string {
 	return fmt.Sprintf(`query {
         result: certificateSubjectMappings(first: %d, after: "%s") {

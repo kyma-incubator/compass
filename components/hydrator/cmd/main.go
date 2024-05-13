@@ -44,7 +44,6 @@ import (
 	"github.com/kyma-incubator/compass/components/hydrator/internal/authnmappinghandler"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/connectortokenresolver"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/director"
-	"github.com/kyma-incubator/compass/components/hydrator/internal/runtimemapping"
 	"github.com/kyma-incubator/compass/components/hydrator/internal/tenantmapping"
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 	tenantmappingconst "github.com/kyma-incubator/compass/components/hydrator/pkg/tenantmapping"
@@ -183,9 +182,6 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 	internalGatewayClientProvider := director.NewClientProvider(cfg.Director.InternalGatewayURL, cfg.Director.ClientTimeout, cfg.Director.SkipSSLValidation)
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
-	logger.Infof("Registering Runtime Mapping endpoint on %s...", cfg.Handler.RuntimeMappingEndpoint)
-	runtimeMappingHandlerFunc := getRuntimeMappingHandlerFunc(ctx, internalDirectorClientProvider, cfg.JWKSSyncPeriod)
-
 	logger.Infof("Registering Authentication Mapping endpoint on %s...", cfg.Handler.AuthenticationMappingEndpoint)
 	authnMappingHandlerFunc := authnmappinghandler.NewHandler(ctx, oathkeeper.NewReqDataParser(), httpClient, authnmappinghandler.DefaultTokenVerifierProvider, authenticators, cfg.InitialSubdomainsForAuthenticators)
 
@@ -195,12 +191,11 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 
 	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
 	certResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg, internalGatewayClientProvider)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while configuring certificate resolver handler")
 
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
 	connectorTokenResolverHandlerFunc := getTokenResolverHandler(internalDirectorClientProvider)
 
-	router.HandleFunc(cfg.Handler.RuntimeMappingEndpoint, metricsCollector.HandlerInstrumentation(runtimeMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.AuthenticationMappingEndpoint, metricsCollector.HandlerInstrumentation(authnMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.TenantMappingEndpoint, metricsCollector.HandlerInstrumentation(tenantMappingHandlerFunc))
 	router.HandleFunc(cfg.Handler.CertResolverEndpoint, metricsCollector.HandlerInstrumentation(certResolverHandlerFunc))
@@ -242,23 +237,6 @@ func getTenantMappingHandlerFunc(authenticators []authenticator.Config, internal
 	return tenantmapping.NewHandler(reqDataParser, objectContextProviders, metricsCollector, internalDirectorClientProvider.Client(), tenantSubstitutionLabelKey), nil
 }
 
-func getRuntimeMappingHandlerFunc(ctx context.Context, clientProvider director.ClientProvider, cachePeriod time.Duration) *runtimemapping.Handler {
-	reqDataParser := oathkeeper.NewReqDataParser()
-
-	jwksFetch := runtimemapping.NewJWKsFetch()
-	jwksCache := runtimemapping.NewJWKsCache(jwksFetch, cachePeriod)
-	tokenVerifier := runtimemapping.NewTokenVerifier(jwksCache)
-
-	executor.NewPeriodic(1*time.Minute, func(ctx context.Context) {
-		jwksCache.Cleanup(ctx)
-	}).Run(ctx)
-
-	return runtimemapping.NewHandler(
-		reqDataParser,
-		clientProvider.Client(),
-		tokenVerifier)
-}
-
 func getCertificateResolverHandler(ctx context.Context, cfg config, internalDirectorClientProvider director.ClientProvider) (certresolver.ValidationHydrator, revocation.Loader, error) {
 	k8sClientSet, err := kubernetes.NewKubernetesClientSet(ctx, cfg.KubeConfig.PollInterval, cfg.KubeConfig.PollTimeout, cfg.KubeConfig.Timeout)
 	if err != nil {
@@ -284,10 +262,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config, internalDire
 		return nil, nil, err
 	}
 
-	subjectProcessor, err := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
-	if err != nil {
-		return nil, nil, err
-	}
+	subjectProcessor := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 
 	connectorCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
 		subject.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
@@ -305,7 +280,7 @@ func createServer(ctx context.Context, handler http.Handler, serverAddress, name
 	logger := log.C(ctx)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, serverTimeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              serverAddress,

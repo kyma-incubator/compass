@@ -23,12 +23,15 @@ var SupportedConsumerTypes = map[consumer.Type]bool{
 	consumer.SuperAdmin:                         true,
 	consumer.BusinessIntegration:                true,
 	consumer.ManagedApplicationProviderOperator: true,
+	consumer.ApplicationProvider:                true,
 	consumer.ManagedApplicationConsumer:         true,
 	consumer.LandscapeResourceOperator:          true,
 	consumer.TenantDiscoveryOperator:            true,
 	consumer.InstanceCreator:                    true,
 	consumer.FormationViewer:                    true,
 	consumer.TechnicalClient:                    true,
+	consumer.ExternalCertificate:                true,
+	consumer.User:                               true,
 }
 
 // SupportedAccessLevels is a map of all supported tenant access levels

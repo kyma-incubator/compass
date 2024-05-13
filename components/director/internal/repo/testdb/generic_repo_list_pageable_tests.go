@@ -86,6 +86,9 @@ func (suite *RepoListPageableTestSuite) Run(t *testing.T) bool {
 		})
 
 		for i := range suite.SQLQueryDetails {
+			if suite.SQLQueryDetails[i].SkipFailValidation {
+				continue
+			}
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
 				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)

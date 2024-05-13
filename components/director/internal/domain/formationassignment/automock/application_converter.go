@@ -18,10 +18,6 @@ type ApplicationConverter struct {
 func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Application {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
-
 	var r0 *graphql.Application
 	if rf, ok := ret.Get(0).(func(*model.Application) *graphql.Application); ok {
 		r0 = rf(in)

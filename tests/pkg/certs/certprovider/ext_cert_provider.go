@@ -3,8 +3,12 @@ package certprovider
 import (
 	"context"
 	"crypto/rsa"
+	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
+	gcli "github.com/machinebox/graphql"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
@@ -124,4 +128,22 @@ func createExtCertJob(t *testing.T, ctx context.Context, k8sClient *kubernetes.C
 	}
 
 	k8s.CreateJobByGivenJobDefinition(t, ctx, k8sClient, jobName, testConfig.ExternalClientCertTestSecretNamespace, jobDef)
+}
+
+func NewDirectorCertClientWithOtherSubject(t *testing.T, ctx context.Context, conf ExternalCertProviderConfig, url, cn string, skipSSLValidation bool) *gcli.Client {
+	externalCertProviderConfig := ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertTestJobName,
+		TestExternalCertSubject:               strings.Replace(conf.TestExternalCertSubject, conf.TestExternalCertCN, cn, -1),
+		ExternalClientCertCertKey:             conf.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  CertificateService,
+	}
+
+	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
+	providerClientKey, providerRawCertChain := NewExternalCertFromConfig(t, ctx, externalCertProviderConfig, true)
+	return gql.NewCertAuthorizedGraphQLClientWithCustomURL(url, providerClientKey, providerRawCertChain, skipSSLValidation)
 }

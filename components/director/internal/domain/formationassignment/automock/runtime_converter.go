@@ -18,10 +18,6 @@ type RuntimeConverter struct {
 func (_m *RuntimeConverter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
-
 	var r0 *graphql.Runtime
 	if rf, ok := ret.Get(0).(func(*model.Runtime) *graphql.Runtime); ok {
 		r0 = rf(in)

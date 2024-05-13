@@ -1,7 +1,6 @@
-package destinationcreator
+package destinationsvc
 
 import (
-	"encoding/json"
 	"fmt"
 	"regexp"
 
@@ -48,12 +47,16 @@ type DestinationRequestBody interface {
 
 // BaseDestinationRequestBody contains the base fields needed in the destination request body
 type BaseDestinationRequestBody struct {
-	Name                 string                          `json:"name"`
-	URL                  string                          `json:"url"`
-	Type                 destinationcreatorpkg.Type      `json:"type"`
-	ProxyType            destinationcreatorpkg.ProxyType `json:"proxyType"`
-	AuthenticationType   destinationcreatorpkg.AuthType  `json:"authenticationType"`
-	AdditionalProperties json.RawMessage                 `json:"additionalProperties,omitempty"`
+	Name               string                          `json:"name"`
+	URL                string                          `json:"url"`
+	Type               destinationcreatorpkg.Type      `json:"type"`
+	ProxyType          destinationcreatorpkg.ProxyType `json:"proxyType"`
+	AuthenticationType destinationcreatorpkg.AuthType  `json:"authenticationType"`
+	XCorrelationID     string                          `json:"x-correlation-id"` // old format
+	CorrelationIds     string                          `json:"correlationIds"`   // new format
+	XSystemTenantID    string                          `json:"x-system-id"`      // local tenant id
+	XSystemTenantName  string                          `json:"x-system-name"`    // random or application name
+	XSystemType        string                          `json:"x-system-type"`    // application type
 }
 
 // DesignTimeDestRequestBody contains the necessary fields for the destination request body with authentication type AuthTypeNoAuth
@@ -122,12 +125,23 @@ func (n *DesignTimeDestRequestBody) Validate() error {
 }
 
 func (n *DesignTimeDestRequestBody) ToDestination() destinationcreator.Destination {
+	correlationID := ""
+	if n.XCorrelationID != "" {
+		correlationID = n.XCorrelationID
+	} else {
+		correlationID = n.CorrelationIds
+	}
+
 	return &destinationcreator.NoAuthenticationDestination{
-		Name:           n.Name,
-		URL:            n.URL,
-		Type:           n.Type,
-		ProxyType:      n.ProxyType,
-		Authentication: n.AuthenticationType,
+		Name:              n.Name,
+		URL:               n.URL,
+		Type:              n.Type,
+		ProxyType:         n.ProxyType,
+		Authentication:    n.AuthenticationType,
+		XCorrelationID:    correlationID,
+		XSystemTenantID:   n.XSystemTenantID,
+		XSystemType:       n.XSystemType,
+		XSystemTenantName: n.XSystemTenantName,
 	}
 }
 
@@ -148,13 +162,24 @@ func (b *BasicDestRequestBody) Validate() error {
 }
 
 func (b *BasicDestRequestBody) ToDestination() destinationcreator.Destination {
+	correlationID := ""
+	if b.XCorrelationID != "" {
+		correlationID = b.XCorrelationID
+	} else {
+		correlationID = b.CorrelationIds
+	}
+
 	return &destinationcreator.BasicDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           b.Name,
-			Type:           b.Type,
-			URL:            b.URL,
-			Authentication: b.AuthenticationType,
-			ProxyType:      b.ProxyType,
+			Name:              b.Name,
+			Type:              b.Type,
+			URL:               b.URL,
+			Authentication:    b.AuthenticationType,
+			ProxyType:         b.ProxyType,
+			XCorrelationID:    correlationID,
+			XSystemTenantID:   b.XSystemTenantID,
+			XSystemType:       b.XSystemType,
+			XSystemTenantName: b.XSystemTenantName,
 		},
 		User:     b.User,
 		Password: b.Password,
@@ -179,13 +204,24 @@ func (s *SAMLAssertionDestRequestBody) Validate() error {
 }
 
 func (s *SAMLAssertionDestRequestBody) ToDestination() destinationcreator.Destination {
+	correlationID := ""
+	if s.XCorrelationID != "" {
+		correlationID = s.XCorrelationID
+	} else {
+		correlationID = s.CorrelationIds
+	}
+
 	return &destinationcreator.SAMLAssertionDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           s.Name,
-			Type:           s.Type,
-			URL:            s.URL,
-			Authentication: s.AuthenticationType,
-			ProxyType:      s.ProxyType,
+			Name:              s.Name,
+			Type:              s.Type,
+			URL:               s.URL,
+			Authentication:    s.AuthenticationType,
+			ProxyType:         s.ProxyType,
+			XCorrelationID:    correlationID,
+			XSystemTenantID:   s.XSystemTenantID,
+			XSystemType:       s.XSystemType,
+			XSystemTenantName: s.XSystemTenantName,
 		},
 		Audience:         s.Audience,
 		KeyStoreLocation: s.KeyStoreLocation,
@@ -209,13 +245,24 @@ func (s *ClientCertificateAuthDestRequestBody) Validate() error {
 }
 
 func (s *ClientCertificateAuthDestRequestBody) ToDestination() destinationcreator.Destination {
+	correlationID := ""
+	if s.XCorrelationID != "" {
+		correlationID = s.XCorrelationID
+	} else {
+		correlationID = s.CorrelationIds
+	}
+
 	return &destinationcreator.ClientCertificateAuthenticationDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           s.Name,
-			Type:           s.Type,
-			URL:            s.URL,
-			Authentication: s.AuthenticationType,
-			ProxyType:      s.ProxyType,
+			Name:              s.Name,
+			Type:              s.Type,
+			URL:               s.URL,
+			Authentication:    s.AuthenticationType,
+			ProxyType:         s.ProxyType,
+			XCorrelationID:    correlationID,
+			XSystemTenantID:   s.XSystemTenantID,
+			XSystemType:       s.XSystemType,
+			XSystemTenantName: s.XSystemTenantName,
 		},
 		KeyStoreLocation: s.KeyStoreLocation,
 	}
@@ -241,14 +288,25 @@ func (b *OAuth2ClientCredsDestRequestBody) Validate() error {
 }
 
 func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.Destination {
+	correlationID := ""
+	if b.XCorrelationID != "" {
+		correlationID = b.XCorrelationID
+	} else {
+		correlationID = b.CorrelationIds
+	}
+
 	if b.KeyStoreLocation != "" {
 		return &destinationcreator.OAuth2mTLSDestination{
 			NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-				Name:           b.Name,
-				Type:           b.Type,
-				URL:            b.URL,
-				Authentication: b.AuthenticationType,
-				ProxyType:      b.ProxyType,
+				Name:              b.Name,
+				Type:              b.Type,
+				URL:               b.URL,
+				Authentication:    b.AuthenticationType,
+				ProxyType:         b.ProxyType,
+				XCorrelationID:    correlationID,
+				XSystemTenantID:   b.XSystemTenantID,
+				XSystemType:       b.XSystemType,
+				XSystemTenantName: b.XSystemTenantName,
 			},
 			TokenServiceURL:     b.TokenServiceURL,
 			TokenServiceURLType: b.TokenServiceURLType,
@@ -259,11 +317,15 @@ func (b *OAuth2ClientCredsDestRequestBody) ToDestination() destinationcreator.De
 
 	return &destinationcreator.OAuth2ClientCredentialsDestination{
 		NoAuthenticationDestination: destinationcreator.NoAuthenticationDestination{
-			Name:           b.Name,
-			Type:           b.Type,
-			URL:            b.URL,
-			Authentication: b.AuthenticationType,
-			ProxyType:      b.ProxyType,
+			Name:              b.Name,
+			Type:              b.Type,
+			URL:               b.URL,
+			Authentication:    b.AuthenticationType,
+			ProxyType:         b.ProxyType,
+			XCorrelationID:    correlationID,
+			XSystemTenantID:   b.XSystemTenantID,
+			XSystemType:       b.XSystemType,
+			XSystemTenantName: b.XSystemTenantName,
 		},
 		TokenServiceURL: b.TokenServiceURL,
 		ClientID:        b.ClientID,
@@ -284,4 +346,25 @@ func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
 		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
 	)
+}
+
+type PostResponse struct {
+	Name   string `json:"name"`
+	Status int    `json:"status"`
+	Cause  string `json:"cause,omitempty"`
+}
+
+func GetDestinationPrefixNameIdentifier(name string) string {
+	return fmt.Sprintf("name_%s", name)
+}
+
+type DeleteStatus struct {
+	Name   string `json:"name"`
+	Status string `json:"status"`
+	Reason string `json:"reason,omitempty"`
+}
+
+type DeleteResponse struct {
+	Count   int
+	Summary []DeleteStatus
 }

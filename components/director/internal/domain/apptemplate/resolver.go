@@ -6,7 +6,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"regexp"
+	"sort"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
 
@@ -44,6 +49,14 @@ const (
 	sapProviderName            = "SAP"
 	displayNameLabelKey        = "displayName"
 )
+
+var defaultSlisFilterValueForManagedByProperty = []interface{}{
+	map[string]interface{}{
+		"key":       "$.additionalAttributes.managedBy",
+		"value":     []string{"SAP Cloud"},
+		"operation": "exclude",
+	},
+}
 
 // ApplicationTemplateService missing godoc
 //
@@ -151,10 +164,11 @@ type Resolver struct {
 	appTemplateProductLabel    string
 	certSubjectMappingSvc      CertSubjectMappingService
 	ordClient                  *apiclient.ORDClient
+	envConsumerSubjects        []string
 }
 
 // NewResolver missing godoc
-func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
+func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, appConverter ApplicationConverter, appTemplateSvc ApplicationTemplateService, appTemplateConverter ApplicationTemplateConverter, webhookService WebhookService, webhookConverter WebhookConverter, labelSvc LabelService, selfRegisterManager SelfRegisterManager, uidService UIDService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine, certSubjectMappingSvc CertSubjectMappingService, appTemplateProductLabel string, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig, environmentConsumerSubjects []string) *Resolver {
 	return &Resolver{
 		transact:                   transact,
 		appSvc:                     appSvc,
@@ -170,6 +184,7 @@ func NewResolver(transact persistence.Transactioner, appSvc ApplicationService, 
 		appTemplateProductLabel:    appTemplateProductLabel,
 		certSubjectMappingSvc:      certSubjectMappingSvc,
 		ordClient:                  apiclient.NewORDClient(ordAggregatorClientConfig),
+		envConsumerSubjects:        environmentConsumerSubjects,
 	}
 }
 
@@ -245,14 +260,101 @@ func (r *Resolver) ApplicationTemplates(ctx context.Context, filter []*graphql.L
 	}, nil
 }
 
-// CreateApplicationTemplate missing godoc
-func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
-	log.C(ctx).Infof("Validating graphql input for Application Template with name %s", in.Name)
+func (r *Resolver) validateLabels(labels map[string]interface{}) error {
+	systemRolesLabel, hasSystemRoles := labels[r.appTemplateProductLabel]
+	slisFilterLabel, hasSlisFilter := labels[systemfetcher.SlisFilterLabelKey]
+
+	if !hasSystemRoles && hasSlisFilter {
+		return errors.New("system role is required when slis filter is defined")
+	}
+
+	if !hasSystemRoles {
+		return nil
+	}
+
+	systemRolesLabelValue, ok := systemRolesLabel.([]interface{})
+	if !ok {
+		return errors.New("invalid format of system roles label")
+	}
+
+	if len(systemRolesLabelValue) == 0 && hasSlisFilter {
+		return errors.New("system role must not be empty when slis filter is defined")
+	}
+
+	if !hasSlisFilter {
+		return nil
+	}
+
+	systemRoles, err := str.ConvertToStringArray(systemRolesLabelValue)
+	if err != nil {
+		return err
+	}
+
+	slisFilterLabelValue, ok := slisFilterLabel.([]interface{})
+	if !ok {
+		return errors.Errorf("invalid format of slis filter label")
+	}
+
+	productIds := make([]string, 0)
+
+	for _, slisFilterValue := range slisFilterLabelValue {
+		filter, ok := slisFilterValue.(map[string]interface{})
+		if !ok {
+			return errors.New("invalid format of slis filter value")
+		}
+
+		productID, ok := filter[systemfetcher.ProductIDKey]
+		if !ok {
+			return errors.New("missing productId in slis filter")
+		}
+
+		productIDStr, ok := productID.(string)
+		if !ok {
+			return errors.New("invalid format of productId value")
+		}
+
+		productIds = append(productIds, productIDStr)
+	}
+
+	systemRolesCount := len(systemRoles)
+	slisFilterProductIdsCount := len(productIds)
+
+	if systemRolesCount != slisFilterProductIdsCount {
+		return errors.New("system roles count does not match the product ids count in slis filter")
+	}
+
+	sort.Strings(systemRoles)
+	sort.Strings(productIds)
+
+	for i, systemRole := range systemRoles {
+		if systemRole != productIds[i] {
+			return errors.New("system roles don't match with product ids in slis filter")
+		}
+	}
+
+	return nil
+}
+
+func (r *Resolver) validateApplicationTemplate(in graphql.ApplicationTemplateInput) error {
 	if err := in.Validate(); err != nil {
-		return nil, err
+		return err
+	}
+
+	if err := r.validateLabels(in.Labels); err != nil {
+		return err
 	}
 
 	if err := validateAppTemplateNameBasedOnProvider(in.Name, in.ApplicationInput); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// CreateApplicationTemplate missing godoc
+func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.ApplicationTemplateInput) (*graphql.ApplicationTemplate, error) {
+	log.C(ctx).Infof("Validating graphql input for Application Template with name %s", in.Name)
+	if err := r.validateApplicationTemplate(in); err != nil {
 		return nil, err
 	}
 
@@ -337,12 +439,48 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 		return nil, err
 	}
 
+	systemRole, hasSystemRole := labels[r.appTemplateProductLabel]
+	_, slisFilterLabelExists := labels[systemfetcher.SlisFilterLabelKey]
+
+	if hasSystemRole && !slisFilterLabelExists {
+		log.C(ctx).Infof("Application Template with name %s has system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
+
+		systemRoleValues, ok := systemRole.([]interface{})
+		if !ok {
+			return nil, errors.Errorf("invalid format of system roles for application template with ID %s", convertedIn.Name)
+		}
+
+		filtersFromSystemRoles := make([]interface{}, 0)
+
+		for _, systemRoleValue := range systemRoleValues {
+			systemRoleValueStr, ok := systemRoleValue.(string)
+			if !ok {
+				return nil, errors.Errorf("system role value should be a string for application template with ID %s", convertedIn.Name)
+			}
+			slisFilter := map[string]interface{}{
+				"productId": systemRoleValueStr,
+				"filter":    defaultSlisFilterValueForManagedByProperty,
+			}
+
+			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
+		}
+
+		labels[systemfetcher.SlisFilterLabelKey] = filtersFromSystemRoles
+	}
+
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
 	id, err := r.appTemplateSvc.CreateWithLabels(ctx, convertedIn, labels)
 	if err != nil {
 		return nil, err
 	}
 	log.C(ctx).Infof("Successfully created an Application Template with name %s and id %s", convertedIn.Name, id)
+
+	if consumerInfo.Flow.IsCertFlow() && consumerInfo.Subject != "" {
+		log.C(ctx).Infof("Flow is cert. Preparing to create a certificate subject mapping.")
+		if err = r.prepareCertSubjectMapping(ctx, id, consumerInfo.Subject); err != nil {
+			return nil, err
+		}
+	}
 
 	appTemplate, err := r.appTemplateSvc.Get(ctx, id)
 	if err != nil {
@@ -757,10 +895,10 @@ func (r *Resolver) retrieveAppTemplate(ctx context.Context,
 				return appTemplate, nil
 			}
 		}
-		return nil, errors.Errorf("application template with id %s and consumer id %q not found", *appTemplateID, consumerID)
+		return nil, errors.Errorf("application template with id %s and consumer id REDACTED_%x not found", *appTemplateID, sha256.Sum256([]byte(consumerID)))
 	}
 	if len(templates) < 1 {
-		return nil, errors.Errorf("application template with name %q and consumer id %q not found", appTemplateName, consumerID)
+		return nil, errors.Errorf("application template with name %q and consumer id REDACTED_%x not found", appTemplateName, sha256.Sum256([]byte(consumerID)))
 	}
 	if len(templates) > 1 {
 		return nil, errors.Errorf("unexpected number of application templates. found %d", len(appTemplates))
@@ -1023,4 +1161,42 @@ func (r *Resolver) areSystemFieldDiscoveryPrerequisitesAvailable(ctx context.Con
 	}
 
 	return regionValue, subaccountIDValue, systemFieldDiscoveryValue, nil
+}
+
+func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID, subject string) error {
+	for _, consumerSubject := range r.envConsumerSubjects {
+		if cert.SubjectsMatch(subject, consumerSubject) {
+			log.C(ctx).Info("Subject matches with a known environment consumer subject. Skipping certificate subject mapping creation.")
+			return nil
+		}
+	}
+
+	certSubjMappings, err := r.certSubjectMappingSvc.ListAll(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "while checking if a certificate subject mapping exists with a subject: %s", subject)
+	}
+
+	for _, csm := range certSubjMappings {
+		if cert.SubjectsMatch(subject, csm.Subject) {
+			log.C(ctx).Info("Subject is already allow-listed. Skipping certificate subject mapping creation.")
+			return nil
+		}
+	}
+
+	id := r.uidService.Generate()
+	model := &model.CertSubjectMapping{
+		ID:                 id,
+		Subject:            subject,
+		ConsumerType:       string(consumer.ApplicationProvider),
+		InternalConsumerID: &appTemplateID,
+		TenantAccessLevels: []string{inputvalidation.GlobalAccessLevel},
+	}
+
+	if _, err := r.certSubjectMappingSvc.Create(ctx, model); err != nil {
+		return errors.Wrapf(err, "while creating a cert subject mapping for app template consumer %q", appTemplateID)
+	}
+
+	log.C(ctx).Infof("Successfully created a certificate subject mapping for Application Template with ID %q", appTemplateID)
+
+	return nil
 }

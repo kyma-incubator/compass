@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
@@ -14,13 +15,15 @@ import (
 )
 
 func TestRepository_Create(t *testing.T) {
+	certsubjectmapping.Now = func() time.Time { return testTime }
+
 	suite := testdb.RepoCreateTestSuite{
 		Name:       "Create certificate subject mapping",
 		MethodName: "Create",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:       `^INSERT INTO public.cert_subject_mapping \(.+\) VALUES \(.+\)$`,
-				Args:        []driver.Value{CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels},
+				Args:        []driver.Value{CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels, testTime, nil},
 				ValidResult: sqlmock.NewResult(-1, 1),
 			},
 		},
@@ -44,11 +47,11 @@ func TestRepository_Get(t *testing.T) {
 		MethodName: "Get",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping WHERE id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels, created_at, updated_at FROM public.cert_subject_mapping WHERE id = $1`),
 				Args:     []driver.Value{TestID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels, testTime, nil)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -69,13 +72,17 @@ func TestRepository_Get(t *testing.T) {
 }
 
 func TestRepository_Update(t *testing.T) {
-	updateStmt := regexp.QuoteMeta(`UPDATE public.cert_subject_mapping SET subject = ?, consumer_type = ?, internal_consumer_id = ?, tenant_access_levels = ? WHERE id = ?`)
+	certsubjectmapping.Now = func() time.Time { return testTime }
+	csmModel := fixCertSubjectMappingModel(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevels, testTime)
+	csmEntity := fixCertSubjectMappingEntity(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevelsAsString, testTime)
+
+	updateStmt := regexp.QuoteMeta(`UPDATE public.cert_subject_mapping SET subject = ?, consumer_type = ?, internal_consumer_id = ?, tenant_access_levels = ?, updated_at = ? WHERE id = ?`)
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update certificate subject mapping by ID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
 				Query:         updateStmt,
-				Args:          []driver.Value{CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels, CertSubjectMappingEntity.ID},
+				Args:          []driver.Value{csmEntity.Subject, csmEntity.ConsumerType, csmEntity.InternalConsumerID, csmEntity.TenantAccessLevels, testTime, csmEntity.ID},
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
 			},
@@ -84,8 +91,8 @@ func TestRepository_Update(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.EntityConverter{}
 		},
-		ModelEntity:    CertSubjectMappingModel,
-		DBEntity:       CertSubjectMappingEntity,
+		ModelEntity:    csmModel,
+		DBEntity:       csmEntity,
 		NilModelEntity: nilModelEntity,
 		IsGlobal:       true,
 	}
@@ -150,10 +157,10 @@ func TestRepository_List(t *testing.T) {
 		MethodName: "List",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping ORDER BY id LIMIT 3 OFFSET 0`),
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels, created_at, updated_at FROM public.cert_subject_mapping ORDER BY id LIMIT 3 OFFSET 0`),
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels, testTime, nil)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
@@ -193,6 +200,34 @@ func TestRepository_List(t *testing.T) {
 	suite.Run(t)
 }
 
+func TestRepository_ListAll(t *testing.T) {
+	suite := testdb.RepoListTestSuite{
+		Name:       "List all certificate subject mappings",
+		MethodName: "ListAll",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels, created_at, updated_at FROM public.cert_subject_mapping`),
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels, testTime, nil)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ExpectedModelEntities: []interface{}{CertSubjectMappingModel},
+		ExpectedDBEntities:    []interface{}{CertSubjectMappingEntity},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       certsubjectmapping.NewRepository,
+		DisableConverterErrorTest: false,
+	}
+
+	suite.Run(t)
+}
+
 func TestRepository_ListByConsumerID(t *testing.T) {
 	consumerID := "consumer-id"
 
@@ -201,11 +236,11 @@ func TestRepository_ListByConsumerID(t *testing.T) {
 		MethodName: "ListByConsumerID",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels FROM public.cert_subject_mapping WHERE internal_consumer_id = $1`),
+				Query:    regexp.QuoteMeta(`SELECT id, subject, consumer_type, internal_consumer_id, tenant_access_levels, created_at, updated_at FROM public.cert_subject_mapping WHERE internal_consumer_id = $1`),
 				Args:     []driver.Value{consumerID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(CertSubjectMappingEntity.ID, CertSubjectMappingEntity.Subject, CertSubjectMappingEntity.ConsumerType, CertSubjectMappingEntity.InternalConsumerID, CertSubjectMappingEntity.TenantAccessLevels, testTime, nil)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}

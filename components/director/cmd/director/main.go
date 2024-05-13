@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/hydrator/pkg/certsubjmapping"
+
 	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 	sfapiclient "github.com/kyma-incubator/compass/components/director/internal/systemfetcher/apiclient"
 
@@ -52,9 +54,8 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 
-	"github.com/kyma-incubator/compass/components/director/internal/info"
-
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
+	"github.com/kyma-incubator/compass/components/director/internal/info"
 	mp_authenticator "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
 	gqlgen "github.com/99designs/gqlgen/graphql"
@@ -202,6 +203,8 @@ type config struct {
 	ExternalClientCertSecretName string `envconfig:"APP_EXTERNAL_CLIENT_CERT_SECRET_NAME"`
 
 	ApplicationTemplateProductLabel string `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
+
+	EnvironmentSubjectConsumerMappings string `envconfig:"default=[],APP_SUBJECT_CONSUMER_MAPPING_CONFIG"`
 }
 
 func main() {
@@ -230,6 +233,18 @@ func main() {
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
+
+	subjectMappings, err := certsubjmapping.UnmarshalMappings(cfg.EnvironmentSubjectConsumerMappings)
+	exitOnError(err, "Error while unmarshalling the subject consumer mappings")
+
+	certSubjects := make([]string, 0, len(subjectMappings))
+	for _, subjectMapping := range subjectMappings {
+		if err := subjectMapping.Validate(); err != nil {
+			log.C(ctx).Errorf("Certificate subject mapping for internal consumer %s is invalid. Will not add it to the list.", subjectMapping.InternalConsumerID)
+			continue
+		}
+		certSubjects = append(certSubjects, subjectMapping.Subject)
+	}
 
 	defer func() {
 		err := closeFunc()
@@ -320,6 +335,7 @@ func main() {
 		cfg.DestinationCreatorConfig,
 		cfg.OrdAggregatorClientConfig,
 		cfg.SystemFetcherSyncClientConfig,
+		certSubjects,
 	)
 	exitOnError(err, "Failed to initialize root resolver")
 
@@ -568,7 +584,7 @@ func exitOnError(err error, context string) {
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              address,

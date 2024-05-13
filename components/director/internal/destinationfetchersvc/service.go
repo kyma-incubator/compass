@@ -32,6 +32,7 @@ type UUIDService interface {
 type DestinationRepo interface {
 	Upsert(ctx context.Context, in model.DestinationInput, id, tenantID, bundleID, revision string) error
 	DeleteOld(ctx context.Context, latestRevision, tenantID string) error
+	GetDestinationByNameAndTenant(ctx context.Context, destinationName, tenantID string) (*model.Destination, error)
 }
 
 // LabelRepo labels repository
@@ -47,6 +48,7 @@ type LabelRepo interface {
 //go:generate mockery --name=BundleRepo --output=automock --outpkg=automock --case=underscore --disable-version-string
 type BundleRepo interface {
 	ListByDestination(ctx context.Context, tenantID string, destination model.DestinationInput) ([]*model.Bundle, error)
+	ListByApplicationAndCorrelationIDs(ctx context.Context, tenantID, appID, correlationIDs string) ([]*model.Bundle, error)
 }
 
 // TenantRepo tenants repository
@@ -55,6 +57,13 @@ type BundleRepo interface {
 type TenantRepo interface {
 	ExistsSubscribed(ctx context.Context, id, selfDistinguishLabel string) (bool, error)
 	ListBySubscribedRuntimesAndApplicationTemplates(ctx context.Context, selfRegDistinguishLabel string) ([]*model.BusinessTenantMapping, error)
+}
+
+// FormationAssignmentRepository represents the Formation Assignment repository layer
+//
+//go:generate mockery --name=FormationAssignmentRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationAssignmentRepository interface {
+	GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error)
 }
 
 // DestinationService missing godoc
@@ -67,11 +76,12 @@ type DestinationService struct {
 	DestinationsConfig      config.DestinationsConfig
 	APIConfig               DestinationServiceAPIConfig
 	TenantRepo              TenantRepo
+	FormationAssignmentRepo FormationAssignmentRepository
 	selfRegDistinguishLabel string
 }
 
 // NewDestinationService creates new destination service
-func NewDestinationService(transactioner persistence.Transactioner, uuidSvc UUIDService, destinationRepo DestinationRepo, bundleRepo BundleRepo, labelRepo LabelRepo, destinationsConfig config.DestinationsConfig, apiConfig DestinationServiceAPIConfig, tenantRepo TenantRepo, selfRegDistinguishLabel string) *DestinationService {
+func NewDestinationService(transactioner persistence.Transactioner, uuidSvc UUIDService, destinationRepo DestinationRepo, bundleRepo BundleRepo, labelRepo LabelRepo, destinationsConfig config.DestinationsConfig, apiConfig DestinationServiceAPIConfig, tenantRepo TenantRepo, formationAssignmentRepo FormationAssignmentRepository, selfRegDistinguishLabel string) *DestinationService {
 	return &DestinationService{
 		Transactioner:           transactioner,
 		UUIDSvc:                 uuidSvc,
@@ -81,6 +91,7 @@ func NewDestinationService(transactioner persistence.Transactioner, uuidSvc UUID
 		DestinationsConfig:      destinationsConfig,
 		APIConfig:               apiConfig,
 		TenantRepo:              tenantRepo,
+		FormationAssignmentRepo: formationAssignmentRepo,
 		selfRegDistinguishLabel: selfRegDistinguishLabel,
 	}
 }
@@ -237,8 +248,27 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 					destinationFromService.Name, tenant)
 				continue
 			}
-			bundles, err := d.BundleRepo.ListByDestination(ctxWithTransact, tenant, destination)
 
+			if !destination.HasValidIdentifiers() {
+				log.C(ctxWithTransact).Warnf("Destination with name %q for tenant %s does not have system identifiers.", destination.Name, tenant)
+
+				bundles, err := d.fetchBundlesByFormationAssignment(ctxWithTransact, tenant, destination.Name, destination.XCorrelationID)
+				if err != nil {
+					log.C(ctxWithTransact).WithError(err).Errorf("Failed to fetch bundles for tenant id '%s', destination name '%s' and correlation IDs '%s'", tenant, destination.Name, destination.XCorrelationID)
+					return err
+				}
+
+				log.C(ctxWithTransact).Infof("Found %d bundles for tenant id '%s', destination name '%s', and correlation IDs '%s'",
+					len(bundles), tenant, destination.Name, destination.XCorrelationID)
+
+				if err = d.upsertDestinationsWithBundleID(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
+					return err
+				}
+
+				continue
+			}
+
+			bundles, err := d.BundleRepo.ListByDestination(ctxWithTransact, tenant, destination)
 			if err != nil {
 				log.C(ctxWithTransact).WithError(err).Errorf(
 					"Failed to fetch bundle for system '%s', url '%s', correlation id '%s', tenant id '%s'",
@@ -246,24 +276,10 @@ func (d *DestinationService) mapDestinationsToTenant(ctx context.Context, tenant
 				return err
 			}
 
-			bundlesCount := len(bundles)
-			if bundlesCount == 0 {
-				log.C(ctxWithTransact).Infof("No bundles found for system '%s', url '%s', correlation id '%s'",
-					destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
-				continue
-			}
+			log.C(ctxWithTransact).Infof("Found %d bundles for system '%s', url '%s', correlation id '%s'", len(bundles), destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
 
-			log.C(ctxWithTransact).Infof("Found %d bundles for system '%s', url '%s', correlation id '%s'",
-				bundlesCount, destination.XSystemTenantName, destination.URL, destination.XCorrelationID)
-
-			for _, bundle := range bundles {
-				id := d.UUIDSvc.Generate()
-				if err := d.DestinationRepo.Upsert(ctxWithTransact, destination, id, tenant, bundle.ID, revision); err != nil {
-					log.C(ctxWithTransact).WithError(err).Errorf(
-						"Failed to insert destination with name '%s' for bundle '%s' and tenant '%s' to DB",
-						destination.Name, bundle.ID, tenant)
-					return err
-				}
+			if err = d.upsertDestinationsWithBundleID(ctxWithTransact, bundles, destination, tenant, revision); err != nil {
+				return err
 			}
 		}
 		return nil
@@ -291,6 +307,20 @@ func (d *DestinationService) walkthroughPages(
 			log.C(ctx).Debugf("Found %d pages of destinations in tenant '%s'", resp.pageCount, tenantID)
 		})
 	}
+	return nil
+}
+
+func (d *DestinationService) upsertDestinationsWithBundleID(ctx context.Context, bundles []*model.Bundle, destination model.DestinationInput, tenant, revision string) error {
+	for _, bundle := range bundles {
+		id := d.UUIDSvc.Generate()
+		if err := d.DestinationRepo.Upsert(ctx, destination, id, tenant, bundle.ID, revision); err != nil {
+			log.C(ctx).WithError(err).Errorf(
+				"Failed to insert destination with name '%s' for bundle '%s' and tenant '%s' to DB",
+				destination.Name, bundle.ID, tenant)
+			return err
+		}
+	}
+
 	return nil
 }
 
@@ -391,4 +421,36 @@ func (d *DestinationService) getRegionLabel(ctx context.Context, tenantID string
 	})
 
 	return region, transactionErr
+}
+
+func (d *DestinationService) fetchBundlesByFormationAssignment(ctx context.Context, tenantID, destinationName, correlationIDs string) ([]*model.Bundle, error) {
+	destination, err := d.DestinationRepo.GetDestinationByNameAndTenant(ctx, destinationName, tenantID)
+	if err != nil {
+		if apperrors.IsNotFoundError(err) {
+			log.C(ctx).Infof("No destination found by name %q and tenant %q", destinationName, tenantID)
+			return nil, nil
+		}
+		log.C(ctx).WithError(err).Errorf("Failed get destination by name %q and tenant %q", destinationName, tenantID)
+		return nil, errors.Wrapf(err, "while getting desination by name %q and tenant %q", destinationName, tenantID)
+	}
+
+	if destination.FormationAssignmentID == nil {
+		log.C(ctx).Warnf("Destination with ID %q and name %q is missing a FormationAssignmentID. Cannot determine the application.", destination.ID, destinationName)
+		return nil, nil
+	}
+
+	formationAssignment, err := d.FormationAssignmentRepo.GetGlobalByID(ctx, *destination.FormationAssignmentID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to fetch formation assignment with ID %q for tenant %q", *destination.FormationAssignmentID, tenantID)
+		return nil, errors.Wrapf(err, "while getting a formation assignment with ID %q", *destination.FormationAssignmentID)
+	}
+
+	appID := formationAssignment.Target
+	bundles, err := d.BundleRepo.ListByApplicationAndCorrelationIDs(ctx, tenantID, appID, correlationIDs)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Failed to list bundles by application ID %q with correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
+		return nil, errors.Wrapf(err, "while listing bundle by application ID %q and correlation IDs %q for tenant %q", appID, correlationIDs, tenantID)
+	}
+
+	return bundles, nil
 }

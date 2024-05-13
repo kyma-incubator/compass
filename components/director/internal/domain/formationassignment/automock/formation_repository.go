@@ -19,10 +19,6 @@ type FormationRepository struct {
 func (_m *FormationRepository) Get(ctx context.Context, id string, tenantID string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id, tenantID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Get")
-	}
-
 	var r0 *model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Formation, error)); ok {

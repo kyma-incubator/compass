@@ -6,8 +6,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
-
 	"github.com/gorilla/mux"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/claims"
 	"github.com/kyma-incubator/compass/components/default-tenant-mapping-handler/internal/config"
@@ -17,6 +15,7 @@ import (
 	httputildirector "github.com/kyma-incubator/compass/components/director/pkg/auth"
 	authmiddleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	timeouthandler "github.com/kyma-incubator/compass/components/director/pkg/handler"
 	"github.com/kyma-incubator/compass/components/director/pkg/header"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -96,7 +95,7 @@ func exitOnError(err error, context string) {
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              address,
