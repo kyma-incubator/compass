@@ -21,10 +21,6 @@ type RuntimeRepository struct {
 func (_m *RuntimeRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, tenant string, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, id, filter)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetByFiltersAndIDUsingUnion")
-	}
-
 	var r0 *model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
@@ -50,10 +46,6 @@ func (_m *RuntimeRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, te
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByID")
-	}
 
 	var r0 *model.Runtime
 	var r1 error
@@ -81,10 +73,6 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListAll")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
@@ -110,10 +98,6 @@ func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter 
 // ListAllWithUnionSetCombination provides a mock function with given fields: ctx, tenant, filter
 func (_m *RuntimeRepository) ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListAllWithUnionSetCombination")
-	}
 
 	var r0 []*model.Runtime
 	var r1 error
@@ -141,10 +125,6 @@ func (_m *RuntimeRepository) ListAllWithUnionSetCombination(ctx context.Context,
 func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, ids)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByIDs")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {
@@ -170,10 +150,6 @@ func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids [
 // ListByScenarios provides a mock function with given fields: ctx, tenant, scenarios
 func (_m *RuntimeRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, scenarios)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByScenarios")
-	}
 
 	var r0 []*model.Runtime
 	var r1 error
@@ -201,10 +177,6 @@ func (_m *RuntimeRepository) ListByScenarios(ctx context.Context, tenant string,
 func (_m *RuntimeRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, scenarios, ids)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByScenariosAndIDs")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []string) ([]*model.Runtime, error)); ok {
@@ -231,10 +203,6 @@ func (_m *RuntimeRepository) ListByScenariosAndIDs(ctx context.Context, tenant s
 func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListOwnedRuntimes")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
@@ -260,10 +228,6 @@ func (_m *RuntimeRepository) ListOwnedRuntimes(ctx context.Context, tenant strin
 // OwnerExistsByFiltersAndID provides a mock function with given fields: ctx, tenant, id, filter
 func (_m *RuntimeRepository) OwnerExistsByFiltersAndID(ctx context.Context, tenant string, id string, filter []*labelfilter.LabelFilter) (bool, error) {
 	ret := _m.Called(ctx, tenant, id, filter)
-
-	if len(ret) == 0 {
-		panic("no return value specified for OwnerExistsByFiltersAndID")
-	}
 
 	var r0 bool
 	var r1 error
