@@ -966,11 +966,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return formationFromDB, nil
 	}
 
-	initialAssignmentsData, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
-	}
-
 	// We can reach this only if we are in INITIAL or DRAFT state and there are assigned objects to the formation
 	// there are no notifications sent for them, and we have created formation assignments for them.
 	// If we by any chance reach it from ERROR state, the formation should be empty, with no formation assignments in it, and the deletion shouldn't do anything.
@@ -990,6 +985,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	// We need the formation assignments data before updating them to DELETING state (and resetting their configuration) in the transaction below,
 	// so in case of any failures that can happen before the processing of these formation assignments (e.g. generating notifications for them),
 	// we could revert the changes made in the transaction below
+	initialAssignmentsData, err := s.formationAssignmentService.ListFormationAssignmentsForObjectID(ctx, formationFromDB.ID, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formation assignments for object with type %q and ID %q", objectType, objectID)
+	}
+
 	initialAssignmentsClones := make([]*model.FormationAssignment, 0, len(initialAssignmentsData))
 	initialParticipants := make(map[string]bool, len(initialAssignmentsData)*2)
 	// If by any chance we are coming from the status API or are being called to clean up the scenario label,
@@ -1361,7 +1361,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
 				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
-					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by resync", model.Unassign, faClone.ID)
+					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Unassign, faClone.ID, assignmentOperationTriggeredBy)
 				}
 			}
 			if operation == model.AssignFormation {
@@ -1372,7 +1372,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
 				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
-					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by resync", model.Assign, faClone.ID)
+					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Assign, faClone.ID, assignmentOperationTriggeredBy)
 				}
 			}
 
