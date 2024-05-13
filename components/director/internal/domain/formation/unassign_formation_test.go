@@ -366,7 +366,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInInitialState.ID, objectTypeData.ObjectID).Return(nil).Once()
 					return formationAssignmentSvc
 				},
@@ -413,7 +412,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInDraftState.ID, objectTypeData.ObjectID).Return(nil).Once()
 					return formationAssignmentSvc
 				},
@@ -460,7 +458,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInInitialState.ID, objectTypeData.ObjectID).Return(nil).Once()
 					return formationAssignmentSvc
 				},
@@ -740,7 +737,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInInitialState.ID, objectTypeData.ObjectID).Return(testErr).Once()
 					return formationAssignmentSvc
 				},
