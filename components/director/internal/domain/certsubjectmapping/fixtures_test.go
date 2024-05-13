@@ -1,6 +1,8 @@
 package certsubjectmapping_test
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -24,14 +26,11 @@ var (
 	TestInvalidTenantAccessLevelsAsString = "[invalid"
 	TestTenantAccessLevels                = []string{string(tenantEntity.Account), string(tenantEntity.Subaccount)}
 	nilModelEntity                        *model.CertSubjectMapping
+	testTime                              = time.Date(2024, 04, 24, 9, 9, 9, 9, time.Local)
 
-	CertSubjectMappingModel = &model.CertSubjectMapping{
-		ID:                 TestID,
-		Subject:            TestSubject,
-		ConsumerType:       TestConsumerType,
-		InternalConsumerID: &TestInternalConsumerID,
-		TenantAccessLevels: TestTenantAccessLevels,
-	}
+	CertSubjectMappingEntity                       = fixCertSubjectMappingEntity(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevelsAsString, testTime)
+	CertSubjectMappingEntityInvalidTntAccessLevels = fixCertSubjectMappingEntity(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestInvalidTenantAccessLevelsAsString, testTime)
+	CertSubjectMappingModel                        = fixCertSubjectMappingModel(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevels, testTime)
 
 	CertSubjectMappingGQLModel = &graphql.CertificateSubjectMapping{
 		ID:                 TestID,
@@ -39,6 +38,7 @@ var (
 		ConsumerType:       TestConsumerType,
 		InternalConsumerID: &TestInternalConsumerID,
 		TenantAccessLevels: TestTenantAccessLevels,
+		CreatedAt:          graphql.Timestamp(testTime),
 	}
 
 	CertSubjectMappingGQLModelInput = graphql.CertificateSubjectMappingInput{
@@ -59,22 +59,6 @@ var (
 		ConsumerType:       TestConsumerType,
 		InternalConsumerID: &TestInternalConsumerID,
 		TenantAccessLevels: TestTenantAccessLevels,
-	}
-
-	CertSubjectMappingEntity = &certsubjectmapping.Entity{
-		ID:                 TestID,
-		Subject:            TestSubject,
-		ConsumerType:       TestConsumerType,
-		InternalConsumerID: &TestInternalConsumerID,
-		TenantAccessLevels: TestTenantAccessLevelsAsString,
-	}
-
-	CertSubjectMappingEntityInvalidTntAccessLevels = &certsubjectmapping.Entity{
-		ID:                 TestID,
-		Subject:            TestSubject,
-		ConsumerType:       TestConsumerType,
-		InternalConsumerID: &TestInternalConsumerID,
-		TenantAccessLevels: TestInvalidTenantAccessLevelsAsString,
 	}
 
 	CertificateSubjectMappingModelPage = &model.CertSubjectMappingPage{
@@ -100,8 +84,30 @@ var (
 	}
 )
 
+func fixCertSubjectMappingEntity(ID, subject, consumerType, internalConsumerID, tenantAccessLevels string, createdAt time.Time) *certsubjectmapping.Entity {
+	return &certsubjectmapping.Entity{
+		ID:                 ID,
+		Subject:            subject,
+		ConsumerType:       consumerType,
+		InternalConsumerID: &internalConsumerID,
+		TenantAccessLevels: tenantAccessLevels,
+		CreatedAt:          createdAt,
+	}
+}
+
+func fixCertSubjectMappingModel(ID, subject, consumerType, internalConsumerID string, tenantAccessLevels []string, createdAt time.Time) *model.CertSubjectMapping {
+	return &model.CertSubjectMapping{
+		ID:                 ID,
+		Subject:            subject,
+		ConsumerType:       consumerType,
+		InternalConsumerID: &internalConsumerID,
+		TenantAccessLevels: tenantAccessLevels,
+		CreatedAt:          createdAt,
+	}
+}
+
 func fixColumns() []string {
-	return []string{"id", "subject", "consumer_type", "internal_consumer_id", "tenant_access_levels"}
+	return []string{"id", "subject", "consumer_type", "internal_consumer_id", "tenant_access_levels", "created_at", "updated_at"}
 }
 
 func fixUnusedCertSubjectMappingRepository() *automock.CertMappingRepository {
