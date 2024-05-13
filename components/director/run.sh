@@ -305,11 +305,11 @@ export APP_FORMATION_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/status'
 export APP_UCL_CERT_OU_SUBACCOUNT_ID='f8075207-1478-4a80-bd26-24a4785a2bfd'
 # This file previously was created with the help of the Helm values.yaml
 # However, the chart was moved in the internal repository and the tenant-mappings need to be created manually
-# yq eval ".global.director.tenantMappings" chart/compass/values.yaml  -o=json > /tmp/tenant-mapping-config.json
+# Created manually with `yq eval ".global.director.tenantMappings" chart/compass/values.yaml  -o=json > /tmp/tenant-mapping-config.json`
 if [ -f /tmp/tenant-mapping-config.json ]; then
     export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
 else
-    echo "Tenant mapping configuration is missing"
+    echo "Tenant mapping configuration is missing and should be manually created with (yq eval ".global.director.tenantMappings" chart/compass/values.yaml  -o=json > /tmp/tenant-mapping-config.json) from BOM repo"
     exit 1
 fi
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
