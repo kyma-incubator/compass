@@ -43,12 +43,6 @@ func NewServer(ctx context.Context, cfg config.Config, services Services) (*http
 	}
 	jwtMiddleware := middlewares.NewJWTMiddleware(jwkCache)
 	tenantMappingRouter.Use(jwtMiddleware.JWT)
-	authMiddleware, err := middlewares.NewAuthMiddleware(ctx, cfg.TenantInfo)
-	if err != nil {
-		return nil, errors.Newf("failed to create auth middleware: %w", err)
-	}
-	routerGroup.Use(authMiddleware.Auth)
-	tenantMappingRouter.Use(authMiddleware.Auth)
 	tenantMappingsHandler := handlers.TenantMappingsHandler{
 		Service:        services.TenantMappingsService,
 		AsyncProcessor: services.AsyncProcessor,
