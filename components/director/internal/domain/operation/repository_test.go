@@ -24,10 +24,10 @@ func TestPgRepository_ListAllByType(t *testing.T) {
 		Name: "List operations by Type",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE op_type = $1`),
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.operation WHERE op_type = $1`),
 				Args:  []driver.Value{model.OperationTypeOrdAggregation},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -87,7 +87,7 @@ func TestPgRepository_Update(t *testing.T) {
 		Name: "Update Operation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.operation SET status = ?, error = ?, priority = ?, updated_at = ? WHERE id = ?`),
+				Query:         regexp.QuoteMeta(`UPDATE public.operation SET status = ?, error = ?, error_severity = ?, priority = ?, updated_at = ? WHERE id = ?`),
 				Args:          fixOperationUpdateArgs(operationModel),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -116,10 +116,10 @@ func TestPgRepository_Get(t *testing.T) {
 		Name: "Get Operation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE id = $1`),
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.operation WHERE id = $1`),
 				Args:  []driver.Value{operationID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -149,10 +149,10 @@ func TestPgRepository_GetByDataAndType(t *testing.T) {
 		Name: "Get Operation by Data and Type",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE data @> $1 AND op_type = $2`),
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.operation WHERE data @> $1 AND op_type = $2`),
 				Args:  []driver.Value{fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -229,11 +229,11 @@ func TestRepository_PriorityQueueListByType(t *testing.T) {
 		Name: "PriorityQueue ListByType",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
 				Args:     []driver.Value{string(model.OperationTypeOrdAggregation), 10},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}

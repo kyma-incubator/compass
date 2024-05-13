@@ -3,7 +3,6 @@ package operation_test
 import (
 	"database/sql/driver"
 	"encoding/json"
-
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -28,7 +27,7 @@ const (
 )
 
 var (
-	fixColumns = []string{"id", "op_type", "status", "data", "error", "priority", "created_at", "updated_at"}
+	fixColumns = []string{"id", "op_type", "status", "data", "error", "error_severity", "priority", "created_at", "updated_at"}
 )
 
 func fixOperationData(appID, appTemplateID string) interface{} {
@@ -42,13 +41,14 @@ func fixOperationDataAsString(appID, appTemplateID string) string {
 
 func fixOperationInput(opType model.OperationType, opStatus model.OperationStatus) *model.OperationInput {
 	return &model.OperationInput{
-		OpType:    opType,
-		Status:    opStatus,
-		Data:      json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
-		Error:     json.RawMessage(errorMsg),
-		Priority:  1,
-		CreatedAt: &time.Time{},
-		UpdatedAt: &time.Time{},
+		OpType:        opType,
+		Status:        opStatus,
+		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
+		Error:         json.RawMessage(errorMsg),
+		ErrorSeverity: model.OperationErrorSeverityInfo,
+		Priority:      1,
+		CreatedAt:     &time.Time{},
+		UpdatedAt:     &time.Time{},
 	}
 }
 
@@ -62,14 +62,15 @@ func fixOperationModelWithPriority(opType model.OperationType, status model.Oper
 
 func fixOperationModelWithID(id string, opType model.OperationType, opStatus model.OperationStatus, priority int) *model.Operation {
 	return &model.Operation{
-		ID:        id,
-		OpType:    opType,
-		Status:    opStatus,
-		Data:      json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
-		Error:     json.RawMessage(errorMsg),
-		Priority:  priority,
-		CreatedAt: &time.Time{},
-		UpdatedAt: &time.Time{},
+		ID:            id,
+		OpType:        opType,
+		Status:        opStatus,
+		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
+		Error:         json.RawMessage(errorMsg),
+		ErrorSeverity: model.OperationErrorSeverityInfo,
+		Priority:      priority,
+		CreatedAt:     &time.Time{},
+		UpdatedAt:     &time.Time{},
 	}
 }
 
@@ -99,21 +100,22 @@ func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOp
 
 func fixEntityOperation(id string, opType model.OperationType, opStatus model.OperationStatus) *operation.Entity {
 	return &operation.Entity{
-		ID:        id,
-		Type:      string(opType),
-		Status:    string(opStatus),
-		Data:      repo.NewValidNullableString(fixOperationDataAsString(applicationID, applicationTemplateID)),
-		Error:     repo.NewValidNullableString(errorMsg),
-		Priority:  1,
-		CreatedAt: &time.Time{},
-		UpdatedAt: &time.Time{},
+		ID:            id,
+		Type:          string(opType),
+		Status:        string(opStatus),
+		Data:          repo.NewValidNullableString(fixOperationDataAsString(applicationID, applicationTemplateID)),
+		Error:         repo.NewValidNullableString(errorMsg),
+		ErrorSeverity: repo.NewValidNullableString(string(model.OperationErrorSeverityInfo)),
+		Priority:      1,
+		CreatedAt:     &time.Time{},
+		UpdatedAt:     &time.Time{},
 	}
 }
 
 func fixOperationCreateArgs(op *model.Operation) []driver.Value {
-	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), op.Priority, op.CreatedAt, op.UpdatedAt}
+	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), repo.NewValidNullableString(string(op.ErrorSeverity)), op.Priority, op.CreatedAt, op.UpdatedAt}
 }
 
 func fixOperationUpdateArgs(op *model.Operation) []driver.Value {
-	return []driver.Value{op.Status, repo.NewNullableStringFromJSONRawMessage(op.Error), op.Priority, op.UpdatedAt, op.ID}
+	return []driver.Value{op.Status, repo.NewNullableStringFromJSONRawMessage(op.Error), repo.NewValidNullableString(string(op.ErrorSeverity)), op.Priority, op.UpdatedAt, op.ID}
 }

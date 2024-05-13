@@ -56,13 +56,14 @@ type Operation struct {
 
 // OperationInput represents an OperationInput
 type OperationInput struct {
-	OpType    OperationType
-	Status    OperationStatus
-	Data      json.RawMessage
-	Error     json.RawMessage
-	Priority  int
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
+	OpType        OperationType
+	Status        OperationStatus
+	Data          json.RawMessage
+	Error         json.RawMessage
+	ErrorSeverity OperationErrorSeverity
+	Priority      int
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
 }
 
 // ToOperation converts OperationInput to Operation
@@ -72,13 +73,14 @@ func (i *OperationInput) ToOperation(id string) *Operation {
 	}
 
 	return &Operation{
-		ID:        id,
-		OpType:    i.OpType,
-		Status:    i.Status,
-		Data:      i.Data,
-		Error:     i.Error,
-		Priority:  i.Priority,
-		CreatedAt: i.CreatedAt,
-		UpdatedAt: i.UpdatedAt,
+		ID:            id,
+		OpType:        i.OpType,
+		Status:        i.Status,
+		Data:          i.Data,
+		Error:         i.Error,
+		ErrorSeverity: i.ErrorSeverity,
+		Priority:      i.Priority,
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
 	}
 }

@@ -24,7 +24,7 @@ func (c *converter) FromEntity(entity *Entity) *model.Operation {
 		Status:        model.OperationStatus(entity.Status),
 		Data:          repo.JSONRawMessageFromNullableString(entity.Data),
 		Error:         repo.JSONRawMessageFromNullableString(entity.Error),
-		ErrorSeverity: model.OperationErrorSeverity(*repo.StringPtrFromNullableString(entity.ErrorSeverity)),
+		ErrorSeverity: model.OperationErrorSeverity(repo.StringFromNullableString(entity.ErrorSeverity)),
 		Priority:      entity.Priority,
 		CreatedAt:     entity.CreatedAt,
 		UpdatedAt:     entity.UpdatedAt,
