@@ -588,8 +588,10 @@ spec:
   upstream:
     url: "http://compass-ias-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.iasAdapter.port }}"
   match:
-    methods: ["PATCH", "OPTIONS"]
-    url: <http|https>://.{{ .Values.global.iasAdapter.internalHost }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>/<.*>
+    methods:
+    - GET
+    - PATCH
+    url: <http|https>://.{{ .Values.global.iasAdapter.internalHost }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.iasAdapter.apiRootPath }}/<.*>
   authenticators:
     - handler: jwt
       config:
