@@ -2,6 +2,7 @@ package certsubjectmapping_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/certsubjectmapping"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -42,6 +43,8 @@ func TestConverter_ToGraphQL(t *testing.T) {
 }
 
 func TestConverter_FromGraphql(t *testing.T) {
+	csmModel := fixCertSubjectMappingModel(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevels, time.Time{})
+
 	testCases := []struct {
 		Name           string
 		Input          graphql.CertificateSubjectMappingInput
@@ -51,7 +54,7 @@ func TestConverter_FromGraphql(t *testing.T) {
 		{
 			Name:     "Success",
 			Input:    CertSubjectMappingGQLModelInput,
-			Expected: CertSubjectMappingModel,
+			Expected: csmModel,
 		},
 	}
 
@@ -102,6 +105,9 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 }
 
 func TestConverter_ToEntity(t *testing.T) {
+	csmModel := fixCertSubjectMappingModel(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevels, testTime)
+	csmEntity := fixCertSubjectMappingEntity(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevelsAsString, time.Time{})
+
 	testCases := []struct {
 		Name           string
 		Input          *model.CertSubjectMapping
@@ -110,8 +116,8 @@ func TestConverter_ToEntity(t *testing.T) {
 	}{
 		{
 			Name:     "Success",
-			Input:    CertSubjectMappingModel,
-			Expected: CertSubjectMappingEntity,
+			Input:    csmModel,
+			Expected: csmEntity,
 		},
 		{
 			Name:     "Success when input is nil",
@@ -139,6 +145,9 @@ func TestConverter_ToEntity(t *testing.T) {
 }
 
 func TestConverter_FromEntity(t *testing.T) {
+	csmModel := fixCertSubjectMappingModel(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevels, testTime)
+	csmEntity := fixCertSubjectMappingEntity(TestID, TestSubject, TestConsumerType, TestInternalConsumerID, TestTenantAccessLevelsAsString, testTime)
+
 	testCases := []struct {
 		Name           string
 		Input          *certsubjectmapping.Entity
@@ -147,8 +156,8 @@ func TestConverter_FromEntity(t *testing.T) {
 	}{
 		{
 			Name:     "Success",
-			Input:    CertSubjectMappingEntity,
-			Expected: CertSubjectMappingModel,
+			Input:    csmEntity,
+			Expected: csmModel,
 		},
 		{
 			Name:     "Success when input is nil",

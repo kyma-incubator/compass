@@ -301,10 +301,12 @@ type ComplexityRoot struct {
 
 	CertificateSubjectMapping struct {
 		ConsumerType       func(childComplexity int) int
+		CreatedAt          func(childComplexity int) int
 		ID                 func(childComplexity int) int
 		InternalConsumerID func(childComplexity int) int
 		Subject            func(childComplexity int) int
 		TenantAccessLevels func(childComplexity int) int
+		UpdatedAt          func(childComplexity int) int
 	}
 
 	CertificateSubjectMappingPage struct {
@@ -2250,6 +2252,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.CertificateSubjectMapping.ConsumerType(childComplexity), true
 
+	case "CertificateSubjectMapping.createdAt":
+		if e.complexity.CertificateSubjectMapping.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.CertificateSubjectMapping.CreatedAt(childComplexity), true
+
 	case "CertificateSubjectMapping.id":
 		if e.complexity.CertificateSubjectMapping.ID == nil {
 			break
@@ -2277,6 +2286,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.CertificateSubjectMapping.TenantAccessLevels(childComplexity), true
+
+	case "CertificateSubjectMapping.updatedAt":
+		if e.complexity.CertificateSubjectMapping.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.CertificateSubjectMapping.UpdatedAt(childComplexity), true
 
 	case "CertificateSubjectMappingPage.data":
 		if e.complexity.CertificateSubjectMappingPage.Data == nil {
@@ -17770,6 +17786,91 @@ func (ec *executionContext) fieldContext_CertificateSubjectMapping_tenantAccessL
 	return fc, nil
 }
 
+func (ec *executionContext) _CertificateSubjectMapping_createdAt(ctx context.Context, field graphql.CollectedField, obj *CertificateSubjectMapping) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CertificateSubjectMapping_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CertificateSubjectMapping_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CertificateSubjectMapping",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _CertificateSubjectMapping_updatedAt(ctx context.Context, field graphql.CollectedField, obj *CertificateSubjectMapping) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_CertificateSubjectMapping_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_CertificateSubjectMapping_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "CertificateSubjectMapping",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _CertificateSubjectMappingPage_data(ctx context.Context, field graphql.CollectedField, obj *CertificateSubjectMappingPage) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_CertificateSubjectMappingPage_data(ctx, field)
 	if err != nil {
@@ -17819,6 +17920,10 @@ func (ec *executionContext) fieldContext_CertificateSubjectMappingPage_data(ctx 
 				return ec.fieldContext_CertificateSubjectMapping_internalConsumerID(ctx, field)
 			case "tenantAccessLevels":
 				return ec.fieldContext_CertificateSubjectMapping_tenantAccessLevels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CertificateSubjectMapping_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CertificateSubjectMapping_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CertificateSubjectMapping", field.Name)
 		},
@@ -34001,6 +34106,10 @@ func (ec *executionContext) fieldContext_Mutation_createCertificateSubjectMappin
 				return ec.fieldContext_CertificateSubjectMapping_internalConsumerID(ctx, field)
 			case "tenantAccessLevels":
 				return ec.fieldContext_CertificateSubjectMapping_tenantAccessLevels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CertificateSubjectMapping_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CertificateSubjectMapping_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CertificateSubjectMapping", field.Name)
 		},
@@ -34089,6 +34198,10 @@ func (ec *executionContext) fieldContext_Mutation_updateCertificateSubjectMappin
 				return ec.fieldContext_CertificateSubjectMapping_internalConsumerID(ctx, field)
 			case "tenantAccessLevels":
 				return ec.fieldContext_CertificateSubjectMapping_tenantAccessLevels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CertificateSubjectMapping_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CertificateSubjectMapping_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CertificateSubjectMapping", field.Name)
 		},
@@ -34177,6 +34290,10 @@ func (ec *executionContext) fieldContext_Mutation_deleteCertificateSubjectMappin
 				return ec.fieldContext_CertificateSubjectMapping_internalConsumerID(ctx, field)
 			case "tenantAccessLevels":
 				return ec.fieldContext_CertificateSubjectMapping_tenantAccessLevels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CertificateSubjectMapping_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CertificateSubjectMapping_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CertificateSubjectMapping", field.Name)
 		},
@@ -39802,6 +39919,10 @@ func (ec *executionContext) fieldContext_Query_certificateSubjectMapping(ctx con
 				return ec.fieldContext_CertificateSubjectMapping_internalConsumerID(ctx, field)
 			case "tenantAccessLevels":
 				return ec.fieldContext_CertificateSubjectMapping_tenantAccessLevels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_CertificateSubjectMapping_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_CertificateSubjectMapping_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type CertificateSubjectMapping", field.Name)
 		},
@@ -50521,6 +50642,13 @@ func (ec *executionContext) _CertificateSubjectMapping(ctx context.Context, sel 
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "createdAt":
+			out.Values[i] = ec._CertificateSubjectMapping_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updatedAt":
+			out.Values[i] = ec._CertificateSubjectMapping_updatedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}

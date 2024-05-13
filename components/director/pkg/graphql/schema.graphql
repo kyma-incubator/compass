@@ -1251,6 +1251,8 @@ type CertificateSubjectMapping {
 	consumerType: String!
 	internalConsumerID: String
 	tenantAccessLevels: [String!]!
+	createdAt: Timestamp!
+	updatedAt: Timestamp
 }
 
 type CertificateSubjectMappingPage implements Pageable {
