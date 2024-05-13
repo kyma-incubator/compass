@@ -2,16 +2,14 @@ module github.com/kyma-incubator/compass/tests
 
 go 1.20
 
-replace (
-	github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
-)
+replace github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
 
 require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.6.0
 	github.com/kyma-incubator/compass/components/connectivity-adapter v0.0.0-20240429124008-273ce1ffbcfd
 	github.com/kyma-incubator/compass/components/connector v0.0.0-20240429124008-273ce1ffbcfd
-	github.com/kyma-incubator/compass/components/director v0.0.0-20240510135719-3a8c90c60b6d
+	github.com/kyma-incubator/compass/components/director v0.0.0-20240513053639-5b3e33cc282b
 	github.com/kyma-incubator/compass/components/external-services-mock v0.0.0-20240429124008-273ce1ffbcfd
 	github.com/kyma-incubator/compass/components/gateway v0.0.0-20240429124008-273ce1ffbcfd
 	github.com/kyma-incubator/compass/components/operations-controller v0.0.0-20240429124008-273ce1ffbcfd
