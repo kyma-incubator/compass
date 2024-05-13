@@ -626,9 +626,8 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, terr
 		}
 
-		// todo::: delete/update below comments
-		// create operations in a transaction similar to the FAs above (using terr as well)
-		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
+		// create operations in a transaction similar to how we persist the FAs above (using terr as well)
+		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API, and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
 		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 			for _, a := range assignments {
 				if _, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
