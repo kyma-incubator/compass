@@ -31,7 +31,7 @@ type processor struct {
 }
 
 // NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping cache, and subject organization unit pattern.
-// If the subject-to-consumer mapping is invalid, an error is returned.
+// If the subject-to-consumer mapping is invalid, an error is logged.
 func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmapping.Cache, ouPattern, ouRegionPattern string) *processor {
 	mappings := certSubjectMappingCache.Get()
 	if len(mappings) == 0 {
