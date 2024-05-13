@@ -19,28 +19,30 @@ func NewConverter() *converter {
 // FromEntity converts the provided Entity repo-layer representation of an Operation to the service-layer representation model.Operation.
 func (c *converter) FromEntity(entity *Entity) *model.Operation {
 	return &model.Operation{
-		ID:        entity.ID,
-		OpType:    model.OperationType(entity.Type),
-		Status:    model.OperationStatus(entity.Status),
-		Data:      repo.JSONRawMessageFromNullableString(entity.Data),
-		Error:     repo.JSONRawMessageFromNullableString(entity.Error),
-		Priority:  entity.Priority,
-		CreatedAt: entity.CreatedAt,
-		UpdatedAt: entity.UpdatedAt,
+		ID:            entity.ID,
+		OpType:        model.OperationType(entity.Type),
+		Status:        model.OperationStatus(entity.Status),
+		Data:          repo.JSONRawMessageFromNullableString(entity.Data),
+		Error:         repo.JSONRawMessageFromNullableString(entity.Error),
+		ErrorSeverity: model.OperationErrorSeverity(*repo.StringPtrFromNullableString(entity.ErrorSeverity)),
+		Priority:      entity.Priority,
+		CreatedAt:     entity.CreatedAt,
+		UpdatedAt:     entity.UpdatedAt,
 	}
 }
 
 // ToEntity converts the provided service-layer representation of an Operation to the repository-layer one.
 func (c *converter) ToEntity(operationModel *model.Operation) *Entity {
 	return &Entity{
-		ID:        operationModel.ID,
-		Type:      string(operationModel.OpType),
-		Status:    string(operationModel.Status),
-		Data:      repo.NewNullableStringFromJSONRawMessage(operationModel.Data),
-		Error:     repo.NewNullableStringFromJSONRawMessage(operationModel.Error),
-		Priority:  operationModel.Priority,
-		CreatedAt: operationModel.CreatedAt,
-		UpdatedAt: operationModel.UpdatedAt,
+		ID:            operationModel.ID,
+		Type:          string(operationModel.OpType),
+		Status:        string(operationModel.Status),
+		Data:          repo.NewNullableStringFromJSONRawMessage(operationModel.Data),
+		Error:         repo.NewNullableStringFromJSONRawMessage(operationModel.Error),
+		ErrorSeverity: repo.NewValidNullableString(string(operationModel.ErrorSeverity)),
+		Priority:      operationModel.Priority,
+		CreatedAt:     operationModel.CreatedAt,
+		UpdatedAt:     operationModel.UpdatedAt,
 	}
 }
 
