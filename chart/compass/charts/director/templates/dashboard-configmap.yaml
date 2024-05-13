@@ -2280,7 +2280,8 @@ data:
               "alias": "Failed",
               "color": "#F2495C",
               "dashes": true,
-              "spaceLength": 10
+              "spaceLength": 10,
+              "fill": 2
             },
             {
               "$$hashKey": "object:206",
@@ -2303,57 +2304,52 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(compass_system_fetcher_operations_total_quantity)",
+              "expr": "sum(compass_system_fetching_operations_status_totalcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 1,
               "legendFormat": "Total",
-              "metric": "compass_system_fetcher_operations_total_quantity",
+              "metric": "compass_system_fetching_operations_status_totalcount",
               "refId": "A",
               "step": 0
             },
             {
-              "expr": "sum(compass_system_fetcher_operations_failed_quantity)",
+              "expr": "sum(compass_system_fetching_operations_status_failedcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "Failed",
-              "metric": "compass_system_fetcher_operations_failed_quantity",
+              "metric": "compass_system_fetching_operations_status_failedcount",
               "refId": "B",
               "step": 0
             },
             {
-              "expr": "sum(compass_system_fetcher_operations_completed_quantity)",
+              "expr": "sum(compass_system_fetching_operations_status_completedcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "Completed",
-              "metric": "compass_system_fetcher_operations_completed_quantity",
+              "metric": "compass_system_fetching_operations_status_completedcount",
               "refId": "C",
               "step": 0
             },
             {
-              "expr": "sum(compass_system_fetcher_operations_scheduled_quantity)",
+              "expr": "sum(compass_system_fetching_operations_status_scheduledcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "Scheduled",
-              "metric": "compass_system_fetcher_operations_scheduled_quantity",
+              "metric": "compass_system_fetching_operations_status_scheduledcount",
               "refId": "D",
               "step": 0
             },
             {
-              "expr": "sum(compass_system_fetcher_operations_in_progress_quantity)",
+              "expr": "sum(compass_system_fetching_operations_status_inprogresscount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "In progress",
-              "metric": "compass_system_fetcher_operations_in_progress_quantity",
+              "metric": "compass_system_fetching_operations_status_inprogresscount",
               "refId": "E",
               "step": 0
             }
@@ -2468,7 +2464,8 @@ data:
               "alias": "Failed",
               "color": "#F2495C",
               "dashes": true,
-              "spaceLength": 10
+              "spaceLength": 10,
+              "fill": 2
             },
             {
               "$$hashKey": "object:115",
@@ -2491,57 +2488,52 @@ data:
           "steppedLine": false,
           "targets": [
             {
-              "expr": "sum(compass_ord_operations_total_quantity)",
+              "expr": "sum(compass_ord_aggregation_operations_status_totalcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 1,
               "legendFormat": "Total",
-              "metric": "compass_ord_operations_total_quantity",
+              "metric": "compass_ord_aggregation_operations_status_totalcount",
               "refId": "A",
               "step": 0
             },
             {
-              "expr": "sum(compass_ord_operations_failed_quantity)",
+              "expr": "sum(compass_ord_aggregation_operations_status_failedcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "Failed",
-              "metric": "compass_ord_operations_failed_quantity",
+              "metric": "compass_ord_aggregation_operations_status_failedcount",
               "refId": "B",
               "step": 0
             },
             {
-              "expr": "sum(compass_ord_operations_completed_quantity)",
+              "expr": "sum(compass_ord_aggregation_operations_status_completedcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "Completed",
-              "metric": "compass_ord_operations_completed_quantity",
+              "metric": "compass_ord_aggregation_operations_status_completedcount",
               "refId": "C",
               "step": 0
             },
             {
-              "expr": "sum(compass_ord_operations_scheduled_quantity)",
+              "expr": "sum(compass_ord_aggregation_operations_status_scheduledcount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "Scheduled",
-              "metric": "compass_ord_operations_scheduled_quantity",
+              "metric": "compass_ord_aggregation_operations_status_scheduledcount",
               "refId": "D",
               "step": 0
             },
             {
-              "expr": "sum(compass_ord_operations_in_progress_quantity)",
+              "expr": "sum(compass_ord_aggregation_operations_status_inprogresscount)",
               "format": "time_series",
               "instant": false,
               "interval": "10s",
-              "intervalFactor": 2,
               "legendFormat": "In progress",
-              "metric": "compass_ord_operations_in_progress_quantity",
+              "metric": "compass_ord_aggregation_operations_status_inprogresscount",
               "refId": "E",
               "step": 0
             }
