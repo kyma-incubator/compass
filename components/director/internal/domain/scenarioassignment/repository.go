@@ -117,11 +117,6 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 func (r *repository) ListForScenarioNames(ctx context.Context, tenantID string, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error) {
 	var collection EntityCollection
 
-	scenarioConditions := make(repo.Conditions, 0, len(scenarioNames))
-	for _, name := range scenarioNames {
-		scenarioConditions = append(scenarioConditions, repo.NewEqualCondition(scenarioColumn, name))
-	}
-
 	condition := repo.NewInConditionForStringValues(scenarioColumn, scenarioNames)
 
 	if err := r.lister.List(ctx, resource.AutomaticScenarioAssigment, tenantID, &collection, condition); err != nil {
