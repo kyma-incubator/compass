@@ -10,6 +10,7 @@ NC='\033[0m' # No Color
 
 set -e
 
+#test
 ROOT_PATH=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 SCHEMA_MIGRATOR_COMPONENT_PATH=${ROOT_PATH}/../schema-migrator
 
