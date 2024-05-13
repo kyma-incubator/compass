@@ -262,10 +262,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config, internalDire
 		return nil, nil, err
 	}
 
-	subjectProcessor, err := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
-	if err != nil {
-		return nil, nil, err
-	}
+	subjectProcessor := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 
 	connectorCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
 		subject.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())

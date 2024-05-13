@@ -32,7 +32,7 @@ type processor struct {
 
 // NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping cache, and subject organization unit pattern.
 // If the subject-to-consumer mapping is invalid, an error is returned.
-func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmapping.Cache, ouPattern, ouRegionPattern string) (*processor, error) {
+func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmapping.Cache, ouPattern, ouRegionPattern string) *processor {
 	mappings := certSubjectMappingCache.Get()
 	if len(mappings) == 0 {
 		log.C(ctx).Warnf("The certificate subject mapping cache is empty.")
@@ -49,7 +49,7 @@ func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmappin
 		certSubjectMappingCache: certSubjectMappingCache,
 		ouPattern:               ouPattern,
 		ouRegionPattern:         ouRegionPattern,
-	}, nil
+	}
 }
 
 // AuthIDFromSubjectFunc returns a function able to extract the authentication ID from a given certificate subject or from the certificate subject mappings.

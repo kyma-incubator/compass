@@ -40,8 +40,6 @@ var (
 	validConsumerType       = string(consumer.IntegrationSystem)
 	validInternalConsumerID = "3bfbb60f-d67d-4657-8f9e-2d73a6b24a10"
 	validTntAccessLevels    = []string{string(tenantEntity.Account)}
-	invalidConsumerType     = "invalidConsumerType"
-	invalidTntAccessLevels  = []string{"invalidAccessLevel"}
 
 	validCertSubjectMappings                     = fixCertSubjectMappings(validSubject, validConsumerType, validInternalConsumerID, validTntAccessLevels)
 	validCertSubjectMappingsMultipleOU           = fixCertSubjectMappings(subjectMappingOUSeparatedWithPlus, validConsumerType, validInternalConsumerID, validTntAccessLevels)
@@ -71,14 +69,11 @@ func TestNewProcessor(t *testing.T) {
 		t.Run(ts.name, func(t *testing.T) {
 			cache := ts.certSubjectMappingCache()
 			defer mock.AssertExpectationsForObjects(t, cache)
-			p, err := subject.NewProcessor(ctx, cache, "testOUPattern", "testOURegionPattern")
+			p := subject.NewProcessor(ctx, cache, "testOUPattern", "testOURegionPattern")
 
 			if len(ts.expectedErrorMsg) > 0 {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), ts.expectedErrorMsg)
 				require.Nil(t, p)
 			} else {
-				require.NoError(t, err)
 				require.NotEmpty(t, p)
 			}
 		})
@@ -93,8 +88,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(validCertSubjectMappings).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubject)
 		require.Equal(t, validInternalConsumerID, res)
@@ -105,8 +99,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(certSubjectMappingsWithoutInternalConsumerID).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
 		require.Equal(t, expectedID, res)
@@ -117,8 +110,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(emptyMappings).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
 		require.Equal(t, expectedID, res)
@@ -129,8 +121,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(certSubjectMappingWithNotMatchingSubject).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithoutRegion)
 		require.Equal(t, expectedID, res)
@@ -141,8 +132,7 @@ func TestAuthIDFromSubjectFunc(t *testing.T) {
 		cache.On("Get").Return(certSubjectMappingWithNotMatchingSubject).Twice()
 		defer mock.AssertExpectationsForObjects(t, cache)
 
-		p, err := subject.NewProcessor(ctx, cache, "Compass Clients", "Region")
-		require.NoError(t, err)
+		p := subject.NewProcessor(ctx, cache, "Compass Clients", "Region")
 
 		res := p.AuthIDFromSubjectFunc(ctx)(validSubjectWithRegion)
 		require.Equal(t, expectedID, res)
@@ -210,8 +200,7 @@ func TestAuthSessionExtraFromSubjectFunc(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			cache := testCase.CertCacheFn()
 
-			p, err := subject.NewProcessor(ctx, cache, "", "")
-			require.NoError(t, err)
+			p := subject.NewProcessor(ctx, cache, "", "")
 
 			extra := p.AuthSessionExtraFromSubjectFunc()(ctx, testCase.Subject)
 			if testCase.ExpectedExtra != nil {
