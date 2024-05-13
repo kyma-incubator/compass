@@ -20,8 +20,11 @@ import (
 )
 
 const (
-	CreateFormationTemplateCategory = "create formation template"
-	globalFormationTemplateName     = "Side-by-Side Extensibility with Kyma"
+	CreateFormationTemplateCategory      = "create formation template"
+	SetFormationTemplateLabelCategory    = "set formation template label"
+	DeleteFormationTemplateLabelCategory = "delete formation template label"
+
+	globalFormationTemplateName = "Side-by-Side Extensibility with Kyma"
 )
 
 var (
@@ -49,25 +52,58 @@ func TestCreateFormationTemplate(t *testing.T) {
 	require.NoError(t, err)
 
 	createFormationTemplateRequest := fixtures.FixCreateFormationTemplateRequest(formationTemplateInputGQLString)
-	output := graphql.FormationTemplate{}
+	ft := graphql.FormationTemplate{}
 
 	// WHEN
 	t.Logf("Create formation template with name: %q", formationTemplateName)
-	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &output)
-	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &output)
+	err = testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, createFormationTemplateRequest, &ft)
+	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
 	require.NoError(t, err)
 
 	//THEN
-	require.NotEmpty(t, output.ID)
-	require.NotEmpty(t, output.Name)
+	require.NotEmpty(t, ft.ID)
+	require.NotEmpty(t, ft.Name)
 
 	example.SaveExampleInCustomDir(t, createFormationTemplateRequest.Query(), CreateFormationTemplateCategory, "create formation template")
 
 	t.Logf("Check if formation template with name %q was created", formationTemplateName)
-
-	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, output.ID)
-
+	formationTemplateOutput := fixtures.QueryFormationTemplate(t, ctx, certSecuredGraphQLClient, ft.ID)
 	assertions.AssertFormationTemplateFromRegisterInput(t, &formationTemplateRegisterInput, formationTemplateOutput)
+
+	t.Run("Test formation template label insertion and deletion", func(t *testing.T) {
+		t.Logf("Create formation template label with key: %q and value: %q", fixtures.FormationTemplateLabelKey, fixtures.FormationTemplateLabelValue)
+		ftLabelInput := graphql.LabelInput{
+			Key:   fixtures.FormationTemplateLabelKey,
+			Value: fixtures.FormationTemplateLabelValue,
+		}
+		ftLabelInputGQLString, err := testctx.Tc.Graphqlizer.LabelInputToGQL(ftLabelInput)
+		require.NoError(t, err)
+
+		setFormationTemplateLabelReq := fixtures.FixSetFormationTemplateLabelRequest(ft.ID, ftLabelInputGQLString)
+		example.SaveExampleInCustomDir(t, setFormationTemplateLabelReq.Query(), SetFormationTemplateLabelCategory, "set formation template label")
+		lbl := graphql.Label{}
+		require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, setFormationTemplateLabelReq, &lbl))
+		require.Equal(t, fixtures.FormationTemplateLabelKey, lbl.Key)
+		require.Equal(t, fixtures.FormationTemplateLabelValue, lbl.Value)
+
+		updatedLblValue := fixtures.FormationTemplateLabelValue + "Updated"
+		t.Logf("Update formation template label with key: %q to: %q", fixtures.FormationTemplateLabelKey, updatedLblValue)
+		ftLabelUpdated := fixtures.SetFormationTemplateLabel(t, ctx, certSecuredGraphQLClient, ft.ID, graphql.LabelInput{
+			Key:   fixtures.FormationTemplateLabelKey,
+			Value: updatedLblValue,
+		})
+		require.Equal(t, fixtures.FormationTemplateLabelKey, ftLabelUpdated.Key)
+		require.Equal(t, updatedLblValue, ftLabelUpdated.Value)
+
+		t.Logf("Delete formation template label with key: %q", fixtures.FormationTemplateLabelKey)
+		deleteFormationTemplateLabelReq := fixtures.FixDeleteFormationTemplateLabelRequest(ft.ID, fixtures.FormationTemplateLabelKey)
+		example.SaveExampleInCustomDir(t, deleteFormationTemplateLabelReq.Query(), DeleteFormationTemplateLabelCategory, "delete formation template label")
+
+		lblOutput := graphql.Label{}
+		require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, certSecuredGraphQLClient, deleteFormationTemplateLabelReq, &lblOutput))
+		require.Equal(t, fixtures.FormationTemplateLabelKey, lblOutput.Key)
+		require.Equal(t, updatedLblValue, lblOutput.Value)
+	})
 }
 
 func TestCreateAppOnlyFormationTemplate(t *testing.T) {

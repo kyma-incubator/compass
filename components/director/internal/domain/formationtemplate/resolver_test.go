@@ -723,7 +723,7 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 
 func TestResolver_CreateFormationTemplate(t *testing.T) {
 	// removing the webhooks below because they do not affect the flow in any way but their validation is difficult to set up properly
-	gqlInputWithoutWebhooks := formationTemplateGraphQLInput
+	gqlInputWithoutWebhooks := formationTemplateRegisterInputGraphQL
 	gqlInputWithoutWebhooks.Webhooks = nil
 
 	modelInputWithoutWebhooks := formationTemplateRegisterInputModel

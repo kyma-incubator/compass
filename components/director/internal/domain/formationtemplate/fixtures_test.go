@@ -107,6 +107,7 @@ var (
 		RuntimeArtifactKind:    &runtimeArtifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		DiscoveryConsumers:     discoveryConsumers,
+		SupportsReset:          shouldReset,
 	}
 
 	formationTemplateModelWithResetInput = model.FormationTemplateRegisterInput{
@@ -121,7 +122,7 @@ var (
 		SupportsReset:          shouldReset,
 	}
 
-	formationTemplateGraphQLInput = graphql.FormationTemplateRegisterInput{
+	formationTemplateRegisterInputGraphQL = graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -140,6 +141,7 @@ var (
 		RuntimeArtifactKind:    &artifactKind,
 		LeadingProductIDs:      leadingProductIDs,
 		DiscoveryConsumers:     discoveryConsumers,
+		SupportsReset:          &shouldReset,
 	}
 
 	formationTemplateWithResetGraphQLInput = graphql.FormationTemplateRegisterInput{
@@ -207,6 +209,19 @@ var (
 		TenantID:               nil,
 		CreatedAt:              testTime,
 		UpdatedAt:              &testTime,
+	}
+
+	formationTemplateModelWithoutWebhooks = model.FormationTemplate{
+		ID:                     testFormationTemplateID,
+		Name:                   formationTemplateName,
+		ApplicationTypes:       applicationTypes,
+		RuntimeTypes:           runtimeTypes,
+		RuntimeTypeDisplayName: &runtimeTypeDisplayName,
+		RuntimeArtifactKind:    &runtimeArtifactKind,
+		LeadingProductIDs:      leadingProductIDs,
+		DiscoveryConsumers:     discoveryConsumers,
+		TenantID:               str.Ptr(testTenantID),
+		SupportsReset:          shouldReset,
 	}
 
 	formationTemplateEntity = formationtemplate.Entity{

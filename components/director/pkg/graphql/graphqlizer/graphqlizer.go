@@ -671,6 +671,16 @@ func (g *Graphqlizer) LabelFilterToGQL(in graphql.LabelFilter) (string, error) {
 	}`)
 }
 
+// LabelInputToGQL missing godoc
+func (g *Graphqlizer) LabelInputToGQL(in graphql.LabelInput) (string, error) {
+	return g.genericToGQL(in, `{
+		key: "{{.Key}}",
+		{{- if .Value }}
+		value: {{.Value}},
+		{{- end }}
+	}`)
+}
+
 // IntegrationSystemInputToGQL missing godoc
 func (g *Graphqlizer) IntegrationSystemInputToGQL(in graphql.IntegrationSystemInput) (string, error) {
 	return g.genericToGQL(in, `{

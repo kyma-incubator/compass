@@ -23,6 +23,18 @@ func CreateFormationTemplate(t require.TestingT, ctx context.Context, gqlClient 
 	return formationTemplate
 }
 
+func SetFormationTemplateLabel(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, formationTemplateID string, in graphql.LabelInput) graphql.Label {
+	labelInputGQLString, err := testctx.Tc.Graphqlizer.LabelInputToGQL(in)
+	require.NoError(t, err)
+	createReq := FixSetFormationTemplateLabelRequest(formationTemplateID, labelInputGQLString)
+
+	lbl := graphql.Label{}
+	require.NoError(t, testctx.Tc.RunOperationWithoutTenant(ctx, gqlClient, createReq, &lbl))
+	require.NotEmpty(t, lbl.Key)
+
+	return lbl
+}
+
 func CreateFormationTemplateExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationTemplateRegisterInput) {
 	formationTemplateInputGQLString, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(in)
 	require.NoError(t, err)

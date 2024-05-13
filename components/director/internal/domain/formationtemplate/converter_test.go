@@ -26,7 +26,7 @@ func TestConverter_FromRegisterInputGraphQL(t *testing.T) {
 	}{
 		{
 			Name:  "Success",
-			Input: &formationTemplateGraphQLInput,
+			Input: &formationTemplateRegisterInputGraphQL,
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", GQLWebhooksInputs).Return(modelWebhookInputs, nil)
@@ -56,7 +56,7 @@ func TestConverter_FromRegisterInputGraphQL(t *testing.T) {
 		},
 		{
 			Name:  "Error when converting webhooks",
-			Input: &formationTemplateGraphQLInput,
+			Input: &formationTemplateRegisterInputGraphQL,
 			WebhookConverterFn: func() *automock.WebhookConverter {
 				conv := &automock.WebhookConverter{}
 				conv.On("MultipleInputFromGraphQL", GQLWebhooksInputs).Return(nil, testErr)
@@ -94,6 +94,44 @@ func TestConverter_FromRegisterInputGraphQL(t *testing.T) {
 	}
 }
 
+func TestConverter_FromUpdateInputGraphQL(t *testing.T) {
+
+	testCases := []struct {
+		Name        string
+		Input       *graphql.FormationTemplateUpdateInput
+		Expected    *model.FormationTemplateUpdateInput
+		ExpectedErr bool
+	}{
+		{
+			Name:     "Success",
+			Input:    &formationTemplateUpdateInputGraphQL,
+			Expected: &formationTemplateUpdateInputModel,
+		},
+		{
+			Name:        "Empty",
+			Input:       nil,
+			Expected:    nil,
+			ExpectedErr: false,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			converter := formationtemplate.NewConverter(nil)
+			// WHEN
+			result, err := converter.FromUpdateInputGraphQL(testCase.Input)
+			if testCase.ExpectedErr {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+			}
+
+			// THEN
+			require.Equal(t, result, testCase.Expected)
+		})
+	}
+}
+
 func TestConverter_FromModelInputToModel(t *testing.T) {
 	ftModel := fixFormationTemplateModel(time.Time{}, nil)
 
@@ -123,6 +161,32 @@ func TestConverter_FromModelInputToModel(t *testing.T) {
 			}
 
 			assert.Equal(t, result, testCase.Expected)
+		})
+	}
+}
+
+func TestConverter_FromModelUpdateInputToModel(t *testing.T) {
+	testCases := []struct {
+		Name     string
+		Input    *model.FormationTemplateUpdateInput
+		Expected *model.FormationTemplate
+	}{{
+		Name:     "Success",
+		Input:    &formationTemplateUpdateInputModel,
+		Expected: &formationTemplateModelWithoutWebhooks,
+	}, {
+		Name:     "Empty",
+		Input:    nil,
+		Expected: nil,
+	},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := formationtemplate.NewConverter(nil)
+
+			result := converter.FromModelUpdateInputToModel(testCase.Input, testFormationTemplateID, testTenantID)
+
+			require.Equal(t, result, testCase.Expected)
 		})
 	}
 }
@@ -242,23 +306,6 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 			whConverter.AssertExpectations(t)
 		})
 	}
-	//t.Run("Success", func(t *testing.T) {
-	//	// GIVEN
-	//	converter := formationtemplate.NewConverter(nil)
-	//	// WHEN
-	//	result := converter.MultipleToGraphQL(formationTemplateModelPage.Data)
-	//
-	//	// THEN
-	//	assert.ElementsMatch(t, result, graphQLFormationTemplatePage.Data)
-	//})
-	//t.Run("Returns nil when given empty model", func(t *testing.T) {
-	//	// GIVEN
-	//	converter := formationtemplate.NewConverter()
-	//	// WHEN
-	//	result := converter.MultipleToGraphQL(nil)
-	//
-	//	assert.Nil(t, result)
-	//})
 }
 
 func TestConverter_ToEntity(t *testing.T) {
