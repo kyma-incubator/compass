@@ -2,8 +2,6 @@ module github.com/kyma-incubator/compass/tests
 
 go 1.20
 
-replace github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
-
 require (
 	github.com/avast/retry-go/v4 v4.5.0
 	github.com/google/uuid v1.6.0
