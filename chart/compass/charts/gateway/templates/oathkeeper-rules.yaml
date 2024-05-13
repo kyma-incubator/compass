@@ -578,28 +578,3 @@ spec:
   - handler: id_token
     config:
       claims: {{ .Values.global.oathkeeper.idTokenConfig.claims | quote }}
----
-apiVersion: oathkeeper.ory.sh/v1alpha1
-kind: Rule
-metadata:
-  name: compass-ias-adapter-internal
-spec:
-  # Configuration of oathkeeper for secure endpoint internal communication with compass ias-adapter
-  upstream:
-    url: "http://compass-ias-adapter.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.global.iasAdapter.port }}"
-  match:
-    methods:
-    - GET
-    - PATCH
-    url: <http|https>://.{{ .Values.global.iasAdapter.internalHost }}.{{ .Values.global.ingress.domainName }}<(:(80|443))?>{{ .Values.global.iasAdapter.apiRootPath }}/<.*>
-  authenticators:
-    - handler: jwt
-      config:
-        jwks_urls: [{{ .Values.global.kubernetes.serviceAccountTokenJWKS }}]
-  authorizer:
-    handler: allow
-  mutators:
-    - handler: noop # This will copy all request headers to the oathkeeper's session, making them available in the claims template
-    - handler: id_token
-      config:
-        claims: {{ .Values.global.oathkeeper.idTokenConfig.internalClaims | quote }}

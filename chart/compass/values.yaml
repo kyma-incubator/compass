@@ -183,7 +183,7 @@ global:
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
-      version: "PR-3831"
+      version: "PR-3873"
       name: compass-ias-adapter
     kyma_adapter:
       dir: dev/incubator/
@@ -573,7 +573,6 @@ global:
       censoredFlows: "JWT"
   iasAdapter:
     port: 8080
-    internalHost: compass-ias-adapter-internal
     apiRootPath: "/ias-adapter"
     readTimeout: 30s
     readHeaderTimeout: 30s
