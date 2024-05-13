@@ -74,6 +74,7 @@ type FormationRepository interface {
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 	Update(ctx context.Context, model *model.Formation) error
+	UpdateLastNotificationSentTimestamps(ctx context.Context, formationID string) error
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer

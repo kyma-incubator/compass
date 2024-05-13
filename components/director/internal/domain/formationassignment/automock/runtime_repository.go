@@ -19,10 +19,6 @@ type RuntimeRepository struct {
 func (_m *RuntimeRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, scenarios)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByScenarios")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {
