@@ -95,7 +95,6 @@ func TestConverter_FromRegisterInputGraphQL(t *testing.T) {
 }
 
 func TestConverter_FromUpdateInputGraphQL(t *testing.T) {
-
 	testCases := []struct {
 		Name        string
 		Input       *graphql.FormationTemplateUpdateInput
