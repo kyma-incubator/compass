@@ -1,15 +1,21 @@
 package model
 
-import "github.com/kyma-incubator/compass/components/director/pkg/pagination"
+import (
+	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+)
 
 // CertSubjectMapping is a structure that represents a certificate subject
 // mapped to internal consumer with given tenant access levels
 type CertSubjectMapping struct {
-	ID                 string   `json:"id"`
-	Subject            string   `json:"subject"`
-	ConsumerType       string   `json:"consumer_type"`
-	InternalConsumerID *string  `json:"internal_consumer_id"`
-	TenantAccessLevels []string `json:"tenant_access_levels"`
+	ID                 string     `json:"id"`
+	Subject            string     `json:"subject"`
+	ConsumerType       string     `json:"consumer_type"`
+	InternalConsumerID *string    `json:"internal_consumer_id"`
+	TenantAccessLevels []string   `json:"tenant_access_levels"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          *time.Time `json:"updated_at"`
 }
 
 // CertSubjectMappingInput is an input for creating a new CertSubjectMapping
