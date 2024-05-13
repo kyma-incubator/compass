@@ -53,7 +53,7 @@ const (
 func TestGetFormation(t *testing.T) {
 	ctx := context.Background()
 
-	t.Logf("Should create formation: %q", testScenario)
+	t.Logf("Should create formation with name: %q", testScenario)
 	defer fixtures.DeleteFormation(t, ctx, certSecuredGraphQLClient, testScenario)
 
 	var formation graphql.Formation
