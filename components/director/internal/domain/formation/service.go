@@ -72,6 +72,7 @@ type FormationRepository interface {
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
 	ListByIDs(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+	ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
@@ -295,8 +296,12 @@ func (s *service) listFormationsForObject(ctx context.Context, objectID string, 
 	return listFormations(ctx, uniqueFormationIDs)
 }
 
-func (s *service) ListObjectIDsOfTypeForFormation(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+func (s *service) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
 	return s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, objectType)
+}
+
+func (s *service) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	return s.formationRepository.ListObjectIDsOfTypeForFormationsGlobal(ctx, formationNames, objectType)
 }
 
 // Get returns the Formation by its id

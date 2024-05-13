@@ -18,6 +18,10 @@ type SystemAuthService struct {
 func (_m *SystemAuthService) DeleteMultipleByIDForObject(ctx context.Context, systemAuths []model.SystemAuth) error {
 	ret := _m.Called(ctx, systemAuths)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteMultipleByIDForObject")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []model.SystemAuth) error); ok {
 		r0 = rf(ctx, systemAuths)
@@ -31,6 +35,10 @@ func (_m *SystemAuthService) DeleteMultipleByIDForObject(ctx context.Context, sy
 // ListForObject provides a mock function with given fields: ctx, objectType, objectID
 func (_m *SystemAuthService) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	ret := _m.Called(ctx, objectType, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObject")
+	}
 
 	var r0 []model.SystemAuth
 	var r1 error

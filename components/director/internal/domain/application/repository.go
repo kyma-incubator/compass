@@ -326,7 +326,7 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 
 // ListAllGlobalByFilter lists a page of applications with their associated tenants filtered by the provided filters.
 // Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
-func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, appIDs []string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	var entities EntityCollection
 
 	filterSubquery, args, err := label.FilterQueryGlobal(model.ApplicationLabelableObject, label.IntersectSet, filter)
@@ -334,12 +334,17 @@ func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labe
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
-	var conditionTree *repo.ConditionTree
+	var conditions []repo.Condition
 	if filterSubquery != "" {
-		conditionTree = &repo.ConditionTree{Operand: repo.NewInConditionForSubQuery("id", filterSubquery, args)}
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+	if len(appIDs) > 0 {
+		conditions = append(conditions, repo.NewInConditionForStringValues("id", appIDs))
 	}
 
-	page, totalCount, err := r.globalPageableQuerier.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entities, conditionTree)
+	conditionsTree := repo.And(repo.ConditionTreesFromConditions(conditions)...)
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entities, conditionsTree)
 	if err != nil {
 		return nil, err
 	}

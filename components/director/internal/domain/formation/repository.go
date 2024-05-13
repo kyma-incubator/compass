@@ -22,6 +22,8 @@ const (
 	tableName                       string = `public.formations`
 	nameColumn                             = `name`
 	listObjectIDsOfTypeForFormation        = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.source_type = ?;"
+	listObjectIDsOfTypeForFormationGlobal        = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.source_type = ?;"
+
 )
 
 var (
@@ -207,6 +209,34 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 
 	args = append(args, tenantID, objectType)
 	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormation, inCond.GetQueryPart())
+	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
+
+	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
+	err = persist.SelectContext(ctx, objectIDs, listObjectIDsOfTypeForFormationStatement, args)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, persistence.MapSQLError(ctx, err, "objectIDsInFormation", resource.List, "while listing object IDs of type %q for formations %q", objectType, formationNames)
+	}
+
+	return objectIDs, nil
+}
+
+// ListObjectIDsOfTypeForFormations returns all object IDs of type `objectType` for Formations with names in `formationNames`
+func (r *repository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	if len(formationNames) == 0{
+		return nil, nil
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var objectIDs []string
+	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
+	args, _ := inCond.GetQueryArgs()
+
+	args = append(args, objectType)
+	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormationGlobal, inCond.GetQueryPart())
 	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
 
 	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)

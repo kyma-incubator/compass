@@ -18,6 +18,10 @@ type OperationService struct {
 func (_m *OperationService) GetByDataAndType(ctx context.Context, data interface{}, opType model.OperationType) (*model.Operation, error) {
 	ret := _m.Called(ctx, data, opType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByDataAndType")
+	}
+
 	var r0 *model.Operation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, interface{}, model.OperationType) (*model.Operation, error)); ok {
