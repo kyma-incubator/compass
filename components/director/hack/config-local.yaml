@@ -129,6 +129,7 @@ graphql:
     deleteCertificateSubjectMapping: [ "certificate_subject_mapping:write" ]
     addTenantAccess: [ "tenant_access:write" ]
     removeTenantAccess: [ "tenant_access:write" ]
+    sheduleOpertion: ["operation:schedule"]
 
   field:
     fetch_request:

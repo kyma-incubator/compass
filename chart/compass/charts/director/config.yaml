@@ -43,6 +43,7 @@ graphql:
     formationConstraintsByFormationType: [ "formation_constraint:read" ]
     certificateSubjectMapping: ["certificate_subject_mapping:read"]
     certificateSubjectMappings: ["certificate_subject_mapping:read"]
+    operation: ["operation:read"]
 
   mutation:
     registerApplication: ["application:write"]
@@ -136,6 +137,7 @@ graphql:
     deleteCertificateSubjectMapping: ["certificate_subject_mapping:write"]
     addTenantAccess: ["tenant_access:write"]
     removeTenantAccess: ["tenant_access:write"]
+    sheduleOpertion: ["operation:schedule"]
 
   field:
     fetch_request:
