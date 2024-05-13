@@ -705,15 +705,15 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 }
 
 func getTopParentFromJSONPath(jsonPath string) string {
-	trimmedJsonPath := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
+	trimmedJSONPath := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
 
 	regexForTopParent := regexp.MustCompile(`^[^\[.]+`)
-	topParent := regexForTopParent.FindStringSubmatch(trimmedJsonPath)
+	topParent := regexForTopParent.FindStringSubmatch(trimmedJSONPath)
 	if len(topParent) > 0 {
 		return topParent[0]
 	}
 
-	return trimmedJsonPath
+	return trimmedJSONPath
 }
 
 func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {
