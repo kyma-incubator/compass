@@ -30,6 +30,8 @@ var SupportedConsumerTypes = map[consumer.Type]bool{
 	consumer.InstanceCreator:                    true,
 	consumer.FormationViewer:                    true,
 	consumer.TechnicalClient:                    true,
+	consumer.ExternalCertificate:                true,
+	consumer.User:                               true,
 }
 
 // SupportedAccessLevels is a map of all supported tenant access levels

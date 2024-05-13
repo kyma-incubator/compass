@@ -585,7 +585,7 @@ func exitOnError(err error, context string) {
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              address,
