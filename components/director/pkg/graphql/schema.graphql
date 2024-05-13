@@ -1704,6 +1704,7 @@ type Query {
 	Maximum `first` parameter value is 10
 	
 	**Examples**
+	- [query applications by local tenant id and an optional filter](examples/query-applications/query-applications-by-local-tenant-id-and-an-optional-filter.graphql)
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
 	"""
@@ -2117,6 +2118,9 @@ type Mutation {
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
+	
+	**Examples**
+	- [set tenant label](examples/set-tenant-label/set-tenant-label.graphql)
 	"""
 	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
@@ -2137,10 +2141,16 @@ type Mutation {
 	"""
 	Sets the given label key and value from the input to the provided formation template ID.
 	If a label with the provided key doesn't exists, it will be created.
+	
+	**Examples**
+	- [set formation template label](examples/set-formation-template-label/set-formation-template-label.graphql)
 	"""
 	setFormationTemplateLabel(formationTemplateID: ID!, in: LabelInput! @validate): Label! @hasScopes(path: "graphql.mutation.setFormationTemplateLabel")
 	"""
 	If formation template does not exist or the label key is not found, it returns an error.
+	
+	**Examples**
+	- [delete formation template label](examples/delete-formation-template-label/delete-formation-template-label.graphql)
 	"""
 	deleteFormationTemplateLabel(formationTemplateID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteFormationTemplateLabel")
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
