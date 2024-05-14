@@ -41,6 +41,7 @@ type OperationsProcessor struct {
 	systemFieldDiscoverySvc SystemFieldDiscoveryService
 }
 
+// NewOperationProcessor creates new operation processor
 func NewOperationProcessor(systemFieldDiscoverySvc SystemFieldDiscoveryService) *OperationsProcessor {
 	return &OperationsProcessor{
 		systemFieldDiscoverySvc: systemFieldDiscoverySvc,

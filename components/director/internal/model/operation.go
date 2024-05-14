@@ -19,6 +19,7 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+// ToString stringifies OperationStatus
 func (os OperationStatus) ToString() string {
 	return string(os)
 }

@@ -54,7 +54,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 		ApplicationTemplateSvcFn           func() *automock.ApplicationTemplateService
 		TenantSvcFn                        func() *automock.TenantService
 		SystemFieldDiscoveryEngineConfigFn func() *automock.SystemFieldDiscoveryEngineConfig
-		HttpClientFn                       func() *automock.Client
+		HTTPClientFn                       func() *automock.Client
 		ExpectedErrorOutput                string
 	}{
 		{
@@ -91,7 +91,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(&http.Response{
 					StatusCode: http.StatusOK,
@@ -133,7 +133,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(&http.Response{
 					StatusCode: http.StatusOK,
@@ -161,7 +161,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: testErr.Error(),
@@ -186,7 +186,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: testErr.Error(),
@@ -215,7 +215,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: testErr.Error(),
@@ -248,7 +248,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: "application with id aaaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa does not have application template id",
@@ -284,7 +284,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: testErr.Error(),
@@ -324,7 +324,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: "is not a string",
@@ -360,7 +360,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				sfdConf.On("PrepareConfiguration").Return(&config.SystemFieldDiscoveryEngineConfig{}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				return &automock.Client{}
 			},
 			ExpectedErrorOutput: "region \"eu1\" is not present into the saas reg configuration",
@@ -398,7 +398,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(nil, testErr)
 				return client
@@ -438,7 +438,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(&http.Response{
 					StatusCode: http.StatusBadRequest,
@@ -482,7 +482,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 				}, nil).Once()
 				return sfdConf
 			},
-			HttpClientFn: func() *automock.Client {
+			HTTPClientFn: func() *automock.Client {
 				client := &automock.Client{}
 				client.On("Do", mock.Anything).Return(&http.Response{
 					StatusCode: http.StatusOK,
@@ -500,7 +500,7 @@ func TestService_ProcessSaasRegistryApplication(t *testing.T) {
 			appTemplateSvc := testCase.ApplicationTemplateSvcFn()
 			tenantSvc := testCase.TenantSvcFn()
 			sfdConf := testCase.SystemFieldDiscoveryEngineConfigFn()
-			client := testCase.HttpClientFn()
+			client := testCase.HTTPClientFn()
 			defer mock.AssertExpectationsForObjects(t, persist, tx, appSvc, appTemplateSvc, tenantSvc, sfdConf)
 
 			svc, err := systemfielddiscoveryengine.NewSystemFieldDiscoverEngineService(sfdConf, client, tx, appSvc, appTemplateSvc, tenantSvc)
