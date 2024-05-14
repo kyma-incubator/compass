@@ -910,7 +910,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	t.Logf("Creating formation template for the provider application tempalаte type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 	var ft directorSchema.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-	ft = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, directorSchema.FormationTemplateInput{
+	ft = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, directorSchema.FormationTemplateRegisterInput{
 		Name:               formationTmplName,
 		ApplicationTypes:   []string{applicationType, consumerAppType},
 		DiscoveryConsumers: []string{applicationType},
@@ -1033,7 +1033,7 @@ func TestORDServiceSystemDiscoveryByApplicationTenantIDUsingProviderCSM(t *testi
 	t.Logf("Creating formation template for the provider application tempalаte type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 	var ft directorSchema.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-	ft = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, directorSchema.FormationTemplateInput{
+	ft = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, directorSchema.FormationTemplateRegisterInput{
 		Name:               formationTmplName,
 		ApplicationTypes:   []string{applicationType, consumerAppType},
 		DiscoveryConsumers: []string{applicationType},

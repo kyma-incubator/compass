@@ -21,9 +21,6 @@ import (
 )
 
 const (
-	consumerID   = "3e64ebae-38b5-46a0-b1ed-9ccee153a0ae"
-	consumerType = "USER"
-
 	cleanupRetryCount = 3
 	defaultRetryCount = 20
 )
