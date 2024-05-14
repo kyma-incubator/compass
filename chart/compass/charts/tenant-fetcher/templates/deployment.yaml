@@ -44,9 +44,6 @@ spec:
       - name: {{ .Values.global.portieris.imagePullSecretName }}
     {{ end }}
       volumes:
-      - name: self-reg-app-names-volume
-        secret:
-          secretName: {{ .Values.global.systemFieldDiscoveryEngine.secrets.saasAppNameCfg.name }}
       - name: credentials-secret
         secret:
           secretName: {{ .Values.global.tenantFetcher.k8sSecret.name }}
@@ -95,18 +92,6 @@ spec:
               value: {{.Values.global.tenantFetcher.tenantProvider.consumerTenantIdProperty }}
             - name: APP_TENANT_PROVIDER_SUBSCRIPTION_PROVIDER_APP_NAME_PROPERTY
               value: {{.Values.global.tenantFetcher.tenantProvider.subscriptionProviderAppNameProperty }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_SAAS_APP_SECRET_PATH
-              value: "{{ .Values.global.systemFieldDiscoveryEngine.secrets.saasAppNameCfg.path }}/{{ .Values.global.systemFieldDiscoveryEngine.secrets.saasAppNameCfg.key }}"
-            - name: APP_SYSTEM_FIELD_DISCOVERY_OAUTH_TOKEN_PATH
-              value: {{ .Values.global.systemFieldDiscoveryEngine.oauthTokenPath }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_INSTANCE_CLIENT_ID_PATH
-              value: {{ .Values.global.systemFieldDiscoveryEngine.clientIdPath }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_CLIENT_SECRET_PATH
-              value: {{ .Values.global.systemFieldDiscoveryEngine.clientSecretPath }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_URL_PATH
-              value: {{ .Values.global.systemFieldDiscoveryEngine.urlPath }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_SAAS_REGISTRY_URL_PATH
-              value: {{ .Values.global.systemFieldDiscoveryEngine.saasRegistryURLPath }}
             - name: APP_LOG_FORMAT
               value: {{.Values.global.log.format | quote }}
             - name: APP_ADDRESS
@@ -133,8 +118,6 @@ spec:
               value: {{ .Values.global.tenantFetcher.requiredAuthScope | quote }}
             - name: APP_FETCH_TENANT_ON_DEMAND_SCOPE
               value: {{ .Values.global.tenantFetcher.fetchTenantAuthScope | quote }}
-            - name: APP_SYSTEM_FIELD_DISCOVERY_SCOPE
-              value: {{ .Values.global.tenantFetcher.systemFieldDiscoveryAuthScope | quote }}
             - name: APP_DIRECTOR_GRAPHQL_ENDPOINT
               value: "https://{{ $.Values.global.gateway.tls.secure.internal.host }}.{{ $.Values.global.ingress.domainName }}{{ $.Values.global.director.prefix }}/graphql"
             - name: APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY
@@ -418,9 +401,6 @@ spec:
             timeoutSeconds: {{ .Values.global.readinessProbe.timeoutSeconds }}
             periodSeconds: {{.Values.global.readinessProbe.periodSeconds }}
           volumeMounts:
-            - name: self-reg-app-names-volume
-              mountPath: {{ .Values.global.systemFieldDiscoveryEngine.secrets.saasAppNameCfg.path }}
-              readOnly: true
             - name: dependencies-config
               mountPath: "{{ .Values.global.tenantFetcher.dependenciesConfig.path }}"
               readOnly: true
