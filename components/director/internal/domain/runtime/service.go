@@ -3,10 +3,11 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"k8s.io/utils/strings/slices"
 

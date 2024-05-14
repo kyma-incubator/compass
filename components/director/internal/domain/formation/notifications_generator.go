@@ -39,13 +39,13 @@ type notificationBuilder interface {
 
 // NotificationsGenerator is responsible for generation of notification requests
 type NotificationsGenerator struct {
-	applicationRepository         applicationRepository
-	runtimeRepo                   runtimeRepository
-	runtimeContextRepo            runtimeContextRepository
-	labelRepository               labelRepository
-	webhookRepository             webhookRepository
-	webhookDataInputBuilder       databuilder.DataInputBuilder
-	notificationBuilder           notificationBuilder
+	applicationRepository   applicationRepository
+	runtimeRepo             runtimeRepository
+	runtimeContextRepo      runtimeContextRepository
+	labelRepository         labelRepository
+	webhookRepository       webhookRepository
+	webhookDataInputBuilder databuilder.DataInputBuilder
+	notificationBuilder     notificationBuilder
 }
 
 // NewNotificationsGenerator returns an instance of NotificationsGenerator
@@ -58,13 +58,13 @@ func NewNotificationsGenerator(
 	webhookDataInputBuilder databuilder.DataInputBuilder,
 	notificationBuilder notificationBuilder) *NotificationsGenerator {
 	return &NotificationsGenerator{
-		applicationRepository:         applicationRepository,
-		runtimeRepo:                   runtimeRepo,
-		runtimeContextRepo:            runtimeContextRepo,
-		labelRepository:               labelRepository,
-		webhookRepository:             webhookRepository,
-		webhookDataInputBuilder:       webhookDataInputBuilder,
-		notificationBuilder:           notificationBuilder,
+		applicationRepository:   applicationRepository,
+		runtimeRepo:             runtimeRepo,
+		runtimeContextRepo:      runtimeContextRepo,
+		labelRepository:         labelRepository,
+		webhookRepository:       webhookRepository,
+		webhookDataInputBuilder: webhookDataInputBuilder,
+		notificationBuilder:     notificationBuilder,
 	}
 }
 

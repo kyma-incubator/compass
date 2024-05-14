@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"time"
+
 	"github.com/jmoiron/sqlx"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
-	"time"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -19,11 +20,10 @@ import (
 )
 
 const (
-	tableName                       string = `public.formations`
-	nameColumn                             = `name`
-	listObjectIDsOfTypeForFormation        = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.source_type = ?;"
-	listObjectIDsOfTypeForFormationGlobal        = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.source_type = ?;"
-
+	tableName                             string = `public.formations`
+	nameColumn                            string = `name`
+	listObjectIDsOfTypeForFormation       string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.source_type = ?;"
+	listObjectIDsOfTypeForFormationGlobal string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.source_type = ?;"
 )
 
 var (
@@ -194,7 +194,7 @@ func (r *repository) ListByIDs(ctx context.Context, formationIDs []string) ([]*m
 
 // ListObjectIDsOfTypeForFormations returns all object IDs of type `objectType` for Formations with names in `formationNames`
 func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
-	if len(formationNames) == 0{
+	if len(formationNames) == 0 {
 		return nil, nil
 	}
 
@@ -222,7 +222,7 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 
 // ListObjectIDsOfTypeForFormations returns all object IDs of type `objectType` for Formations with names in `formationNames`
 func (r *repository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
-	if len(formationNames) == 0{
+	if len(formationNames) == 0 {
 		return nil, nil
 	}
 

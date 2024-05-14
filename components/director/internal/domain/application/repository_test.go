@@ -661,7 +661,7 @@ func TestPgRepository_List(t *testing.T) {
 				},
 			},
 			{
-				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND id IN ($4, $5) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $6)))`),
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND id IN ($4, $5) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $6)))`),
 				Args:     []driver.Value{givenTenant(), "SCC", "{\"locationId\":\"locationId\"}", app1ID, app2ID, givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -711,7 +711,7 @@ func TestPgRepository_List(t *testing.T) {
 				},
 			},
 			{
-				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4)))`),
+				Query:    regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND (id IN (SELECT id FROM application_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND (id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4)))`),
 				Args:     []driver.Value{givenTenant(), "SCC", "{\"locationId\":\"locationId\"}", givenTenant()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
@@ -1005,7 +1005,7 @@ func TestPgRepository_ListByLocalTenantID_NoFilter(t *testing.T) {
 					(id IN (SELECT id FROM tenant_applications WHERE tenant_id = $4)))
 					ORDER BY id LIMIT 200 OFFSET 0
 				`),
-				Args:     []driver.Value{localTenantID,app1ID, app2ID, givenTenantAsUUID()},
+				Args:     []driver.Value{localTenantID, app1ID, app2ID, givenTenantAsUUID()},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixAppColumns()).
@@ -1064,7 +1064,6 @@ func TestPgRepository_ListByLocalTenantID_WithFilter(t *testing.T) {
 	app2ID := "ccdbef8f-b97a-490c-86e2-2bab2862a6e4"
 	appEntity := fixDetailedEntityApplication(t, app1ID, givenTenant(), "App", "App desc")
 	appModel := fixDetailedModelApplication(t, app1ID, givenTenant(), "App", "App desc")
-
 
 	suite := testdb.RepoListPageableTestSuite{
 		Name: "List Applications by Local Tenant ID with filter",
@@ -1287,7 +1286,7 @@ func TestPgRepository_ListAllGlobalByFilter(t *testing.T) {
 			{
 				Query: regexp.QuoteMeta(`SELECT id, app_template_id, system_number, local_tenant_id, name, description, status_condition, status_timestamp, system_status, healthcheck_url, integration_system_id, provider_name, base_url, application_namespace, labels, ready, created_at, updated_at, deleted_at, error, correlation_ids, tags, documentation_labels FROM public.applications 
 											WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "key" = $1 AND "value" @> $2) AND id IN ($3, $4)) ORDER BY id LIMIT 2 OFFSET  0`),
-				Args:     []driver.Value{"key", "query",app1ID, app2ID},
+				Args:     []driver.Value{"key", "query", app1ID, app2ID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixAppColumns()).
@@ -1299,7 +1298,7 @@ func TestPgRepository_ListAllGlobalByFilter(t *testing.T) {
 			{
 				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.applications
 											WHERE (id IN (SELECT "app_id" FROM public.labels WHERE "app_id" IS NOT NULL AND "key" = $1 AND "value" @> $2) AND id IN ($3, $4))`),
-				Args:     []driver.Value{"key", "query",app1ID, app2ID},
+				Args:     []driver.Value{"key", "query", app1ID, app2ID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(2)}

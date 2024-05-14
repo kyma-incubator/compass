@@ -4,9 +4,10 @@ import (
 	"context"
 	"database/sql/driver"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"regexp"
 	"testing"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/stretchr/testify/assert"
 
@@ -245,7 +246,7 @@ func TestPgRepository_List(t *testing.T) {
 				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes
 											WHERE (id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND id IN ($4, $5)
 											AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $6))) ORDER BY name LIMIT 2 OFFSET 0`),
-				Args:     []driver.Value{tenantID, "key", "query",runtime1ID, runtime2ID, tenantID},
+				Args:     []driver.Value{tenantID, "key", "query", runtime1ID, runtime2ID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).
@@ -258,7 +259,7 @@ func TestPgRepository_List(t *testing.T) {
 				Query: regexp.QuoteMeta(`SELECT COUNT(*) FROM public.runtimes
 												WHERE (id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" @> $3) AND id IN ($4, $5)
 											AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $6)))`),
-				Args:     []driver.Value{tenantID, "key", "query",runtime1ID, runtime2ID, tenantID},
+				Args:     []driver.Value{tenantID, "key", "query", runtime1ID, runtime2ID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows([]string{"count"}).AddRow(2)}
@@ -284,7 +285,7 @@ func TestPgRepository_List(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       runtime.NewRepository,
-		MethodArgs:                []interface{}{tenantID, []string{runtime1ID, runtime2ID},  []*labelfilter.LabelFilter{{Key: "key", Query: str.Ptr("query")}}, 2, ""},
+		MethodArgs:                []interface{}{tenantID, []string{runtime1ID, runtime2ID}, []*labelfilter.LabelFilter{{Key: "key", Query: str.Ptr("query")}}, 2, ""},
 		MethodName:                "List",
 		DisableConverterErrorTest: true,
 	}
@@ -337,7 +338,7 @@ func TestPgRepository_List(t *testing.T) {
 			return &automock.EntityConverter{}
 		},
 		RepoConstructorFunc:       runtime.NewRepository,
-		MethodArgs:                []interface{}{tenantID, []string{},  []*labelfilter.LabelFilter{{Key: "key", Query: str.Ptr("query")}}, 2, ""},
+		MethodArgs:                []interface{}{tenantID, []string{}, []*labelfilter.LabelFilter{{Key: "key", Query: str.Ptr("query")}}, 2, ""},
 		MethodName:                "List",
 		DisableConverterErrorTest: true,
 	}

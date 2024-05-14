@@ -2829,7 +2829,7 @@ func TestService_Unpair(t *testing.T) {
 	testErr := errors.New("Test error")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
-	rtmId := "bar"
+	rtmID := "bar"
 	desc := "Lorem ipsum"
 	tnt := "tenant"
 	externalTnt := "external-tnt"
@@ -3029,12 +3029,12 @@ func TestService_Unpair(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", mock.Anything, tnt, []string{rtmId}).Return([]*model.Runtime{runtimeModel}, nil).Once()
+				repo.On("ListByIDs", mock.Anything, tnt, []string{rtmID}).Return([]*model.Runtime{runtimeModel}, nil).Once()
 				return repo
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{rtmId}, nil).Once()
+				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{rtmID}, nil).Once()
 				svc.On("ListFormationsForObjectGlobal", mock.Anything, id).Return(formations, nil).Once()
 				return svc
 			},
@@ -5897,21 +5897,20 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 		},
 	}
 
-
 	scenarios := []string{"DEFAULT"}
 	scenariosFilter := []*labelfilter.LabelFilter{{Key: model.ScenariosKey, Query: stringPtr("$[*] ? (@ == \"DEFAULT\")")}}
 
 	testCases := []struct {
-		Name           string
-		Ctx            context.Context
-		RepositoryFn   func() *automock.ApplicationRepository
+		Name               string
+		Ctx                context.Context
+		RepositoryFn       func() *automock.ApplicationRepository
 		FormationServiceFn func() *automock.FormationService
-		LocalTenantID  string
-		Filter         []*labelfilter.LabelFilter
-		First          int
-		Cursor         string
-		ExptectedValue *model.ApplicationPage
-		ExpectedError  error
+		LocalTenantID      string
+		Filter             []*labelfilter.LabelFilter
+		First              int
+		Cursor             string
+		ExptectedValue     *model.ApplicationPage
+		ExpectedError      error
 	}{
 		{
 			Name: "Getting tenant from context fails",
@@ -5933,7 +5932,7 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 			Ctx:  ctx,
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID,[]string{}, filter, first, cursor).Return(nil, testError).Once()
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, []string{}, filter, first, cursor).Return(nil, testError).Once()
 				return repo
 			},
 			LocalTenantID:  localTenantID,
@@ -5982,7 +5981,7 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 			Ctx:  ctx,
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID,[]string{appID}, []*labelfilter.LabelFilter{}, first, cursor).Return(modelApplications, nil).Once()
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, []string{appID}, []*labelfilter.LabelFilter{}, first, cursor).Return(modelApplications, nil).Once()
 				return repo
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -6009,11 +6008,11 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeApplication).Return(nil, testError).Once()
 				return svc
 			},
-			LocalTenantID:  localTenantID,
-			Filter:         scenariosFilter,
-			First:          first,
-			Cursor:         cursor,
-			ExpectedError:  testError,
+			LocalTenantID: localTenantID,
+			Filter:        scenariosFilter,
+			First:         first,
+			Cursor:        cursor,
+			ExpectedError: testError,
 		},
 	}
 
