@@ -14,38 +14,12 @@ type FormationTemplateConverter struct {
 	mock.Mock
 }
 
-// FromInputGraphQL provides a mock function with given fields: in
-func (_m *FormationTemplateConverter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model.FormationTemplateInput, error) {
-	ret := _m.Called(in)
-
-	var r0 *model.FormationTemplateInput
-	var r1 error
-	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateInput) (*model.FormationTemplateInput, error)); ok {
-		return rf(in)
-	}
-	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateInput) *model.FormationTemplateInput); ok {
-		r0 = rf(in)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.FormationTemplateInput)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(*graphql.FormationTemplateInput) error); ok {
-		r1 = rf(in)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// FromModelInputToModel provides a mock function with given fields: in, id, tenantID
-func (_m *FormationTemplateConverter) FromModelInputToModel(in *model.FormationTemplateInput, id string, tenantID string) *model.FormationTemplate {
+// FromModelRegisterInputToModel provides a mock function with given fields: in, id, tenantID
+func (_m *FormationTemplateConverter) FromModelRegisterInputToModel(in *model.FormationTemplateRegisterInput, id string, tenantID string) *model.FormationTemplate {
 	ret := _m.Called(in, id, tenantID)
 
 	var r0 *model.FormationTemplate
-	if rf, ok := ret.Get(0).(func(*model.FormationTemplateInput, string, string) *model.FormationTemplate); ok {
+	if rf, ok := ret.Get(0).(func(*model.FormationTemplateRegisterInput, string, string) *model.FormationTemplate); ok {
 		r0 = rf(in, id, tenantID)
 	} else {
 		if ret.Get(0) != nil {
@@ -54,6 +28,74 @@ func (_m *FormationTemplateConverter) FromModelInputToModel(in *model.FormationT
 	}
 
 	return r0
+}
+
+// FromModelUpdateInputToModel provides a mock function with given fields: in, id, tenantID
+func (_m *FormationTemplateConverter) FromModelUpdateInputToModel(in *model.FormationTemplateUpdateInput, id string, tenantID string) *model.FormationTemplate {
+	ret := _m.Called(in, id, tenantID)
+
+	var r0 *model.FormationTemplate
+	if rf, ok := ret.Get(0).(func(*model.FormationTemplateUpdateInput, string, string) *model.FormationTemplate); ok {
+		r0 = rf(in, id, tenantID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationTemplate)
+		}
+	}
+
+	return r0
+}
+
+// FromRegisterInputGraphQL provides a mock function with given fields: in
+func (_m *FormationTemplateConverter) FromRegisterInputGraphQL(in *graphql.FormationTemplateRegisterInput) (*model.FormationTemplateRegisterInput, error) {
+	ret := _m.Called(in)
+
+	var r0 *model.FormationTemplateRegisterInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateRegisterInput) (*model.FormationTemplateRegisterInput, error)); ok {
+		return rf(in)
+	}
+	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateRegisterInput) *model.FormationTemplateRegisterInput); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationTemplateRegisterInput)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*graphql.FormationTemplateRegisterInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// FromUpdateInputGraphQL provides a mock function with given fields: in
+func (_m *FormationTemplateConverter) FromUpdateInputGraphQL(in *graphql.FormationTemplateUpdateInput) (*model.FormationTemplateUpdateInput, error) {
+	ret := _m.Called(in)
+
+	var r0 *model.FormationTemplateUpdateInput
+	var r1 error
+	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateUpdateInput) (*model.FormationTemplateUpdateInput, error)); ok {
+		return rf(in)
+	}
+	if rf, ok := ret.Get(0).(func(*graphql.FormationTemplateUpdateInput) *model.FormationTemplateUpdateInput); ok {
+		r0 = rf(in)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.FormationTemplateUpdateInput)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(*graphql.FormationTemplateUpdateInput) error); ok {
+		r1 = rf(in)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
 }
 
 // MultipleToGraphQL provides a mock function with given fields: in

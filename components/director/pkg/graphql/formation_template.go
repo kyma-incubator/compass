@@ -12,10 +12,13 @@ type FormationTemplate struct {
 	LeadingProductIDs      []string      `json:"leadingProductIDs"`
 	SupportsReset          bool          `json:"supportsReset"`
 	DiscoveryConsumers     []string      `json:"discoveryConsumers"`
+	CreatedAt              Timestamp     `json:"createdAt"`
+	UpdatedAt              *Timestamp    `json:"updatedAt"`
 }
 
-// FormationTemplateExt  is an extended types used by external API
+// FormationTemplateExt is an extended types used by external API
 type FormationTemplateExt struct {
 	FormationTemplate
 	FormationConstraints []FormationConstraint `json:"formationConstraints"`
+	Labels               Labels                `json:"labels"`
 }

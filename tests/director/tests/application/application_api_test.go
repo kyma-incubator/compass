@@ -1842,10 +1842,10 @@ func TestMergeApplications(t *testing.T) {
 	fixtures.SetApplicationLabelWithTenant(t, ctx, oauthGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
 	t.Logf("Should create formation template: %s", formationTemplateName)
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithTypes(formationTemplateName, []string{conf.KymaRuntimeTypeLabelValue}, []string{expectedProductType})
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithTypes(formationTemplateName, []string{conf.KymaRuntimeTypeLabelValue}, []string{expectedProductType})
 	actualFormationTemplate := graphql.FormationTemplate{} // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &actualFormationTemplate)
-	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation
 	formationInput := fixtures.FixFormationInput(newFormation, str.Ptr(formationTemplateName))
@@ -2010,10 +2010,10 @@ func TestMergeApplicationsWithSelfRegDistinguishLabelKey(t *testing.T) {
 	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, managedLabel, managedLabelValue)
 	fixtures.SetApplicationLabelWithTenant(t, ctx, certSecuredGraphQLClient, tenantId, outputSrcApp.ID, sccLabel, sccLabelValue)
 
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithTypes(formationTemplateName, []string{conf.KymaRuntimeTypeLabelValue}, []string{expectedProductType})
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithTypes(formationTemplateName, []string{conf.KymaRuntimeTypeLabelValue}, []string{expectedProductType})
 	actualFormationTemplate := graphql.FormationTemplate{} // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &actualFormationTemplate)
-	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	t.Logf("Should create formation: %s", newFormation)
 	var formation graphql.Formation

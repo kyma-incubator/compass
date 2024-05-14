@@ -191,7 +191,7 @@ func registerHydratorHandlers(ctx context.Context, router *mux.Router, authentic
 
 	logger.Infof("Registering Certificate Resolver endpoint on %s...", cfg.Handler.CertResolverEndpoint)
 	certResolverHandlerFunc, revokedCertsLoader, err := getCertificateResolverHandler(ctx, cfg, internalGatewayClientProvider)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while configuring certificate resolver handler")
 
 	logger.Infof("Registering Connector Token Resolver endpoint on %s...", cfg.Handler.TokenResolverEndpoint)
 	connectorTokenResolverHandlerFunc := getTokenResolverHandler(internalDirectorClientProvider)
@@ -262,10 +262,7 @@ func getCertificateResolverHandler(ctx context.Context, cfg config, internalDire
 		return nil, nil, err
 	}
 
-	subjectProcessor, err := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
-	if err != nil {
-		return nil, nil, err
-	}
+	subjectProcessor := subject.NewProcessor(ctx, certSubjectMappingCache, cfg.ExternalIssuerSubject.OrganizationalUnitPattern, cfg.ExternalIssuerSubject.OrganizationalUnitRegionPattern)
 
 	connectorCertHeaderParser := certresolver.NewHeaderParser(cfg.CertificateDataHeader, oathkeeper.ConnectorIssuer,
 		subject.ConnectorCertificateSubjectMatcher(cfg.CSRSubject), cert.GetCommonName, subjectProcessor.EmptyAuthSessionExtraFunc())
@@ -283,7 +280,7 @@ func createServer(ctx context.Context, handler http.Handler, serverAddress, name
 	logger := log.C(ctx)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, serverTimeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              serverAddress,

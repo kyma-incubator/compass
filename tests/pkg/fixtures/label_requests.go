@@ -71,7 +71,7 @@ func FixLabelDefinitionRequest(labelKey string) *gcli.Request {
 
 func FixLabelDefinitionsRequest() *gcli.Request {
 	return gcli.NewRequest(
-		fmt.Sprintf(`query {
+		fmt.Sprint(`query {
 			result:	labelDefinitions() {
 					key
 					schema
@@ -95,4 +95,22 @@ func FixDeleteApplicationLabelRequest(applicationID, labelKey string) *gcli.Requ
 					%s
 				}
 			}`, applicationID, labelKey, testctx.Tc.GQLFieldsProvider.ForLabel()))
+}
+
+func FixSetFormationTemplateLabelRequest(formationTemplateID, labelInputGQL string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: setFormationTemplateLabel(formationTemplateID: %q, in: %s) {
+						%s
+					}
+				}`, formationTemplateID, labelInputGQL, testctx.Tc.GQLFieldsProvider.ForLabel()))
+}
+
+func FixDeleteFormationTemplateLabelRequest(formationTemplateID, labelKey string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation {
+				result: deleteFormationTemplateLabel(formationTemplateID: %q, key: %q) {
+						%s
+					}
+				}`, formationTemplateID, labelKey, testctx.Tc.GQLFieldsProvider.ForLabel()))
 }

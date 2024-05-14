@@ -19,10 +19,6 @@ type ApplicationRepo struct {
 func (_m *ApplicationRepo) ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenantID, ids)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListAllByIDs")
-	}
-
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {

@@ -20,6 +20,10 @@ func (_m *TenantSvc) GetTenantByID(ctx context.Context, id string) (*model.Busin
 	ret := _m.Called(ctx, id)
 
 	var r0 *model.BusinessTenantMapping
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.BusinessTenantMapping); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -28,7 +32,6 @@ func (_m *TenantSvc) GetTenantByID(ctx context.Context, id string) (*model.Busin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -38,13 +41,12 @@ func (_m *TenantSvc) GetTenantByID(ctx context.Context, id string) (*model.Busin
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantSvc interface {
+// NewTenantSvc creates a new instance of TenantSvc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantSvc(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantSvc creates a new instance of TenantSvc. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantSvc(t mockConstructorTestingTNewTenantSvc) *TenantSvc {
+}) *TenantSvc {
 	mock := &TenantSvc{}
 	mock.Mock.Test(t)
 

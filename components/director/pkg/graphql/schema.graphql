@@ -776,13 +776,25 @@ input FormationInput {
 	state: String @hasScopes(path: "graphql.input.formation.state")
 }
 
-input FormationTemplateInput {
+input FormationTemplateRegisterInput {
 	name: String!
 	applicationTypes: [String!]!
 	runtimeTypes: [String!]
 	runtimeTypeDisplayName: String
 	runtimeArtifactKind: ArtifactType
 	webhooks: [WebhookInput!]
+	leadingProductIDs: [String!]
+	supportsReset: Boolean
+	discoveryConsumers: [String!]
+	labels: Labels
+}
+
+input FormationTemplateUpdateInput {
+	name: String!
+	applicationTypes: [String!]!
+	runtimeTypes: [String!]
+	runtimeTypeDisplayName: String
+	runtimeArtifactKind: ArtifactType
 	leadingProductIDs: [String!]
 	supportsReset: Boolean
 	discoveryConsumers: [String!]
@@ -1239,6 +1251,8 @@ type CertificateSubjectMapping {
 	consumerType: String!
 	internalConsumerID: String
 	tenantAccessLevels: [String!]!
+	createdAt: Timestamp!
+	updatedAt: Timestamp
 }
 
 type CertificateSubjectMappingPage implements Pageable {
@@ -1421,6 +1435,9 @@ type FormationTemplate {
 	formationConstraints: [FormationConstraint!]
 	supportsReset: Boolean!
 	discoveryConsumers: [String!]
+	labels(key: String): Labels
+	createdAt: Timestamp!
+	updatedAt: Timestamp
 }
 
 type FormationTemplatePage implements Pageable {
@@ -1687,6 +1704,7 @@ type Query {
 	Maximum `first` parameter value is 10
 	
 	**Examples**
+	- [query applications by local tenant id and an optional filter](examples/query-applications/query-applications-by-local-tenant-id-and-an-optional-filter.graphql)
 	- [query applications with label filter](examples/query-applications/query-applications-with-label-filter.graphql)
 	- [query applications](examples/query-applications/query-applications.graphql)
 	"""
@@ -1814,7 +1832,7 @@ type Query {
 	**Examples**
 	- [query formation templates](examples/query-formation-templates/query-formation-templates.graphql)
 	"""
-	formationTemplates(first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
+	formationTemplates(filter: [LabelFilter!], first: Int = 200, after: PageCursor): FormationTemplatePage! @hasScopes(path: "graphql.query.formationTemplates")
 	"""
 	**Examples**
 	- [query formation templates by name](examples/query-formation-templates-by-name/query-formation-templates-by-name.graphql)
@@ -2100,6 +2118,9 @@ type Mutation {
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
+	
+	**Examples**
+	- [set tenant label](examples/set-tenant-label/set-tenant-label.graphql)
 	"""
 	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
@@ -2117,6 +2138,21 @@ type Mutation {
 	If Runtime does not exist or the label key is not found, it returns an error.
 	"""
 	deleteRuntimeLabel(runtimeID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteRuntimeLabel")
+	"""
+	Sets the given label key and value from the input to the provided formation template ID.
+	If a label with the provided key doesn't exists, it will be created.
+	
+	**Examples**
+	- [set formation template label](examples/set-formation-template-label/set-formation-template-label.graphql)
+	"""
+	setFormationTemplateLabel(formationTemplateID: ID!, in: LabelInput! @validate): Label! @hasScopes(path: "graphql.mutation.setFormationTemplateLabel")
+	"""
+	If formation template does not exist or the label key is not found, it returns an error.
+	
+	**Examples**
+	- [delete formation template label](examples/delete-formation-template-label/delete-formation-template-label.graphql)
+	"""
+	deleteFormationTemplateLabel(formationTemplateID: ID!, key: String!): Label! @hasScopes(path: "graphql.mutation.deleteFormationTemplateLabel")
 	setDefaultEventingForApplication(appID: String!, runtimeID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.setDefaultEventingForApplication")
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
@@ -2184,7 +2220,7 @@ type Mutation {
 	- [create formation template with webhooks](examples/create-formation-template/create-formation-template-with-webhooks.graphql)
 	- [create formation template](examples/create-formation-template/create-formation-template.graphql)
 	"""
-	createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
+	createFormationTemplate(in: FormationTemplateRegisterInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
 	"""
 	**Examples**
 	- [delete formation template](examples/delete-formation-template/delete-formation-template.graphql)
@@ -2194,7 +2230,7 @@ type Mutation {
 	**Examples**
 	- [update formation template](examples/update-formation-template/update-formation-template.graphql)
 	"""
-	updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
+	updateFormationTemplate(id: ID!, in: FormationTemplateUpdateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 	"""
 	**Examples**
 	- [create certificate subject mapping](examples/create-certificate-subject-mapping/create-certificate-subject-mapping.graphql)
