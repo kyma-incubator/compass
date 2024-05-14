@@ -16,13 +16,13 @@ func FixCreateFormationTemplateRequest(createFormationTemplateGQLInput string) *
 				}`, createFormationTemplateGQLInput, testctx.Tc.GQLFieldsProvider.ForFormationTemplate()))
 }
 
-func FixUpdateFormationTemplateRequest(id string, createFormationTemplateGQLInput string) *gcli.Request {
+func FixUpdateFormationTemplateRequest(id string, updateFormationTemplateGQLInput string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation {
 				  result: updateFormationTemplate(id: "%s", in: %s) {
     					%s
 					}
-				}`, id, createFormationTemplateGQLInput, testctx.Tc.GQLFieldsProvider.ForFormationTemplate()))
+				}`, id, updateFormationTemplateGQLInput, testctx.Tc.GQLFieldsProvider.ForFormationTemplate()))
 }
 
 func FixDeleteFormationTemplateRequest(id string) *gcli.Request {

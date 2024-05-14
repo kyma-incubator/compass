@@ -32,9 +32,9 @@ type FormationTemplatePage implements Pageable {
 Director API exposes the following GraphQL mutations for managing formation templates: 
 ```graphql
 type Mutation {
-    createFormationTemplate(in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
+    createFormationTemplate(in: FormationTemplateRegisterInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.createFormationTemplate")
     deleteFormationTemplate(id: ID!): FormationTemplate @hasScopes(path: "graphql.mutation.deleteFormationTemplate")
-    updateFormationTemplate(id: ID!, in: FormationTemplateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
+    updateFormationTemplate(id: ID!, in: FormationTemplateUpdateInput! @validate): FormationTemplate @hasScopes(path: "graphql.mutation.updateFormationTemplate")
 }
 ```
 > **Note:** For example GraphQL mutations, see: [Create](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/create-formation-template/create-formation-template.graphql), [Update](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/update-formation-template/update-formation-template.graphql), or [Delete](https://github.com/kyma-incubator/compass/tree/main/components/director/examples/delete-formation-template/delete-formation-template.graphql).

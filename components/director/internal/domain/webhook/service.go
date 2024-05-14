@@ -155,7 +155,7 @@ func (s *service) ListForRuntime(ctx context.Context, runtimeID string) ([]*mode
 // ListForFormationTemplate lists all webhooks for a given formationTemplateID
 func (s *service) ListForFormationTemplate(ctx context.Context, tenant, formationTemplateID string) ([]*model.Webhook, error) {
 	if tenant == "" {
-		log.C(ctx).Infof("tenant was not loaded while getting webhooks for formation template with id %s", formationTemplateID)
+		log.C(ctx).Infof("tenant was not loaded while getting webhooks for formation template with ID: %s", formationTemplateID)
 		return s.webhookRepo.ListByReferenceObjectIDGlobal(ctx, formationTemplateID, model.FormationTemplateWebhookReference)
 	}
 	return s.webhookRepo.ListByReferenceObjectID(ctx, tenant, formationTemplateID, model.FormationTemplateWebhookReference)

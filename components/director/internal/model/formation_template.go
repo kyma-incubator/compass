@@ -1,6 +1,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 )
 
@@ -18,27 +20,43 @@ const (
 
 // FormationTemplate missing godoc
 type FormationTemplate struct {
-	ID                     string               `json:"id"`
-	Name                   string               `json:"name"`
-	ApplicationTypes       []string             `json:"applicationTypes"`
-	RuntimeTypes           []string             `json:"runtimeTypes"`
-	RuntimeTypeDisplayName *string              `json:"runtimeTypeDisplayName"`
-	RuntimeArtifactKind    *RuntimeArtifactKind `json:"runtimeArtifactKind"`
-	TenantID               *string              `json:"tenant_id"`
-	Webhooks               []*Webhook           `json:"webhooks"`
-	LeadingProductIDs      []string             `json:"leadingProductIDs"`
-	SupportsReset          bool                 `json:"supportsReset"`
-	DiscoveryConsumers     []string             `json:"discoveryConsumers"`
+	ID                     string                 `json:"id"`
+	Name                   string                 `json:"name"`
+	ApplicationTypes       []string               `json:"applicationTypes"`
+	RuntimeTypes           []string               `json:"runtimeTypes"`
+	RuntimeTypeDisplayName *string                `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    *RuntimeArtifactKind   `json:"runtimeArtifactKind"`
+	TenantID               *string                `json:"tenant_id"`
+	Webhooks               []*Webhook             `json:"webhooks"`
+	LeadingProductIDs      []string               `json:"leadingProductIDs"`
+	SupportsReset          bool                   `json:"supportsReset"`
+	DiscoveryConsumers     []string               `json:"discoveryConsumers"`
+	Labels                 map[string]interface{} `json:"labels"`
+	CreatedAt              time.Time              `json:"createdAt"`
+	UpdatedAt              *time.Time             `json:"updatedAt"`
 }
 
-// FormationTemplateInput missing godoc
-type FormationTemplateInput struct {
+// FormationTemplateRegisterInput is an input used for formation template registration
+type FormationTemplateRegisterInput struct {
+	Name                   string                 `json:"name"`
+	ApplicationTypes       []string               `json:"applicationTypes"`
+	RuntimeTypes           []string               `json:"runtimeTypes"`
+	RuntimeTypeDisplayName *string                `json:"runtimeTypeDisplayName"`
+	RuntimeArtifactKind    *RuntimeArtifactKind   `json:"runtimeArtifactKind"`
+	Webhooks               []*WebhookInput        `json:"webhooks"`
+	LeadingProductIDs      []string               `json:"leadingProductIDs"`
+	SupportsReset          bool                   `json:"supportsReset"`
+	DiscoveryConsumers     []string               `json:"discoveryConsumers"`
+	Labels                 map[string]interface{} `json:"labels"`
+}
+
+// FormationTemplateUpdateInput is an input used for formation template update operations
+type FormationTemplateUpdateInput struct {
 	Name                   string               `json:"name"`
 	ApplicationTypes       []string             `json:"applicationTypes"`
 	RuntimeTypes           []string             `json:"runtimeTypes"`
 	RuntimeTypeDisplayName *string              `json:"runtimeTypeDisplayName"`
 	RuntimeArtifactKind    *RuntimeArtifactKind `json:"runtimeArtifactKind"`
-	Webhooks               []*WebhookInput      `json:"webhooks"`
 	LeadingProductIDs      []string             `json:"leadingProductIDs"`
 	SupportsReset          bool                 `json:"supportsReset"`
 	DiscoveryConsumers     []string             `json:"discoveryConsumers"`

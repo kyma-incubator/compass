@@ -2,7 +2,7 @@
 mutation {
   result: addTenantAccess(
     in: {
-      tenantID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
+      tenantID: "resource-group-2-external-tenant"
       resourceID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
       resourceType: APPLICATION
       owner: true

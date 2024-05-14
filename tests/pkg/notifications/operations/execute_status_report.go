@@ -131,7 +131,7 @@ func (o *ExecuteStatusReportOperation) Operation() Operation {
 	return o
 }
 
-func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, sourceID, targetID string) string {
+func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPageExt, sourceID, targetID string) string {
 	var formationAssignmentID string
 	for _, a := range assignmentsPage.Data {
 		if a.Source == sourceID && a.Target == targetID {

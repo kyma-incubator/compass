@@ -24,7 +24,7 @@ mutation {
                 format: YAML
               }
               version: {
-                value: "v1"
+                value: "1.0.0"
                 deprecated: true
                 deprecatedSince: "v5"
                 forRemoval: false
@@ -67,7 +67,7 @@ mutation {
               }
               group: "comments"
               version: {
-                value: "v1"
+                value: "1.0.0"
                 deprecated: true
                 deprecatedSince: "v5"
                 forRemoval: false
@@ -141,7 +141,7 @@ mutation {
                 format: YAML
               }
               version: {
-                value: "v1"
+                value: "1.0.0"
                 deprecated: true
                 deprecatedSince: "v5"
                 forRemoval: false
@@ -184,7 +184,7 @@ mutation {
               }
               group: "comments"
               version: {
-                value: "v1"
+                value: "1.0.0"
                 deprecated: true
                 deprecatedSince: "v5"
                 forRemoval: false
@@ -332,6 +332,43 @@ mutation {
         }
       }
       createdAt
+    }
+    integrationDependencies {
+      data {
+        id
+        name
+        description
+        ordID
+        partOfPackage
+        visibility
+        releaseStatus
+        mandatory
+        version {
+          value
+        }
+        labels
+        aspects {
+          id
+          name
+          description
+          mandatory
+          apiResources {
+            ordID
+          }
+          eventResources {
+            ordID
+            subset {
+              eventType
+            }
+          }
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+      }
+      totalCount
     }
     healthCheckURL
     bundles {
@@ -769,6 +806,14 @@ mutation {
           }
         }
       }
+    }
+    operations {
+      id
+      operationType
+      status
+      error
+      createdAt
+      updatedAt
     }
     eventingConfiguration {
       defaultURL
