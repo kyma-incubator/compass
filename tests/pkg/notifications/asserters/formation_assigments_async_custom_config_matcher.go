@@ -16,7 +16,7 @@ type FormationAssignmentsAsyncCustomConfigMatcherAsserter struct {
 	FormationAssignmentsAsyncAsserter
 }
 
-func NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher func(require.TestingT, *string, *string) bool, expectations map[string]map[string]fixtures.AssignmentState, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsyncCustomConfigMatcherAsserter {
+func NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher func(require.TestingT, *string, *string) bool, expectations map[string]map[string]fixtures.Assignment, expectedAssignmentsCount int, certSecuredGraphQLClient *graphql.Client, tenantID string) *FormationAssignmentsAsyncCustomConfigMatcherAsserter {
 	f := FormationAssignmentsAsyncCustomConfigMatcherAsserter{
 		configMatcher: configMatcher,
 		FormationAssignmentsAsyncAsserter: FormationAssignmentsAsyncAsserter{

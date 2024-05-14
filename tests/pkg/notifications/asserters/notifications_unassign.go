@@ -88,7 +88,7 @@ func (a *UnassignNotificationsAsserter) AssertExpectations(t *testing.T, ctx con
 			if a.useItemsStruct {
 				assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, &a.config)
 			} else {
-				err := verifyFormationAssignmentNotification(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.config, a.tenant, a.tenantParentCustomer, false, a.state)
+				err := verifyFormationAssignmentNotification(t, notification, unassignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, &a.config, a.tenant, a.tenantParentCustomer, false, a.state)
 				require.NoError(t, err)
 			}
 		}
