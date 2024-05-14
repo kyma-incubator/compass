@@ -261,6 +261,36 @@ func (_m *FormationRepository) ListObjectIDsOfTypeForFormations(ctx context.Cont
 	return r0, r1
 }
 
+// ListObjectIDsOfTypeForFormationsGlobal provides a mock function with given fields: ctx, formationNames, objectType
+func (_m *FormationRepository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	ret := _m.Called(ctx, formationNames, objectType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListObjectIDsOfTypeForFormationsGlobal")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, model.FormationAssignmentType) ([]string, error)); ok {
+		return rf(ctx, formationNames, objectType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string, model.FormationAssignmentType) []string); ok {
+		r0 = rf(ctx, formationNames, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string, model.FormationAssignmentType) error); ok {
+		r1 = rf(ctx, formationNames, objectType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *FormationRepository) Update(ctx context.Context, _a1 *model.Formation) error {
 	ret := _m.Called(ctx, _a1)

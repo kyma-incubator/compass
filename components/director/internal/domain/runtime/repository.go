@@ -215,26 +215,6 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	return runtimeModel, nil
 }
 
-// ListByFiltersGlobal missing godoc
-func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building filter query")
-	}
-
-	var additionalConditions repo.Conditions
-	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
-	}
-
-	var entities RuntimeCollection
-	if err := r.listerGlobal.ListGlobal(ctx, &entities, additionalConditions...); err != nil {
-		return nil, err
-	}
-
-	return r.multipleFromEntities(entities), nil
-}
-
 // ListAll returns all runtimes in a tenant that match given label filter and owner check to false. The results from the separate filters are combined using 'INTERSECT'.
 func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	return r.listRuntimes(ctx, tenant, filter, label.IntersectSet, false)
@@ -258,7 +238,9 @@ func (r RuntimeCollection) Len() int {
 	return len(r)
 }
 
-// List missing godoc
+// List lists runtimes by provided filters in the context of the provided tenant.
+// Runtime IDs are optional and are provided only of the initial filters contained `scenarios` filter.
+// The `scenarios` filter is processed outside the method and converted to list of IDs as the scenario metadata is no longer stored in `scenario` label.
 func (r *pgRepository) List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	var runtimesCollection RuntimeCollection
 	tenantID, err := uuid.Parse(tenant)

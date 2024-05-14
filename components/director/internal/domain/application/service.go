@@ -220,7 +220,6 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 		return nil, err
 	}
 	if hasScenariosFilter {
-
 		if len(appIDsInScenarios) == 0 {
 			return &model.ApplicationPage{
 				Data:       []*model.Application{},
@@ -268,7 +267,6 @@ func (s *service) ListAllGlobalByFilter(ctx context.Context, filters []*labelfil
 		return nil, err
 	}
 	if hasScenariosFilter {
-
 		if len(appIDsInScenarios) == 0 {
 			return &model.ApplicationWithTenantsPage{
 				Data:       []*model.ApplicationWithTenants{},
@@ -398,7 +396,6 @@ func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string,
 		return nil, err
 	}
 	if hasScenariosFilter {
-
 		if len(appIDsInScenarios) == 0 {
 			return &model.ApplicationPage{
 				Data:       []*model.Application{},
