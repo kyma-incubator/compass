@@ -73,6 +73,7 @@ type formationService interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	DeleteAutomaticScenarioAssignment(ctx context.Context, in *model.AutomaticScenarioAssignment) error
+	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
 }
 
 // RuntimeConverter missing godoc

@@ -305,6 +305,10 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		in.Labels[key] = value
 	}
 
+	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
+	}
+
 	if isConsumerIntegrationSystem {
 		in.Labels[s.runtimeTypeLabelKey] = s.kymaRuntimeTypeLabelValue
 
@@ -386,13 +390,17 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 		in.Labels[IsNormalizedLabel] = "true"
 	}
 
+	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
+	}
+
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)
 	if in.Labels, err = s.UnsafeExtractModifiableLabels(in.Labels); err != nil {
 		return err
 	}
 	log.C(ctx).Debugf("Successfully stripped protected labels. Resulting labels after operation are: %+v", in.Labels)
 
-	unmodifiablePattern := s.protectedLabelPattern + "|^" + model.ScenariosKey + "$" + "|" + s.immutableLabelPattern
+	unmodifiablePattern := s.protectedLabelPattern + "|" + s.immutableLabelPattern
 	// NOTE: The db layer does not support OR currently so multiple label patterns can't be implemented easily
 	if err = s.labelRepo.DeleteByKeyNegationPattern(ctx, rtmTenant, model.RuntimeLabelableObject, id, unmodifiablePattern); err != nil {
 		return errors.Wrapf(err, "while deleting all labels for Runtime")
@@ -451,6 +459,10 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 		return err
 	} else if !modifiable {
 		return apperrors.NewInvalidDataError("could not set unmodifiable label with key %s", labelInput.Key)
+	}
+
+	if labelInput.Key == model.ScenariosKey {
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
 	}
 
 	if err = s.labelService.UpsertLabel(ctx, rtmTenant, labelInput); err != nil {
@@ -524,6 +536,10 @@ func (s *service) DeleteLabel(ctx context.Context, runtimeID string, key string)
 		return apperrors.NewInvalidDataError("could not delete unmodifiable label with key %s", key)
 	}
 
+	if key == model.ScenariosKey {
+		return errors.Errorf("label with key %s cannot be deleted explicitly", model.ScenariosKey)
+	}
+
 	if err = s.labelRepo.Delete(ctx, rtmTenant, model.RuntimeLabelableObject, runtimeID, key); err != nil {
 		return errors.Wrapf(err, "while deleting Runtime label")
 	}
@@ -569,38 +585,18 @@ func (s *service) assignRuntimeScenarios(ctx context.Context, rtmTenant, id stri
 }
 
 func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runtimeID string) error {
-	currentRuntimeLabels, err := s.getCurrentLabelsForRuntime(ctx, rtmTenant, runtimeID)
+	formations, err := s.formationService.ListFormationsForObject(ctx, runtimeID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while listing formations for runtime with ID %q", runtimeID)
 	}
 
-	if scenarios, areScenariosInLabels := currentRuntimeLabels[model.ScenariosKey]; areScenariosInLabels {
-		scenariosStr, err := label.ValueToStringsSlice(scenarios)
-		if err != nil {
-			return errors.Wrapf(err, "while converting scenarios: %+v to slice of strings", scenarios)
-		}
-
-		for _, scenario := range scenariosStr {
-			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
-				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, runtimeID)
-			}
+	for _, formation := range formations {
+		if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: formation.Name}); err != nil {
+			return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", formation.Name, runtimeID)
 		}
 	}
 
 	return nil
-}
-
-func (s *service) getCurrentLabelsForRuntime(ctx context.Context, tenantID, runtimeID string) (map[string]interface{}, error) {
-	labels, err := s.labelRepo.ListForObject(ctx, tenantID, model.RuntimeLabelableObject, runtimeID)
-	if err != nil {
-		return nil, err
-	}
-
-	currentLabels := make(map[string]interface{})
-	for _, v := range labels {
-		currentLabels[v.Key] = v.Value
-	}
-	return currentLabels, nil
 }
 
 func (s *service) extractTenantFromSubaccountLabel(ctx context.Context, value interface{}) (*model.BusinessTenantMapping, error) {

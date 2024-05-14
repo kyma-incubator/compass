@@ -329,21 +329,6 @@ func (s *service) Update(ctx context.Context, model *model.Formation) error {
 	return nil
 }
 
-// GetFormationsForObject returns slice of formations for entity with ID objID and type objType
-func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
-	labelInput := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		ObjectID:   objID,
-		ObjectType: objType,
-	}
-	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while fetching scenario label for %q with id %q", objType, objID)
-	}
-
-	return label.ValueToStringsSlice(existingLabel.Value)
-}
-
 // CreateFormation is responsible for a couple of things:
 //   - Enforce any "pre" and "post" operation formation constraints
 //   - Adds the provided formation to the scenario label definitions of the given tenant, if the scenario label definition does not exist it will be created
