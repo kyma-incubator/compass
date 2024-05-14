@@ -72,7 +72,6 @@ func (r *repository) GetLatestOperation(ctx context.Context, formationAssignment
 		repo.NewEqualCondition("formation_assignment_id", formationAssignmentID),
 		repo.NewEqualCondition("formation_id", formationID),
 	}
-	// todo may have to add limit
 	if err := r.getter.GetGlobal(ctx, conditions, repo.OrderByParams{repo.NewDescOrderBy(startedAtColumn)}, &entity); err != nil {
 		return nil, err
 	}
