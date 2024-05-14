@@ -163,7 +163,7 @@ global:
       path: europe-docker.pkg.dev/kyma-project
     connector:
       dir: dev/incubator/
-      version: "PR-3787"
+      version: "PR-3872"
       name: compass-connector
     connectivity_adapter:
       dir: dev/incubator/
@@ -171,7 +171,7 @@ global:
       name: compass-connectivity-adapter
     pairing_adapter:
       dir: dev/incubator/
-      version: "PR-3787"
+      version: "PR-3872"
       name: compass-pairing-adapter
     director:
       dir: dev/incubator/
@@ -179,7 +179,7 @@ global:
       name: compass-director
     hydrator:
       dir: dev/incubator/
-      version: "PR-3868"
+      version: "PR-3872"
       name: compass-hydrator
     ias_adapter:
       dir: dev/incubator/
@@ -224,11 +224,11 @@ global:
       version: "0a651695"
     external_services_mock:
       dir: dev/incubator/
-      version: "PR-3787"
+      version: "PR-3872"
       name: compass-external-services-mock
     e2e_tests:
       dir: dev/incubator/
-      version: "PR-3849"
+      version: "PR-3872"
       name: compass-e2e-tests
   isLocalEnv: false
   isForTesting: false
