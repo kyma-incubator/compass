@@ -87,7 +87,7 @@ func Test_SetForApplication(t *testing.T) {
 		ctx := fixCtxWithTenant()
 		app := fixApplicationModel("test-app")
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -116,7 +116,7 @@ func Test_SetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -148,7 +148,7 @@ func Test_SetForApplication(t *testing.T) {
 		ctx := fixCtxWithTenant()
 		app := fixApplicationModel("test-app")
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -178,7 +178,7 @@ func Test_SetForApplication(t *testing.T) {
 		ctx := fixCtxWithTenant()
 		app := fixApplicationModel("test-app")
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -220,7 +220,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while deleting default eventing for application: while getting default runtime for app eventing: while fetching runtimes with label [key=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(nil, errors.New("some-error"))
 		labelRepo := &automock.LabelRepository{}
 
@@ -240,7 +240,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while deleting default eventing for application: while getting default runtime for app eventing: got multpile runtimes labeled [key=%s] as default for eventing`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 
@@ -260,7 +260,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while deleting default eventing for application: while deleting label: while deleting label [key=%s, runtimeID=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID), runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
@@ -282,7 +282,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting the runtime: while getting application scenarios: while getting the label [key=%s] for application [ID=%s]: some error`, model.ScenariosKey, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
@@ -306,7 +306,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`does not find the given runtime [ID=%s] assigned to the application scenarios`, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
@@ -332,7 +332,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting the runtime: while getting the runtime [ID=%s] with scenarios with filter: some-error`, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(nil, errors.New("some-error"))
@@ -358,7 +358,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while setting the runtime as default for eventing for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some-error`, runtimeID, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -385,7 +385,7 @@ func Test_SetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while fetching eventing configuration for runtime: while getting the label [key=%s] for runtime [ID=%s]: some-error`, RuntimeEventingURLLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -415,7 +415,7 @@ func Test_SetForApplication(t *testing.T) {
 		ctx := fixCtxWithTenant()
 		app := fixApplicationModel("test-app")
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -448,7 +448,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 
 		svc := NewService(nil, runtimeRepo, nil)
@@ -467,7 +467,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -493,7 +493,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -519,7 +519,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -558,7 +558,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while deleting default eventing for application: while getting default runtime for app eventing: while fetching runtimes with label [key=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(nil, errors.New("some-error"))
 
 		svc := NewService(nil, runtimeRepo, nil)
@@ -577,7 +577,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while deleting default eventing for application: while getting default runtime for app eventing: got multpile runtimes labeled [key=%s] as default for eventing`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePage(), nil)
 
 		svc := NewService(nil, runtimeRepo, nil)
@@ -596,7 +596,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while deleting default eventing for application: while deleting label: while deleting label [key=%s, runtimeID=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID), runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("Delete", ctx, tenantID.String(), model.RuntimeLabelableObject, runtimeID.String(),
@@ -618,7 +618,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while fetching eventing configuration for runtime: while getting the label [key=%s] for runtime [ID=%s]: some error`, RuntimeEventingURLLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -642,7 +642,7 @@ func Test_UnsetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.RuntimeLabelableObject,
@@ -672,7 +672,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -700,7 +700,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), fixLabelFilterForRuntimeScenarios()).
 			Return(fixRuntimes()[0], nil)
@@ -728,7 +728,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -756,7 +756,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -784,7 +784,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), fixLabelFilterForRuntimeScenarios()).
 			Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
@@ -808,7 +808,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
@@ -835,7 +835,7 @@ func Test_GetForApplication(t *testing.T) {
 		}
 		runtimeRepo := &automock.RuntimeRepository{}
 		runtimePage := fixRuntimePageWithOne()
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(runtimePage, nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
@@ -857,7 +857,7 @@ func Test_GetForApplication(t *testing.T) {
 		// GIVEN
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
@@ -888,7 +888,7 @@ func Test_GetForApplication(t *testing.T) {
 		runtimeRepo := &automock.RuntimeRepository{}
 		newRuntime := fixRuntimes()[0]
 		runtimePage := fixRuntimePageWithOne()
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(), 1, mock.Anything).Return(runtimePage, nil)
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(), 1, mock.Anything).Return(runtimePage, nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
 			applicationID.String(), model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "")).Once()
@@ -933,7 +933,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while setting the runtime as default for eventing for application: while labeling the runtime [ID=%s] as default for eventing for application [ID=%s]: some error`, runtimeID, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), fixLabelFilterForRuntimeScenarios()).
 			Return(fixRuntimes()[0], nil)
@@ -959,7 +959,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting the oldest runtime for application [ID=%s] scenarios with filter: some error`, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		runtimeRepo.On("GetOldestForFilters", ctx, tenantID.String(), fixLabelFilterForRuntimeScenarios()).
 			Return(nil, errors.New("some error"))
@@ -982,7 +982,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting application scenarios: while converting label [key=%s] value to a slice of strings: Internal Server Error: cannot convert label value to slice of strings`, model.ScenariosKey)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 		scenariosLabel := fixApplicationScenariosLabel()
@@ -1005,7 +1005,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting the oldest runtime for scenarios: while getting application scenarios: while getting the label [key=%s] for application [ID=%s]: some error`, model.ScenariosKey, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixEmptyRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
@@ -1026,7 +1026,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting default runtime for app eventing: while fetching runtimes with label [key=%s]: some error`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(nil, errors.New("some error"))
 		svc := NewService(nil, runtimeRepo, nil)
 
@@ -1044,7 +1044,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while getting default runtime for app eventing: got multpile runtimes labeled [key=%s] as default for eventing`, getDefaultEventingForAppLabelKey(applicationID))
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePage(), nil)
 		labelRepo := &automock.LabelRepository{}
 
@@ -1064,7 +1064,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while ensuring the scenarios assigned to the runtime and application: while verifing whether runtime [ID=%s] belongs to the application scenarios: while getting application scenarios: while getting the label [key=%s] for application [ID=%s]: some error`, runtimeID, model.ScenariosKey, applicationID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		labelRepo := &automock.LabelRepository{}
 		labelRepo.On("GetByKey", ctx, tenantID.String(), model.ApplicationLabelableObject,
@@ -1086,7 +1086,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while ensuring the scenarios assigned to the runtime and application: while verifing whether runtime [ID=%s] belongs to the application scenarios: while getting the runtime [ID=%s] with scenarios with filter: some-error`, runtimeID, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(nil, errors.New("some-error"))
@@ -1110,7 +1110,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while ensuring the scenarios assigned to the runtime and application: when deleting current default runtime for the application because of scenarios mismatch: while deleting label [key=%s, runtimeID=%s]: some-error`, getDefaultEventingForAppLabelKey(applicationID), runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(nil, apperrors.NewNotFoundError(resource.Runtime, ""))
@@ -1136,7 +1136,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while fetching eventing configuration for runtime: while getting the label [key=%s] for runtime [ID=%s]: some error`, RuntimeEventingURLLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)
@@ -1162,7 +1162,7 @@ func Test_GetForApplication(t *testing.T) {
 		expectedError := fmt.Sprintf(`while determining whether application name should be normalized in runtime eventing URL: while getting the label [key=%s] for runtime [ID=%s]: some error`, isNormalizedLabel, runtimeID)
 		ctx := fixCtxWithTenant()
 		runtimeRepo := &automock.RuntimeRepository{}
-		runtimeRepo.On("List", ctx, tenantID.String(), fixLabelFilterForRuntimeDefaultEventingForApp(),
+		runtimeRepo.On("List", ctx, tenantID.String(), []string{}, fixLabelFilterForRuntimeDefaultEventingForApp(),
 			1, mock.Anything).Return(fixRuntimePageWithOne(), nil)
 		runtimeRepo.On("GetByFiltersAndID", ctx, tenantID.String(), runtimeID.String(),
 			fixLabelFilterForRuntimeScenarios()).Return(fixRuntimes()[0], nil)

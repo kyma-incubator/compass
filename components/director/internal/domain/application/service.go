@@ -89,7 +89,7 @@ type ApplicationRepository interface {
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
-	ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
+	ListAllGlobalByFilter(ctx context.Context, appIDs []string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
 }
 
 // LabelRepository missing godoc
@@ -120,7 +120,9 @@ type FormationService interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error)
 	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+	ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 }
 
 // RuntimeRepository missing godoc
@@ -204,24 +206,25 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, appTenant, filters)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, appTenant, filters, false)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(appIDsInScenarios) == 0 {
-		return &model.ApplicationPage{
-			Data:       []*model.Application{},
-			TotalCount: 0,
-			PageInfo: &pagination.Page{
-				StartCursor: cursor,
-				EndCursor:   "",
-				HasNextPage: false,
-			},
-		}, nil
+	if hasScenariosFilter {
+		if len(appIDsInScenarios) == 0 {
+			return &model.ApplicationPage{
+				Data:       []*model.Application{},
+				TotalCount: 0,
+				PageInfo: &pagination.Page{
+					StartCursor: cursor,
+					EndCursor:   "",
+					HasNextPage: false,
+				},
+			}, nil
+		}
 	}
-
 	return s.appRepo.ListByIDsAndFilters(ctx, appTenant, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
+
 }
 
 // ListAll lists tenant scoped applications
@@ -245,12 +248,30 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 
 // ListAllGlobalByFilter lists a page of applications with their associated tenants filtered by the provided filters.
 // Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
-func (s *service) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+func (s *service) ListAllGlobalByFilter(ctx context.Context, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.appRepo.ListAllGlobalByFilter(ctx, filter, pageSize, cursor)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, "", filters, true)
+	if err != nil {
+		return nil, err
+	}
+	if hasScenariosFilter {
+		if len(appIDsInScenarios) == 0 {
+			return &model.ApplicationWithTenantsPage{
+				Data:       []*model.ApplicationWithTenants{},
+				TotalCount: 0,
+				PageInfo: &pagination.Page{
+					StartCursor: cursor,
+					EndCursor:   "",
+					HasNextPage: false,
+				},
+			}, nil
+		}
+	}
+
+	return s.appRepo.ListAllGlobalByFilter(ctx, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
 }
 
 // ListAllByApplicationTemplateID lists all applications which have the given app template id
@@ -355,28 +376,28 @@ func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string,
 		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
 
-	appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, appTenant, filters)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, appTenant, filters, false)
 	if err != nil {
 		return nil, err
 	}
-
-	if len(appIDsInScenarios) == 0 {
-		return &model.ApplicationPage{
-			Data:       []*model.Application{},
-			TotalCount: 0,
-			PageInfo: &pagination.Page{
-				StartCursor: cursor,
-				EndCursor:   "",
-				HasNextPage: false,
-			},
-		}, nil
+	if hasScenariosFilter {
+		if len(appIDsInScenarios) == 0 {
+			return &model.ApplicationPage{
+				Data:       []*model.Application{},
+				TotalCount: 0,
+				PageInfo: &pagination.Page{
+					StartCursor: cursor,
+					EndCursor:   "",
+					HasNextPage: false,
+				},
+			}, nil
+		}
 	}
 
 	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing applications")
 	}
-
 	return apps, nil
 }
 
@@ -857,19 +878,14 @@ func (s *service) GetScenariosGlobal(ctx context.Context, applicationID string) 
 		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
 	}
 
-	labels, err := s.labelRepo.ListGlobalByKeyAndObjects(ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey)
+	formations, err := s.formationService.ListFormationsForObjectGlobal(ctx, applicationID)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting label for Application with ID: %s", applicationID)
+		return nil, errors.Wrapf(err, "while getting formations for Application with ID: %s", applicationID)
 	}
 
 	var scenarios []string
-	for _, lbl := range labels {
-		scenariosFromLabel, err := label.ValueToStringsSlice(lbl.Value)
-		if err != nil {
-			return nil, errors.Wrapf(err, "while parsing label values for Application with ID: %s", applicationID)
-		}
-
-		scenarios = append(scenarios, scenariosFromLabel...)
+	for _, formation := range formations {
+		scenarios = append(scenarios, formation.Name)
 	}
 
 	return scenarios, nil
@@ -1658,27 +1674,37 @@ func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
 	return mappingCfg.ProxyURL + mappingCfg.OrdURLPath
 }
 
-func (s *service)removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter)([]string, []*labelfilter.LabelFilter, error){
+func (s *service) removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter, isGlobal bool) (bool, []string, []*labelfilter.LabelFilter, error) {
+	var hasScenarioFilter bool
 	var appIDsInScenarios = make([]string, 0)
 	filtersWithoutScenarioFilter := make([]*labelfilter.LabelFilter, 0, len(filters))
+
 	for i, labelFilter := range filters {
 		if labelFilter.Key == model.ScenariosKey {
+			hasScenarioFilter = true
 			formationNamesInterface, err := label.ExtractValueFromJSONPath(*labelFilter.Query)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
+				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
 			}
 
 			formationNames, err := label.ValueToStringsSlice(formationNamesInterface)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "while converting formation names to strings")
+				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while converting formation names to strings")
 			}
-
-			appIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, formationNames, model.FormationAssignmentTypeApplication)
-			if err != nil {
-				return nil, nil, errors.Wrapf(err, "while getting application IDs for formations %v", formationNames)
+			if isGlobal {
+				appIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormationsGlobal(ctx, formationNames, model.FormationAssignmentTypeApplication)
+				if err != nil {
+					return hasScenarioFilter, nil, nil, errors.Wrapf(err, "while getting application IDs for formations %v", formationNames)
+				}
+			} else {
+				appIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, formationNames, model.FormationAssignmentTypeApplication)
+				if err != nil {
+					return hasScenarioFilter, nil, nil, errors.Wrapf(err, "while getting application IDs for formations %v", formationNames)
+				}
 			}
+		} else {
+			filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
 		}
-		filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
 	}
-	return appIDsInScenarios, filtersWithoutScenarioFilter, nil
+	return hasScenarioFilter, appIDsInScenarios, filtersWithoutScenarioFilter, nil
 }

@@ -18,6 +18,10 @@ type ApplicationWithTenantsConverter struct {
 func (_m *ApplicationWithTenantsConverter) MultipleToGraphQL(in []*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for MultipleToGraphQL")
+	}
+
 	var r0 []*graphql.ApplicationWithTenants
 	if rf, ok := ret.Get(0).(func([]*model.ApplicationWithTenants) []*graphql.ApplicationWithTenants); ok {
 		r0 = rf(in)

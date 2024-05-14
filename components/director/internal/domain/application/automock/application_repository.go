@@ -428,51 +428,29 @@ func (_m *ApplicationRepository) ListAllByIDs(ctx context.Context, tenantID stri
 	return r0, r1
 }
 
-<<<<<<< Updated upstream
-// ListAllGlobalByFilter provides a mock function with given fields: ctx, filter, pageSize, cursor
-func (_m *ApplicationRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
-	ret := _m.Called(ctx, filter, pageSize, cursor)
+// ListAllGlobalByFilter provides a mock function with given fields: ctx, appIDs, filter, pageSize, cursor
+func (_m *ApplicationRepository) ListAllGlobalByFilter(ctx context.Context, appIDs []string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+	ret := _m.Called(ctx, appIDs, filter, pageSize, cursor)
 
 	if len(ret) == 0 {
 		panic("no return value specified for ListAllGlobalByFilter")
-=======
-// ListByIDs provides a mock function with given fields: ctx, tenant, applicationIDs, pageSize, cursor
-func (_m *ApplicationRepository) ListByIDs(ctx context.Context, tenant uuid.UUID, applicationIDs []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, tenant, applicationIDs, pageSize, cursor)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByIDs")
->>>>>>> Stashed changes
 	}
 
 	var r0 *model.ApplicationWithTenantsPage
 	var r1 error
-<<<<<<< Updated upstream
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (*model.ApplicationWithTenantsPage, error)); ok {
-		return rf(ctx, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []string, []*labelfilter.LabelFilter, int, string) (*model.ApplicationWithTenantsPage, error)); ok {
+		return rf(ctx, appIDs, filter, pageSize, cursor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) *model.ApplicationWithTenantsPage); ok {
-		r0 = rf(ctx, filter, pageSize, cursor)
-=======
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, tenant, applicationIDs, pageSize, cursor)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, tenant, applicationIDs, pageSize, cursor)
->>>>>>> Stashed changes
+	if rf, ok := ret.Get(0).(func(context.Context, []string, []*labelfilter.LabelFilter, int, string) *model.ApplicationWithTenantsPage); ok {
+		r0 = rf(ctx, appIDs, filter, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.ApplicationWithTenantsPage)
 		}
 	}
 
-<<<<<<< Updated upstream
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, int, string) error); ok {
-		r1 = rf(ctx, filter, pageSize, cursor)
-=======
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string) error); ok {
-		r1 = rf(ctx, tenant, applicationIDs, pageSize, cursor)
->>>>>>> Stashed changes
+	if rf, ok := ret.Get(1).(func(context.Context, []string, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, appIDs, filter, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -531,9 +509,8 @@ func (_m *ApplicationRepository) ListByLocalTenantID(ctx context.Context, tenant
 		}
 	}
 
-<<<<<<< Updated upstream
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, []*labelfilter.LabelFilter, int, string) error); ok {
-		r1 = rf(ctx, tenant, localTenantID, filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, tenant, localTenantID, appIDs, filters, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -594,10 +571,6 @@ func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tena
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []string) error); ok {
 		r1 = rf(ctx, tenant, scenarios, ids)
-=======
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string, []*labelfilter.LabelFilter, int, string) error); ok {
-		r1 = rf(ctx, tenant, localTenantID, appIDs, filters, pageSize, cursor)
->>>>>>> Stashed changes
 	} else {
 		r1 = ret.Error(1)
 	}

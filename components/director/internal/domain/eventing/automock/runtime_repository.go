@@ -21,6 +21,10 @@ type RuntimeRepository struct {
 func (_m *RuntimeRepository) GetByFiltersAndID(ctx context.Context, tenant string, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, id, filter)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByFiltersAndID")
+	}
+
 	var r0 *model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
@@ -47,6 +51,10 @@ func (_m *RuntimeRepository) GetByFiltersAndID(ctx context.Context, tenant strin
 func (_m *RuntimeRepository) GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetOldestForFilters")
+	}
+
 	var r0 *model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
@@ -69,25 +77,29 @@ func (_m *RuntimeRepository) GetOldestForFilters(ctx context.Context, tenant str
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, tenant, filter, pageSize, cursor
-func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
-	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
+// List provides a mock function with given fields: ctx, tenant, runtimeIDs, filters, pageSize, cursor
+func (_m *RuntimeRepository) List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+	ret := _m.Called(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.RuntimePage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
-		return rf(ctx, tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
+		return rf(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
-		r0 = rf(ctx, tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
+		r0 = rf(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.RuntimePage)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
-		r1 = rf(ctx, tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -20,6 +20,10 @@ type ApplicationTemplateService struct {
 func (_m *ApplicationTemplateService) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.ApplicationTemplate
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
@@ -45,6 +49,10 @@ func (_m *ApplicationTemplateService) Get(ctx context.Context, id string) (*mode
 // GetByFilters provides a mock function with given fields: ctx, filter
 func (_m *ApplicationTemplateService) GetByFilters(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, filter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByFilters")
+	}
 
 	var r0 *model.ApplicationTemplate
 	var r1 error

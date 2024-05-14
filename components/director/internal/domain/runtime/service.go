@@ -42,7 +42,6 @@ type runtimeRepository interface {
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
-	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	Create(ctx context.Context, tenant string, item *model.Runtime) error
 	Update(ctx context.Context, tenant string, item *model.Runtime) error
 	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
@@ -147,12 +146,12 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	runtimeIDs, labelFiltersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, rtmTenant, filters)
+	hasScenariosFilter, runtimeIDs, labelFiltersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, rtmTenant, filters)
 	if err != nil {
 		return nil, err
 	}
-
-	if runtimeIDs != nil {
+	if hasScenariosFilter {
+		if len(runtimeIDs) == 0 {
 			return &model.RuntimePage{
 				Data:       []*model.Runtime{},
 				TotalCount: 0,
@@ -163,7 +162,7 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 				},
 			}, nil
 		}
-
+	}
 	return s.repo.List(ctx, rtmTenant, runtimeIDs, labelFiltersWithoutScenarioFilter, pageSize, cursor)
 }
 
@@ -224,15 +223,6 @@ func (s *service) GetByFilters(ctx context.Context, filters []*labelfilter.Label
 		return nil, errors.Wrapf(err, "while getting runtime by filters from repo")
 	}
 	return runtime, nil
-}
-
-// ListByFiltersGlobal missing godoc
-func (s *service) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	runtimes, err := s.repo.ListByFiltersGlobal(ctx, filters)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
-	}
-	return runtimes, nil
 }
 
 // ListByFilters lists all runtimes in a given tenant that match given label filter.
@@ -800,27 +790,30 @@ func convertLabelValue(value interface{}) (string, error) {
 	return values[0], nil
 }
 
-func (s *service)removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter)([]string, []*labelfilter.LabelFilter, error){
+func (s *service) removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter) (bool, []string, []*labelfilter.LabelFilter, error) {
+	var hasScenarioFilter bool
 	var runtimeIDsInScenarios = make([]string, 0)
 	filtersWithoutScenarioFilter := make([]*labelfilter.LabelFilter, 0, len(filters))
+
 	for i, labelFilter := range filters {
 		if labelFilter.Key == model.ScenariosKey {
+			hasScenarioFilter = true
 			formationNamesInterface, err := label.ExtractValueFromJSONPath(*labelFilter.Query)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
+				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
 			}
 
 			formationNames, err := label.ValueToStringsSlice(formationNamesInterface)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "while converting formation names to strings")
+				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while converting formation names to strings")
 			}
-
 			runtimeIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, formationNames, model.FormationAssignmentTypeRuntime)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "while getting runtime IDs for formations %v", formationNames)
+				return hasScenarioFilter, nil, nil, errors.Wrapf(err, "while getting runtime IDs for formations %v", formationNames)
 			}
+		} else {
+			filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
 		}
-		filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
 	}
-	return runtimeIDsInScenarios, filtersWithoutScenarioFilter, nil
+	return hasScenarioFilter, runtimeIDsInScenarios, filtersWithoutScenarioFilter, nil
 }

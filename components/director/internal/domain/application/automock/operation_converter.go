@@ -18,6 +18,10 @@ type OperationConverter struct {
 func (_m *OperationConverter) MultipleToGraphQL(in []*model.Operation) ([]*graphql.Operation, error) {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for MultipleToGraphQL")
+	}
+
 	var r0 []*graphql.Operation
 	var r1 error
 	if rf, ok := ret.Get(0).(func([]*model.Operation) ([]*graphql.Operation, error)); ok {

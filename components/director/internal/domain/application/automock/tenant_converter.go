@@ -20,6 +20,10 @@ type TenantConverter struct {
 func (_m *TenantConverter) FromEntity(in *tenant.Entity) *model.BusinessTenantMapping {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for FromEntity")
+	}
+
 	var r0 *model.BusinessTenantMapping
 	if rf, ok := ret.Get(0).(func(*tenant.Entity) *model.BusinessTenantMapping); ok {
 		r0 = rf(in)
@@ -35,6 +39,10 @@ func (_m *TenantConverter) FromEntity(in *tenant.Entity) *model.BusinessTenantMa
 // MultipleToGraphQL provides a mock function with given fields: in
 func (_m *TenantConverter) MultipleToGraphQL(in []*model.BusinessTenantMapping) []*graphql.Tenant {
 	ret := _m.Called(in)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MultipleToGraphQL")
+	}
 
 	var r0 []*graphql.Tenant
 	if rf, ok := ret.Get(0).(func([]*model.BusinessTenantMapping) []*graphql.Tenant); ok {

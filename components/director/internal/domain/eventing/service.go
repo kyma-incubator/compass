@@ -35,7 +35,7 @@ const (
 type RuntimeRepository interface {
 	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
 	GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 }
 
 // LabelRepository missing godoc
@@ -305,7 +305,7 @@ func (s *service) getDefaultRuntimeForAppEventing(ctx context.Context, tenantID 
 	labelFilterForRuntime := []*labelfilter.LabelFilter{labelfilter.NewForKey(labelKey)}
 
 	var cursor string
-	runtimesPage, err := s.runtimeRepo.List(ctx, tenantID, labelFilterForRuntime, 1, cursor)
+	runtimesPage, err := s.runtimeRepo.List(ctx, tenantID, []string{}, labelFilterForRuntime, 1, cursor)
 	if err != nil {
 		return nil, false, errors.Wrap(err, fmt.Sprintf("while fetching runtimes with label [key=%s]", labelKey))
 	}
