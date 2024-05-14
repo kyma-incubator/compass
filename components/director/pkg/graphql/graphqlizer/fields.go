@@ -218,6 +218,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
         leadingProductIDs
         supportsReset
 		discoveryConsumers
+        labels
         webhooks {%s}
 		formationConstraints {%s}
 	`, fp.ForWebhooks(), fp.ForFormationConstraint())

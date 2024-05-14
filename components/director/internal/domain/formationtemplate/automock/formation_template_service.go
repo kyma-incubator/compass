@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -16,21 +18,21 @@ type FormationTemplateService struct {
 }
 
 // Create provides a mock function with given fields: ctx, in
-func (_m *FormationTemplateService) Create(ctx context.Context, in *model.FormationTemplateInput) (string, error) {
+func (_m *FormationTemplateService) Create(ctx context.Context, in *model.FormationTemplateRegisterInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
 	var r0 string
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateInput) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateRegisterInput) (string, error)); ok {
 		return rf(ctx, in)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateInput) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationTemplateRegisterInput) string); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Get(0).(string)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationTemplateInput) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *model.FormationTemplateRegisterInput) error); ok {
 		r1 = rf(ctx, in)
 	} else {
 		r1 = ret.Error(1)
@@ -46,6 +48,20 @@ func (_m *FormationTemplateService) Delete(ctx context.Context, id string) error
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteLabel provides a mock function with given fields: ctx, formationTemplateID, key
+func (_m *FormationTemplateService) DeleteLabel(ctx context.Context, formationTemplateID string, key string) error {
+	ret := _m.Called(ctx, formationTemplateID, key)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
+		r0 = rf(ctx, formationTemplateID, key)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -79,25 +95,77 @@ func (_m *FormationTemplateService) Get(ctx context.Context, id string) (*model.
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, name, pageSize, cursor
-func (_m *FormationTemplateService) List(ctx context.Context, name *string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
-	ret := _m.Called(ctx, name, pageSize, cursor)
+// GetLabel provides a mock function with given fields: ctx, formationTemplateID, key
+func (_m *FormationTemplateService) GetLabel(ctx context.Context, formationTemplateID string, key string) (*model.Label, error) {
+	ret := _m.Called(ctx, formationTemplateID, key)
+
+	var r0 *model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
+		return rf(ctx, formationTemplateID, key)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Label); ok {
+		r0 = rf(ctx, formationTemplateID, key)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Label)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, formationTemplateID, key)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// List provides a mock function with given fields: ctx, filters, name, pageSize, cursor
+func (_m *FormationTemplateService) List(ctx context.Context, filters []*labelfilter.LabelFilter, name *string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+	ret := _m.Called(ctx, filters, name, pageSize, cursor)
 
 	var r0 *model.FormationTemplatePage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *string, int, string) (*model.FormationTemplatePage, error)); ok {
-		return rf(ctx, name, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *string, int, string) (*model.FormationTemplatePage, error)); ok {
+		return rf(ctx, filters, name, pageSize, cursor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *string, int, string) *model.FormationTemplatePage); ok {
-		r0 = rf(ctx, name, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *string, int, string) *model.FormationTemplatePage); ok {
+		r0 = rf(ctx, filters, name, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FormationTemplatePage)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *string, int, string) error); ok {
-		r1 = rf(ctx, name, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, *string, int, string) error); ok {
+		r1 = rf(ctx, filters, name, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListLabels provides a mock function with given fields: ctx, formationTemplateID
+func (_m *FormationTemplateService) ListLabels(ctx context.Context, formationTemplateID string) (map[string]*model.Label, error) {
+	ret := _m.Called(ctx, formationTemplateID)
+
+	var r0 map[string]*model.Label
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
+		return rf(ctx, formationTemplateID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) map[string]*model.Label); ok {
+		r0 = rf(ctx, formationTemplateID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(map[string]*model.Label)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, formationTemplateID)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -131,12 +199,26 @@ func (_m *FormationTemplateService) ListWebhooksForFormationTemplate(ctx context
 	return r0, r1
 }
 
+// SetLabel provides a mock function with given fields: ctx, label
+func (_m *FormationTemplateService) SetLabel(ctx context.Context, label *model.LabelInput) error {
+	ret := _m.Called(ctx, label)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
+		r0 = rf(ctx, label)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Update provides a mock function with given fields: ctx, id, in
-func (_m *FormationTemplateService) Update(ctx context.Context, id string, in *model.FormationTemplateInput) error {
+func (_m *FormationTemplateService) Update(ctx context.Context, id string, in *model.FormationTemplateUpdateInput) error {
 	ret := _m.Called(ctx, id, in)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationTemplateInput) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, *model.FormationTemplateUpdateInput) error); ok {
 		r0 = rf(ctx, id, in)
 	} else {
 		r0 = ret.Error(0)
