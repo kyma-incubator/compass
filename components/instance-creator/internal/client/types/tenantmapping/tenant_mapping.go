@@ -29,21 +29,43 @@ const (
 
 // Context is a structure used to JSON decode the context in the Body
 type Context struct {
-	FormationID string `json:"uclFormationId"`
-	Operation   string `json:"operation"`
+	Platform        string `json:"platform"`
+	CrmID           string `json:"crmId"`
+	AccountID       string `json:"accountId"`
+	FormationID     string `json:"uclFormationId"`
+	FormationName   string `json:"uclFormationName"`
+	FormationTypeID string `json:"uclFormationTypeId"`
+	Operation       string `json:"operation"`
 }
 
 // ReceiverTenant is a structure used to JSON decode the receiverTenant in the Body
 type ReceiverTenant struct {
-	Region        string          `json:"deploymentRegion"`
-	SubaccountID  string          `json:"subaccountId"`
-	AssignmentID  string          `json:"uclAssignmentId"`
-	Configuration json.RawMessage `json:"configuration"`
+	State                string          `json:"state"`
+	AssignmentID         string          `json:"uclAssignmentId"`
+	DeploymentRegion     string          `json:"deploymentRegion"`
+	ApplicationNamespace string          `json:"applicationNamespace"`
+	ApplicationURL       string          `json:"applicationUrl"`
+	ApplicationTenantID  string          `json:"applicationTenantId"`
+	SubaccountID         string          `json:"subaccountId"`
+	Subdomain            string          `json:"subdomain"`
+	SystemName           string          `json:"uclSystemName"`
+	SystemTenantID       string          `json:"uclSystemTenantId"`
+	Configuration        json.RawMessage `json:"configuration"`
 }
 
 // AssignedTenant is a structure used to JSON decode the assignedTenant in the Body
 type AssignedTenant struct {
-	Configuration json.RawMessage `json:"configuration"`
+	State                string          `json:"state"`
+	AssignmentID         string          `json:"uclAssignmentId"`
+	DeploymentRegion     string          `json:"deploymentRegion"`
+	ApplicationNamespace string          `json:"applicationNamespace"`
+	ApplicationURL       string          `json:"applicationUrl"`
+	ApplicationTenantID  string          `json:"applicationTenantId"`
+	SubaccountID         string          `json:"subaccountId"`
+	Subdomain            string          `json:"subdomain"`
+	SystemName           string          `json:"uclSystemName"`
+	SystemTenantID       string          `json:"uclSystemTenantId"`
+	Configuration        json.RawMessage `json:"configuration"`
 }
 
 // Body is a structure used to JSON decode the request body sent to the adapter handler
@@ -53,8 +75,14 @@ type Body struct {
 	AssignedTenant AssignedTenant `json:"assignedTenant"`
 }
 
+// String prints the data in the tenant mapping request body excepts the configuration part because it could have sensitive data.
+// We should NOT include the configuration in this method.
+func (b *Body) String() string {
+	return fmt.Sprintf("Context: {Platform: %s, CrmID: %s, AccountID: %s, FormationID: %s, FormationName: %s, FormationTypeID: %s, Operation: %s}, ReceiverTenant: {State: %s, AssignmentID: %s, DeploymentRegion: %s, ApplicationNamespace: %s, ApplicationURL: %s, ApplicationTenantID: %s, SubaccountID: %s, Subdomain: %s, SystemName: %s, SystemTenantID: %s}, AssignedTenant: {State: %s, AssignmentID: %s, DeploymentRegion: %s, ApplicationNamespace: %s, ApplicationURL: %s, ApplicationTenantID: %s, SubaccountID: %s, Subdomain: %s, SystemName: %s, SystemTenantID: %s}", b.Context.Platform, b.Context.CrmID, b.Context.AccountID, b.Context.FormationID, b.Context.FormationName, b.Context.FormationTypeID, b.Context.Operation, b.ReceiverTenant.State, b.ReceiverTenant.AssignmentID, b.ReceiverTenant.DeploymentRegion, b.ReceiverTenant.ApplicationNamespace, b.ReceiverTenant.ApplicationURL, b.ReceiverTenant.ApplicationTenantID, b.ReceiverTenant.SubaccountID, b.ReceiverTenant.Subdomain, b.ReceiverTenant.SystemName, b.ReceiverTenant.SystemTenantID, b.AssignedTenant.State, b.AssignedTenant.AssignmentID, b.AssignedTenant.DeploymentRegion, b.AssignedTenant.ApplicationNamespace, b.AssignedTenant.ApplicationURL, b.AssignedTenant.ApplicationTenantID, b.AssignedTenant.SubaccountID, b.AssignedTenant.Subdomain, b.AssignedTenant.SystemName, b.AssignedTenant.SystemTenantID)
+}
+
 // GetTenantCommunication returns the Body tenant(Receiver or Assigned) communication(inbound or outbound)
-func (b Body) GetTenantCommunication(tenantType TenantType, communicationType string) gjson.Result {
+func (b *Body) GetTenantCommunication(tenantType TenantType, communicationType string) gjson.Result {
 	var tenantConfiguration gjson.Result
 
 	switch tenantType {
@@ -85,15 +113,15 @@ func (c Context) Validate() error {
 // Validate validates the Body's ReceiverTenant
 func (rt ReceiverTenant) Validate() error {
 	return validation.ValidateStruct(&rt,
-		validation.Field(&rt.Region, validation.Required.Error("ReceiverTenant Region must be provided")),
+		validation.Field(&rt.DeploymentRegion, validation.Required.Error("ReceiverTenant DeploymentRegion must be provided")),
 		validation.Field(&rt.SubaccountID, validation.Required.Error("ReceiverTenant SubaccountID must be provided")),
 		validation.Field(&rt.AssignmentID, validation.Required.Error("ReceiverTenant AssignmentID must be provided")),
 	)
 }
 
 // Validate validates the request Body
-func (b Body) Validate() error {
-	return validation.ValidateStruct(&b,
+func (b *Body) Validate() error {
+	return validation.ValidateStruct(b,
 		validation.Field(&b.ReceiverTenant, validation.By(func(interface{}) error {
 			return b.ReceiverTenant.Validate()
 		})),

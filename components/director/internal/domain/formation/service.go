@@ -74,6 +74,7 @@ type FormationRepository interface {
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 	Update(ctx context.Context, model *model.Formation) error
+	UpdateLastNotificationSentTimestamps(ctx context.Context, formationID string) error
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
@@ -161,6 +162,15 @@ type asaEngine interface {
 	IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error)
 }
 
+//go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type assignmentOperationService interface {
+	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
+	Finish(ctx context.Context, assignmentID, formationID string) error
+	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
+	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
+	DeleteByIDs(ctx context.Context, ids []string) error
+}
+
 type service struct {
 	applicationRepository                  applicationRepository
 	labelDefRepository                     labelDefRepository
@@ -176,6 +186,7 @@ type service struct {
 	runtimeRepo                            runtimeRepository
 	runtimeContextRepo                     runtimeContextRepository
 	formationAssignmentService             formationAssignmentService
+	assignmentOperationService             assignmentOperationService
 	formationAssignmentNotificationService FormationAssignmentNotificationsService
 	notificationsService                   NotificationsService
 	constraintEngine                       constraintEngine
@@ -203,6 +214,7 @@ func NewService(
 	tenantSvc tenantService, runtimeRepo runtimeRepository,
 	runtimeContextRepo runtimeContextRepository,
 	formationAssignmentService formationAssignmentService,
+	assignmentOperationService assignmentOperationService,
 	formationAssignmentNotificationService FormationAssignmentNotificationsService,
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
@@ -226,6 +238,7 @@ func NewService(
 		runtimeContextRepo:                     runtimeContextRepo,
 		formationAssignmentNotificationService: formationAssignmentNotificationService,
 		formationAssignmentService:             formationAssignmentService,
+		assignmentOperationService:             assignmentOperationService,
 		notificationsService:                   notificationsService,
 		constraintEngine:                       constraintEngine,
 		runtimeTypeLabelKey:                    runtimeTypeLabelKey,
@@ -393,6 +406,9 @@ func (s *service) CreateFormation(ctx context.Context, tnt string, formation mod
 		return nil, err
 	}
 
+	logger := log.C(ctx).WithField(log.FieldFormationID, newFormation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	if newFormation.State == model.DraftFormationState {
 		log.C(ctx).Infof("The formation is created with %s state. No Lifecycle notification will be executed until the formation is finalized", newFormation.State)
 	} else {
@@ -552,6 +568,9 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, errors.Wrapf(err, "while assigning formation with name %q", formation.Name)
 	}
 
+	logger := log.C(ctx).WithField(log.FieldFormationID, ft.formation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	if !isObjectTypeSupported(ft.formationTemplate, objectType) {
 		return nil, errors.Errorf("Formation %q of type %q does not support resources of type %q", ft.formation.Name, ft.formationTemplate.Name, objectType)
 	}
@@ -607,6 +626,25 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, terr
 		}
 
+		// create operations in a transaction similar to how we persist the FAs above (using terr as well)
+		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API, and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
+		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+			for _, a := range assignments {
+				if _, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+					Type:                  model.Assign,
+					FormationAssignmentID: a.ID,
+					FormationID:           a.FormationID,
+					TriggeredBy:           model.AssignObject,
+				}); terr != nil {
+					return errors.Wrapf(terr, "while creating %s Operation for assignment with ID: %s", model.Assign, a.ID)
+				}
+			}
+
+			return nil
+		}); terr != nil {
+			return nil, terr
+		}
+
 		// If the assigning of the object fails, the transaction opened in the resolver will be rolled back.
 		// The FA records and the labels for the object will not be reverted as they were persisted as part of another
 		// transaction. The leftover resources should be deleted separately.
@@ -629,7 +667,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}()
 
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
-		// If we are in create error state, the formation is not ready, and we should not send notifications
+		// If we are in create error or draft state, the formation is not ready, and we should not send notifications
 		if formationFromDB.State == model.InitialFormationState || formationFromDB.State == model.CreateErrorFormationState || formationFromDB.State == model.DraftFormationState {
 			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for state to be updated...", formationFromDB.ID, model.ReadyFormationState)
 			return ft.formation, nil
@@ -892,6 +930,9 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while unassigning formation with name %q", formationName)
 	}
 
+	logger := log.C(ctx).WithField(log.FieldFormationID, ft.formation.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	formationFromDB := ft.formation
 
 	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
@@ -986,6 +1027,27 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, err
 	}
 
+	// create `Unassign` Operation here in separate transaction similar to the `Assign` case
+	var operationAssignmentIDs []string
+	if opErr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+		for _, ia := range initialAssignmentsData {
+			opID, err := s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+				Type:                  model.Unassign,
+				FormationAssignmentID: ia.ID,
+				FormationID:           ia.FormationID,
+				TriggeredBy:           model.UnassignObject,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.Unassign, ia.ID)
+			}
+			operationAssignmentIDs = append(operationAssignmentIDs, opID)
+		}
+
+		return nil
+	}); opErr != nil {
+		return nil, opErr
+	}
+
 	defer func() {
 		if err == nil {
 			return
@@ -1007,6 +1069,16 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil
 		}); terr != nil {
 			log.C(ctx).WithError(terr).Error("An error occurred while reverting formation assignments with their original data")
+		}
+
+		log.C(ctx).Infof("Deleting Operations related to assignments that were updated to DELETING state...")
+		if terr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+			if deleteErr := s.assignmentOperationService.DeleteByIDs(ctxWithTransact, operationAssignmentIDs); deleteErr != nil {
+				return deleteErr
+			}
+			return nil
+		}); terr != nil {
+			log.C(ctx).WithError(terr).Errorf("while deleting Operations for formation assignments with IDs: %s", operationAssignmentIDs)
 		}
 	}()
 
@@ -1097,8 +1169,11 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	return formationFromDB, nil
 }
 
-// FinalizeDraftFormation changes the formation state do initial and start processing the formation and formation assignment notifications
+// FinalizeDraftFormation changes the formation state to initial and start processing the formation and formation assignment notifications
 func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error) {
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	log.C(ctx).Infof("Finalizing formation with ID: %q", formationID)
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
@@ -1131,7 +1206,7 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 		newState = model.InitialFormationState
 	}
 
-	log.C(ctx).Infof("Setting formation with ID %s to %s state and starting resinchronization", formationID, newState)
+	log.C(ctx).Infof("Setting formation with ID: %s to: %s state and starting resynchronization", formationID, newState)
 	formation.State = newState
 
 	formationStateTx, err := s.transact.Begin()
@@ -1156,6 +1231,9 @@ func (s *service) FinalizeDraftFormation(ctx context.Context, formationID string
 
 // ResynchronizeFormationNotifications sends all notifications that are in error or initial state
 func (s *service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, shouldReset bool) (*model.Formation, error) {
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	tenantID, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -1199,6 +1277,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 
+	assignmentOperationTriggeredBy := model.ResyncAssignment
 	formationID := formation.ID
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		if shouldReset {
@@ -1220,6 +1299,15 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err != nil {
 					return err
 				}
+				assignmentOperationTriggeredBy = model.ResetAssignment
+				if _, err = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+					Type:                  model.Assign,
+					FormationAssignmentID: assignment.ID,
+					FormationID:           assignment.FormationID,
+					TriggeredBy:           assignmentOperationTriggeredBy,
+				}); err != nil {
+					return err
+				}
 			}
 		}
 
@@ -1236,6 +1324,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 		resyncableFormationAssignments = resyncableFAs
 
 		for _, fa := range resyncableFormationAssignments {
+			logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, fa.ID)
+			ctx = log.ContextWithLogger(ctx, logger)
+
 			operation := fa.GetOperation()
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, operation)
@@ -1269,6 +1360,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
+					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Unassign, faClone.ID, assignmentOperationTriggeredBy)
+				}
 			}
 			if operation == model.AssignFormation {
 				faClone.State = string(model.InitialAssignmentState)
@@ -1276,6 +1370,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				faClone.Error = nil
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
+				}
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
+					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Assign, faClone.ID, assignmentOperationTriggeredBy)
 				}
 			}
 
@@ -1870,14 +1967,6 @@ func (s *service) isValidApplicationType(ctx context.Context, tnt string, applic
 		return apperrors.NewInvalidOperationError(fmt.Sprintf("unsupported applicationType %q for formation template %q, allowing only %q", applicationType, formationTemplate.Name, formationTemplate.ApplicationTypes))
 	}
 	return nil
-}
-
-func setToSlice(set map[string]bool) []string {
-	result := make([]string, 0, len(set))
-	for key := range set {
-		result = append(result, key)
-	}
-	return result
 }
 
 func (s *service) processFormationNotifications(ctx context.Context, formation *model.Formation, formationReq *webhookclient.FormationNotificationRequest, errorState model.FormationState) error {

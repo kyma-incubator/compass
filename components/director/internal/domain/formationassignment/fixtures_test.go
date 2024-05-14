@@ -1,9 +1,14 @@
 package formationassignment_test
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
+	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -27,9 +32,17 @@ import (
 )
 
 const (
-	TestID                  = "c861c3db-1265-4143-a05c-1ced1291d816"
-	TestFormationName       = "test-formation"
-	TestFormationID         = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
+	TestID            = "c861c3db-1265-4143-a05c-1ced1291d816"
+	TestFormationName = "test-formation"
+	TestFormationID   = "a7c0bd01-2441-4ca1-9b5e-a54e74fd7773"
+
+	TestFormationAssignmentID  = "2d4cc18b-8c95-4ca3-9628-8906d2c5bbbd"
+	TestFormationAssignmentID2 = "96d9c272-0e28-4930-9d83-7729a6ca220b"
+
+	TestAssignmentOperationID  = "186df474-f7fe-4831-9017-cb2b8f5a7740"
+	TestAssignmentOperationID2 = "6f67b148-d797-458d-b0f8-df913076f052"
+	TestAssignmentOperationID3 = "3ce9004b-6bf4-4c0d-9e75-062e2de58d3f"
+
 	TestFormationTemplateID = "jjc0bd01-2441-4ca1-9b5e-a54e74fd7773"
 	TestTenantID            = "b4d1bd32-dd07-4141-9655-42bc33a4ae37"
 	TestSource              = "05e10560-2259-4adf-bb3e-6aee0518f573"
@@ -912,4 +925,25 @@ func fixParentTenant(id, externalID string, t tnt.Type) *model.BusinessTenantMap
 		Provider:       testProvider,
 		Status:         tnt.Active,
 	}
+}
+
+func ctxWithTenantAndLoggerMatcher() interface{} {
+	return mock.MatchedBy(func(ctx context.Context) bool {
+		return tenantMatcher(ctx) && loggerMatcher(ctx)
+	})
+}
+
+func tenantMatcher(ctx context.Context) bool {
+	tenants, err := tenant.LoadTenantPairFromContext(ctx)
+	return err == nil && (tenants.ExternalID == externalTnt && tenants.InternalID == TestTenantID)
+}
+
+func loggerMatcher(ctx context.Context) bool {
+	logEntry := log.C(ctx)
+	if logEntry != nil && logEntry.Data != nil {
+		formationLogField := logEntry.Data[log.FieldFormationID]
+		formationAssignmentLogField := logEntry.Data[log.FieldFormationAssignmentID]
+		return formationLogField != "" || formationAssignmentLogField != ""
+	}
+	return false
 }

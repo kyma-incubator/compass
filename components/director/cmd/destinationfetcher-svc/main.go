@@ -22,6 +22,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+
 	"github.com/kyma-incubator/compass/components/director/internal/authenticator/claims"
 	auth_middleware "github.com/kyma-incubator/compass/components/director/pkg/auth-middleware"
 
@@ -173,10 +175,13 @@ func getDestinationService(cfg config, transact persistence.Transactioner) *dest
 	tenantConverter := tenant.NewConverter()
 	tenantRepo := tenant.NewRepository(tenantConverter)
 
+	formationAssignmentConv := formationassignment.NewConverter()
+	formationAssignmentRepo := formationassignment.NewRepository(formationAssignmentConv)
+
 	err := cfg.DestinationsConfig.MapInstanceConfigs()
 	exitOnError(err, "error while loading destination instances config")
 
-	return destinationfetcher.NewDestinationService(transact, uuidSvc, destRepo, bundleRepo, labelRepo, cfg.DestinationsConfig, cfg.DestinationServiceAPIConfig, tenantRepo, cfg.SelfRegisterDistinguishLabelKey)
+	return destinationfetcher.NewDestinationService(transact, uuidSvc, destRepo, bundleRepo, labelRepo, cfg.DestinationsConfig, cfg.DestinationServiceAPIConfig, tenantRepo, formationAssignmentRepo, cfg.SelfRegisterDistinguishLabelKey)
 }
 
 func initAPIHandler(ctx context.Context, httpClient *http.Client,
@@ -238,7 +243,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	logger := log.C(ctx)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              cfg.Address,

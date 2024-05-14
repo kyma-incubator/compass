@@ -2,7 +2,6 @@ package subject
 
 import (
 	"context"
-	"strings"
 
 	"github.com/kyma-incubator/compass/components/hydrator/internal/certsubjectmapping"
 
@@ -32,8 +31,8 @@ type processor struct {
 }
 
 // NewProcessor returns a new subject processor configured with the given subject-to-consumer mapping cache, and subject organization unit pattern.
-// If the subject-to-consumer mapping is invalid, an error is returned.
-func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmapping.Cache, ouPattern, ouRegionPattern string) (*processor, error) {
+// If the subject-to-consumer mapping is invalid, an error is logged.
+func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmapping.Cache, ouPattern, ouRegionPattern string) *processor {
 	mappings := certSubjectMappingCache.Get()
 	if len(mappings) == 0 {
 		log.C(ctx).Warnf("The certificate subject mapping cache is empty.")
@@ -41,7 +40,8 @@ func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmappin
 
 	for _, m := range mappings {
 		if err := m.Validate(); err != nil {
-			return nil, err
+			// in case the certificate subject mapping is invalid, only log an error and continue so the hydrator component can still start
+			log.C(ctx).Errorf("Certificate subject mapping with subject: '%s' is not valid: %s", m.Subject, err.Error())
 		}
 	}
 
@@ -49,7 +49,7 @@ func NewProcessor(ctx context.Context, certSubjectMappingCache certsubjectmappin
 		certSubjectMappingCache: certSubjectMappingCache,
 		ouPattern:               ouPattern,
 		ouRegionPattern:         ouRegionPattern,
-	}, nil
+	}
 }
 
 // AuthIDFromSubjectFunc returns a function able to extract the authentication ID from a given certificate subject or from the certificate subject mappings.
@@ -86,7 +86,7 @@ func (p *processor) AuthSessionExtraFromSubjectFunc() func(context.Context, stri
 
 		for _, m := range mappings {
 			log.C(ctx).Infof("Trying to match the consumer subject DN with certificate subject mappings DN: %q", m.Subject)
-			if subjectsMatch(subject, m.Subject) {
+			if cert.SubjectsMatch(subject, m.Subject) {
 				log.C(ctx).Infof("Subject's DNs matched!")
 				return cert.GetAuthSessionExtra(m.ConsumerType, m.InternalConsumerID, m.TenantAccessLevels)
 			}
@@ -119,37 +119,10 @@ func (p *processor) authIDFromMappings() func(subject string) string {
 	return func(subject string) string {
 		mappings := p.certSubjectMappingCache.Get()
 		for _, m := range mappings {
-			if subjectsMatch(subject, m.Subject) {
+			if cert.SubjectsMatch(subject, m.Subject) {
 				return m.InternalConsumerID
 			}
 		}
 		return ""
 	}
-}
-
-func subjectsMatch(actualSubject, expectedSubject string) bool {
-	return cert.GetCommonName(expectedSubject) == cert.GetCommonName(actualSubject) &&
-		cert.GetCountry(expectedSubject) == cert.GetCountry(actualSubject) &&
-		cert.GetLocality(expectedSubject) == cert.GetLocality(actualSubject) &&
-		cert.GetOrganization(expectedSubject) == cert.GetOrganization(actualSubject) &&
-		matchOrganizationalUnits(cert.GetAllOrganizationalUnits(actualSubject), cert.GetAllOrganizationalUnits(expectedSubject))
-}
-
-func matchOrganizationalUnits(actualOrgUnits, expectedOrgUnits []string) bool {
-	if len(expectedOrgUnits) != len(actualOrgUnits) {
-		return false
-	}
-
-	expectedOrgUnitsMap := make(map[string]struct{}, len(expectedOrgUnits))
-	for _, expectedOrgUnit := range expectedOrgUnits {
-		expectedOrgUnitsMap[strings.TrimSpace(expectedOrgUnit)] = struct{}{}
-	}
-
-	for _, actualOrgUnit := range actualOrgUnits {
-		if _, exist := expectedOrgUnitsMap[strings.TrimSpace(actualOrgUnit)]; !exist {
-			return false
-		}
-	}
-
-	return true
 }

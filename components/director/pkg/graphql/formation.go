@@ -21,7 +21,7 @@ type FormationPageExt struct {
 // FormationExt is an extended types used by external API
 type FormationExt struct {
 	Formation
-	FormationAssignment  FormationAssignment     `json:"formationAssignment"`
-	FormationAssignments FormationAssignmentPage `json:"formationAssignments"`
-	Status               FormationStatus         `json:"status"`
+	FormationAssignment  FormationAssignmentExt     `json:"formationAssignment"`
+	FormationAssignments FormationAssignmentPageExt `json:"formationAssignments"`
+	Status               FormationStatus            `json:"status"`
 }

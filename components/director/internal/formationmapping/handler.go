@@ -41,6 +41,12 @@ type formationAssignmentStatusService interface {
 	DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error
 }
 
+//go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type assignmentOperationService interface {
+	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
+	Finish(ctx context.Context, assignmentID, formationID string) error
+}
+
 type malformedRequest struct {
 	status int
 	msg    string
@@ -61,23 +67,25 @@ type FormationRequestBody struct {
 
 // Handler is the base struct definition of the FormationMappingHandler
 type Handler struct {
-	transact               persistence.Transactioner
-	faService              FormationAssignmentService
-	faStatusService        formationAssignmentStatusService
-	faNotificationService  FormationAssignmentNotificationService
-	formationService       formationService
-	formationStatusService formationStatusService
+	transact                   persistence.Transactioner
+	faService                  FormationAssignmentService
+	faStatusService            formationAssignmentStatusService
+	faNotificationService      FormationAssignmentNotificationService
+	assignmentOperationService assignmentOperationService
+	formationService           formationService
+	formationStatusService     formationStatusService
 }
 
 // NewFormationMappingHandler creates a formation mapping Handler
-func NewFormationMappingHandler(transact persistence.Transactioner, faService FormationAssignmentService, faStatusService formationAssignmentStatusService, faNotificationService FormationAssignmentNotificationService, formationService formationService, formationStatusService formationStatusService) *Handler {
+func NewFormationMappingHandler(transact persistence.Transactioner, faService FormationAssignmentService, faStatusService formationAssignmentStatusService, faNotificationService FormationAssignmentNotificationService, assignmentOperationService assignmentOperationService, formationService formationService, formationStatusService formationStatusService) *Handler {
 	return &Handler{
-		transact:               transact,
-		faService:              faService,
-		faStatusService:        faStatusService,
-		faNotificationService:  faNotificationService,
-		formationService:       formationService,
-		formationStatusService: formationStatusService,
+		transact:                   transact,
+		faService:                  faService,
+		faStatusService:            faStatusService,
+		faNotificationService:      faNotificationService,
+		assignmentOperationService: assignmentOperationService,
+		formationService:           formationService,
+		formationStatusService:     formationStatusService,
 	}
 }
 
@@ -94,6 +102,10 @@ func (h *Handler) UpdateFormationAssignmentStatus(w http.ResponseWriter, r *http
 func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http.Request, reset bool) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
+
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	var assignmentReqBody FormationAssignmentRequestBody
@@ -130,6 +142,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
 		return
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()
 	if err != nil {
@@ -221,15 +237,37 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
+
 		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, stateFromStatusReport)
 		fa.State = stateFromStatusReport
 		if err = h.faService.Update(ctx, fa.ID, fa); err != nil {
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
+		log.C(ctx).Infof("Creating %s Operation for formation assignment with ID: %s triggered by reset on the status API", model.Assign, fa.ID)
+		if _, err = h.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
+			Type:                  model.Assign,
+			FormationAssignmentID: fa.ID,
+			FormationID:           fa.FormationID,
+			TriggeredBy:           model.ResetAssignment,
+		}); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+
 		log.C(ctx).Infof("Resetting reverse formation assignment with ID: %s to state: %s", reverseFA.ID, model.InitialAssignmentState)
 		reverseFA.State = string(model.InitialAssignmentState)
 		if err = h.faService.Update(ctx, reverseFA.ID, reverseFA); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		log.C(ctx).Infof("Creating %s Operation for reverse formation assignment with ID: %s triggered by reset on the status API", model.Assign, fa.ID)
+		if _, err = h.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
+			Type:                  model.Assign,
+			FormationAssignmentID: reverseFA.ID,
+			FormationID:           reverseFA.FormationID,
+			TriggeredBy:           model.ResetAssignment,
+		}); err != nil {
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
@@ -271,6 +309,15 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
+	if fa.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("Finish %s Operation for assignment with ID: %s during status report", model.Assign, fa.ID)
+		if finishOpErr := h.assignmentOperationService.Finish(ctx, fa.ID, fa.FormationID); finishOpErr != nil {
+			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation for formation assignment with ID: %q", model.Assign, fa.ID)
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+	}
+
 	if err = tx.Commit(); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
 		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
@@ -287,7 +334,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	if shouldProcessNotifications {
 		// The formation assignment notifications processing is independent of the status update request handling.
 		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-		go h.processFormationAssignmentNotifications(fa, correlationID)
+		go h.processFormationAssignmentNotifications(fa, correlationID, traceID, spanID, parentSpanID)
 	}
 
 	httputils.Respond(w, http.StatusOK)
@@ -297,6 +344,10 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
+
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
 	var reqBody FormationRequestBody
@@ -327,6 +378,9 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
 		return
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()
 	if err != nil {
@@ -384,7 +438,7 @@ func (h *Handler) UpdateFormationStatus(w http.ResponseWriter, r *http.Request) 
 	if shouldResync {
 		// The formation notifications processing is independent of the status update request handling.
 		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
-		go h.processFormationNotifications(f, correlationID)
+		go h.processFormationNotifications(f, correlationID, traceID, spanID, parentSpanID)
 	}
 
 	httputils.Respond(w, http.StatusOK)
@@ -509,7 +563,7 @@ func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Con
 }
 
 func (h *Handler) processFormationAssignmentAssignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, statusReport *statusreport.NotificationStatusReport, correlationID string) (bool, *responseError) {
-	log.C(ctx).Infof("Updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
+	log.C(ctx).Infof("Updating formation assignment with ID: %q, formation ID: %q and state: %q", fa.ID, fa.FormationID, fa.State)
 	if err := h.faStatusService.UpdateWithConstraints(ctx, statusReport, fa, model.AssignFormation); err != nil {
 		log.C(ctx).WithError(err).Errorf("An error occurred while updating formation assignment with ID: %q and formation ID: %q with state: %q", fa.ID, fa.FormationID, fa.State)
 		return false, &responseError{
@@ -571,16 +625,16 @@ func (h *Handler) processFormationCreateStatusUpdate(ctx context.Context, format
 	return true, nil
 }
 
-func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID string) {
+func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAssignment, correlationID, traceID, spanID, parentSpanID string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
-
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
+	logger = logger.WithField(log.FieldFormationID, fa.FormationID)
+	logger = logger.WithField(log.FieldFormationAssignmentID, fa.ID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	log.C(ctx).Info("Configuration is provided in the request body. Starting formation assignment asynchronous notifications processing...")
@@ -631,16 +685,15 @@ func (h *Handler) processFormationAssignmentNotifications(fa *model.FormationAss
 	log.C(ctx).Info("Finished formation assignment asynchronous notifications processing")
 }
 
-func (h *Handler) processFormationNotifications(f *model.Formation, correlationID string) {
+func (h *Handler) processFormationNotifications(f *model.Formation, correlationID, traceID, spanID, parentSpanID string) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	defer cancel()
 
 	ctx = tenant.SaveToContext(ctx, f.TenantID, "")
+	ctx = correlation.AddCorrelationIDsToContext(ctx, correlationID, traceID, spanID, parentSpanID)
 
-	correlationIDKey := correlation.RequestIDHeaderKey
-	ctx = correlation.SaveCorrelationIDHeaderToContext(ctx, &correlationIDKey, &correlationID)
-
-	logger := log.C(ctx).WithField(correlationIDKey, correlationID)
+	logger := log.AddCorrelationIDsToLogger(ctx, correlationID, traceID, spanID, parentSpanID)
+	logger = logger.WithField(log.FieldFormationID, f.ID)
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()

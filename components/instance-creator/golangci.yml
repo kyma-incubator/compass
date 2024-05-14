@@ -117,15 +117,12 @@ linters:
     # - wrapcheck
   # - wsl
   enable:
-    - deadcode
     - errcheck
     - gosimple
     - govet
     - staticcheck
-    - structcheck
     - typecheck
     - unused
-    - varcheck
     - asciicheck
     - dogsled
     - durationcheck
@@ -135,7 +132,6 @@ linters:
     - goconst
     - gocritic
     - goprintffuncname
-    - ifshort
     - importas
     - makezero
     - misspell
@@ -179,7 +175,6 @@ issues:
     # Exclude some linters from running on tests files.
     - path: _test\.go
       linters:
-        - deadcode
         - unused
         - goconst
         - gocritic
@@ -211,10 +206,6 @@ issues:
     - linters:
         - forcetypeassert
       text: "type assertion must be checked"
-
-    - linters:
-        - ifshort
-      text: "variable 'errs' is only used in the if-statement"
 
   #    # Exclude known linters from partially hard-vendored code,
   #    # which is impossible to exclude via "nolint" comments.

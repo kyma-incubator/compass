@@ -33,8 +33,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 	txGen := txtest.NewTransactionContextGenerator(transactionError)
 
 	formationAssignments := []*model.FormationAssignment{
-		{ID: FormationAssignmentID},
-		{ID: FormationAssignmentID2},
+		{ID: FormationAssignmentID, FormationID: FormationID},
+		{ID: FormationAssignmentID2, FormationID: FormationID},
 	}
 
 	assignment1Clone := formationAssignments[0].Clone()
@@ -250,6 +250,13 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 	}
 
+	assignmentOperation := mock.MatchedBy(func(op *model.AssignmentOperationInput) bool {
+		return op.Type == model.Unassign && op.FormationAssignmentID == FormationAssignmentID && op.FormationID == FormationID && op.TriggeredBy == model.UnassignObject
+	})
+	assignmentOperation2 := mock.MatchedBy(func(op *model.AssignmentOperationInput) bool {
+		return op.Type == model.Unassign && op.FormationAssignmentID == FormationAssignmentID2 && op.FormationID == FormationID && op.TriggeredBy == model.UnassignObject
+	})
+
 	for _, objectTypeData := range mockData {
 		testCases := []struct {
 			Name                          string
@@ -264,6 +271,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
 			ConstraintEngineFn            func() *automock.ConstraintEngine
 			ASAEngineFn                   func() *automock.AsaEngine
+			AssignmentOperationServiceFn  func() *automock.AssignmentOperationService
 			ObjectType                    graphql.FormationObjectType
 			ObjectID                      string
 			InputFormation                model.Formation
@@ -273,11 +281,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
 					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
@@ -290,7 +298,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -300,7 +308,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -309,19 +317,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -333,9 +348,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatDoesntStartTransaction,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
-					labelService.On("UpdateLabel", ctx, TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
+					labelService.On("UpdateLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
 						Value:      []string{secondTestFormationName},
 						ObjectID:   objectTypeData.ObjectID,
@@ -346,27 +361,27 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctx, formationInInitialState.ID, objectTypeData.ObjectID).Return(nil).Once()
+					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInInitialState.ID, objectTypeData.ObjectID).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ObjectType:        objectTypeData.ObjectType,
@@ -379,9 +394,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatDoesntStartTransaction,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
-					labelService.On("UpdateLabel", ctx, TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
+					labelService.On("UpdateLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
 						Value:      []string{secondTestFormationName},
 						ObjectID:   objectTypeData.ObjectID,
@@ -392,27 +407,27 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInDraftState, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(formationInDraftState, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctx, formationInDraftState.ID, objectTypeData.ObjectID).Return(nil).Once()
+					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInDraftState.ID, objectTypeData.ObjectID).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ObjectType:        objectTypeData.ObjectType,
@@ -425,9 +440,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatDoesntStartTransaction,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
-					labelService.On("UpdateLabel", ctx, TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
+					labelService.On("UpdateLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
 						Value:      []string{secondTestFormationName},
 						ObjectID:   objectTypeData.ObjectID,
@@ -438,27 +453,27 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctx, formationInInitialState.ID, objectTypeData.ObjectID).Return(nil).Once()
+					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInInitialState.ID, objectTypeData.ObjectID).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -470,16 +485,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success if async unassignments exist",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -489,7 +504,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, pendingAsyncAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -498,19 +513,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -520,11 +542,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success if formation do not exist",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, &model.LabelInput{
 						Key:        model.ScenariosKey,
 						Value:      []string{secondTestFormationName},
@@ -543,7 +565,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, secondTestFormationName, TntInternalID).Return(&secondFormation, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), secondTestFormationName, TntInternalID).Return(&secondFormation, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -553,7 +575,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -562,19 +584,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, secondTestFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, secondTestFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -584,17 +613,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when formation is last",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.SingleFormationLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				LabelRepoFn: func() *automock.LabelRepository {
@@ -609,7 +638,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -618,19 +647,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -638,36 +674,85 @@ func TestServiceUnassignFormation(t *testing.T) {
 				ExpectedFormation: expected,
 			},
 			{
-				Name: "error when formation has state different than ready and fails to delete the formation assignments",
-				TxFn: txGen.ThatDoesntStartTransaction,
+				Name: "error when creating operation",
+				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+					return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(1)
+				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctx, formationInInitialState.ID, objectTypeData.ObjectID).Return(testErr).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", testErr).Once()
+
+					return svc
+				},
+				ObjectType:         objectTypeData.ObjectType,
+				ObjectID:           objectTypeData.ObjectID,
+				InputFormation:     in,
+				ExpectedFormation:  expected,
+				ExpectedErrMessage: testErr.Error(),
+			},
+			{
+				Name: "error when formation has state different than ready and fails to delete the formation assignments",
+				TxFn: txGen.ThatDoesntStartTransaction,
+				LabelServiceFn: func() *automock.LabelService {
+					labelService := &automock.LabelService{}
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					return labelService
+				},
+				FormationRepositoryFn: func() *automock.FormationRepository {
+					formationRepo := &automock.FormationRepository{}
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(formationInInitialState, nil).Once()
+					return formationRepo
+				},
+				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+					formationAssignmentSvc := &automock.FormationAssignmentService{}
+					formationAssignmentSvc.On("DeleteAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), formationInInitialState.ID, objectTypeData.ObjectID).Return(testErr).Once()
+					return formationAssignmentSvc
+				},
+				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+					repo := &automock.FormationTemplateRepository{}
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					return repo
+				},
+				ConstraintEngineFn: func() *automock.ConstraintEngine {
+					engine := &automock.ConstraintEngine{}
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					return engine
+				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -679,17 +764,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 				Name: "error when fails to check if formations are coming from ASAs",
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, testErr)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, testErr)
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -701,11 +786,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while getting label",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(nil, testErr).Once()
 					return labelService
 				},
@@ -716,7 +801,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -726,23 +811,30 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -752,11 +844,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while converting label values to string slice",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, &model.LabelInput{
 						Key:        model.ScenariosKey,
 						Value:      []string{testFormationName},
@@ -781,7 +873,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -790,23 +882,30 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -816,11 +915,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while converting label value to string",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(&model.Label{
 						ID:         "123",
 						Tenant:     str.Ptr(TntInternalID),
@@ -839,7 +938,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -849,23 +948,30 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -875,11 +981,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error when formation is last and delete fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.SingleFormationLabel, nil).Once()
 					return labelService
 				},
@@ -895,7 +1001,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -904,23 +1010,30 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -930,11 +1043,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when formation is last and delete fails with Unauthorized",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.SingleFormationLabel, nil).Once()
 					return labelService
 				},
@@ -950,7 +1063,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -959,24 +1072,31 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -986,11 +1106,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error when updating label fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
 					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
@@ -1008,7 +1128,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1017,23 +1137,30 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1043,11 +1170,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when label update returns Unauthorized error",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
 					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
@@ -1060,7 +1187,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1070,7 +1197,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1079,19 +1206,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -1102,7 +1236,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				Name: "error when fetching formation fails",
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(nil, testErr).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(nil, testErr).Once()
 					return formationRepo
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -1113,15 +1247,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 			},
 			{
 				Name: "success if generating notifications fails with not found",
-				TxFn: txGen.ThatSucceedsTwice,
+				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+					return txGen.ThatSucceedsMultipleTimes(3)
+				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1131,25 +1267,32 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
@@ -1162,21 +1305,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(3)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(3)
-					persistTx.On("Commit").Return(nil).Once()
+					transact.On("Begin").Return(persistTx, nil).Times(5)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
+					persistTx.On("Commit").Return(nil).Twice()
 					persistTx.On("Commit").Return(transactionError).Once()
+					persistTx.On("Commit").Return(nil).Once()
 
 					return persistTx, transact
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1186,7 +1330,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
@@ -1195,18 +1339,91 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
+
+					return svc
+				},
+				ObjectType:         objectTypeData.ObjectType,
+				ObjectID:           objectTypeData.ObjectID,
+				InputFormation:     in,
+				ExpectedErrMessage: fmt.Sprintf("while committing transaction: %s", transactionError.Error()),
+			},
+			{
+				Name: "Error when there is an error invoking the defer cleanup and it fails when deleting the assignment operations",
+				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+					persistTx := &persistenceautomock.PersistenceTx{}
+					transact := &persistenceautomock.Transactioner{}
+
+					transact.On("Begin").Return(persistTx, nil).Times(5)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
+					persistTx.On("Commit").Return(nil).Twice()
+					persistTx.On("Commit").Return(transactionError).Once()
+
+					return persistTx, transact
+				},
+				LabelServiceFn: func() *automock.LabelService {
+					labelService := &automock.LabelService{}
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					return labelService
+				},
+				FormationRepositoryFn: func() *automock.FormationRepository {
+					formationRepo := &automock.FormationRepository{}
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
+					return formationRepo
+				},
+				NotificationServiceFN: func() *automock.NotificationsService {
+					notificationSvc := &automock.NotificationsService{}
+					notificationSvc.On("GenerateFormationAssignmentNotifications", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ObjectID, expected, model.UnassignFormation, objectTypeData.ObjectType).Return(nil, apperrors.NewNotFoundError(resource.Runtime, objectTypeData.ObjectID)).Once()
+					return notificationSvc
+				},
+				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+					formationAssignmentSvc := &automock.FormationAssignmentService{}
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[1])).Return(testErr).Once()
+					return formationAssignmentSvc
+				},
+				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+					repo := &automock.FormationTemplateRepository{}
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					return repo
+				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
+				ConstraintEngineFn: func() *automock.ConstraintEngine {
+					engine := &automock.ConstraintEngine{}
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(testErr).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1219,22 +1436,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(3)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(3)
-					persistTx.On("Commit").Return(nil).Once()
+					transact.On("Begin").Return(persistTx, nil).Times(5)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
+					persistTx.On("Commit").Return(nil).Twice()
 					persistTx.On("Commit").Return(transactionError).Once()
-					persistTx.On("Commit").Return(nil).Once()
+					persistTx.On("Commit").Return(nil).Twice()
 
 					return persistTx, transact
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1244,7 +1461,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[1])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1253,18 +1470,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1284,32 +1509,32 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(nil, testErr).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, testErr).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -1330,33 +1555,33 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(testErr).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -1369,34 +1594,34 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatFailsOnCommit,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -1407,16 +1632,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if generating notifications fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(5, 4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1426,7 +1651,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[1])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1435,18 +1660,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1459,22 +1692,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(3)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(3)
-					persistTx.On("Commit").Return(nil).Once()
+					transact.On("Begin").Return(persistTx, nil).Times(5)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
+					persistTx.On("Commit").Return(nil).Twice()
 					persistTx.On("Commit").Return(transactionError).Once()
-					persistTx.On("Commit").Return(nil).Once()
+					persistTx.On("Commit").Return(nil).Twice()
 
 					return persistTx, transact
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1484,7 +1717,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[1])).Return(nil).Once()
@@ -1494,18 +1727,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1516,16 +1757,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if processing formation assignments fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(2)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1535,7 +1776,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(testErr).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
@@ -1543,18 +1784,25 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1564,16 +1812,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while beginning scenario transaction",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(2)
+					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1583,7 +1831,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
@@ -1591,18 +1839,25 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1612,16 +1867,16 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if list pending formation assignments fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1631,7 +1886,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, testErr).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1640,18 +1895,25 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1661,22 +1923,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if assign due to async pending assignments fail - get application type label fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(nil, testErr).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1686,7 +1948,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1695,13 +1957,20 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1711,22 +1980,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if assign due to async pending assignments fail - get scenario label fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(nil, testErr).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1736,7 +2005,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1745,13 +2014,20 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1761,11 +2037,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if assign due to async pending assignments fail - update scenario label fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
 					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
@@ -1778,12 +2054,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1793,7 +2069,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return([]*model.FormationAssignment{}, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1802,13 +2078,20 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1821,22 +2104,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(3)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(3)
-					persistTx.On("Commit").Return(nil).Once()
+					transact.On("Begin").Return(persistTx, nil).Times(5)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
+					persistTx.On("Commit").Return(nil).Twice()
 					persistTx.On("Commit").Return(transactionError).Once()
-					persistTx.On("Commit").Return(nil).Once()
+					persistTx.On("Commit").Return(nil).Twice()
 
 					return persistTx, transact
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				NotificationServiceFN: func() *automock.NotificationsService {
@@ -1846,7 +2129,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[1])).Return(nil).Once()
@@ -1856,18 +2139,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1879,32 +2170,32 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatFailsOnBegin,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					return formationAssignmentSvc
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -1919,36 +2210,36 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Once()
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
-					persistTx.On("Commit").Return(nil).Once()
+					transact.On("Begin").Return(persistTx, nil).Twice()
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+					persistTx.On("Commit").Return(nil).Twice()
 
 					transact.On("Begin").Return(persistTx, transactionError).Once()
 
-					transact.On("Begin").Return(persistTx, nil).Once()
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
-					persistTx.On("Commit").Return(nil).Once()
+					transact.On("Begin").Return(persistTx, nil).Twice()
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
+					persistTx.On("Commit").Return(nil).Twice()
 
 					return persistTx, transact
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil).Once()
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[0])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments[1])).Return(nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -1957,13 +2248,21 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -1974,11 +2273,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while committing scenario label transaction",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(2)
+					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
 					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
@@ -1996,12 +2295,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -2010,18 +2309,25 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -2032,11 +2338,11 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while enforcing post constraints",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
 					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
 						Key:        model.ScenariosKey,
@@ -2054,12 +2360,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
-					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctx, expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
 					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
 					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
@@ -2068,19 +2374,26 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctx, postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
 				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
@@ -2093,27 +2406,27 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatDoesntExpectCommit,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctx, preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -2127,22 +2440,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 				TxFn: txGen.ThatDoesntExpectCommit,
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
-					labelService.On("GetLabel", ctx, TntInternalID, objectTypeData.TypeLabelInput).Return(nil, testErr)
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(nil, testErr)
 					return labelService
 				},
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
 					return engine
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
 					return repo
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -2155,17 +2468,17 @@ func TestServiceUnassignFormation(t *testing.T) {
 				Name: "success when formation is coming from ASA",
 				FormationRepositoryFn: func() *automock.FormationRepository {
 					formationRepo := &automock.FormationRepository{}
-					formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 					return formationRepo
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 					repo := &automock.FormationTemplateRepository{}
-					repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 					return repo
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
 					engine := &automock.AsaEngine{}
-					engine.On("IsFormationComingFromASA", ctx, objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(true, nil)
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(true, nil)
 					return engine
 				},
 				ObjectType:        objectTypeData.ObjectType,
@@ -2195,7 +2508,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					runtimeContextRepo = testCase.RuntimeContextRepoFn()
 				}
 				if objectTypeData.ObjectType == graphql.FormationObjectTypeRuntimeContext {
-					runtimeContextRepo.On("GetByID", ctx, TntInternalID, RuntimeContextID).Return(fixRuntimeContextModel(), nil).Maybe()
+					runtimeContextRepo.On("GetByID", ctxWithTenantAndLoggerMatcher(), TntInternalID, RuntimeContextID).Return(fixRuntimeContextModel(), nil).Maybe()
 				}
 				formationRepo := unusedFormationRepo()
 				if testCase.FormationRepositoryFn != nil {
@@ -2225,8 +2538,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 				if testCase.ASAEngineFn != nil {
 					asaEngine = testCase.ASAEngineFn()
 				}
+				assignmentOperationSvc := &automock.AssignmentOperationService{}
+				if testCase.AssignmentOperationServiceFn != nil {
+					assignmentOperationSvc = testCase.AssignmentOperationServiceFn()
+				}
 
-				svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil)
+				svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil, assignmentOperationSvc)
 
 				// WHEN
 				actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
@@ -2240,7 +2557,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 					require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 					require.Nil(t, actual)
 				}
-				mock.AssertExpectationsForObjects(t, persist, labelService, applicationRepository, runtimeContextRepo, formationRepo, formationTemplateRepo, labelRepo, notificationsSvc, formationAssignmentSvc, constraintEngine, asaEngine)
+				mock.AssertExpectationsForObjects(t, persist, labelService, applicationRepository, runtimeContextRepo, formationRepo, formationTemplateRepo, labelRepo, notificationsSvc, formationAssignmentSvc, constraintEngine, asaEngine, assignmentOperationSvc)
 			})
 		}
 	}
@@ -2291,40 +2608,40 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 
-				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+				asaRepo.On("DeleteForScenarioName", ctxWithTenantAndLoggerMatcher(), TntInternalID, testFormationName).Return(nil).Once()
 
 				return asaRepo
 			},
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
+				asaService.On("GetForScenarioName", ctxWithTenantAndLoggerMatcher(), testFormationName).Return(asa, nil).Once()
 				return asaService
 			},
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				svc.On("GetTenantByExternalID", ctxWithTenantAndLoggerMatcher(), TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
+				engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				engine.On("RemoveAssignedScenario", ctxWithTenantAndLoggerMatcher(), asa, mock.Anything).Return(nil).Once()
 				return engine
 			},
 			ObjectType:        graphql.FormationObjectTypeTenant,
@@ -2336,37 +2653,37 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			Name: "error for tenant when delete fails",
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
-				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(testErr).Once()
+				asaRepo.On("DeleteForScenarioName", ctxWithTenantAndLoggerMatcher(), TntInternalID, testFormationName).Return(testErr).Once()
 				return asaRepo
 			},
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
+				asaService.On("GetForScenarioName", ctxWithTenantAndLoggerMatcher(), testFormationName).Return(asa, nil).Once()
 				return asaService
 			},
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				svc.On("GetTenantByExternalID", ctxWithTenantAndLoggerMatcher(), TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
 				return engine
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2379,40 +2696,40 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			AsaRepoFN: func() *automock.AutomaticFormationAssignmentRepository {
 				asaRepo := &automock.AutomaticFormationAssignmentRepository{}
 
-				asaRepo.On("DeleteForScenarioName", ctx, TntInternalID, testFormationName).Return(nil).Once()
+				asaRepo.On("DeleteForScenarioName", ctxWithTenantAndLoggerMatcher(), TntInternalID, testFormationName).Return(nil).Once()
 
 				return asaRepo
 			},
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(asa, nil).Once()
+				asaService.On("GetForScenarioName", ctxWithTenantAndLoggerMatcher(), testFormationName).Return(asa, nil).Once()
 				return asaService
 			},
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				svc.On("GetTenantByExternalID", ctxWithTenantAndLoggerMatcher(), TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				engine.On("RemoveAssignedScenario", ctx, asa, mock.Anything).Return(nil).Once()
+				engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				engine.On("RemoveAssignedScenario", ctxWithTenantAndLoggerMatcher(), asa, mock.Anything).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2424,32 +2741,32 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			Name: "error for tenant when getting asa fails",
 			AsaServiceFN: func() *automock.AutomaticFormationAssignmentService {
 				asaService := &automock.AutomaticFormationAssignmentService{}
-				asaService.On("GetForScenarioName", ctx, testFormationName).Return(nil, testErr).Once()
+				asaService.On("GetForScenarioName", ctxWithTenantAndLoggerMatcher(), testFormationName).Return(nil, testErr).Once()
 				return asaService
 			},
 			TenantServiceFn: func() *automock.TenantService {
 				svc := &automock.TenantService{}
-				svc.On("GetTenantByExternalID", ctx, TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
+				svc.On("GetTenantByExternalID", ctxWithTenantAndLoggerMatcher(), TargetTenant).Return(&model.BusinessTenantMapping{Type: "account"}, nil)
 				return svc
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				formationRepo := &automock.FormationRepository{}
-				formationRepo.On("GetByName", ctx, testFormationName, TntInternalID).Return(expected, nil).Once()
+				formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
 				return formationRepo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
-				engine.On("IsFormationComingFromASA", ctx, TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
+				engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2501,7 +2818,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 				asaEngine = testCase.ASAEngineFn()
 			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, nil, nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, asaService, tenantSvc, nil, nil, nil, nil, nil, nil, constraintEngine, runtimeType, applicationType, asaEngine, nil)
+			svc := formation.NewServiceWithAsaEngine(transact, nil, nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, asaService, tenantSvc, nil, nil, nil, nil, nil, nil, constraintEngine, runtimeType, applicationType, asaEngine, nil, nil)
 
 			// WHEN
 			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)

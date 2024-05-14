@@ -2,6 +2,7 @@ package certsubjectmapping
 
 import (
 	"context"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -17,11 +18,13 @@ const (
 )
 
 var (
-	idTableColumns        = []string{"id"}
-	updatableTableColumns = []string{"subject", "consumer_type", "internal_consumer_id", "tenant_access_levels"}
-	tableColumns          = append(idTableColumns, updatableTableColumns...)
-
+	idTableColumns           = []string{"id"}
+	updatableTableColumns    = []string{"subject", "consumer_type", "internal_consumer_id", "tenant_access_levels", "updated_at"}
+	tableColumns             = []string{"id", "subject", "consumer_type", "internal_consumer_id", "tenant_access_levels", "created_at", "updated_at"}
 	internalConsumerIDColumn = "internal_consumer_id"
+
+	// Now is a function variable that returns the current time. It is used, so we could mock it in the tests.
+	Now = time.Now
 )
 
 // entityConverter converts between the internal model and entity
@@ -68,6 +71,7 @@ func (r *repository) Create(ctx context.Context, model *model.CertSubjectMapping
 	if err != nil {
 		return errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", model.ID)
 	}
+	entity.CreatedAt = Now()
 
 	log.C(ctx).Debugf("Persisting certificate mapping with ID: %s and subject: %s to DB", model.ID, model.Subject)
 	return r.creator.Create(ctx, entity)
@@ -100,6 +104,8 @@ func (r *repository) Update(ctx context.Context, model *model.CertSubjectMapping
 	if err != nil {
 		return errors.Wrapf(err, "while converting certificate subject mapping with ID: %s", model.ID)
 	}
+	currentTime := Now()
+	entity.UpdatedAt = &currentTime
 
 	log.C(ctx).Debugf("Updating certificate mapping with ID: %s and subject: %s", model.ID, model.Subject)
 	return r.updaterGlobal.UpdateSingleGlobal(ctx, entity)
@@ -144,6 +150,19 @@ func (r *repository) List(ctx context.Context, pageSize int, cursor string) (*mo
 	}, nil
 }
 
+// ListAll lists all certificate subject mappings
+func (r *repository) ListAll(ctx context.Context) ([]*model.CertSubjectMapping, error) {
+	var entityCollection EntityCollection
+
+	err := r.listerGlobal.ListGlobal(ctx, &entityCollection)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entityCollection)
+}
+
 // ListByConsumerID queries all certificate subject mappings with given consumer id
 func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
 	log.C(ctx).Debug("Listing certificate subject mappings from DB")
@@ -155,6 +174,16 @@ func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([
 		return nil, err
 	}
 
+	return r.multipleFromEntities(entityCollection)
+}
+
+// DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id
+func (r *repository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
+	log.C(ctx).Debugf("Deleting all certificate subject mappings for consumer ID %q from DB", consumerID)
+	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("internal_consumer_id", consumerID)})
+}
+
+func (r *repository) multipleFromEntities(entityCollection EntityCollection) ([]*model.CertSubjectMapping, error) {
 	result := make([]*model.CertSubjectMapping, 0, len(entityCollection))
 
 	for _, entity := range entityCollection {
@@ -167,10 +196,4 @@ func (r *repository) ListByConsumerID(ctx context.Context, consumerID string) ([
 	}
 
 	return result, nil
-}
-
-// DeleteByConsumerID deletes all certificate subject mappings for a specific consumer id
-func (r *repository) DeleteByConsumerID(ctx context.Context, consumerID string) error {
-	log.C(ctx).Debugf("Deleting all certificate subject mappings for consumer ID %q from DB", consumerID)
-	return r.deleterGlobal.DeleteManyGlobal(ctx, repo.Conditions{repo.NewEqualCondition("internal_consumer_id", consumerID)})
 }

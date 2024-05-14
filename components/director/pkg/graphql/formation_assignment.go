@@ -24,6 +24,7 @@ type FormationAssignmentPageExt struct {
 // FormationAssignmentExt is an extended types used by external API
 type FormationAssignmentExt struct {
 	FormationAssignment
-	SourceEntity FormationParticipant
-	TargetEntity FormationParticipant
+	AssignmentOperations AssignmentOperationPage
+	SourceEntity         FormationParticipant
+	TargetEntity         FormationParticipant
 }

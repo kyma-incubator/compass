@@ -93,6 +93,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 		LabelDefRepositoryFn                     func() *automock.LabelDefRepository
 		LabelDefServiceFn                        func() *automock.LabelDefService
 		StatusServiceFn                          func() *automock.StatusService
+		AssignmentOperationServiceFn             func() *automock.AssignmentOperationService
 		ExpectedErrMessage                       string
 	}{
 		{
@@ -131,19 +132,27 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				repo.On("Update", txtest.CtxWithDBMatcher(), fixFormationModelWithState(model.ReadyFormationState)).Return(nil).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
+				repo.On("ListByReferenceObjectIDGlobal", ctxWithTenantAndLoggerMatcher(), formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
 				return repo
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				return svc
 			},
 		},
 		{
@@ -174,7 +183,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				repo.On("Get", txtest.CtxWithDBMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once() //todo~~ twice
 				return repo
 			},
@@ -195,13 +204,13 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("ListByReferenceObjectIDGlobal", ctx, FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
+				webhookRepo.On("ListByReferenceObjectIDGlobal", ctxWithTenantAndLoggerMatcher(), FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
 				webhookRepo.On("ListByReferenceObjectIDGlobal", txtest.CtxWithDBMatcher(), FormationTemplateID, model.FormationTemplateWebhookReference).Return(formationLifecycleSyncWebhooks, nil).Once()
 				return webhookRepo
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				repo.On("Get", txtest.CtxWithDBMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
 				repo.On("Update", txtest.CtxWithDBMatcher(), fixFormationModelWithState(model.InitialFormationState)).Return(nil).Once()
 				return repo
@@ -209,6 +218,14 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			StatusServiceFn: func() *automock.StatusService {
 				svc := &automock.StatusService{}
 				svc.On("UpdateWithConstraints", txtest.CtxWithDBMatcher(), fixFormationModelWithState(model.ReadyFormationState), model.CreateFormation).Return(nil).Once()
+				return svc
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				return svc
 			},
 		},
@@ -220,18 +237,18 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				repo.On("Update", txtest.CtxWithDBMatcher(), fixFormationModelWithState(model.ReadyFormationState)).Return(nil).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
+				repo.On("ListByReferenceObjectIDGlobal", ctxWithTenantAndLoggerMatcher(), formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "transaction error",
@@ -244,18 +261,18 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				repo.On("Update", txtest.CtxWithDBMatcher(), fixFormationModelWithState(model.ReadyFormationState)).Return(testErr).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
+				repo.On("ListByReferenceObjectIDGlobal", ctxWithTenantAndLoggerMatcher(), formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -268,17 +285,17 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
+				repo.On("ListByReferenceObjectIDGlobal", ctxWithTenantAndLoggerMatcher(), formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "transaction error",
@@ -288,17 +305,17 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			FormationAssignments: formationAssignments,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(&formationTemplate, nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(&formationTemplate, nil).Once()
 				return repo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
 				repo := &automock.WebhookRepository{}
-				repo.On("ListByReferenceObjectIDGlobal", ctx, formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
+				repo.On("ListByReferenceObjectIDGlobal", ctxWithTenantAndLoggerMatcher(), formationTemplate.ID, model.FormationTemplateWebhookReference).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: "when listing formation lifecycle webhooks for formation template with ID",
@@ -308,12 +325,12 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			FormationAssignments: formationAssignments,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.DraftFormationState), nil).Once()
 				return repo
 			},
 			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
 				repo := &automock.FormationTemplateRepository{}
-				repo.On("Get", ctx, FormationTemplateID).Return(nil, testErr).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: "An error occurred while getting formation template with ID:",
@@ -323,7 +340,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			FormationAssignments: formationAssignments,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(fixFormationModelWithState(model.ReadyFormationState), nil).Once()
 				return repo
 			},
 			ExpectedErrMessage: "is not in DRAFT state",
@@ -333,7 +350,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			FormationAssignments: formationAssignments,
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("Get", ctx, FormationID, TntInternalID).Return(nil, testErr).Once()
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(nil, testErr).Once()
 				return repo
 			},
 			ExpectedErrMessage: "while getting formation with ID",
@@ -408,6 +425,11 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				statusService = testCase.StatusServiceFn()
 			}
 
+			assignmentOperationSvc := &automock.AssignmentOperationService{}
+			if testCase.AssignmentOperationServiceFn != nil {
+				assignmentOperationSvc = testCase.AssignmentOperationServiceFn()
+			}
+
 			assignmentsBeforeModifications := make(map[string]*model.FormationAssignment)
 			for _, a := range testCase.FormationAssignments {
 				assignmentsBeforeModifications[a.ID] = a.Clone()
@@ -418,7 +440,7 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				}
 			}()
 
-			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, nil, statusService)
+			svc := formation.NewServiceWithAsaEngine(transact, nil, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, labelDefSvc, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, webhookRepo, formationAssignmentNotificationService, notificationsSvc, nil, runtimeType, applicationType, nil, statusService, assignmentOperationSvc)
 
 			// WHEN
 			_, err := svc.FinalizeDraftFormation(ctx, FormationID)
@@ -431,13 +453,12 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			//todo assert persist and transact
-			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService, persist, transact)
+			mock.AssertExpectationsForObjects(t, labelService, runtimeContextRepo, formationRepo, labelRepo, notificationsSvc, formationAssignmentSvc, formationAssignmentNotificationService, formationTemplateRepo, webhookRepo, statusService, persist, transact, assignmentOperationSvc)
 		})
 	}
 
 	t.Run("returns error when empty tenant", func(t *testing.T) {
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		svc := formation.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 		_, err := svc.ResynchronizeFormationNotifications(context.TODO(), FormationID, false)
 		require.Contains(t, err.Error(), "cannot read tenant from context")
 	})

@@ -3,13 +3,18 @@ package notifications
 import (
 	"bytes"
 	"context"
+	"crypto"
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	urlpkg "net/url"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/tests/pkg/request"
+	"github.com/tidwall/sjson"
 
 	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
@@ -56,8 +61,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		},
 	}
 
-	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1)
-
+	certSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "subscription-notifications-cn", -1)
 	// We need an externally issued cert with a subject that is not part of the access level mappings
 	externalCertProviderConfig := certprovider.ExternalCertProviderConfig{
 		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
@@ -72,8 +76,26 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 	}
 
 	// Prepare provider external client certificate and secret and Build graphql director client configured with certificate
-	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, false)
+	providerClientKey, providerRawCertChain := certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig, true)
 	appProviderDirectorCertSecuredClient := gql.NewCertAuthorizedGraphQLClientWithCustomURL(conf.DirectorExternalCertSecuredURL, providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+	certSubject2 := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "async-cn", -1)
+
+	// We need an externally issued cert with a subject that is not part of the access level mappings
+	externalCertProviderConfig2 := certprovider.ExternalCertProviderConfig{
+		ExternalClientCertTestSecretName:      conf.ExternalCertProviderConfig.ExternalClientCertTestSecretName,
+		ExternalClientCertTestSecretNamespace: conf.ExternalCertProviderConfig.ExternalClientCertTestSecretNamespace,
+		CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
+		ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
+		ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
+		TestExternalCertSubject:               certSubject2,
+		ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
+		ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
+		ExternalCertProvider:                  certprovider.CertificateService,
+	}
+
+	// Only needed for the ext svc mock
+	_, _ = certprovider.NewExternalCertFromConfig(stdT, ctx, externalCertProviderConfig2, false)
 
 	// The external cert secret created by the NewExternalCertFromConfig above is used by the external-services-mock for the async formation status API call,
 	// that's why in the function above there is a false parameter that don't delete it and an explicit defer deletion func is added here
@@ -107,7 +129,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		}
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(stdT, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(stdT, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 		require.NoError(stdT, err)
 		require.NotEmpty(stdT, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -163,15 +185,14 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 		t.Logf("Create application template for type %q", applicationType2)
 		appTemplateInput = fixtures.FixApplicationTemplateWithoutWebhook(applicationType2, localTenantID2, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-		appTemplateInput.ApplicationInput.Labels[conf.GlobalSubaccountIDLabelKey] = subscriptionConsumerSubaccountID
 		appTemplateInput.ApplicationInput.BaseURL = &app2BaseURL
-		appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, "", appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, "", appTmpl2)
+		appTmpl2, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTmpl2)
 		require.NoError(t, err)
 
 		// Create certificate subject mapping with custom subject that was used to create a certificate for the graphql client above
 		internalConsumerID := appTmpl2.ID // add application templated ID as certificate subject mapping internal consumer to satisfy the authorization checks in the formation assignment status API
-		certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject, "/"), "/", ",")
+		certSubjectMappingCustomSubjectWithCommaSeparator := strings.ReplaceAll(strings.TrimLeft(certSubject2, "/"), "/", ",")
 		csmInput := fixtures.FixCertificateSubjectMappingInput(certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, &internalConsumerID, tenantAccessLevels)
 		t.Logf("Create certificate subject mapping with subject: %s, consumer type: %s and tenant access levels: %s", certSubjectMappingCustomSubjectWithCommaSeparator, consumerType, tenantAccessLevels)
 
@@ -209,7 +230,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			inputTemplate := "{\\\"ucl-formation-id\\\":\\\"{{.FormationID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\", \\\"config\\\":{{ .ReverseAssignment.Value }},\\\"items\\\":[{\\\"region\\\":\\\"{{ if .SourceApplication.Labels.region }}{{.SourceApplication.Labels.region}}{{ else }}{{.SourceApplicationTemplate.Labels.region}}{{ end }}\\\",\\\"application-namespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\"{{ if .SourceApplicationTemplate.Labels.composite }},\\\"composite-label\\\":{{.SourceApplicationTemplate.Labels.composite}}{{end}},\\\"tenant-id\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"ucl-system-tenant-id\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"subdomain\\\": \\\"{{ if eq .TargetApplication.Tenant.Type \\\"subaccount\\\"}}{{ .TargetApplication.Tenant.Labels.subdomain }}{{end}}\\\"}], \\\"app-template\\\": \\\"{{ .TargetApplicationTemplate.Tenant.Labels}}\\\"}"
 			outputTemplate := "{\\\"config\\\":\\\"{{.Body.config}}\\\", \\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\": 200, \\\"incomplete_status_code\\\": 204}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, emptyHeaderTemplate)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(webhookType, webhookMode, urlTemplate, inputTemplate, outputTemplate, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID %q", webhookType, webhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
@@ -239,8 +260,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-				app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+			expectedAssignments := map[string]map[string]fixtures.Assignment{
+				app1.ID: {
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					}},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -252,14 +277,26 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, assignedFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
@@ -280,8 +317,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			require.NoError(t, err)
 			require.Equal(t, formationName, unassignFormation.Name)
 
-			expectedAssignments = map[string]map[string]fixtures.AssignmentState{
-				app2.ID: {app2.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+			expectedAssignments = map[string]map[string]fixtures.Assignment{
+				app2.ID: {
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					}},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -328,7 +369,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			inputTemplateApplication := "{\\\"context\\\":{\\\"crmId\\\":\\\"{{.CustomerTenantContext.CustomerID}}\\\",\\\"globalAccountId\\\":\\\"{{.CustomerTenantContext.AccountID}}\\\",\\\"uclFormationId\\\":\\\"{{.FormationID}}\\\",\\\"uclFormationName\\\":\\\"{{.Formation.Name}}\\\",\\\"operation\\\":\\\"{{.Operation}}\\\"},\\\"receiverTenant\\\":{\\\"state\\\":\\\"{{.Assignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.Assignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .TargetApplication.Labels.region}}{{.TargetApplication.Labels.region}}{{else}}{{.TargetApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.TargetApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.TargetApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.TargetApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.TargetApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.TargetApplication.ID}}\\\",\\\"configuration\\\":{{.Assignment.Value}}},\\\"assignedTenant\\\":{\\\"state\\\":\\\"{{.ReverseAssignment.State}}\\\",\\\"uclAssignmentId\\\":\\\"{{.ReverseAssignment.ID}}\\\",\\\"deploymentRegion\\\":\\\"{{if .SourceApplication.Labels.region}}{{.SourceApplication.Labels.region}}{{else}}{{.SourceApplicationTemplate.Labels.region}}{{end}}\\\",\\\"applicationNamespace\\\":\\\"{{.SourceApplicationTemplate.ApplicationNamespace}}\\\",\\\"applicationUrl\\\":\\\"{{.SourceApplication.BaseURL}}\\\",\\\"applicationTenantId\\\":\\\"{{.SourceApplication.LocalTenantID}}\\\",\\\"uclSystemName\\\":\\\"{{.SourceApplication.Name}}\\\",\\\"uclSystemTenantId\\\":\\\"{{.SourceApplication.ID}}\\\",\\\"configuration\\\":{{.ReverseAssignment.Value}}}}"
 			outputTemplateAsyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\":\\\"{{.Body.error}}\\\",\\\"success_status_code\\\":202}"
 
-			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication, emptyHeaderTemplate)
+			applicationAsyncWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, asyncCallbackWebhookMode, urlTemplateAsyncApplication, inputTemplateApplication, outputTemplateAsyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, asyncCallbackWebhookMode, app2.ID)
 			actualApplicationAsyncWebhookInput := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationAsyncWebhookInput, subscriptionConsumerAccountID, app2.ID)
@@ -339,7 +380,7 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			urlTemplateSyncApplication := "{\\\"path\\\":\\\"" + conf.ExternalServicesMockMtlsSecuredURL + "/formation-callback/destinations/configuration/{{.TargetApplication.LocalTenantID}}{{if eq .Operation \\\"unassign\\\"}}/{{.SourceApplication.ID}}{{end}}\\\",\\\"method\\\":\\\"{{if eq .Operation \\\"assign\\\"}}PATCH{{else}}DELETE{{end}}\\\"}"
 			outputTemplateSyncApplication := "{\\\"config\\\":\\\"{{.Body.configuration}}\\\",\\\"state\\\":\\\"{{.Body.state}}\\\",\\\"location\\\":\\\"{{.Headers.Location}}\\\",\\\"error\\\": \\\"{{.Body.error}}\\\",\\\"success_status_code\\\":200}"
 
-			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication, emptyHeaderTemplate)
+			applicationWebhookInput := fixtures.FixFormationNotificationWebhookInput(applicationTntMappingWebhookType, syncWebhookMode, urlTemplateSyncApplication, inputTemplateApplication, outputTemplateSyncApplication, "", emptyHeaderTemplate)
 
 			t.Logf("Add webhook with type %q and mode: %q to application with ID: %q", applicationTntMappingWebhookType, syncWebhookMode, app1.ID)
 			actualApplicationWebhook := fixtures.AddWebhookToApplication(t, ctx, certSecuredGraphQLClient, applicationWebhookInput, subscriptionConsumerAccountID, app1.ID)
@@ -404,9 +445,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNotificationsCountForTenant(t, body, subscriptionConsumerTenantID, 0)
 			assertNotificationsCountForTenant(t, body, localTenantID2, 0)
 
-			expectedAssignmentsBySourceID := map[string]map[string]fixtures.AssignmentState{
+			expectedAssignmentsBySourceID := map[string]map[string]fixtures.Assignment{
 				app2.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID)
@@ -456,14 +500,26 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			destinationDetailsConfigWithPlaceholders := "{\"destinations\":[{\"name\":\"%s\",\"type\":\"HTTP\",\"description\":\"e2e-design-time-destination description\",\"proxyType\":\"Internet\",\"authentication\":\"NoAuthentication\",\"url\":\"%s\",\"subaccountId\":\"%s\"}],\"credentials\":{\"inboundCommunication\":{\"basicAuthentication\":{\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e-basic-destination description\",\"url\":\"%s\",\"authentication\":\"BasicAuthentication\",\"subaccountId\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-basic-testKey\":\"e2e-basic-testVal\"}}]},\"samlAssertion\":{\"correlationIds\":[\"e2e-saml-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e saml assertion destination description\",\"url\":\"%s\",\"instanceId\":\"%s\",\"additionalProperties\":{\"e2e-samlTestKey\":\"e2e-samlTestVal\"}}]},\"clientCertificateAuthentication\":{\"correlationIds\":[\"e2e-client-cert-auth-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"description\":\"e2e client cert auth destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-clientCertAuthTestKey\":\"e2e-clientCertAuthTestVal\"}}]},\"oauth2ClientCredentials\":{\"correlationIds\":[\"e2e-oauth2-client-creds-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 client creds destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2ClientCredsTestKey\":\"e2e-oauth2ClientCredsTestVal\"}}]},\"oauth2mtls\":{\"correlationIds\":[\"e2e-oauth2mTLS-correlation-ids\"],\"destinations\":[{\"name\":\"%s\",\"subaccountId\":\"%s\",\"description\":\"e2e oauth2 mTLS destination description\",\"url\":\"%s\",\"additionalProperties\":{\"e2e-oauth2mTLSAuthTestKey\":\"e2e-oauth2mTLSTestVal\"}}]}}},\"additionalProperties\":[{\"propertyName\":\"example-property-name\",\"propertyValue\":\"example-property-value\",\"correlationIds\":[\"correlation-ids\"]}]}"
 			destinationDetailsConfig := fmt.Sprintf(destinationDetailsConfigWithPlaceholders, noAuthDestinationName, noAuthDestinationURL, conf.TestProviderSubaccountID, basicDestinationName, basicDestinationURLPath, conf.TestProviderSubaccountID, testDestinationInstanceID, samlAssertionDestinationName, samlAssertionDestinationURL, testDestinationInstanceID, clientCertAuthDestinationName, clientCertAuthDestinationURL, oauth2ClientCredsDestinationName, conf.TestProviderSubaccountID, oauth2ClientCredsDestinationURL, oauth2mTLSDestinationName, conf.TestProviderSubaccountID, oauth2mTLSDestinationURL)
 			destinationCredentialsConfig := fmt.Sprintf("{\"credentials\":{\"outboundCommunication\":{\"basicAuthentication\":{\"url\":\"%s\",\"username\":\"%s\",\"password\":\"%s\"},\"samlAssertion\":{\"url\":\"%s\"},\"clientCertificateAuthentication\":{\"url\":\"%s\"},\"oauth2ClientCredentials\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\",\"clientSecret\":\"%s\"},\"oauth2mtls\":{\"url\":\"%s\",\"tokenServiceUrl\":\"%s\",\"clientId\":\"%s\"}}}}", basicDestinationURLFromCreds, basicDestinationUsername, basicDestinationPassword, samlAssertionDestinationURL, clientCertAuthDestinationURL, oauth2ClientCredsDestinationURL, oauth2ClientCredsDestinationTokenURL, oauth2ClientCredsDestinationClientID, oauth2ClientCredsDestinationClientSecret, oauth2mTLSDestinationURL, oauth2mTLSDestinationTokenURL, oauth2mTLSDestinationClientID)
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignmentsBySourceID = map[string]map[string]fixtures.Assignment{
 				app1.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: str.Ptr(destinationCredentialsConfig)},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 				app2.ID: {
-					app1.ID: fixtures.AssignmentState{State: "READY", Config: nil},
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app1.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 
@@ -545,6 +601,69 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertOAuth2mTLSDestination(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, oauth2mTLSDestinationName, oauth2mTLSDestinationCertName, oauth2mTLSDestinationURL, "", conf.TestProviderSubaccountID, destinationProviderToken, 1)
 			t.Log("Destinations and destination certificates have been successfully created")
 
+			t.Run("Create a destination associated with a bundle using existing destinations created from destination creator", func(t *testing.T) {
+				const correlationID = "e2e-client-cert-auth-correlation-ids" // the client cert dest has that correlationID as well
+				bndlInput := graphql.BundleCreateInput{
+					Name:           "test-bundle",
+					CorrelationIDs: []string{correlationID},
+				}
+				bundle := fixtures.CreateBundleWithInput(stdT, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, app1.ID, bndlInput)
+				require.NotEmpty(stdT, bundle.ID)
+
+				stdT.Log("Getting consumer application using both provider and consumer credentials...")
+
+				consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
+				consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
+				consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+				require.NoError(stdT, err)
+				headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
+
+				// HTTP client configured with certificate with patched subject, issued from cert-rotation job
+				certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
+
+				// Make a request to the ORD service with http client.
+				params := urlpkg.Values{}
+				params.Add("$format", "json")
+				ordURLForSystems := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURLForSystems = ordURLForSystems + params.Encode()
+
+				respBody := makeRequestWithHeaders(stdT, certHttpClient, ordURLForSystems, headers)
+
+				require.Equal(stdT, app1.Name, gjson.Get(respBody, "title").String())
+				stdT.Log("Successfully fetched consumer application using both provider and consumer credentials")
+
+				// Make a request to the ORD service expanding bundles and destinations.
+				// With destinations - waiting for the synchronization job
+				stdT.Log("Getting system with bundles and destinations - waiting for the synchronization job")
+
+				params.Add("$expand", "consumptionBundles($select=id,title;$expand=destinations)")
+				params.Add("reload", "true")
+				ordURLForSystemsWithBundlesAndDests := conf.ORDExternalCertSecuredServiceURL + fmt.Sprintf("/systemInstances(%s)?", app1.ID)
+				ordURLForSystemsWithBundlesAndDests = ordURLForSystemsWithBundlesAndDests + params.Encode()
+
+				require.Eventually(stdT, func() bool {
+					respBody = makeRequestWithHeaders(stdT, certHttpClient, ordURLForSystemsWithBundlesAndDests, headers)
+					appDestinationsRaw := gjson.Get(respBody, "consumptionBundles.0.destinations").Raw
+					if appDestinationsRaw == "" {
+						return false
+					}
+					require.NotEmpty(stdT, appDestinationsRaw)
+
+					appDestinations := gjson.Get(respBody, "consumptionBundles.0.destinations").Array()
+					if len(appDestinations) != 1 {
+						return false
+					}
+					require.Len(stdT, appDestinations, 1)
+
+					expectedDestinationName := "e2e-client-cert-auth-destination-name"
+					appDestinationName := gjson.Get(respBody, "consumptionBundles.0.destinations.0.name").String()
+					require.Equal(t, expectedDestinationName, appDestinationName)
+
+					return true
+				}, time.Second*30, time.Second)
+				stdT.Log("Successfully fetched system with bundles and destinations while waiting for the synchronization job")
+			})
+
 			cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
 
 			unassignStartTime := time.Now()
@@ -558,12 +677,21 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 
 			// assert the intermediate FA state only if the unassign operation duration is within the fixed tenant mapping async delay
 			if unassignDuration < time.Millisecond*time.Duration(conf.TenantMappingAsyncResponseDelay) {
-				expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+				expectedAssignmentsBySourceID = map[string]map[string]fixtures.Assignment{
 					app1.ID: {
-						app2.ID: fixtures.AssignmentState{State: "DELETING", Config: nil},
+						app2.ID: fixtures.Assignment{
+							AssignmentStatus: fixtures.AssignmentState{State: "DELETING", Config: nil},
+							Operations: []*fixtures.Operation{
+								fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true),
+								fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+							},
+						},
 					},
 					app2.ID: {
-						app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+						app2.ID: fixtures.Assignment{
+							AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+							Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+						},
 					},
 				}
 
@@ -584,9 +712,12 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertNoDestinationCertificateIsFound(t, destinationClient, conf.ProviderDestinationConfig.ServiceURL, clientCertAuthDestinationCertName+directordestinationcreator.JavaKeyStoreFileExtension, "", destinationConsumerToken)
 			t.Logf("Destinations and destination certificates are successfully deleted as part of the unassign operation")
 
-			expectedAssignmentsBySourceID = map[string]map[string]fixtures.AssignmentState{
+			expectedAssignmentsBySourceID = map[string]map[string]fixtures.Assignment{
 				app2.ID: {
-					app2.ID: fixtures.AssignmentState{State: "READY", Config: nil},
+					app2.ID: fixtures.Assignment{
+						AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil},
+						Operations:       []*fixtures.Operation{fixtures.NewOperation(app2.ID, app2.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+					},
 				},
 			}
 			assertFormationAssignmentsAsynchronouslyWithEventually(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignmentsBySourceID, eventuallyTimeoutForDestinations, eventuallyTickForDestinations)
@@ -616,4 +747,27 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 			assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
 		})
 	})
+}
+
+// CreateHttpClientWithCert returns http client configured with provided client certificate and key
+func CreateHttpClientWithCert(clientKey crypto.PrivateKey, rawCertChain [][]byte, skipSSLValidation bool) *http.Client {
+	return &http.Client{
+		Timeout: 20 * time.Second,
+		Transport: &http.Transport{
+			TLSClientConfig: &tls.Config{
+				Certificates: []tls.Certificate{
+					{
+						Certificate: rawCertChain,
+						PrivateKey:  clientKey,
+					},
+				},
+				ClientAuth:         tls.RequireAndVerifyClientCert,
+				InsecureSkipVerify: skipSSLValidation,
+			},
+		},
+	}
+}
+
+func makeRequestWithHeaders(t require.TestingT, httpClient *http.Client, url string, headers map[string][]string) string {
+	return request.MakeRequestWithHeadersAndStatusExpect(t, httpClient, url, headers, http.StatusOK, conf.ORDServiceDefaultResponseType)
 }

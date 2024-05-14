@@ -122,35 +122,37 @@ type faNotificationService interface {
 }
 
 type service struct {
-	repo                    FormationAssignmentRepository
-	uidSvc                  UIDService
-	applicationRepository   applicationRepository
-	runtimeRepo             runtimeRepository
-	runtimeContextRepo      runtimeContextRepository
-	notificationService     notificationService
-	faNotificationService   faNotificationService
-	labelService            labelService
-	formationRepository     formationRepository
-	statusService           statusService
-	runtimeTypeLabelKey     string
-	applicationTypeLabelKey string
+	repo                       FormationAssignmentRepository
+	uidSvc                     UIDService
+	applicationRepository      applicationRepository
+	runtimeRepo                runtimeRepository
+	runtimeContextRepo         runtimeContextRepository
+	notificationService        notificationService
+	faNotificationService      faNotificationService
+	assignmentOperationService assignmentOperationService
+	labelService               labelService
+	formationRepository        formationRepository
+	statusService              statusService
+	runtimeTypeLabelKey        string
+	applicationTypeLabelKey    string
 }
 
-// NewService creates a FormationTemplate service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+// NewService creates a Formation Assignment service
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, assignmentOperationService assignmentOperationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
-		repo:                    repo,
-		uidSvc:                  uidSvc,
-		applicationRepository:   applicationRepository,
-		runtimeRepo:             runtimeRepository,
-		runtimeContextRepo:      runtimeContextRepo,
-		notificationService:     notificationService,
-		faNotificationService:   faNotificationService,
-		labelService:            labelService,
-		formationRepository:     formationRepository,
-		statusService:           statusService,
-		runtimeTypeLabelKey:     runtimeTypeLabelKey,
-		applicationTypeLabelKey: applicationTypeLabelKey,
+		repo:                       repo,
+		uidSvc:                     uidSvc,
+		applicationRepository:      applicationRepository,
+		runtimeRepo:                runtimeRepository,
+		runtimeContextRepo:         runtimeContextRepo,
+		notificationService:        notificationService,
+		faNotificationService:      faNotificationService,
+		assignmentOperationService: assignmentOperationService,
+		labelService:               labelService,
+		formationRepository:        formationRepository,
+		statusService:              statusService,
+		runtimeTypeLabelKey:        runtimeTypeLabelKey,
+		applicationTypeLabelKey:    applicationTypeLabelKey,
 	}
 }
 
@@ -622,12 +624,19 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 	}
 	assignment := assignmentReqMappingClone.FormationAssignment
 
-	if assignment != nil {
-		log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", assignment.ID, assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType, assignment.State)
+	if assignment == nil {
+		return errors.New("formation assignment is nil")
 	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, assignment.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+	log.C(ctx).Infof("Processing formation assignment with ID: %q for formation with ID: %q with Source: %q of Type: %q and Target: %q of Type: %q and State %q", assignment.ID, assignment.FormationID, assignment.Source, assignment.SourceType, assignment.Target, assignment.TargetType, assignment.State)
 
 	if assignment.State == string(model.ReadyAssignmentState) {
 		log.C(ctx).Infof("The formation assignment with ID: %q is in %q state. No notifications will be sent for it.", assignment.ID, assignment.State)
+		if err := s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID); err != nil {
+			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s", model.FromFormationOperationType(mappingPair.Operation), assignment.ID)
+		}
 		return nil
 	}
 
@@ -641,6 +650,11 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		if err := s.Update(ctx, assignment.ID, assignment); err != nil {
 			return errors.Wrapf(err, "while updating formation assignment for formation with ID: %q with source: %q and target: %q", assignment.FormationID, assignment.Source, assignment.Target)
 		}
+
+		if err := s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID); err != nil {
+			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s that has no notifications", model.Assign, assignment.ID)
+		}
+
 		return nil
 	}
 
@@ -692,6 +706,12 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 
 	if err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with constraints for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
+	}
+
+	if assignment.State == string(model.ReadyAssignmentState) {
+		if err = s.assignmentOperationService.Finish(ctx, assignment.ID, assignment.FormationID); err != nil {
+			return errors.Wrapf(err, "while finishing %s Operation for assignment with ID: %s during SYNC processing", model.FromFormationOperationType(mappingPair.Operation), assignment.ID)
+		}
 	}
 
 	// In case of an error state we should not proceed with processing the reverse notification
@@ -748,6 +768,9 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 // In all other cases the `State` and `Config` are updated accordingly
 func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation) (bool, error) {
 	assignment := mappingPair.AssignmentReqMapping.FormationAssignment
+	logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, assignment.ID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
 	if mappingPair.AssignmentReqMapping.Request == nil {
 		if err := s.Delete(ctx, assignment.ID); err != nil {
 			if apperrors.IsNotFoundError(err) {

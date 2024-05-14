@@ -27,7 +27,6 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/notifications/operations"
 	resource_providers "github.com/kyma-incubator/compass/tests/pkg/notifications/resource-providers"
 	"github.com/kyma-incubator/compass/tests/pkg/subscription"
-	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 	"github.com/kyma-incubator/compass/tests/pkg/tenantfetcher"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/kyma-incubator/compass/tests/pkg/token"
@@ -70,10 +69,10 @@ func TestInstanceCreator(t *testing.T) {
 
 	formationTemplateName := "instance-creator-formation-template-name"
 
-	certSubjcetMappingCN := "csm-async-callback-cn"
-	certSubjcetMappingCNSecond := "csm-async-callback-cn-second"
-	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCN, -1)
-	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjcetMappingCNSecond, -1)
+	certSubjectMappingCN := "csm-async-ic-callback-cn"
+	certSubjectMappingCNSecond := "csm-async-ic-callback-cn-second"
+	certSubjectMappingCustomSubject := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCN, -1)
+	certSubjectMappingCustomSubjectSecond := strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.TestExternalCertCN, certSubjectMappingCNSecond, -1)
 
 	// We need an externally issued cert with a custom subject that will be used to create a certificate subject mapping through the GraphQL API,
 	// which later will be loaded in-memory from the hydrator component
@@ -137,8 +136,8 @@ func TestInstanceCreator(t *testing.T) {
 		appTemplateInput.Placeholders[i].JSONPath = str.Ptr(fmt.Sprintf("$.%s", conf.SubscriptionProviderAppNameProperty))
 	}
 
-	appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredClient, tenant.TestTenants.GetDefaultTenantID(), appTmpl)
+	appTmpl, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredClient, appTmpl)
 	require.NoError(t, err)
 	require.NotEmpty(t, appTmpl.ID)
 	require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -309,16 +308,21 @@ func TestInstanceCreator(t *testing.T) {
 		expectedInstanceCreatorConfig := str.Ptr(`{"credentials": {"outboundCommunication": {"basicAuthentication": {"password": "password", "uri": "uri", "username": "username"}}}}`)
 		expectedNotSubstitutedConfig := str.Ptr(`{"credentials": {"inboundCommunication": {"basicAuthentication": {"uri": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri", "password": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password", "username": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username", "serviceInstances": [{"plan": "standard", "service": "feature-flags", "serviceBinding": {}}]}}}}`)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1ID: {
-				app1ID: fixtures.AssignmentState{State: readyAssignmentState, Config: nil, Value: nil, Error: nil},
-				app2ID: fixtures.AssignmentState{State: readyAssignmentState, Config: expectedNotSubstitutedConfig, Value: nil, Error: nil},
-			},
-			app2ID: {
-				app1ID: fixtures.AssignmentState{State: readyAssignmentState, Config: expectedInstanceCreatorConfig, Value: nil, Error: nil},
-				app2ID: fixtures.AssignmentState{State: readyAssignmentState, Config: nil, Value: nil, Error: nil},
-			},
-		}
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
+			WithParticipant(app1ID).
+			WithParticipant(app2ID).
+			WithNotifications([]*mock_data.NotificationData{
+				mock_data.NewNotificationData(app1ID, app1ID, readyAssignmentState, nil, nil),
+				mock_data.NewNotificationData(app1ID, app2ID, readyAssignmentState, expectedNotSubstitutedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app2ID, readyAssignmentState, nil, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, expectedInstanceCreatorConfig, nil),
+			}).
+			WithOperations([]*fixtures.Operation{
+				fixtures.NewOperation(app1ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
+				fixtures.NewOperation(app1ID, app2ID, "ASSIGN", "ASSIGN_OBJECT", true),
+				fixtures.NewOperation(app2ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
+				fixtures.NewOperation(app2ID, app2ID, "ASSIGN", "ASSIGN_OBJECT", true),
+			})
 
 		configMatcher := func(t require.TestingT, expectedConfig, actualConfig *string) bool {
 			if expectedConfig != nil && strings.Contains(*expectedConfig, "outboundCommunication") {
@@ -327,7 +331,7 @@ func TestInstanceCreator(t *testing.T) {
 			return assertExactConfig(t, expectedConfig, actualConfig)
 		}
 
-		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt).
+		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
 			WithTimeout(eventuallyTimeoutForInstances).
 			WithTick(eventuallyTickForInstances)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)

@@ -318,7 +318,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 			CertSvcInstanceTestSecretName:         conf.CertSvcInstanceTestSecretName,
 			ExternalCertCronjobContainerName:      conf.ExternalCertProviderConfig.ExternalCertCronjobContainerName,
 			ExternalCertTestJobName:               conf.ExternalCertProviderConfig.ExternalCertTestJobName,
-			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-subscription-cn", -1),
+			TestExternalCertSubject:               strings.Replace(conf.ExternalCertProviderConfig.TestExternalCertSubject, conf.ExternalCertProviderConfig.TestExternalCertCN, "app-template-update-formation-assignment-cn", -1),
 			ExternalClientCertCertKey:             conf.ExternalCertProviderConfig.ExternalClientCertCertKey,
 			ExternalClientCertKeyKey:              conf.ExternalCertProviderConfig.ExternalClientCertKeyKey,
 			ExternalCertProvider:                  certprovider.CertificateService,
@@ -341,7 +341,7 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 
 		appTmpl, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, appProviderDirectorCertSecuredGQLClient, subscriptionConsumerAccountID, appTemplateInput)
-		defer fixtures.CleanupApplicationTemplate(t, ctx, appProviderDirectorCertSecuredGQLClient, subscriptionConsumerAccountID, appTmpl)
+		defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, appProviderDirectorCertSecuredGQLClient, appTmpl)
 		require.NoError(t, err)
 		require.NotEmpty(t, appTmpl.ID)
 		require.Equal(t, conf.SubscriptionConfig.SelfRegRegion, appTmpl.Labels[tenantfetcher.RegionKey])
@@ -579,7 +579,7 @@ func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSec
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formationID, parentTenantID string, expectedAssignmentsCount int) *graphql.FormationAssignmentPage {
+func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formationID, parentTenantID string, expectedAssignmentsCount int) *graphql.FormationAssignmentPageExt {
 	t.Logf("List formation assignments for formation with ID: %q", formationID)
 	listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, parentTenantID, listFormationAssignmentsReq)
@@ -588,7 +588,7 @@ func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formatio
 	return assignmentsPage
 }
 
-func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, targetType graphql.FormationAssignmentType, sourceID string) string {
+func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPage *graphql.FormationAssignmentPageExt, targetType graphql.FormationAssignmentType, sourceID string) string {
 	var formationAssignmentID string
 	for _, a := range assignmentsPage.Data {
 		if a.TargetType == targetType && a.Source == sourceID && a.Target != sourceID {
@@ -599,7 +599,7 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 	return formationAssignmentID
 }
 
-func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, sourceID, targetID string) string {
+func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPageExt, sourceID, targetID string) string {
 	var formationAssignmentID string
 	for _, a := range assignmentsPage.Data {
 		if a.Source == sourceID && a.Target == targetID {

@@ -8,7 +8,9 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
+	"github.com/kyma-incubator/compass/tests/pkg/gql"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
+	"github.com/kyma-incubator/compass/tests/pkg/token"
 	"github.com/stretchr/testify/require"
 )
 
@@ -26,7 +28,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	formationTemplateName := "test-kyma-formation-template"
 	runtimeArtifactKind := graphql.ArtifactTypeEnvironmentInstance
 	supportReset := true
-	formationTemplateInput := graphql.FormationTemplateInput{
+	formationTemplateRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       []string{applicationType},
 		RuntimeTypes:           []string{"kyma"},
@@ -37,7 +39,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	// Create formation from template
 	formationName := "test-kyma-adapter-formation"
@@ -55,7 +57,6 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	baseUrl := "url"
 	t.Logf("Create application template for type %q", applicationType)
 	appTemplateInput := fixtures.FixApplicationTemplateWithoutWebhook(applicationType, localTenantID, appRegion, appNamespace, namePlaceholder, displayNamePlaceholder)
-	appTemplateInput.Labels[conf.SubscriptionConfig.SelfRegDistinguishLabelKey] = conf.SubscriptionConfig.SelfRegDistinguishLabelValue
 	appTemplateInput.ApplicationInput.BaseURL = &baseUrl
 	appTemplateInput.ApplicationInput.Bundles = []*graphql.BundleCreateInput{{
 		Name: "bndl-1",
@@ -87,8 +88,25 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 		},
 	}
 
-	appTemplate, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, appTemplateInput)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, appTemplate)
+	t.Log("Create integration system")
+	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, "int-kyma-tma-notifications")
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, intSys)
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, conf.TestProviderSubaccountID, intSys.ID)
+	require.NotEmpty(t, intSysAuth)
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
+
+	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
+	require.True(t, ok)
+
+	t.Log("Issue a Hydra token with Client Credentials")
+	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
+	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, conf.GatewayOauth)
+
+	appTemplate, err := fixtures.CreateApplicationTemplateFromInputWithoutTenant(t, ctx, oauthGraphQLClient, appTemplateInput)
+	defer fixtures.CleanupApplicationTemplateWithoutTenant(t, ctx, oauthGraphQLClient, appTemplate)
 
 	require.NoError(t, err)
 	require.NotEmpty(t, appTemplate.ID)
@@ -176,14 +194,26 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	// Assert the assignments - there should be an assignment with source APP, target RUNTIME and state CONFIG_PENDING
 	t.Logf("Assert formation assignments for formation with ID: %q", formation.ID)
-	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+	expectedAssignments := map[string]map[string]fixtures.Assignment{
 		app.ID: {
-			app.ID:     fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			runtime.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: nil, Value: nil, Error: nil},
+			app.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(app.ID, app.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+			},
+			runtime.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(app.ID, runtime.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+			},
 		},
 		runtime.ID: {
-			app.ID:     fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			runtime.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+			app.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(runtime.ID, app.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+			},
+			runtime.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(runtime.ID, runtime.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+			},
 		},
 	}
 	assertFormationAssignments(t, ctx, tenantId, formation.ID, 4, expectedAssignments)
