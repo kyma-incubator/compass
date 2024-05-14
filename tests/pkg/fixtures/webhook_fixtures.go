@@ -5,10 +5,20 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
-func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate string, headerTemplate *string) *graphql.WebhookInput {
+func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode graphql.WebhookMode, urlTemplate, inputTemplate, outputTemplate, url string, headerTemplate *string) *graphql.WebhookInput {
 	var inputTmpl *string
 	if inputTemplate != "" {
 		inputTmpl = &inputTemplate
+	}
+
+	var urlTpl *string
+	if urlTemplate != "" {
+		urlTpl = &urlTemplate
+	}
+
+	var urlPtr *string
+	if url != "" {
+		urlPtr = &url
 	}
 
 	return &graphql.WebhookInput{
@@ -17,7 +27,8 @@ func FixFormationNotificationWebhookInput(webhookType graphql.WebhookType, mode 
 			AccessStrategy: str.Ptr("sap:cmp-mtls:v1"),
 		},
 		Mode:           &mode,
-		URLTemplate:    &urlTemplate,
+		URL:            urlPtr,
+		URLTemplate:    urlTpl,
 		InputTemplate:  inputTmpl,
 		OutputTemplate: &outputTemplate,
 		HeaderTemplate: headerTemplate,
