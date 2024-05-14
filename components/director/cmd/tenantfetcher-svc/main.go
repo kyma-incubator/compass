@@ -165,7 +165,7 @@ func main() {
 	applicationRepo := application.NewRepository(appConverter)
 	uidSvc := uid.NewService()
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, nil, applicationRepo, nil, nil, nil, nil, nil, nil, uidSvc, nil, "", nil)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, applicationRepo, nil, nil, nil, nil, nil, nil, uidSvc, nil, "", nil)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
 
 	webhookClient := pkgAuth.PrepareHTTPClient(cfg.Handler.ClientTimeout)

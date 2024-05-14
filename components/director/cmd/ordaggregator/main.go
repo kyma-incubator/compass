@@ -88,7 +88,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/features"
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -107,9 +106,6 @@ type config struct {
 	Database       persistence.DatabaseConfig
 	Log            log.Config
 	Features       features.Config
-
-	ConfigurationFile       string
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 
 	ClientTimeout                  time.Duration `envconfig:"default=120s"`
 	ClientMaxConnectionsPerHost    int           `envconfig:"APP_CLIENT_MAX_CONNECTIONS_PER_HOST,default=1000"`
@@ -175,8 +171,6 @@ func main() {
 
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	exitOnError(err, "failed while unmarshalling ord webhook mappings")
-
-	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
@@ -328,7 +322,7 @@ func main() {
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
 	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)
 	vendorSvc := ordvendor.NewService(vendorRepo, uidSvc)
@@ -562,20 +556,6 @@ func ctxTenantProvider(ctx context.Context) (string, error) {
 	}
 
 	return localTenantID, nil
-}
-
-func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
-	provider := configprovider.NewProvider(cfg.ConfigurationFile)
-	err := provider.Load()
-	exitOnError(err, "Error on loading configuration file")
-	executor.NewPeriodic(cfg.ConfigurationFileReload, func(ctx context.Context) {
-		if err := provider.Load(); err != nil {
-			exitOnError(err, "Error from Reloader watch")
-		}
-		log.C(ctx).Infof("Successfully reloaded configuration file.")
-	}).Run(ctx)
-
-	return provider
 }
 
 func exitOnError(err error, context string) {

@@ -77,7 +77,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/uid"
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 	pkgAuth "github.com/kyma-incubator/compass/components/director/pkg/auth"
-	configprovider "github.com/kyma-incubator/compass/components/director/pkg/config"
 	"github.com/kyma-incubator/compass/components/director/pkg/credloader"
 	"github.com/kyma-incubator/compass/components/director/pkg/executor"
 	httputil "github.com/kyma-incubator/compass/components/director/pkg/http"
@@ -122,9 +121,6 @@ type config struct {
 
 	Features features.Config
 
-	ConfigurationFile string
-
-	ConfigurationFileReload time.Duration `envconfig:"default=1m"`
 	ClientTimeout           time.Duration `envconfig:"default=60s"`
 
 	CertLoaderConfig credloader.CertConfig
@@ -179,8 +175,6 @@ func main() {
 	opRepo := operation.NewRepository(operation.NewConverter())
 	opSvc := operation.NewService(opRepo, uidSvc)
 
-	cfgProvider := createAndRunConfigProvider(ctx, cfg)
-
 	certCache, err := credloader.StartCertLoader(ctx, cfg.CertLoaderConfig)
 	exitOnError(err, "Failed to initialize certificate loader")
 
@@ -197,7 +191,7 @@ func main() {
 	securedHTTPClient := pkgAuth.PrepareHTTPClient(cfg.ClientTimeout)
 	mtlsClient := pkgAuth.PrepareMTLSClient(cfg.ClientTimeout, certCache, cfg.ExternalClientCertSecretName)
 
-	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, cfgProvider, transact, httpClient, securedHTTPClient, mtlsClient, certCache, keyCache)
+	systemFetcherSvc, err := createSystemFetcher(ctx, cfg, transact, httpClient, securedHTTPClient, mtlsClient, certCache, keyCache)
 	exitOnError(err, "Failed to initialize System Fetcher")
 
 	operationsManager := operationsmanager.NewOperationsManager(transact, opSvc, model.OperationTypeSystemFetching, cfg.OperationsManagerConfig)
@@ -487,7 +481,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	return runFn, shutdownFn
 }
 
-func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configprovider.Provider, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
+func createSystemFetcher(ctx context.Context, cfg config, tx persistence.Transactioner, httpClient, securedHTTPClient, mtlsClient *http.Client, certCache credloader.CertCache, keyCache credloader.KeysCache) (*systemfetcher.SystemFetcher, error) {
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed while unmarshalling ord webhook mappings")
@@ -579,7 +573,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
 	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
-	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
+	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
 
 	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
@@ -620,24 +614,6 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	}
 
 	return systemfetcher.NewSystemFetcher(tx, tenantSvc, appSvc, systemsSyncSvc, templateRenderer, systemsAPIClient, directorClient, cfg.SystemFetcher), nil
-}
-
-func createAndRunConfigProvider(ctx context.Context, cfg config) *configprovider.Provider {
-	provider := configprovider.NewProvider(cfg.ConfigurationFile)
-	err := provider.Load()
-	if err != nil {
-		log.D().Fatal(errors.Wrap(err, "error on loading configuration file"))
-	}
-	executor.NewPeriodic(cfg.ConfigurationFileReload, func(ctx context.Context) {
-		if err = provider.Load(); err != nil {
-			if err != nil {
-				log.D().Fatal(errors.Wrap(err, "error from Reloader watch"))
-			}
-		}
-		log.C(ctx).Infof("Successfully reloaded configuration file.")
-	}).Run(ctx)
-
-	return provider
 }
 
 func calculateTemplateMappings(ctx context.Context, cfg config, transact persistence.Transactioner, appTemplateSvc apptemplate.ApplicationTemplateService, placeholdersMapping []systemfetcher.PlaceholderMapping) error {

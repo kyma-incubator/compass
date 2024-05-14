@@ -458,6 +458,36 @@ func (_m *ApplicationRepository) ListAllGlobalByFilter(ctx context.Context, appI
 	return r0, r1
 }
 
+// ListByIDs provides a mock function with given fields: ctx, tenant, applicationIDs, pageSize, cursor
+func (_m *ApplicationRepository) ListByIDs(ctx context.Context, tenant uuid.UUID, applicationIDs []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	ret := _m.Called(ctx, tenant, applicationIDs, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByIDs")
+	}
+
+	var r0 *model.ApplicationPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string) (*model.ApplicationPage, error)); ok {
+		return rf(ctx, tenant, applicationIDs, pageSize, cursor)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string) *model.ApplicationPage); ok {
+		r0 = rf(ctx, tenant, applicationIDs, pageSize, cursor)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.ApplicationPage)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string) error); ok {
+		r1 = rf(ctx, tenant, applicationIDs, pageSize, cursor)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByIDsAndFilters provides a mock function with given fields: ctx, tenant, appIDs, filters, pageSize, cursor
 func (_m *ApplicationRepository) ListByIDsAndFilters(ctx context.Context, tenant string, appIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenant, appIDs, filters, pageSize, cursor)
@@ -511,36 +541,6 @@ func (_m *ApplicationRepository) ListByLocalTenantID(ctx context.Context, tenant
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, []string, []*labelfilter.LabelFilter, int, string) error); ok {
 		r1 = rf(ctx, tenant, localTenantID, appIDs, filters, pageSize, cursor)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListByScenarios provides a mock function with given fields: ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors
-func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
-	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByScenarios")
-	}
-
-	var r0 *model.ApplicationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) (*model.ApplicationPage, error)); ok {
-		return rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) *model.ApplicationPage); ok {
-		r0 = rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.ApplicationPage)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) error); ok {
-		r1 = rf(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 	} else {
 		r1 = ret.Error(1)
 	}

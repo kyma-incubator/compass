@@ -532,7 +532,7 @@ func TestService_Create(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
 			formationSvc := testCase.FormationServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, bndlSvc, uidSvc, formationSvc, "", nil)
+			svc := application.NewService(appNameNormalizer, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, bndlSvc, uidSvc, formationSvc, "", nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
@@ -552,7 +552,7 @@ func TestService_Create(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -988,7 +988,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			bndlSvc := testCase.BundleServiceFn()
 			formationSvc := testCase.FormationServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, bndlSvc, uidSvc, formationSvc, "", nil)
+			svc := application.NewService(appNameNormalizer, appRepo, webhookRepo, nil, nil, intSysRepo, labelSvc, bndlSvc, uidSvc, formationSvc, "", nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
@@ -1008,7 +1008,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 		// WHEN
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -1579,7 +1579,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			formationService := testCase.FormationServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
+			svc := application.NewService(appNameNormalizer, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1605,7 +1605,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			formationService := testCase.FormationServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
+			svc := application.NewService(appNameNormalizer, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1624,7 +1624,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -1972,7 +1972,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 			intSysRepo := testCase.IntSysRepoFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			formationService := testCase.FormationServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
+			svc := application.NewService(appNameNormalizer, appRepo, webhookRepo, nil, labelRepo, intSysRepo, labelSvc, nil, uidSvc, formationService, "", testCase.OrdWebhookMapping)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// when
@@ -1991,7 +1991,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 		// when
 		_, err := svc.Create(context.TODO(), model.ApplicationRegisterInput{})
 		assert.True(t, apperrors.IsCannotReadTenant(err))
@@ -2443,7 +2443,7 @@ func TestService_Update(t *testing.T) {
 			lblSvc := testCase.LabelSvcFn()
 			webhookRepo := testCase.WebhookRepoFn()
 			uidSvc := testCase.UIDServiceFn()
-			svc := application.NewService(appNameNormalizer, nil, appRepo, webhookRepo, nil, nil, intSysRepo, lblSvc, nil, uidSvc, nil, "", testCase.ORDWebhookMapping)
+			svc := application.NewService(appNameNormalizer, appRepo, webhookRepo, nil, nil, intSysRepo, lblSvc, nil, uidSvc, nil, "", testCase.ORDWebhookMapping)
 			svc.SetTimestampGen(timestampGenFunc)
 
 			// WHEN
@@ -2572,7 +2572,7 @@ func TestService_UpdateBaseURL(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			resetModels()
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			err := svc.UpdateBaseURL(testCase.Context, testCase.InputID, testCase.TargetURL)
@@ -2683,7 +2683,7 @@ func TestService_UpdateBaseURLAndReadyState(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			resetModels()
 			appRepo := testCase.AppRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			err := svc.UpdateBaseURLAndReadyState(testCase.Context, testCase.InputID, updatedBaseURL, true)
@@ -2806,7 +2806,7 @@ func TestService_Delete(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			formationSvc := testCase.FormationServiceFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
@@ -3087,7 +3087,7 @@ func TestService_Unpair(t *testing.T) {
 			}
 			ctx := testCase.ContextFn()
 			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, nil, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, appRepo, nil, runtimeRepo, nil, nil, nil, nil, nil, formationSvc, "", nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 			// WHEN
 			err := svc.Unpair(ctx, testCase.InputID)
@@ -3700,7 +3700,7 @@ func TestService_Merge(t *testing.T) {
 			if testCase.FormationServiceFn != nil {
 				fomationService = testCase.FormationServiceFn()
 			}
-			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, labelUpserSvc, nil, nil, fomationService, selfRegDistLabelKey, nil)
+			svc := application.NewService(nil, appRepo, nil, nil, labelRepo, nil, labelUpserSvc, nil, nil, fomationService, selfRegDistLabelKey, nil)
 
 			// WHEN
 			destApp, err := svc.Merge(testCase.Ctx, testCase.DestinationID, testCase.SourceID)
@@ -3777,7 +3777,7 @@ func TestService_Get(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			app, err := svc.Get(ctx, testCase.InputID)
@@ -3846,7 +3846,7 @@ func TestService_GetGlobalByID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			app, err := svc.GetGlobalByID(ctx, testCase.InputID)
@@ -3926,7 +3926,7 @@ func TestService_GetSystem(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			app, err := svc.GetSccSystem(testCase.Ctx, "id", locationID, virtualHost)
@@ -4096,7 +4096,7 @@ func TestService_List(t *testing.T) {
 				formationSvc = testCase.FormationServiceFn()
 			}
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			app, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, after)
@@ -4179,7 +4179,7 @@ func TestService_ListAll(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			defer mock.AssertExpectationsForObjects(t, repo)
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			app, err := svc.ListAll(testCase.Context)
@@ -4320,7 +4320,7 @@ func TestService_ListAllGlobalByFilter(t *testing.T) {
 				formationSvc = testCase.FormationServiceFn()
 			}
 
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			app, err := svc.ListAllGlobalByFilter(ctx, testCase.LabelFilter, pageSize, cursor)
@@ -4341,6 +4341,10 @@ func TestService_ListAllGlobalByFilter(t *testing.T) {
 
 func TestService_ListByRuntimeID(t *testing.T) {
 	runtimeUUID := uuid.New()
+	runtimeID := runtimeUUID.String()
+	appID1 := "test1"
+	appID2 := "test2"
+	appIDs := []string{appID1, appID2}
 	testError := errors.New("test error")
 	tenantUUID := uuid.New()
 	externalTenantUUID := uuid.New()
@@ -4349,17 +4353,12 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 	first := 10
 	cursor := "test"
-	scenarios := []interface{}{"Easter", "Christmas", "Winter-Sale"}
-	scenarioLabel := model.Label{
-		ID:    uuid.New().String(),
-		Key:   model.ScenariosKey,
-		Value: scenarios,
-	}
-	hidingSelectors := map[string][]string{"foo": {"bar", "baz"}}
+	scenarios := []string{"Easter", "Christmas", "Winter-Sale"}
+	formations := []*model.Formation{&model.Formation{Name: "Easter"}, &model.Formation{Name: "Christmas"}, &model.Formation{Name: "Winter-Sale"}}
 
 	applications := []*model.Application{
-		fixModelApplication("test1", "tenant-foo", "test1", "test1"),
-		fixModelApplication("test2", "tenant-foo", "test2", "test2"),
+		fixModelApplication(appID1, "tenant-foo", "test1", "test1"),
+		fixModelApplication(appID2, "tenant-foo", "test2", "test2"),
 	}
 	applicationPage := fixApplicationPage(applications)
 	emptyPage := model.ApplicationPage{
@@ -4371,9 +4370,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		Name                string
 		Input               uuid.UUID
 		RuntimeRepositoryFn func() *automock.RuntimeRepository
-		LabelRepositoryFn   func() *automock.LabelRepository
+		FormationServiceFn  func() *automock.FormationService
 		AppRepositoryFn     func() *automock.ApplicationRepository
-		ConfigProviderFn    func() *automock.ApplicationHideCfgProvider
 		ExpectedResult      *model.ApplicationPage
 		ExpectedError       error
 	}{
@@ -4386,28 +4384,23 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&scenarioLabel, nil).Once()
-				return labelRepository
-			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, hidingSelectors).
+				appRepository.On("ListByIDs", ctx, tenantUUID,appIDs, first, cursor).
 					Return(applicationPage, nil).Once()
 				return appRepository
 			},
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				cfgProvider.On("GetApplicationHideSelectors").Return(hidingSelectors, nil).Once()
-				return cfgProvider
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, runtimeID).Return(formations, nil).Once()
+				svc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(appIDs, nil).Once()
+				return svc
 			},
 			ExpectedError:  nil,
 			ExpectedResult: applicationPage,
 		},
 		{
-			Name:  "Success when scenarios label not set",
+			Name:  "Success when the runtime is not part of any formation",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -4415,23 +4408,14 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, apperrors.NewNotFoundError(resource.Application, "")).Once()
-				return labelRepository
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, runtimeID).Return(nil, nil).Once()
+				return svc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError: nil,
-			ExpectedResult: &model.ApplicationPage{
-				Data:       []*model.Application{},
-				PageInfo:   &pagination.Page{},
-				TotalCount: 0,
-			},
+			ExpectedError:   nil,
+			ExpectedResult: &emptyPage,
 		},
 		{
 			Name:  "Return error when checking of runtime existence failed",
@@ -4442,17 +4426,9 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(false, testError).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				return labelRepository
-			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  testError,
-			ExpectedResult: nil,
+			ExpectedError:   testError,
+			ExpectedResult:  nil,
 		},
 		{
 			Name:  "Return error when runtime not exits",
@@ -4463,20 +4439,12 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(false, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				return labelRepository
-			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  errors.New("runtime does not exist"),
-			ExpectedResult: nil,
+			ExpectedError:   errors.New("runtime does not exist"),
+			ExpectedResult:  nil,
 		},
 		{
-			Name:  "Return error when getting runtime scenarios by RuntimeID failed",
+			Name:  "Return error when getting formations by RuntimeID failed",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -4484,19 +4452,32 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, testError).Once()
-				return labelRepository
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, runtimeID).Return(nil, testError).Once()
+				return svc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
+			ExpectedError:   testError,
+			ExpectedResult:  nil,
+		},
+		{
+			Name:  "Return error when listing application IDs for formations failed",
+			Input: runtimeUUID,
+			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
+				runtimeRepository := &automock.RuntimeRepository{}
+				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
+					Return(true, nil).Once()
+				return runtimeRepository
+			},
+			AppRepositoryFn: UnusedApplicationRepository,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, runtimeID).Return(formations, nil).Once()
+				svc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(nil, testError).Once()
+				return svc
 			},
 			ExpectedError:  testError,
-			ExpectedResult: nil,
 		},
 		{
 			Name:  "Return error when listing application by scenarios failed",
@@ -4507,69 +4488,17 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&scenarioLabel, nil).Once()
-				return labelRepository
-			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, hidingSelectors).
+				appRepository.On("ListByIDs", ctx, tenantUUID,appIDs, first, cursor).
 					Return(nil, testError).Once()
 				return appRepository
 			},
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				cfgProvider.On("GetApplicationHideSelectors").Return(hidingSelectors, nil).Once()
-				return cfgProvider
-			},
-			ExpectedError:  testError,
-			ExpectedResult: nil,
-		},
-		{
-			Name:  "Return empty page when runtime is not assigned to any scenario",
-			Input: runtimeUUID,
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				runtimeRepository := &automock.RuntimeRepository{}
-				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
-					Return(true, nil).Once()
-				return runtimeRepository
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&model.Label{ID: uuid.New().String(), Key: model.ScenariosKey, Value: []interface{}{}}, nil).Once()
-				return labelRepository
-			},
-			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  nil,
-			ExpectedResult: &emptyPage,
-		},
-		{
-			Name:  "Return error when config provider returns error",
-			Input: runtimeUUID,
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				runtimeRepository := &automock.RuntimeRepository{}
-				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
-					Return(true, nil).Once()
-				return runtimeRepository
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&scenarioLabel, nil).Once()
-				return labelRepository
-			},
-			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				cfgProvider.On("GetApplicationHideSelectors").Return(nil, testError).Once()
-				return cfgProvider
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, runtimeID).Return(formations, nil).Once()
+				svc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(appIDs, nil).Once()
+				return svc
 			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
@@ -4580,10 +4509,12 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			runtimeRepository := testCase.RuntimeRepositoryFn()
-			labelRepository := testCase.LabelRepositoryFn()
 			appRepository := testCase.AppRepositoryFn()
-			cfgProvider := testCase.ConfigProviderFn()
-			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil, "", nil)
+			formationSvc := &automock.FormationService{}
+			if testCase.FormationServiceFn != nil {
+				formationSvc = testCase.FormationServiceFn()
+			}
+			svc := application.NewService(nil, appRepository, nil, runtimeRepository, nil, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -4597,7 +4528,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.ExpectedResult, results)
-			mock.AssertExpectationsForObjects(t, runtimeRepository, labelRepository, appRepository, cfgProvider)
+			mock.AssertExpectationsForObjects(t, runtimeRepository, appRepository, formationSvc)
 		})
 	}
 }
@@ -4728,7 +4659,7 @@ func TestService_ListBySCC(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			app, err := svc.ListBySCC(testCase.Ctx, filter)
@@ -4824,7 +4755,7 @@ func TestService_ListSCCs(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := application.NewService(nil, nil, nil, nil, nil, repo, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, nil, nil, nil, repo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			app, err := svc.ListSCCs(testCase.Ctx)
@@ -4899,7 +4830,7 @@ func TestService_Exist(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			value, err := svc.Exist(ctx, testCase.InputApplicationID)
@@ -5162,7 +5093,7 @@ func TestService_SetLabel(t *testing.T) {
 			labelSvc := testCase.LabelServiceFn()
 			formationSvc := testCase.FormationServiceFn()
 
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, labelSvc, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, labelSvc, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			err := svc.SetLabel(ctx, testCase.InputLabel)
@@ -5273,7 +5204,7 @@ func TestService_GetLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			l, err := svc.GetLabel(ctx, testCase.InputApplicationID, testCase.InputLabel.Key)
@@ -5413,7 +5344,7 @@ func TestService_GetScenariosGlobal(t *testing.T) {
 			if testCase.FormationServiceFn != nil {
 				formationSvc = testCase.FormationServiceFn()
 			}
-			svc := application.NewService(nil, nil, repo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			scenarios, err := svc.GetScenariosGlobal(ctx, testCase.InputApplicationID)
@@ -5431,7 +5362,7 @@ func TestService_GetScenariosGlobal(t *testing.T) {
 	}
 
 	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 		// WHEN
 		_, err := svc.GetScenariosGlobal(context.TODO(), applicationID)
 		assert.Contains(t, err.Error(), "while loading tenant from context")
@@ -5532,7 +5463,7 @@ func TestService_ListLabel(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			l, err := svc.ListLabels(ctx, testCase.InputApplicationID)
@@ -5641,7 +5572,7 @@ func TestService_ListLabelsGlobal(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			l, err := svc.ListLabelsGlobal(ctx, testCase.InputApplicationID)
@@ -5792,7 +5723,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			repo := testCase.RepositoryFn()
 			labelRepo := testCase.LabelRepositoryFn()
 			formationSvc := testCase.FormationServiceFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			err := svc.DeleteLabel(ctx, testCase.InputApplicationID, testCase.InputKey)
@@ -5855,7 +5786,7 @@ func TestService_GetBySystemNumber(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			value, err := svc.GetBySystemNumber(ctx, testCase.InputSystemNumber)
@@ -5897,21 +5828,20 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 		},
 	}
 
-
 	scenarios := []string{"DEFAULT"}
 	scenariosFilter := []*labelfilter.LabelFilter{{Key: model.ScenariosKey, Query: stringPtr("$[*] ? (@ == \"DEFAULT\")")}}
 
 	testCases := []struct {
-		Name           string
-		Ctx            context.Context
-		RepositoryFn   func() *automock.ApplicationRepository
+		Name               string
+		Ctx                context.Context
+		RepositoryFn       func() *automock.ApplicationRepository
 		FormationServiceFn func() *automock.FormationService
-		LocalTenantID  string
-		Filter         []*labelfilter.LabelFilter
-		First          int
-		Cursor         string
-		ExptectedValue *model.ApplicationPage
-		ExpectedError  error
+		LocalTenantID      string
+		Filter             []*labelfilter.LabelFilter
+		First              int
+		Cursor             string
+		ExptectedValue     *model.ApplicationPage
+		ExpectedError      error
 	}{
 		{
 			Name: "Getting tenant from context fails",
@@ -5933,7 +5863,7 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 			Ctx:  ctx,
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID,[]string{}, filter, first, cursor).Return(nil, testError).Once()
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, []string{}, filter, first, cursor).Return(nil, testError).Once()
 				return repo
 			},
 			LocalTenantID:  localTenantID,
@@ -5982,7 +5912,7 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 			Ctx:  ctx,
 			RepositoryFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID,[]string{appID}, []*labelfilter.LabelFilter{}, first, cursor).Return(modelApplications, nil).Once()
+				repo.On("ListByLocalTenantID", ctx, tnt, localTenantID, []string{appID}, []*labelfilter.LabelFilter{}, first, cursor).Return(modelApplications, nil).Once()
 				return repo
 			},
 			FormationServiceFn: func() *automock.FormationService {
@@ -6009,11 +5939,11 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeApplication).Return(nil, testError).Once()
 				return svc
 			},
-			LocalTenantID:  localTenantID,
-			Filter:         scenariosFilter,
-			First:          first,
-			Cursor:         cursor,
-			ExpectedError:  testError,
+			LocalTenantID: localTenantID,
+			Filter:        scenariosFilter,
+			First:         first,
+			Cursor:        cursor,
+			ExpectedError: testError,
 		},
 	}
 
@@ -6025,7 +5955,7 @@ func TestService_ListByLocalTenantID(t *testing.T) {
 			if testCase.FormationServiceFn != nil {
 				formationSvc = testCase.FormationServiceFn()
 			}
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			value, err := svc.ListByLocalTenantID(testCase.Ctx, testCase.LocalTenantID, testCase.Filter, testCase.First, testCase.Cursor)
@@ -6091,7 +6021,7 @@ func TestService_GetByLocalTenantIDAndAppTemplateID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			appRepo := testCase.RepositoryFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, appRepo, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
 
 			// WHEN
 			value, err := svc.GetByLocalTenantIDAndAppTemplateID(ctx, testCase.LocalTenantID, testCase.AppTemplateID)
