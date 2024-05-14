@@ -20,6 +20,7 @@ type SystemFieldDiscoveryService interface {
 	ProcessSaasRegistryApplication(ctx context.Context, appID, tenantID string) error
 }
 
+// ProcessingError custom error to store information about the processing error
 type ProcessingError struct {
 	Message string `json:"message"`
 }
