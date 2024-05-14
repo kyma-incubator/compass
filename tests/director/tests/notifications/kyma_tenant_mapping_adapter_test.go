@@ -28,7 +28,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	formationTemplateName := "test-kyma-formation-template"
 	runtimeArtifactKind := graphql.ArtifactTypeEnvironmentInstance
 	supportReset := true
-	formationTemplateInput := graphql.FormationTemplateInput{
+	formationTemplateRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       []string{applicationType},
 		RuntimeTypes:           []string{"kyma"},
@@ -39,7 +39,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	// Create formation from template
 	formationName := "test-kyma-adapter-formation"

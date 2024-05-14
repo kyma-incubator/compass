@@ -1,6 +1,9 @@
 package formationtemplate
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 // Entity represents the formation template entity
 type Entity struct {
@@ -14,6 +17,8 @@ type Entity struct {
 	TenantID               sql.NullString `db:"tenant_id"`
 	SupportsReset          bool           `db:"supports_reset"`
 	DiscoveryConsumers     sql.NullString `db:"discovery_consumers"`
+	CreatedAt              time.Time      `db:"created_at"`
+	UpdatedAt              *time.Time     `db:"updated_at"`
 }
 
 // EntityCollection is a collection of formation template entities.

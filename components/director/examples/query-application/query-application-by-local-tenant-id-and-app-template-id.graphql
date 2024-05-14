@@ -104,6 +104,7 @@ query {
         version {
           value
         }
+        labels
         aspects {
           id
           name
@@ -563,6 +564,14 @@ query {
           }
         }
       }
+    }
+    operations {
+      id
+      operationType
+      status
+      error
+      createdAt
+      updatedAt
     }
     eventingConfiguration {
       defaultURL

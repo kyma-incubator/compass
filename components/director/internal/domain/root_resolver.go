@@ -294,7 +294,7 @@ func NewRootResolver(
 	}
 	subscriptionSvc := subscription.NewService(runtimeSvc, runtimeContextSvc, tenantSvc, labelSvc, appTemplateSvc, appConverter, appTemplateConv, appSvc, uidSvc, systemFieldDiscoveryEngine, subscriptionConfig.GlobalSubaccountIDLabelKey, subscriptionConfig.SubscriptionLabelKey, subscriptionConfig.RuntimeTypeLabelKey, subscriptionConfig.ProviderLabelKey)
 	tenantOnDemandSvc := tenant.NewFetchOnDemandService(internalGatewayHTTPClient, tenantOnDemandAPIConfig)
-	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc, webhookRepo, webhookSvc)
+	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc, webhookRepo, webhookSvc, labelSvc)
 	constraintReferenceSvc := formationtemplateconstraintreferences.NewService(constraintReferencesRepo, constraintReferencesConverter)
 	certSubjectMappingSvc := certsubjectmapping.NewService(certSubjectMappingRepo)
 
@@ -540,8 +540,8 @@ func (r *queryResolver) FormationTemplate(ctx context.Context, id string) (*grap
 	return r.formationTemplate.FormationTemplate(ctx, id)
 }
 
-func (r *queryResolver) FormationTemplates(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
-	return r.formationTemplate.FormationTemplates(ctx, first, after)
+func (r *queryResolver) FormationTemplates(ctx context.Context, filters []*graphql.LabelFilter, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
+	return r.formationTemplate.FormationTemplates(ctx, filters, first, after)
 }
 
 func (r *queryResolver) FormationTemplatesByName(ctx context.Context, name string, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
@@ -778,7 +778,7 @@ func (r *mutationResolver) DeleteFormationConstraint(ctx context.Context, id str
 	return r.formationConstraint.DeleteFormationConstraint(ctx, id)
 }
 
-func (r *mutationResolver) CreateFormationTemplate(ctx context.Context, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
+func (r *mutationResolver) CreateFormationTemplate(ctx context.Context, in graphql.FormationTemplateRegisterInput) (*graphql.FormationTemplate, error) {
 	return r.formationTemplate.CreateFormationTemplate(ctx, in)
 }
 
@@ -786,7 +786,7 @@ func (r *mutationResolver) DeleteFormationTemplate(ctx context.Context, id strin
 	return r.formationTemplate.DeleteFormationTemplate(ctx, id)
 }
 
-func (r *mutationResolver) UpdateFormationTemplate(ctx context.Context, id string, in graphql.FormationTemplateInput) (*graphql.FormationTemplate, error) {
+func (r *mutationResolver) UpdateFormationTemplate(ctx context.Context, id string, in graphql.FormationTemplateUpdateInput) (*graphql.FormationTemplate, error) {
 	return r.formationTemplate.UpdateFormationTemplate(ctx, id, in)
 }
 
@@ -974,6 +974,17 @@ func (r *mutationResolver) SetRuntimeLabel(ctx context.Context, runtimeID string
 // DeleteRuntimeLabel missing godoc
 func (r *mutationResolver) DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*graphql.Label, error) {
 	return r.runtime.DeleteRuntimeLabel(ctx, runtimeID, key)
+}
+
+// SetFormationTemplateLabel add the provided label key and value to a formation template with the specified ID.
+// If the label does not exist, it will be created. In case the label is already present, it will be updated with the provided value.
+func (r *mutationResolver) SetFormationTemplateLabel(ctx context.Context, formationTemplateID string, lblInput graphql.LabelInput) (*graphql.Label, error) {
+	return r.formationTemplate.SetFormationTemplateLabel(ctx, formationTemplateID, lblInput)
+}
+
+// DeleteFormationTemplateLabel deletes a formation template label with the specified label key and formation template ID
+func (r *mutationResolver) DeleteFormationTemplateLabel(ctx context.Context, formationTemplateID string, key string) (*graphql.Label, error) {
+	return r.formationTemplate.DeleteFormationTemplateLabel(ctx, formationTemplateID, key)
 }
 
 // RequestOneTimeTokenForApplication missing godoc
@@ -1265,6 +1276,11 @@ func (r *RootResolver) FormationTemplate() graphql.FormationTemplateResolver {
 // Webhooks missing godoc
 func (r *formationTemplateResolver) Webhooks(ctx context.Context, obj *graphql.FormationTemplate) ([]*graphql.Webhook, error) {
 	return r.formationTemplate.Webhooks(ctx, obj)
+}
+
+// Labels missing godoc
+func (r *formationTemplateResolver) Labels(ctx context.Context, obj *graphql.FormationTemplate, key *string) (graphql.Labels, error) {
+	return r.formationTemplate.Labels(ctx, obj, key)
 }
 
 // FormationConstraints missing godoc

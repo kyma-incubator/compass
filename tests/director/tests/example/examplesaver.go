@@ -2,7 +2,6 @@ package example
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"regexp"
@@ -39,7 +38,7 @@ func SaveExample(t *testing.T, query string, exampleName string) {
 	err = os.MkdirAll(dir, os.ModePerm)
 	require.NoError(t, err)
 
-	err = ioutil.WriteFile(fmt.Sprintf("%s/%s.graphql", dir, sanitizedName), []byte(content), 0660)
+	err = os.WriteFile(fmt.Sprintf("%s/%s.graphql", dir, sanitizedName), []byte(content), 0660)
 	require.NoError(t, err)
 }
 
@@ -58,6 +57,6 @@ func SaveExampleInCustomDir(t *testing.T, query string, exampleDirectory string,
 	err = os.MkdirAll(dir, os.ModePerm)
 	require.NoError(t, err)
 
-	err = ioutil.WriteFile(fmt.Sprintf("%s/%s.graphql", dir, sanitizedName), []byte(content), 0660)
+	err = os.WriteFile(fmt.Sprintf("%s/%s.graphql", dir, sanitizedName), []byte(content), 0660)
 	require.NoError(t, err)
 }

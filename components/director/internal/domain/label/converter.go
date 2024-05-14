@@ -34,6 +34,7 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 	var rtmCtxID sql.NullString
 	var appTmplID sql.NullString
 	var webhookID sql.NullString
+	var formationTmplID sql.NullString
 	switch in.ObjectType {
 	case model.ApplicationLabelableObject:
 		appID = sql.NullString{
@@ -60,19 +61,25 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 			Valid:  true,
 			String: in.ObjectID,
 		}
+	case model.FormationTemplateLabelableObject:
+		formationTmplID = sql.NullString{
+			Valid:  true,
+			String: in.ObjectID,
+		}
 	}
 
 	return &Entity{
-		ID:               in.ID,
-		TenantID:         repo.NewNullableString(in.Tenant),
-		AppID:            appID,
-		RuntimeID:        rtmID,
-		RuntimeContextID: rtmCtxID,
-		AppTemplateID:    appTmplID,
-		WebhookID:        webhookID,
-		Key:              in.Key,
-		Value:            string(valueMarshalled),
-		Version:          in.Version,
+		ID:                  in.ID,
+		TenantID:            repo.NewNullableString(in.Tenant),
+		AppID:               appID,
+		RuntimeID:           rtmID,
+		RuntimeContextID:    rtmCtxID,
+		AppTemplateID:       appTmplID,
+		WebhookID:           webhookID,
+		FormationTemplateID: formationTmplID,
+		Key:                 in.Key,
+		Value:               string(valueMarshalled),
+		Version:             in.Version,
 	}, nil
 }
 
@@ -104,6 +111,9 @@ func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
 	} else if in.WebhookID.Valid {
 		objectID = in.WebhookID.String
 		objectType = model.WebhookLabelableObject
+	} else if in.FormationTemplateID.Valid {
+		objectID = in.FormationTemplateID.String
+		objectType = model.FormationTemplateLabelableObject
 	}
 
 	return &model.Label{
