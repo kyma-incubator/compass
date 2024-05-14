@@ -461,15 +461,18 @@ type ComplexityRoot struct {
 
 	FormationTemplate struct {
 		ApplicationTypes       func(childComplexity int) int
+		CreatedAt              func(childComplexity int) int
 		DiscoveryConsumers     func(childComplexity int) int
 		FormationConstraints   func(childComplexity int) int
 		ID                     func(childComplexity int) int
+		Labels                 func(childComplexity int, key *string) int
 		LeadingProductIDs      func(childComplexity int) int
 		Name                   func(childComplexity int) int
 		RuntimeArtifactKind    func(childComplexity int) int
 		RuntimeTypeDisplayName func(childComplexity int) int
 		RuntimeTypes           func(childComplexity int) int
 		SupportsReset          func(childComplexity int) int
+		UpdatedAt              func(childComplexity int) int
 		Webhooks               func(childComplexity int) int
 	}
 
@@ -565,7 +568,7 @@ type ComplexityRoot struct {
 		CreateCertificateSubjectMapping              func(childComplexity int, in CertificateSubjectMappingInput) int
 		CreateFormation                              func(childComplexity int, formation FormationInput) int
 		CreateFormationConstraint                    func(childComplexity int, formationConstraint FormationConstraintInput) int
-		CreateFormationTemplate                      func(childComplexity int, in FormationTemplateInput) int
+		CreateFormationTemplate                      func(childComplexity int, in FormationTemplateRegisterInput) int
 		CreateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
 		DeleteAPIDefinition                          func(childComplexity int, id string) int
 		DeleteApplicationLabel                       func(childComplexity int, applicationID string, key string) int
@@ -579,6 +582,7 @@ type ComplexityRoot struct {
 		DeleteFormation                              func(childComplexity int, formation FormationInput) int
 		DeleteFormationConstraint                    func(childComplexity int, id string) int
 		DeleteFormationTemplate                      func(childComplexity int, id string) int
+		DeleteFormationTemplateLabel                 func(childComplexity int, formationTemplateID string, key string) int
 		DeleteIntegrationDependency                  func(childComplexity int, id string) int
 		DeleteRuntimeLabel                           func(childComplexity int, runtimeID string, key string) int
 		DeleteSystemAuthForApplication               func(childComplexity int, authID string) int
@@ -609,6 +613,7 @@ type ComplexityRoot struct {
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetBundleInstanceAuth                        func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
+		SetFormationTemplateLabel                    func(childComplexity int, formationTemplateID string, in LabelInput) int
 		SetRuntimeLabel                              func(childComplexity int, runtimeID string, key string, value interface{}) int
 		SetTenantLabel                               func(childComplexity int, tenantID string, key string, value interface{}) int
 		SubscribeTenant                              func(childComplexity int, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) int
@@ -630,7 +635,7 @@ type ComplexityRoot struct {
 		UpdateEventDefinition                        func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateEventDefinitionForApplication          func(childComplexity int, id string, in EventDefinitionInput) int
 		UpdateFormationConstraint                    func(childComplexity int, id string, in FormationConstraintUpdateInput) int
-		UpdateFormationTemplate                      func(childComplexity int, id string, in FormationTemplateInput) int
+		UpdateFormationTemplate                      func(childComplexity int, id string, in FormationTemplateUpdateInput) int
 		UpdateIntegrationSystem                      func(childComplexity int, id string, in IntegrationSystemInput) int
 		UpdateLabelDefinition                        func(childComplexity int, in LabelDefinitionInput) int
 		UpdateRuntime                                func(childComplexity int, id string, in RuntimeUpdateInput) int
@@ -721,7 +726,7 @@ type ComplexityRoot struct {
 		FormationConstraints                       func(childComplexity int) int
 		FormationConstraintsByFormationType        func(childComplexity int, formationTemplateID string) int
 		FormationTemplate                          func(childComplexity int, id string) int
-		FormationTemplates                         func(childComplexity int, first *int, after *PageCursor) int
+		FormationTemplates                         func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
 		FormationTemplatesByName                   func(childComplexity int, name string, first *int, after *PageCursor) int
 		Formations                                 func(childComplexity int, first *int, after *PageCursor) int
 		FormationsForObject                        func(childComplexity int, objectID string) int
@@ -917,6 +922,8 @@ type FormationTemplateResolver interface {
 	Webhooks(ctx context.Context, obj *FormationTemplate) ([]*Webhook, error)
 
 	FormationConstraints(ctx context.Context, obj *FormationTemplate) ([]*FormationConstraint, error)
+
+	Labels(ctx context.Context, obj *FormationTemplate, key *string) (Labels, error)
 }
 type IntegrationSystemResolver interface {
 	Auths(ctx context.Context, obj *IntegrationSystem) ([]*IntSysSystemAuth, error)
@@ -988,6 +995,8 @@ type MutationResolver interface {
 	DeleteApplicationLabel(ctx context.Context, applicationID string, key string) (*Label, error)
 	SetRuntimeLabel(ctx context.Context, runtimeID string, key string, value interface{}) (*Label, error)
 	DeleteRuntimeLabel(ctx context.Context, runtimeID string, key string) (*Label, error)
+	SetFormationTemplateLabel(ctx context.Context, formationTemplateID string, in LabelInput) (*Label, error)
+	DeleteFormationTemplateLabel(ctx context.Context, formationTemplateID string, key string) (*Label, error)
 	SetDefaultEventingForApplication(ctx context.Context, appID string, runtimeID string) (*ApplicationEventingConfiguration, error)
 	DeleteDefaultEventingForApplication(ctx context.Context, appID string) (*ApplicationEventingConfiguration, error)
 	SetBundleInstanceAuth(ctx context.Context, authID string, in BundleInstanceAuthSetInput) (*BundleInstanceAuth, error)
@@ -1005,9 +1014,9 @@ type MutationResolver interface {
 	UpdateTenant(ctx context.Context, id string, in BusinessTenantMappingInput) (*Tenant, error)
 	SubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionPayload string) (bool, error)
 	UnsubscribeTenant(ctx context.Context, providerID string, subaccountID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionPayload string) (bool, error)
-	CreateFormationTemplate(ctx context.Context, in FormationTemplateInput) (*FormationTemplate, error)
+	CreateFormationTemplate(ctx context.Context, in FormationTemplateRegisterInput) (*FormationTemplate, error)
 	DeleteFormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
-	UpdateFormationTemplate(ctx context.Context, id string, in FormationTemplateInput) (*FormationTemplate, error)
+	UpdateFormationTemplate(ctx context.Context, id string, in FormationTemplateUpdateInput) (*FormationTemplate, error)
 	CreateCertificateSubjectMapping(ctx context.Context, in CertificateSubjectMappingInput) (*CertificateSubjectMapping, error)
 	UpdateCertificateSubjectMapping(ctx context.Context, id string, in CertificateSubjectMappingInput) (*CertificateSubjectMapping, error)
 	DeleteCertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
@@ -1062,7 +1071,7 @@ type QueryResolver interface {
 	FormationConstraint(ctx context.Context, id string) (*FormationConstraint, error)
 	FormationConstraintsByFormationType(ctx context.Context, formationTemplateID string) ([]*FormationConstraint, error)
 	FormationTemplate(ctx context.Context, id string) (*FormationTemplate, error)
-	FormationTemplates(ctx context.Context, first *int, after *PageCursor) (*FormationTemplatePage, error)
+	FormationTemplates(ctx context.Context, filter []*LabelFilter, first *int, after *PageCursor) (*FormationTemplatePage, error)
 	FormationTemplatesByName(ctx context.Context, name string, first *int, after *PageCursor) (*FormationTemplatePage, error)
 	CertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
 	CertificateSubjectMappings(ctx context.Context, first *int, after *PageCursor) (*CertificateSubjectMappingPage, error)
@@ -2974,6 +2983,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.FormationTemplate.ApplicationTypes(childComplexity), true
 
+	case "FormationTemplate.createdAt":
+		if e.complexity.FormationTemplate.CreatedAt == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.CreatedAt(childComplexity), true
+
 	case "FormationTemplate.discoveryConsumers":
 		if e.complexity.FormationTemplate.DiscoveryConsumers == nil {
 			break
@@ -2994,6 +3010,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.ID(childComplexity), true
+
+	case "FormationTemplate.labels":
+		if e.complexity.FormationTemplate.Labels == nil {
+			break
+		}
+
+		args, err := ec.field_FormationTemplate_labels_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.FormationTemplate.Labels(childComplexity, args["key"].(*string)), true
 
 	case "FormationTemplate.leadingProductIDs":
 		if e.complexity.FormationTemplate.LeadingProductIDs == nil {
@@ -3036,6 +3064,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.FormationTemplate.SupportsReset(childComplexity), true
+
+	case "FormationTemplate.updatedAt":
+		if e.complexity.FormationTemplate.UpdatedAt == nil {
+			break
+		}
+
+		return e.complexity.FormationTemplate.UpdatedAt(childComplexity), true
 
 	case "FormationTemplate.webhooks":
 		if e.complexity.FormationTemplate.Webhooks == nil {
@@ -3561,7 +3596,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateFormationTemplate(childComplexity, args["in"].(FormationTemplateInput)), true
+		return e.complexity.Mutation.CreateFormationTemplate(childComplexity, args["in"].(FormationTemplateRegisterInput)), true
 
 	case "Mutation.createLabelDefinition":
 		if e.complexity.Mutation.CreateLabelDefinition == nil {
@@ -3718,6 +3753,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteFormationTemplate(childComplexity, args["id"].(string)), true
+
+	case "Mutation.deleteFormationTemplateLabel":
+		if e.complexity.Mutation.DeleteFormationTemplateLabel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteFormationTemplateLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteFormationTemplateLabel(childComplexity, args["formationTemplateID"].(string), args["key"].(string)), true
 
 	case "Mutation.deleteIntegrationDependency":
 		if e.complexity.Mutation.DeleteIntegrationDependency == nil {
@@ -4079,6 +4126,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.SetDefaultEventingForApplication(childComplexity, args["appID"].(string), args["runtimeID"].(string)), true
 
+	case "Mutation.setFormationTemplateLabel":
+		if e.complexity.Mutation.SetFormationTemplateLabel == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_setFormationTemplateLabel_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.SetFormationTemplateLabel(childComplexity, args["formationTemplateID"].(string), args["in"].(LabelInput)), true
+
 	case "Mutation.setRuntimeLabel":
 		if e.complexity.Mutation.SetRuntimeLabel == nil {
 			break
@@ -4341,7 +4400,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateFormationTemplate(childComplexity, args["id"].(string), args["in"].(FormationTemplateInput)), true
+		return e.complexity.Mutation.UpdateFormationTemplate(childComplexity, args["id"].(string), args["in"].(FormationTemplateUpdateInput)), true
 
 	case "Mutation.updateIntegrationSystem":
 		if e.complexity.Mutation.UpdateIntegrationSystem == nil {
@@ -4996,7 +5055,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.FormationTemplates(childComplexity, args["first"].(*int), args["after"].(*PageCursor)), true
+		return e.complexity.Query.FormationTemplates(childComplexity, args["filter"].([]*LabelFilter), args["first"].(*int), args["after"].(*PageCursor)), true
 
 	case "Query.formationTemplatesByName":
 		if e.complexity.Query.FormationTemplatesByName == nil {
@@ -5768,7 +5827,8 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFormationConstraintInput,
 		ec.unmarshalInputFormationConstraintUpdateInput,
 		ec.unmarshalInputFormationInput,
-		ec.unmarshalInputFormationTemplateInput,
+		ec.unmarshalInputFormationTemplateRegisterInput,
+		ec.unmarshalInputFormationTemplateUpdateInput,
 		ec.unmarshalInputIntegrationDependencyInput,
 		ec.unmarshalInputIntegrationSystemInput,
 		ec.unmarshalInputLabelDefinitionInput,
@@ -6274,6 +6334,21 @@ func (ec *executionContext) field_Bundle_instanceAuth_args(ctx context.Context, 
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_FormationTemplate_labels_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg0, err = ec.unmarshalOString2ᚖstring(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg0
 	return args, nil
 }
 
@@ -6859,11 +6934,11 @@ func (ec *executionContext) field_Mutation_createFormationConstraint_args(ctx co
 func (ec *executionContext) field_Mutation_createFormationTemplate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 FormationTemplateInput
+	var arg0 FormationTemplateRegisterInput
 	if tmp, ok := rawArgs["in"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNFormationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateInput(ctx, tmp)
+			return ec.unmarshalNFormationTemplateRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateRegisterInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Validate == nil {
@@ -6876,10 +6951,10 @@ func (ec *executionContext) field_Mutation_createFormationTemplate_args(ctx cont
 		if err != nil {
 			return nil, graphql.ErrorOnPath(ctx, err)
 		}
-		if data, ok := tmp.(FormationTemplateInput); ok {
+		if data, ok := tmp.(FormationTemplateRegisterInput); ok {
 			arg0 = data
 		} else {
-			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationTemplateInput`, tmp))
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationTemplateRegisterInput`, tmp))
 		}
 	}
 	args["in"] = arg0
@@ -7087,6 +7162,30 @@ func (ec *executionContext) field_Mutation_deleteFormationConstraint_args(ctx co
 		}
 	}
 	args["id"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteFormationTemplateLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["formationTemplateID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("formationTemplateID"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationTemplateID"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["key"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["key"] = arg1
 	return args, nil
 }
 
@@ -7807,6 +7906,45 @@ func (ec *executionContext) field_Mutation_setDefaultEventingForApplication_args
 		}
 	}
 	args["runtimeID"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_setFormationTemplateLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["formationTemplateID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("formationTemplateID"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["formationTemplateID"] = arg0
+	var arg1 LabelInput
+	if tmp, ok := rawArgs["in"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
+		directive0 := func(ctx context.Context) (interface{}, error) {
+			return ec.unmarshalNLabelInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelInput(ctx, tmp)
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			if ec.directives.Validate == nil {
+				return nil, errors.New("directive validate is not implemented")
+			}
+			return ec.directives.Validate(ctx, rawArgs, directive0)
+		}
+
+		tmp, err = directive1(ctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if data, ok := tmp.(LabelInput); ok {
+			arg1 = data
+		} else {
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.LabelInput`, tmp))
+		}
+	}
+	args["in"] = arg1
 	return args, nil
 }
 
@@ -8554,11 +8692,11 @@ func (ec *executionContext) field_Mutation_updateFormationTemplate_args(ctx cont
 		}
 	}
 	args["id"] = arg0
-	var arg1 FormationTemplateInput
+	var arg1 FormationTemplateUpdateInput
 	if tmp, ok := rawArgs["in"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("in"))
 		directive0 := func(ctx context.Context) (interface{}, error) {
-			return ec.unmarshalNFormationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateInput(ctx, tmp)
+			return ec.unmarshalNFormationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateUpdateInput(ctx, tmp)
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			if ec.directives.Validate == nil {
@@ -8571,10 +8709,10 @@ func (ec *executionContext) field_Mutation_updateFormationTemplate_args(ctx cont
 		if err != nil {
 			return nil, graphql.ErrorOnPath(ctx, err)
 		}
-		if data, ok := tmp.(FormationTemplateInput); ok {
+		if data, ok := tmp.(FormationTemplateUpdateInput); ok {
 			arg1 = data
 		} else {
-			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationTemplateInput`, tmp))
+			return nil, graphql.ErrorOnPath(ctx, fmt.Errorf(`unexpected type %T from directive, should be github.com/kyma-incubator/compass/components/director/pkg/graphql.FormationTemplateUpdateInput`, tmp))
 		}
 	}
 	args["in"] = arg1
@@ -9403,24 +9541,33 @@ func (ec *executionContext) field_Query_formationTemplatesByName_args(ctx contex
 func (ec *executionContext) field_Query_formationTemplates_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *int
+	var arg0 []*LabelFilter
+	if tmp, ok := rawArgs["filter"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("filter"))
+		arg0, err = ec.unmarshalOLabelFilter2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilterᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["filter"] = arg0
+	var arg1 *int
 	if tmp, ok := rawArgs["first"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("first"))
-		arg0, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["first"] = arg0
-	var arg1 *PageCursor
+	args["first"] = arg1
+	var arg2 *PageCursor
 	if tmp, ok := rawArgs["after"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("after"))
-		arg1, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
+		arg2, err = ec.unmarshalOPageCursor2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐPageCursor(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["after"] = arg1
+	args["after"] = arg2
 	return args, nil
 }
 
@@ -22814,6 +22961,143 @@ func (ec *executionContext) fieldContext_FormationTemplate_discoveryConsumers(ct
 	return fc, nil
 }
 
+func (ec *executionContext) _FormationTemplate_labels(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FormationTemplate_labels(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.FormationTemplate().Labels(rctx, obj, fc.Args["key"].(*string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(Labels)
+	fc.Result = res
+	return ec.marshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FormationTemplate_labels(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FormationTemplate",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Labels does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_FormationTemplate_labels_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FormationTemplate_createdAt(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FormationTemplate_createdAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CreatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(Timestamp)
+	fc.Result = res
+	return ec.marshalNTimestamp2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FormationTemplate_createdAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FormationTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _FormationTemplate_updatedAt(ctx context.Context, field graphql.CollectedField, obj *FormationTemplate) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_FormationTemplate_updatedAt(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.UpdatedAt, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Timestamp)
+	fc.Result = res
+	return ec.marshalOTimestamp2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐTimestamp(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_FormationTemplate_updatedAt(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "FormationTemplate",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Timestamp does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _FormationTemplatePage_data(ctx context.Context, field graphql.CollectedField, obj *FormationTemplatePage) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_FormationTemplatePage_data(ctx, field)
 	if err != nil {
@@ -22875,6 +23159,12 @@ func (ec *executionContext) fieldContext_FormationTemplatePage_data(ctx context.
 				return ec.fieldContext_FormationTemplate_supportsReset(ctx, field)
 			case "discoveryConsumers":
 				return ec.fieldContext_FormationTemplate_discoveryConsumers(ctx, field)
+			case "labels":
+				return ec.fieldContext_FormationTemplate_labels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_FormationTemplate_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_FormationTemplate_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationTemplate", field.Name)
 		},
@@ -31634,6 +31924,176 @@ func (ec *executionContext) fieldContext_Mutation_deleteRuntimeLabel(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_setFormationTemplateLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_setFormationTemplateLabel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().SetFormationTemplateLabel(rctx, fc.Args["formationTemplateID"].(string), fc.Args["in"].(LabelInput))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.setFormationTemplateLabel")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Label); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Label`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Label)
+	fc.Result = res
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_setFormationTemplateLabel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_Label_key(ctx, field)
+			case "value":
+				return ec.fieldContext_Label_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Label", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_setFormationTemplateLabel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteFormationTemplateLabel(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteFormationTemplateLabel(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().DeleteFormationTemplateLabel(rctx, fc.Args["formationTemplateID"].(string), fc.Args["key"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.deleteFormationTemplateLabel")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Label); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Label`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*Label)
+	fc.Result = res
+	return ec.marshalNLabel2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteFormationTemplateLabel(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_Label_key(ctx, field)
+			case "value":
+				return ec.fieldContext_Label_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Label", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteFormationTemplateLabel_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_setDefaultEventingForApplication(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_setDefaultEventingForApplication(ctx, field)
 	if err != nil {
@@ -33273,7 +33733,7 @@ func (ec *executionContext) _Mutation_createFormationTemplate(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().CreateFormationTemplate(rctx, fc.Args["in"].(FormationTemplateInput))
+			return ec.resolvers.Mutation().CreateFormationTemplate(rctx, fc.Args["in"].(FormationTemplateRegisterInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.createFormationTemplate")
@@ -33340,6 +33800,12 @@ func (ec *executionContext) fieldContext_Mutation_createFormationTemplate(ctx co
 				return ec.fieldContext_FormationTemplate_supportsReset(ctx, field)
 			case "discoveryConsumers":
 				return ec.fieldContext_FormationTemplate_discoveryConsumers(ctx, field)
+			case "labels":
+				return ec.fieldContext_FormationTemplate_labels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_FormationTemplate_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_FormationTemplate_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationTemplate", field.Name)
 		},
@@ -33440,6 +33906,12 @@ func (ec *executionContext) fieldContext_Mutation_deleteFormationTemplate(ctx co
 				return ec.fieldContext_FormationTemplate_supportsReset(ctx, field)
 			case "discoveryConsumers":
 				return ec.fieldContext_FormationTemplate_discoveryConsumers(ctx, field)
+			case "labels":
+				return ec.fieldContext_FormationTemplate_labels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_FormationTemplate_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_FormationTemplate_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationTemplate", field.Name)
 		},
@@ -33473,7 +33945,7 @@ func (ec *executionContext) _Mutation_updateFormationTemplate(ctx context.Contex
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().UpdateFormationTemplate(rctx, fc.Args["id"].(string), fc.Args["in"].(FormationTemplateInput))
+			return ec.resolvers.Mutation().UpdateFormationTemplate(rctx, fc.Args["id"].(string), fc.Args["in"].(FormationTemplateUpdateInput))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.updateFormationTemplate")
@@ -33540,6 +34012,12 @@ func (ec *executionContext) fieldContext_Mutation_updateFormationTemplate(ctx co
 				return ec.fieldContext_FormationTemplate_supportsReset(ctx, field)
 			case "discoveryConsumers":
 				return ec.fieldContext_FormationTemplate_discoveryConsumers(ctx, field)
+			case "labels":
+				return ec.fieldContext_FormationTemplate_labels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_FormationTemplate_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_FormationTemplate_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationTemplate", field.Name)
 		},
@@ -39170,6 +39648,12 @@ func (ec *executionContext) fieldContext_Query_formationTemplate(ctx context.Con
 				return ec.fieldContext_FormationTemplate_supportsReset(ctx, field)
 			case "discoveryConsumers":
 				return ec.fieldContext_FormationTemplate_discoveryConsumers(ctx, field)
+			case "labels":
+				return ec.fieldContext_FormationTemplate_labels(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_FormationTemplate_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_FormationTemplate_updatedAt(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type FormationTemplate", field.Name)
 		},
@@ -39203,7 +39687,7 @@ func (ec *executionContext) _Query_formationTemplates(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Query().FormationTemplates(rctx, fc.Args["first"].(*int), fc.Args["after"].(*PageCursor))
+			return ec.resolvers.Query().FormationTemplates(rctx, fc.Args["filter"].([]*LabelFilter), fc.Args["first"].(*int), fc.Args["after"].(*PageCursor))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.query.formationTemplates")
@@ -46776,14 +47260,14 @@ func (ec *executionContext) unmarshalInputFormationInput(ctx context.Context, ob
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Context, obj interface{}) (FormationTemplateInput, error) {
-	var it FormationTemplateInput
+func (ec *executionContext) unmarshalInputFormationTemplateRegisterInput(ctx context.Context, obj interface{}) (FormationTemplateRegisterInput, error) {
+	var it FormationTemplateRegisterInput
 	asMap := map[string]interface{}{}
 	for k, v := range obj.(map[string]interface{}) {
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"name", "applicationTypes", "runtimeTypes", "runtimeTypeDisplayName", "runtimeArtifactKind", "webhooks", "leadingProductIDs", "supportsReset", "discoveryConsumers"}
+	fieldsInOrder := [...]string{"name", "applicationTypes", "runtimeTypes", "runtimeTypeDisplayName", "runtimeArtifactKind", "webhooks", "leadingProductIDs", "supportsReset", "discoveryConsumers", "labels"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -46832,6 +47316,89 @@ func (ec *executionContext) unmarshalInputFormationTemplateInput(ctx context.Con
 				return it, err
 			}
 			it.Webhooks = data
+		case "leadingProductIDs":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leadingProductIDs"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.LeadingProductIDs = data
+		case "supportsReset":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("supportsReset"))
+			data, err := ec.unmarshalOBoolean2ᚖbool(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SupportsReset = data
+		case "discoveryConsumers":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("discoveryConsumers"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.DiscoveryConsumers = data
+		case "labels":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("labels"))
+			data, err := ec.unmarshalOLabels2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabels(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Labels = data
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputFormationTemplateUpdateInput(ctx context.Context, obj interface{}) (FormationTemplateUpdateInput, error) {
+	var it FormationTemplateUpdateInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"name", "applicationTypes", "runtimeTypes", "runtimeTypeDisplayName", "runtimeArtifactKind", "leadingProductIDs", "supportsReset", "discoveryConsumers"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "name":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Name = data
+		case "applicationTypes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("applicationTypes"))
+			data, err := ec.unmarshalNString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.ApplicationTypes = data
+		case "runtimeTypes":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runtimeTypes"))
+			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuntimeTypes = data
+		case "runtimeTypeDisplayName":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runtimeTypeDisplayName"))
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuntimeTypeDisplayName = data
+		case "runtimeArtifactKind":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("runtimeArtifactKind"))
+			data, err := ec.unmarshalOArtifactType2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐArtifactType(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.RuntimeArtifactKind = data
 		case "leadingProductIDs":
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("leadingProductIDs"))
 			data, err := ec.unmarshalOString2ᚕstringᚄ(ctx, v)
@@ -51447,6 +52014,46 @@ func (ec *executionContext) _FormationTemplate(ctx context.Context, sel ast.Sele
 			}
 		case "discoveryConsumers":
 			out.Values[i] = ec._FormationTemplate_discoveryConsumers(ctx, field, obj)
+		case "labels":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._FormationTemplate_labels(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		case "createdAt":
+			out.Values[i] = ec._FormationTemplate_createdAt(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				atomic.AddUint32(&out.Invalids, 1)
+			}
+		case "updatedAt":
+			out.Values[i] = ec._FormationTemplate_updatedAt(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -52477,6 +53084,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "deleteRuntimeLabel":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteRuntimeLabel(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "setFormationTemplateLabel":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_setFormationTemplateLabel(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deleteFormationTemplateLabel":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteFormationTemplateLabel(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -56635,11 +57256,6 @@ func (ec *executionContext) marshalNFormationTemplate2ᚖgithubᚗcomᚋkymaᚑi
 	return ec._FormationTemplate(ctx, sel, v)
 }
 
-func (ec *executionContext) unmarshalNFormationTemplateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateInput(ctx context.Context, v interface{}) (FormationTemplateInput, error) {
-	res, err := ec.unmarshalInputFormationTemplateInput(ctx, v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
 func (ec *executionContext) marshalNFormationTemplatePage2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplatePage(ctx context.Context, sel ast.SelectionSet, v FormationTemplatePage) graphql.Marshaler {
 	return ec._FormationTemplatePage(ctx, sel, &v)
 }
@@ -56652,6 +57268,16 @@ func (ec *executionContext) marshalNFormationTemplatePage2ᚖgithubᚗcomᚋkyma
 		return graphql.Null
 	}
 	return ec._FormationTemplatePage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNFormationTemplateRegisterInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateRegisterInput(ctx context.Context, v interface{}) (FormationTemplateRegisterInput, error) {
+	res, err := ec.unmarshalInputFormationTemplateRegisterInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNFormationTemplateUpdateInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐFormationTemplateUpdateInput(ctx context.Context, v interface{}) (FormationTemplateUpdateInput, error) {
+	res, err := ec.unmarshalInputFormationTemplateUpdateInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNHealthCheck2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐHealthCheckᚄ(ctx context.Context, sel ast.SelectionSet, v []*HealthCheck) graphql.Marshaler {
@@ -57002,6 +57628,11 @@ func (ec *executionContext) unmarshalNLabelDefinitionInput2githubᚗcomᚋkyma�
 func (ec *executionContext) unmarshalNLabelFilter2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelFilter(ctx context.Context, v interface{}) (*LabelFilter, error) {
 	res, err := ec.unmarshalInputLabelFilter(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalNLabelInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelInput(ctx context.Context, v interface{}) (LabelInput, error) {
+	res, err := ec.unmarshalInputLabelInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) unmarshalNLabelSelectorInput2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabelSelectorInput(ctx context.Context, v interface{}) (LabelSelectorInput, error) {

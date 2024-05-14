@@ -59,6 +59,8 @@ const (
 	AppTemplateLabelableObject LabelableObject = "Application Template"
 	// WebhookLabelableObject represents a webhook entity.
 	WebhookLabelableObject LabelableObject = "Webhook"
+	// FormationTemplateLabelableObject represents a formation template entity.
+	FormationTemplateLabelableObject LabelableObject = "Formation Template"
 )
 
 // GetResourceType returns the resource type of the label based on the referenced entity.
@@ -74,6 +76,8 @@ func (obj LabelableObject) GetResourceType() resource.Type {
 		return resource.TenantLabel
 	case WebhookLabelableObject:
 		return resource.Webhook
+	case FormationTemplateLabelableObject:
+		return resource.FormationTemplate
 	}
 	return ""
 }
