@@ -62,11 +62,14 @@ func (c *converter) ToGraphQL(in *model.Operation) (*graphql.Operation, error) {
 		return nil, err
 	}
 
+	opErrorSeverity := c.operationErrorSeverityToGraphQL(in.ErrorSeverity)
+
 	return &graphql.Operation{
 		ID:            in.ID,
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         str.StringifyJSONRawMessage(in.Error),
+		ErrorSeverity: &opErrorSeverity,
 		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
 		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
 	}, nil
@@ -112,5 +115,18 @@ func (c *converter) operationStatusModelToGraphQL(in model.OperationStatus) (gra
 		return graphql.OperationStatusFailed, nil
 	default:
 		return "", errors.Errorf("unknown operation status %v", in)
+	}
+}
+
+func (c *converter) operationErrorSeverityToGraphQL(in model.OperationErrorSeverity) graphql.OperationErrorSeverity {
+	switch in {
+	case model.OperationErrorSeverityError:
+		return graphql.OperationErrorSeverityError
+	case model.OperationErrorSeverityWarning:
+		return graphql.OperationErrorSeverityWarning
+	case model.OperationErrorSeverityInfo:
+		return graphql.OperationErrorSeverityInfo
+	default:
+		return ""
 	}
 }

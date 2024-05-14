@@ -779,12 +779,13 @@ type OneTimeTokenInput struct {
 }
 
 type Operation struct {
-	ID            string                 `json:"id"`
-	OperationType ScheduledOperationType `json:"operationType"`
-	Status        OperationStatus        `json:"status"`
-	Error         *string                `json:"error,omitempty"`
-	CreatedAt     *Timestamp             `json:"createdAt,omitempty"`
-	UpdatedAt     *Timestamp             `json:"updatedAt,omitempty"`
+	ID            string                  `json:"id"`
+	OperationType ScheduledOperationType  `json:"operationType"`
+	Status        OperationStatus         `json:"status"`
+	Error         *string                 `json:"error,omitempty"`
+	ErrorSeverity *OperationErrorSeverity `json:"errorSeverity,omitempty"`
+	CreatedAt     *Timestamp              `json:"createdAt,omitempty"`
+	UpdatedAt     *Timestamp              `json:"updatedAt,omitempty"`
 }
 
 type PageInfo struct {
@@ -1794,6 +1795,49 @@ func (e *OneTimeTokenType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OneTimeTokenType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OperationErrorSeverity string
+
+const (
+	OperationErrorSeverityInfo    OperationErrorSeverity = "Info"
+	OperationErrorSeverityWarning OperationErrorSeverity = "Warning"
+	OperationErrorSeverityError   OperationErrorSeverity = "Error"
+)
+
+var AllOperationErrorSeverity = []OperationErrorSeverity{
+	OperationErrorSeverityInfo,
+	OperationErrorSeverityWarning,
+	OperationErrorSeverityError,
+}
+
+func (e OperationErrorSeverity) IsValid() bool {
+	switch e {
+	case OperationErrorSeverityInfo, OperationErrorSeverityWarning, OperationErrorSeverityError:
+		return true
+	}
+	return false
+}
+
+func (e OperationErrorSeverity) String() string {
+	return string(e)
+}
+
+func (e *OperationErrorSeverity) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationErrorSeverity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationErrorSeverity", str)
+	}
+	return nil
+}
+
+func (e OperationErrorSeverity) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

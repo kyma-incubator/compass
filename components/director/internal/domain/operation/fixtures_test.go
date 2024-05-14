@@ -76,23 +76,27 @@ func fixOperationModelWithID(id string, opType model.OperationType, opStatus mod
 
 func fixOperationModelWithIDAndTimestamp(id string, opType model.OperationType, opStatus model.OperationStatus, errorMsg string, priority int, timestamp *time.Time) *model.Operation {
 	return &model.Operation{
-		ID:        id,
-		OpType:    opType,
-		Status:    opStatus,
-		Data:      json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
-		Error:     json.RawMessage(errorMsg),
-		Priority:  priority,
-		CreatedAt: timestamp,
-		UpdatedAt: timestamp,
+		ID:            id,
+		OpType:        opType,
+		Status:        opStatus,
+		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
+		Error:         json.RawMessage(errorMsg),
+		ErrorSeverity: model.OperationErrorSeverityInfo,
+		Priority:      priority,
+		CreatedAt:     timestamp,
+		UpdatedAt:     timestamp,
 	}
 }
 
 func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOperationType, opStatus graphql.OperationStatus, errorMsg string, timestamp *time.Time) *graphql.Operation {
+	infoSeverity := graphql.OperationErrorSeverityInfo
+
 	return &graphql.Operation{
 		ID:            id,
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         &errorMsg,
+		ErrorSeverity: &infoSeverity,
 		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
 		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
 	}
