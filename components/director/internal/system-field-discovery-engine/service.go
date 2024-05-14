@@ -70,13 +70,20 @@ type TenantService interface {
 //
 //go:generate mockery --name=SystemFieldDiscoveryEngineConfig --output=automock --outpkg=automock --case=underscore --disable-version-string
 type SystemFieldDiscoveryEngineConfig interface {
-	PrepareConfiguration() error
+	PrepareConfiguration() (*config.SystemFieldDiscoveryEngineConfig, error)
+}
+
+// Client is responsible for making HTTP requests.
+//
+//go:generate mockery --name=Client --output=automock --outpkg=automock --case=underscore --disable-version-string
+type Client interface {
+	Do(req *http.Request) (*http.Response, error)
 }
 
 // Service consists of various resource services responsible for service-layer system field discovery engine operations.
 type Service struct {
 	cfg      config.SystemFieldDiscoveryEngineConfig
-	client   *http.Client
+	client   Client
 	transact persistence.Transactioner
 
 	appSvc         ApplicationService
@@ -85,12 +92,13 @@ type Service struct {
 }
 
 // NewSystemFieldDiscoverEngineService returns a new object responsible for service-layer system field discovery engine operations.
-func NewSystemFieldDiscoverEngineService(cfg config.SystemFieldDiscoveryEngineConfig, client *http.Client, transact persistence.Transactioner, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, tenantSvc TenantService) (*Service, error) {
-	if err := cfg.PrepareConfiguration(); err != nil {
+func NewSystemFieldDiscoverEngineService(cfg SystemFieldDiscoveryEngineConfig, client Client, transact persistence.Transactioner, appSvc ApplicationService, appTemplateSvc ApplicationTemplateService, tenantSvc TenantService) (*Service, error) {
+	conf, err := cfg.PrepareConfiguration()
+	if err != nil {
 		return nil, errors.Wrap(err, "while preparing system field discovery engine configuration")
 	}
 	return &Service{
-		cfg:            cfg,
+		cfg:            *conf,
 		transact:       transact,
 		client:         client,
 		appSvc:         appSvc,
@@ -124,6 +132,7 @@ func (s *Service) ProcessSaasRegistryApplication(ctx context.Context, appID, ten
 	var response subscriptionsResponse
 	if err = json.Unmarshal(respBody, &response); err != nil {
 		log.C(ctx).Errorf(errors.Wrap(err, "failed to unmarshal subscriptions response").Error())
+		return errors.Wrapf(err, "while unmarshaling subscription response")
 	}
 	for _, subscription := range response.Subscriptions {
 		processed, err := s.processSubscription(ctx, subscription, url, appID)
@@ -164,8 +173,7 @@ func (s *Service) getRegionLabelInTx(ctx context.Context, appID string) (string,
 	}
 	regionValue, ok := label.Value.(string)
 	if !ok {
-		log.C(ctx).Infof("%q label for applicationTemplate with ID %q is not a string", regionLabelKey, *app.ApplicationTemplateID)
-		return "", nil
+		return "", errors.Errorf("%q label for applicationTemplate with ID %q is not a string", regionLabelKey, *app.ApplicationTemplateID)
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -236,7 +244,7 @@ func (s *Service) processSubscription(ctx context.Context, subscription subscrip
 	return true, tx.Commit()
 }
 
-func executeCall(ctx context.Context, client *http.Client, url string) ([]byte, error) {
+func executeCall(ctx context.Context, client Client, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil, errors.Wrapf(err, "error while creating request for URL %q", url)

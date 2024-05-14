@@ -3,8 +3,9 @@ package subscription_test
 import (
 	"context"
 	"fmt"
-	systemfielddiscoveryapiclient "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
 	"testing"
+
+	systemfielddiscoveryapiclient "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 

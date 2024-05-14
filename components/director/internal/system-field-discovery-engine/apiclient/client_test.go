@@ -2,12 +2,13 @@ package apiclient_test
 
 import (
 	"context"
-	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
-	"github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
+	"github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/require"

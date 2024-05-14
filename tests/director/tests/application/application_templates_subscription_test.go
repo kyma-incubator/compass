@@ -512,11 +512,11 @@ func TestSubscriptionApplicationTemplateFlowWithSystemFieldDiscoveryLabel(baseT 
 				appPageExt = fixtures.GetApplicationPageExt(t, ctx, certSecuredGraphQLClient, subscriptionConsumerSubaccountID)
 
 				if appPageExt.Data[0].BaseURL != nil {
-					t.Log("application webhook was executed and base URL was updated successfully")
+					t.Log("The system filed discovery operation was executed and base URL was updated successfully")
 					return true
 				}
 
-				t.Log("application webhook was executed, but application base URL was not updated")
+				t.Log("The system filed discovery operation was executed, but application base URL was not updated")
 				return false
 			}, timeout, checkInterval, "Waiting for application base URL to be updated.")
 		})

@@ -20,24 +20,25 @@ type SystemFieldDiscoveryEngineConfig struct {
 }
 
 // PrepareConfiguration take cares to build the system field discovery engine configuration
-func (c *SystemFieldDiscoveryEngineConfig) PrepareConfiguration() error {
-	if err := c.MapSaasRegConfigs(); err != nil {
-		return errors.Wrap(err, "while building region instances credentials")
+func (c SystemFieldDiscoveryEngineConfig) PrepareConfiguration() (*SystemFieldDiscoveryEngineConfig, error) {
+	sfdCfg, err := c.MapSaasRegConfigs()
+	if err != nil {
+		return nil, errors.Wrap(err, "while building region instances credentials")
 	}
 
-	return nil
+	return sfdCfg, nil
 }
 
 // MapSaasRegConfigs parses the SaasRegConfigs json string to map with key: region name and value: SaasRegConfig for the instance in the region
-func (c *SystemFieldDiscoveryEngineConfig) MapSaasRegConfigs() error {
+func (c SystemFieldDiscoveryEngineConfig) MapSaasRegConfigs() (*SystemFieldDiscoveryEngineConfig, error) {
 	secretData, err := directorcfg.ReadConfigFile(c.SaasRegSecretPath)
 	if err != nil {
-		return errors.Wrapf(err, "while getting destinations secret")
+		return nil, errors.Wrapf(err, "while getting destinations secret")
 	}
 
 	bindingsMap, err := directorcfg.ParseConfigToJSONMap(secretData)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	c.RegionToSaasRegConfig = make(map[string]SaasRegConfig)
 	for region, config := range bindingsMap {
@@ -50,11 +51,11 @@ func (c *SystemFieldDiscoveryEngineConfig) MapSaasRegConfigs() error {
 
 		if err := s.validate(); err != nil {
 			c.RegionToSaasRegConfig = nil
-			return errors.Wrapf(err, "while validating saas reg config for region: %q", region)
+			return nil, errors.Wrapf(err, "while validating saas reg config for region: %q", region)
 		}
 
 		c.RegionToSaasRegConfig[region] = s
 	}
 
-	return nil
+	return &c, nil
 }

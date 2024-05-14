@@ -3,6 +3,7 @@ package subscription
 import (
 	"context"
 	"encoding/json"
+
 	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 
 	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"

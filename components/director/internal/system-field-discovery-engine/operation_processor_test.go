@@ -3,12 +3,13 @@ package systemfielddiscoveryengine_test
 import (
 	"context"
 	"errors"
+	"testing"
+
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
 	"github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/automock"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
-	"testing"
 )
 
 func TestOperationProcessor_Process(t *testing.T) {
