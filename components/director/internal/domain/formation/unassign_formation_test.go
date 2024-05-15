@@ -2490,7 +2490,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when formation is coming from ASA but ignoreASA is true",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(4)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -2539,6 +2539,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 					engine := &automock.AsaEngine{}
 					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(true, nil)
 					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+					return svc
 				},
 				ObjectType:        objectTypeData.ObjectType,
 				ObjectID:          objectTypeData.ObjectID,
