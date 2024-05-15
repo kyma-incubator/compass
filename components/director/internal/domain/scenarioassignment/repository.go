@@ -26,7 +26,6 @@ func NewRepository(conv EntityConverter) *repository {
 	return &repository{
 		creator:         repo.NewCreatorGlobal(resource.AutomaticScenarioAssigment, tableName, columns),
 		lister:          repo.NewListerWithEmbeddedTenant(tableName, tenantColumn, columns),
-		conditionLister: repo.NewConditionTreeListerWithEmbeddedTenant(tableName, tenantColumn, columns),
 		singleGetter:    repo.NewSingleGetterWithEmbeddedTenant(tableName, tenantColumn, columns),
 		pageableQuerier: repo.NewPageableQuerierWithEmbeddedTenant(tableName, tenantColumn, columns),
 		deleter:         repo.NewDeleterWithEmbeddedTenant(tableName, tenantColumn),
@@ -38,7 +37,6 @@ type repository struct {
 	creator         repo.CreatorGlobal
 	singleGetter    repo.SingleGetter
 	lister          repo.Lister
-	conditionLister repo.ConditionTreeLister
 	pageableQuerier repo.PageableQuerier
 	deleter         repo.Deleter
 	conv            EntityConverter

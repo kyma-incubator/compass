@@ -882,7 +882,7 @@ func (r *Resolver) unassignAssociatedFormationsComingFromASA(ctx context.Context
 	for _, parentTenantID := range tntMapping.Parents {
 		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
 
-		scenarios, err := r.asaEngine.GetScenariosFromMatchingASAs(ctx, runtimeID, graphql.FormationObjectTypeRuntime)
+		scenarios, err := r.asaEngine.GetScenariosFromMatchingASAs(ctxWithParentTenant, runtimeID, graphql.FormationObjectTypeRuntime)
 		if err != nil {
 			return errors.Wrap(err, "while getting scenarios from ASA")
 		}
