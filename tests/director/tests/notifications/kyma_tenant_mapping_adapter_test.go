@@ -28,7 +28,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 	formationTemplateName := "test-kyma-formation-template"
 	runtimeArtifactKind := graphql.ArtifactTypeEnvironmentInstance
 	supportReset := true
-	formationTemplateInput := graphql.FormationTemplateInput{
+	formationTemplateRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       []string{applicationType},
 		RuntimeTypes:           []string{"kyma"},
@@ -39,7 +39,7 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	// Create formation from template
 	formationName := "test-kyma-adapter-formation"
@@ -194,14 +194,26 @@ func TestKymaTenantMappingAdapter(t *testing.T) {
 
 	// Assert the assignments - there should be an assignment with source APP, target RUNTIME and state CONFIG_PENDING
 	t.Logf("Assert formation assignments for formation with ID: %q", formation.ID)
-	expectedAssignments := map[string]map[string]fixtures.AssignmentState{
+	expectedAssignments := map[string]map[string]fixtures.Assignment{
 		app.ID: {
-			app.ID:     fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			runtime.ID: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: nil, Value: nil, Error: nil},
+			app.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(app.ID, app.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+			},
+			runtime.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "CONFIG_PENDING", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(app.ID, runtime.ID, "ASSIGN", "ASSIGN_OBJECT", false)},
+			},
 		},
 		runtime.ID: {
-			app.ID:     fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-			runtime.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+			app.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(runtime.ID, app.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+			},
+			runtime.ID: fixtures.Assignment{
+				AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				Operations:       []*fixtures.Operation{fixtures.NewOperation(runtime.ID, runtime.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+			},
 		},
 	}
 	assertFormationAssignments(t, ctx, tenantId, formation.ID, 4, expectedAssignments)

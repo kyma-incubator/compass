@@ -103,6 +103,12 @@ const (
 	FormationAssignmentTargetType  = "FormationAssignmentTargetType"
 	FormationAssignmentState       = "FormationAssignmentState"
 
+	// Assignment Operation constants
+	AssignmentOperationID  = "AssignmentOperationID"
+	AssignmentOperation2ID = "AssignmentOperation2ID"
+	AssignmentOperation3ID = "AssignmentOperation3ID"
+	AssignmentOperation4ID = "AssignmentOperation4ID"
+
 	// Other constants
 	ErrMsg          = "some error"
 	runtimeType     = "runtimeType"

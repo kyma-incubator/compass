@@ -1,7 +1,6 @@
 package formationtemplate_test
 
 import (
-	"context"
 	"reflect"
 	"testing"
 
@@ -15,7 +14,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
-	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -23,11 +21,6 @@ import (
 )
 
 func TestResolver_FormationTemplate(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
@@ -43,7 +36,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
 
 				return svc
 			},
@@ -61,7 +54,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testErr)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil, testErr)
 
 				return svc
 			},
@@ -74,20 +67,20 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, apperrors.NewNotFoundError(resource.FormationTemplate, testID))
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil, formationTemplateNotFoundErr)
 
 				return svc
 			},
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
 			ExpectedOutput:             nil,
-			ExpectedError:              apperrors.NewNotFoundError(resource.FormationTemplate, testID),
+			ExpectedError:              formationTemplateNotFoundErr,
 		},
 		{
 			Name: "Returns error when failing on the committing of a transaction",
 			TxFn: txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
 
 				return svc
 			},
@@ -105,7 +98,7 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
 
 				return svc
 			},
@@ -137,7 +130,138 @@ func TestResolver_FormationTemplate(t *testing.T) {
 			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
-			result, err := resolver.FormationTemplate(ctx, testID)
+			result, err := resolver.FormationTemplate(ctx, testFormationTemplateID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, persist, formationTemplateSvc, formationTemplateConverter)
+		})
+	}
+}
+
+func TestResolver_FormationTemplatesByName(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+	testFormationTemplateName := formationTemplateName
+
+	first := 2
+	after := "test"
+	gqlAfter := graphql.PageCursor(after)
+
+	testCases := []struct {
+		Name                       string
+		First                      *int
+		TxFn                       func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		FormationTemplateConverter func() *automock.FormationTemplateConverter
+		FormationTemplateService   func() *automock.FormationTemplateService
+		ExpectedOutput             *graphql.FormationTemplatePage
+		ExpectedError              error
+	}{
+		{
+			Name:  "Success",
+			TxFn:  txGen.ThatSucceeds,
+			First: &first,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("List", txtest.CtxWithDBMatcher(), nilLabelFilters, &testFormationTemplateName, first, after).Return(&formationTemplateModelPage, nil)
+
+				return svc
+			},
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("MultipleToGraphQL", formationTemplateModelPage.Data).Return(graphQLFormationTemplatePage.Data, nil)
+
+				return converter
+			},
+			ExpectedOutput: &graphQLFormationTemplatePage,
+			ExpectedError:  nil,
+		},
+		{
+			Name:  "Error when listing from service fails",
+			First: &first,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("List", txtest.CtxWithDBMatcher(), nilLabelFilters, &testFormationTemplateName, first, after).Return(nil, testErr)
+
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Error when converting to graphql fails",
+			First: &first,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("List", txtest.CtxWithDBMatcher(), nilLabelFilters, &testFormationTemplateName, first, after).Return(&formationTemplateModelPage, nil)
+
+				return svc
+			},
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("MultipleToGraphQL", formationTemplateModelPage.Data).Return(nil, testErr)
+
+				return converter
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Returns error when failing on the committing of a transaction",
+			First: &first,
+			TxFn:  txGen.ThatFailsOnCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("List", txtest.CtxWithDBMatcher(), nilLabelFilters, &testFormationTemplateName, first, after).Return(&formationTemplateModelPage, nil)
+
+				return svc
+			},
+			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
+				converter := &automock.FormationTemplateConverter{}
+				converter.On("MultipleToGraphQL", formationTemplateModelPage.Data).Return(graphQLFormationTemplatePage.Data, nil)
+
+				return converter
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:          "Returns error missing first parameter",
+			First:         nil,
+			TxFn:          txGen.ThatDoesntExpectCommit,
+			ExpectedError: apperrors.NewInvalidDataError("missing required parameter: 'first'"),
+		},
+		{
+			Name:          "Returns error when failing on the beginning of a transaction",
+			First:         &first,
+			TxFn:          txGen.ThatFailsOnBegin,
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+
+			formationTemplateSvc := UnusedFormationTemplateService()
+			if testCase.FormationTemplateService != nil {
+				formationTemplateSvc = testCase.FormationTemplateService()
+			}
+
+			formationTemplateConverter := UnusedFormationTemplateConverter()
+			if testCase.FormationTemplateConverter != nil {
+				formationTemplateConverter = testCase.FormationTemplateConverter()
+			}
+
+			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
+
+			// WHEN
+			result, err := resolver.FormationTemplatesByName(ctx, &testFormationTemplateName, testCase.First, &gqlAfter)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -154,11 +278,6 @@ func TestResolver_FormationTemplate(t *testing.T) {
 }
 
 func TestResolver_FormationTemplates(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	first := 2
@@ -180,7 +299,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			First: &first,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), emptyLabelFilters, nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -199,13 +318,12 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(nil, testErr)
+				svc.On("List", txtest.CtxWithDBMatcher(), emptyLabelFilters, nilStr, first, after).Return(nil, testErr)
 
 				return svc
 			},
-			FormationTemplateConverter: UnusedFormationTemplateConverter,
-			ExpectedOutput:             nil,
-			ExpectedError:              testErr,
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
 		},
 		{
 			Name:  "Error when converting to graphql fails",
@@ -213,7 +331,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), emptyLabelFilters, nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -232,7 +350,7 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			TxFn:  txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("List", txtest.CtxWithDBMatcher(), nilStr, first, after).Return(&formationTemplateModelPage, nil)
+				svc.On("List", txtest.CtxWithDBMatcher(), emptyLabelFilters, nilStr, first, after).Return(&formationTemplateModelPage, nil)
 
 				return svc
 			},
@@ -246,35 +364,39 @@ func TestResolver_FormationTemplates(t *testing.T) {
 			ExpectedError:  testErr,
 		},
 		{
-			Name:                       "Returns error missing first parameter",
-			First:                      nil,
-			TxFn:                       txGen.ThatDoesntExpectCommit,
-			FormationTemplateService:   UnusedFormationTemplateService,
-			FormationTemplateConverter: UnusedFormationTemplateConverter,
-			ExpectedOutput:             nil,
-			ExpectedError:              apperrors.NewInvalidDataError("missing required parameter 'first'"),
+			Name:           "Returns error missing first parameter",
+			First:          nil,
+			TxFn:           txGen.ThatDoesntExpectCommit,
+			ExpectedOutput: nil,
+			ExpectedError:  apperrors.NewInvalidDataError("missing required parameter: 'first'"),
 		},
 		{
-			Name:                       "Returns error when failing on the beginning of a transaction",
-			First:                      &first,
-			TxFn:                       txGen.ThatFailsOnBegin,
-			FormationTemplateService:   UnusedFormationTemplateService,
-			FormationTemplateConverter: UnusedFormationTemplateConverter,
-			ExpectedOutput:             nil,
-			ExpectedError:              testErr,
+			Name:           "Returns error when failing on the beginning of a transaction",
+			First:          &first,
+			TxFn:           txGen.ThatFailsOnBegin,
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
 		},
 	}
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persist, transact := testCase.TxFn()
-			formationTemplateSvc := testCase.FormationTemplateService()
-			formationTemplateConverter := testCase.FormationTemplateConverter()
+
+			formationTemplateSvc := UnusedFormationTemplateService()
+			if testCase.FormationTemplateService != nil {
+				formationTemplateSvc = testCase.FormationTemplateService()
+			}
+
+			formationTemplateConverter := UnusedFormationTemplateConverter()
+			if testCase.FormationTemplateConverter != nil {
+				formationTemplateConverter = testCase.FormationTemplateConverter()
+			}
 
 			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
-			result, err := resolver.FormationTemplates(ctx, testCase.First, &gqlAfter)
+			result, err := resolver.FormationTemplates(ctx, nil, testCase.First, &gqlAfter)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -291,18 +413,6 @@ func TestResolver_FormationTemplates(t *testing.T) {
 }
 
 func TestResolver_UpdateFormationTemplate(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
-	// removing the webhooks below because they do not affect the flow in any way but their validation is difficult to set up properly
-	gqlInputWithoutWebhooks := formationTemplateGraphQLInput
-	gqlInputWithoutWebhooks.Webhooks = nil
-
-	modelInputWithoutWebhooks := formationTemplateModelInput
-	modelInputWithoutWebhooks.Webhooks = nil
-
 	modelWithoutWebhooks := formationTemplateModel
 	modelWithoutWebhooks.Webhooks = nil
 
@@ -313,7 +423,7 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 
 	testCases := []struct {
 		Name                       string
-		Input                      graphql.FormationTemplateInput
+		Input                      graphql.FormationTemplateUpdateInput
 		TxFn                       func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		FormationTemplateConverter func() *automock.FormationTemplateConverter
 		FormationTemplateService   func() *automock.FormationTemplateService
@@ -323,17 +433,17 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		{
 			Name:  "Success",
 			TxFn:  txGen.ThatSucceeds,
-			Input: gqlInputWithoutWebhooks,
+			Input: formationTemplateUpdateInputGraphQL,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), testID, &modelInputWithoutWebhooks).Return(nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelWithoutWebhooks, nil)
+				svc.On("Update", txtest.CtxWithDBMatcher(), testFormationTemplateID, &formationTemplateUpdateInputModel).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&modelWithoutWebhooks, nil)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromUpdateInputGraphQL", &formationTemplateUpdateInputGraphQL).Return(&formationTemplateUpdateInputModel, nil)
 				converter.On("ToGraphQL", &modelWithoutWebhooks).Return(&graphQLFormationTemplateWithoutWebhooks, nil)
 
 				return converter
@@ -343,12 +453,12 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:                     "Error when converting from graphql fails",
-			Input:                    gqlInputWithoutWebhooks,
+			Input:                    formationTemplateUpdateInputGraphQL,
 			TxFn:                     txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: UnusedFormationTemplateService,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(nil, testErr)
+				converter.On("FromUpdateInputGraphQL", &formationTemplateUpdateInputGraphQL).Return(nil, testErr)
 
 				return converter
 			},
@@ -357,17 +467,17 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:  "Error when updating call in service fails",
-			Input: gqlInputWithoutWebhooks,
+			Input: formationTemplateUpdateInputGraphQL,
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), testID, &modelInputWithoutWebhooks).Return(testErr)
+				svc.On("Update", txtest.CtxWithDBMatcher(), testFormationTemplateID, &formationTemplateUpdateInputModel).Return(testErr)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromUpdateInputGraphQL", &formationTemplateUpdateInputGraphQL).Return(&formationTemplateUpdateInputModel, nil)
 
 				return converter
 			},
@@ -376,18 +486,18 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:  "Error when get call in service fails",
-			Input: gqlInputWithoutWebhooks,
+			Input: formationTemplateUpdateInputGraphQL,
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), testID, &modelInputWithoutWebhooks).Return(nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testErr)
+				svc.On("Update", txtest.CtxWithDBMatcher(), testFormationTemplateID, &formationTemplateUpdateInputModel).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil, testErr)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromUpdateInputGraphQL", &formationTemplateUpdateInputGraphQL).Return(&formationTemplateUpdateInputModel, nil)
 
 				return converter
 			},
@@ -396,18 +506,18 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:  "Error when converting to graphql fails",
-			Input: gqlInputWithoutWebhooks,
+			Input: formationTemplateUpdateInputGraphQL,
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), testID, &modelInputWithoutWebhooks).Return(nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelWithoutWebhooks, nil)
+				svc.On("Update", txtest.CtxWithDBMatcher(), testFormationTemplateID, &formationTemplateUpdateInputModel).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&modelWithoutWebhooks, nil)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromUpdateInputGraphQL", &formationTemplateUpdateInputGraphQL).Return(&formationTemplateUpdateInputModel, nil)
 				converter.On("ToGraphQL", &modelWithoutWebhooks).Return(nil, testErr)
 
 				return converter
@@ -418,17 +528,17 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		{
 			Name:  "Returns error when failing on the committing of a transaction",
 			TxFn:  txGen.ThatFailsOnCommit,
-			Input: gqlInputWithoutWebhooks,
+			Input: formationTemplateUpdateInputGraphQL,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Update", txtest.CtxWithDBMatcher(), testID, &modelInputWithoutWebhooks).Return(nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelWithoutWebhooks, nil)
+				svc.On("Update", txtest.CtxWithDBMatcher(), testFormationTemplateID, &formationTemplateUpdateInputModel).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&modelWithoutWebhooks, nil)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromUpdateInputGraphQL", &formationTemplateUpdateInputGraphQL).Return(&formationTemplateUpdateInputModel, nil)
 				converter.On("ToGraphQL", &modelWithoutWebhooks).Return(&graphQLFormationTemplateWithoutWebhooks, nil)
 
 				return converter
@@ -438,7 +548,7 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:                       "Returns error when input validation fails",
-			Input:                      graphql.FormationTemplateInput{},
+			Input:                      graphql.FormationTemplateUpdateInput{},
 			TxFn:                       txGen.ThatDoesntExpectCommit,
 			FormationTemplateService:   UnusedFormationTemplateService,
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
@@ -447,7 +557,7 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:                       "Returns error when failing on the beginning of a transaction",
-			Input:                      formationTemplateGraphQLInput,
+			Input:                      formationTemplateUpdateInputGraphQL,
 			TxFn:                       txGen.ThatFailsOnBegin,
 			FormationTemplateService:   UnusedFormationTemplateService,
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
@@ -465,7 +575,7 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
-			result, err := resolver.UpdateFormationTemplate(ctx, testID, testCase.Input)
+			result, err := resolver.UpdateFormationTemplate(ctx, testFormationTemplateID, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -482,11 +592,6 @@ func TestResolver_UpdateFormationTemplate(t *testing.T) {
 }
 
 func TestResolver_DeleteFormationTemplate(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
@@ -502,8 +607,8 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
-				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
+				svc.On("Delete", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil)
 
 				return svc
 			},
@@ -521,7 +626,7 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testErr)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil, testErr)
 
 				return svc
 			},
@@ -534,8 +639,8 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
-				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(testErr)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
+				svc.On("Delete", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(testErr)
 
 				return svc
 			},
@@ -548,8 +653,8 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
-				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
+				svc.On("Delete", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil)
 
 				return svc
 			},
@@ -567,8 +672,8 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&formationTemplateModel, nil)
-				svc.On("Delete", txtest.CtxWithDBMatcher(), testID).Return(nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&formationTemplateModel, nil)
+				svc.On("Delete", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil)
 
 				return svc
 			},
@@ -600,7 +705,7 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 			resolver := formationtemplate.NewResolver(transact, formationTemplateConverter, formationTemplateSvc, nil, nil, nil)
 
 			// WHEN
-			result, err := resolver.DeleteFormationTemplate(ctx, testID)
+			result, err := resolver.DeleteFormationTemplate(ctx, testFormationTemplateID)
 
 			// THEN
 			if testCase.ExpectedError != nil {
@@ -617,16 +722,11 @@ func TestResolver_DeleteFormationTemplate(t *testing.T) {
 }
 
 func TestResolver_CreateFormationTemplate(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	// removing the webhooks below because they do not affect the flow in any way but their validation is difficult to set up properly
-	gqlInputWithoutWebhooks := formationTemplateGraphQLInput
+	gqlInputWithoutWebhooks := formationTemplateRegisterInputGraphQL
 	gqlInputWithoutWebhooks.Webhooks = nil
 
-	modelInputWithoutWebhooks := formationTemplateModelInput
+	modelInputWithoutWebhooks := formationTemplateRegisterInputModel
 	modelInputWithoutWebhooks.Webhooks = nil
 
 	modelWithoutWebhooks := formationTemplateModel
@@ -639,7 +739,7 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 
 	testCases := []struct {
 		Name                       string
-		Input                      graphql.FormationTemplateInput
+		Input                      graphql.FormationTemplateRegisterInput
 		TxFn                       func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		FormationTemplateConverter func() *automock.FormationTemplateConverter
 		FormationTemplateService   func() *automock.FormationTemplateService
@@ -652,14 +752,14 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			Input: gqlInputWithoutWebhooks,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testID, nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelWithoutWebhooks, nil)
+				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testFormationTemplateID, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&modelWithoutWebhooks, nil)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromRegisterInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
 				converter.On("ToGraphQL", &modelWithoutWebhooks).Return(&graphQLFormationTemplateWithoutWebhooks, nil)
 
 				return converter
@@ -674,7 +774,7 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			FormationTemplateService: UnusedFormationTemplateService,
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(nil, testErr)
+				converter.On("FromRegisterInputGraphQL", &gqlInputWithoutWebhooks).Return(nil, testErr)
 
 				return converter
 			},
@@ -693,7 +793,7 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromRegisterInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
 
 				return converter
 			},
@@ -706,14 +806,14 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testID, nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testErr)
+				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testFormationTemplateID, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(nil, testErr)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromRegisterInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
 
 				return converter
 			},
@@ -726,14 +826,14 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			TxFn:  txGen.ThatDoesntExpectCommit,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testID, nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelWithoutWebhooks, nil)
+				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testFormationTemplateID, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&modelWithoutWebhooks, nil)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromRegisterInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
 				converter.On("ToGraphQL", &modelWithoutWebhooks).Return(nil, testErr)
 
 				return converter
@@ -747,14 +847,14 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 			Input: gqlInputWithoutWebhooks,
 			FormationTemplateService: func() *automock.FormationTemplateService {
 				svc := &automock.FormationTemplateService{}
-				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testID, nil)
-				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelWithoutWebhooks, nil)
+				svc.On("Create", txtest.CtxWithDBMatcher(), &modelInputWithoutWebhooks).Return(testFormationTemplateID, nil)
+				svc.On("Get", txtest.CtxWithDBMatcher(), testFormationTemplateID).Return(&modelWithoutWebhooks, nil)
 
 				return svc
 			},
 			FormationTemplateConverter: func() *automock.FormationTemplateConverter {
 				converter := &automock.FormationTemplateConverter{}
-				converter.On("FromInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
+				converter.On("FromRegisterInputGraphQL", &gqlInputWithoutWebhooks).Return(&modelInputWithoutWebhooks, nil)
 				converter.On("ToGraphQL", &modelWithoutWebhooks).Return(&graphQLFormationTemplateWithoutWebhooks, nil)
 
 				return converter
@@ -764,7 +864,7 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 		},
 		{
 			Name:                       "Returns error when input validation fails",
-			Input:                      graphql.FormationTemplateInput{},
+			Input:                      graphql.FormationTemplateRegisterInput{},
 			TxFn:                       txGen.ThatDoesntExpectCommit,
 			FormationTemplateService:   UnusedFormationTemplateService,
 			FormationTemplateConverter: UnusedFormationTemplateConverter,
@@ -808,11 +908,6 @@ func TestResolver_CreateFormationTemplate(t *testing.T) {
 }
 
 func TestResolver_Webhooks(t *testing.T) {
-	// GIVEN
-	ctx := context.TODO()
-
-	testErr := errors.New("test error")
-
 	modelWebhooks := []*model.Webhook{fixFormationTemplateModelWebhook()}
 	gqlWebhooks := []*graphql.Webhook{fixFormationTemplateGQLWebhook()}
 
@@ -948,7 +1043,6 @@ func TestResolver_Webhooks(t *testing.T) {
 }
 
 func TestResolver_FormationConstraints(t *testing.T) {
-	ctx := context.TODO()
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	formationConstraintIDs := []string{constraintID1, constraintID2}
@@ -1054,6 +1148,281 @@ func TestResolver_FormationConstraints(t *testing.T) {
 			}
 
 			mock.AssertExpectationsForObjects(t, persist, svc, converter)
+		})
+	}
+}
+
+func TestResolver_SetFormationTemplateLabel(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name                     string
+		Input                    graphql.LabelInput
+		TxFn                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		FormationTemplateService func() *automock.FormationTemplateService
+		ExpectedOutput           *graphql.Label
+		ExpectedError            error
+	}{
+		{
+			Name:  "Success",
+			Input: lblInput,
+			TxFn:  txGen.ThatSucceeds,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("SetLabel", txtest.CtxWithDBMatcher(), formationTemplateLabelInput).Return(nil)
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(modelLabel, nil)
+				return svc
+			},
+			ExpectedOutput: gqlLabel,
+		},
+		{
+			Name:  "Error when setting label fails",
+			Input: lblInput,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("SetLabel", txtest.CtxWithDBMatcher(), formationTemplateLabelInput).Return(testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Error when getting label fails",
+			Input: lblInput,
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("SetLabel", txtest.CtxWithDBMatcher(), formationTemplateLabelInput).Return(nil)
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:          "Error when beginning of a transaction fails",
+			Input:         lblInput,
+			TxFn:          txGen.ThatFailsOnBegin,
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Error when committing transaction fails",
+			Input: lblInput,
+			TxFn:  txGen.ThatFailsOnCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("SetLabel", txtest.CtxWithDBMatcher(), formationTemplateLabelInput).Return(nil)
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(modelLabel, nil)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+
+			formationTemplateSvc := UnusedFormationTemplateService()
+			if testCase.FormationTemplateService != nil {
+				formationTemplateSvc = testCase.FormationTemplateService()
+			}
+
+			resolver := formationtemplate.NewResolver(transact, nil, formationTemplateSvc, nil, nil, nil)
+
+			// WHEN
+			result, err := resolver.SetFormationTemplateLabel(ctx, testFormationTemplateID, testCase.Input)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, persist, formationTemplateSvc)
+		})
+	}
+}
+
+func TestResolver_DeleteFormationTemplateLabel(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name                     string
+		TxFn                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		FormationTemplateService func() *automock.FormationTemplateService
+		ExpectedOutput           *graphql.Label
+		ExpectedError            error
+	}{
+		{
+			Name: "Success",
+			TxFn: txGen.ThatSucceeds,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(modelLabel, nil)
+				svc.On("DeleteLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(nil)
+				return svc
+			},
+			ExpectedOutput: gqlLabel,
+		},
+		{
+			Name: "Error when getting label fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name: "Error when deleting label fails",
+			TxFn: txGen.ThatDoesntExpectCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(modelLabel, nil)
+				svc.On("DeleteLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:          "Error when beginning of a transaction fails",
+			TxFn:          txGen.ThatFailsOnBegin,
+			ExpectedError: testErr,
+		},
+		{
+			Name: "Error when committing transaction fails",
+			TxFn: txGen.ThatFailsOnCommit,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("GetLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(modelLabel, nil)
+				svc.On("DeleteLabel", txtest.CtxWithDBMatcher(), testFormationTemplateID, lblInput.Key).Return(nil)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+
+			formationTemplateSvc := UnusedFormationTemplateService()
+			if testCase.FormationTemplateService != nil {
+				formationTemplateSvc = testCase.FormationTemplateService()
+			}
+
+			resolver := formationtemplate.NewResolver(transact, nil, formationTemplateSvc, nil, nil, nil)
+
+			// WHEN
+			result, err := resolver.DeleteFormationTemplateLabel(ctx, testFormationTemplateID, testLabelKey)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, persist, formationTemplateSvc)
+		})
+	}
+}
+
+func TestResolver_Labels(t *testing.T) {
+	txGen := txtest.NewTransactionContextGenerator(testErr)
+
+	testCases := []struct {
+		Name                     string
+		TxFn                     func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		Input                    *graphql.FormationTemplate
+		FormationTemplateService func() *automock.FormationTemplateService
+		ExpectedOutput           graphql.Labels
+		ExpectedError            error
+	}{
+		{
+			Name:  "Success",
+			TxFn:  txGen.ThatSucceeds,
+			Input: &graphQLFormationTemplate,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelLabels, nil)
+				return svc
+			},
+			ExpectedOutput: gqlLabels,
+		},
+		{
+			Name:  "Success when listing labels returns not found error",
+			TxFn:  txGen.ThatSucceeds,
+			Input: &graphQLFormationTemplate,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(nil, formationTemplateNotFoundErr)
+				return svc
+			},
+			ExpectedOutput: nil,
+		},
+		{
+			Name:  "Returns error when listing labels fails",
+			TxFn:  txGen.ThatDoesntExpectCommit,
+			Input: &graphQLFormationTemplate,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(nil, testErr)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+		{
+			Name:          "Returns error when input formation template is nil",
+			TxFn:          txGen.ThatFailsOnBegin,
+			Input:         nil,
+			ExpectedError: apperrors.NewInternalError("Formation Template cannot be empty"),
+		},
+		{
+			Name:          "Error when beginning of a transaction fails",
+			TxFn:          txGen.ThatFailsOnBegin,
+			Input:         &graphQLFormationTemplate,
+			ExpectedError: testErr,
+		},
+		{
+			Name:  "Error when committing transaction fails",
+			TxFn:  txGen.ThatFailsOnCommit,
+			Input: &graphQLFormationTemplate,
+			FormationTemplateService: func() *automock.FormationTemplateService {
+				svc := &automock.FormationTemplateService{}
+				svc.On("ListLabels", txtest.CtxWithDBMatcher(), graphQLFormationTemplate.ID).Return(modelLabels, nil)
+				return svc
+			},
+			ExpectedError: testErr,
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			persist, transact := testCase.TxFn()
+			formationTemplateSvc := UnusedFormationTemplateService()
+			if testCase.FormationTemplateService != nil {
+				formationTemplateSvc = testCase.FormationTemplateService()
+			}
+
+			resolver := formationtemplate.NewResolver(transact, nil, formationTemplateSvc, nil, nil, nil)
+
+			// WHEN
+			result, err := resolver.Labels(ctx, testCase.Input, &testLabelKey)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				assert.NoError(t, err)
+			}
+			assert.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, persist, formationTemplateSvc)
 		})
 	}
 }

@@ -3,6 +3,8 @@ package resync
 import (
 	"context"
 
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/api"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/auth"
@@ -155,6 +157,10 @@ func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (Te
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 
+	assignmentOperationConv := assignmentOp.NewConverter()
+	assignmentOperationRepo := assignmentOp.NewRepository(assignmentOperationConv)
+	assignmentOperationSvc := assignmentOp.NewService(assignmentOperationRepo, uidSvc)
+
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	tenantStorageSvc := tenant.NewServiceWithLabels(tenantStorageRepo, uidSvc, labelRepo, labelSvc, tenantStorageConverter)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
@@ -168,8 +174,8 @@ func (b *synchronizerBuilder) domainServices(featuresConfig features.Config) (Te
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, nil, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, nil, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
-	formationSvc := formation.NewService(b.transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, nil, constraintEngine, webhookRepo, nil, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, nil, faNotificationSvc, assignmentOperationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(b.transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, assignmentOperationSvc, faNotificationSvc, nil, constraintEngine, webhookRepo, nil, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantStorageSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue, featuresConfig.KymaApplicationNamespaceValue, featuresConfig.KymaAdapterWebhookMode, featuresConfig.KymaAdapterWebhookType, featuresConfig.KymaAdapterWebhookURLTemplate, featuresConfig.KymaAdapterWebhookInputTemplate, featuresConfig.KymaAdapterWebhookHeaderTemplate, featuresConfig.KymaAdapterWebhookOutputTemplate)
 

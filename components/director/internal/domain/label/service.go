@@ -22,6 +22,8 @@ type LabelRepository interface {
 	UpdateWithVersion(ctx context.Context, tenant string, label *model.Label) error
 	GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
 	GetByKeyGlobal(ctx context.Context, objectType model.LabelableObject, objectID, key string) (*model.Label, error)
+	Delete(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string, key string) error
+	ListForObject(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 // LabelDefinitionRepository missing godoc
@@ -76,9 +78,9 @@ func (s *labelService) CreateLabel(ctx context.Context, tenant, id string, label
 	label := labelInput.ToLabel(id, tenant)
 
 	if err := s.labelRepo.Create(ctx, tenant, label); err != nil {
-		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+		return errors.Wrapf(err, "while creating label with ID: %s for %s with ID: %s", label.ID, label.ObjectType, label.ObjectID)
 	}
-	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	log.C(ctx).Debugf("Successfully created label with ID: %s for %s with ID: %s", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }
@@ -92,9 +94,9 @@ func (s *labelService) UpsertLabel(ctx context.Context, tenant string, labelInpu
 	label := labelInput.ToLabel(s.uidService.Generate(), tenant)
 
 	if err := s.labelRepo.Upsert(ctx, tenant, label); err != nil {
-		return errors.Wrapf(err, "while creating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+		return errors.Wrapf(err, "while upserting label with ID: %s for %s with ID: %s", label.ID, label.ObjectType, label.ObjectID)
 	}
-	log.C(ctx).Debugf("Successfully created Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	log.C(ctx).Debugf("Successfully upserted label with ID: %s for %s with ID: %s", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }
@@ -108,9 +110,9 @@ func (s *labelService) UpsertLabelGlobal(ctx context.Context, labelInput *model.
 	label := labelInput.ToLabel(s.uidService.Generate(), "")
 
 	if err := s.labelRepo.UpsertGlobal(ctx, label); err != nil {
-		return errors.Wrapf(err, "while upserting Label with id %q for %q with id %q", label.ID, label.ObjectType, label.ObjectID)
+		return errors.Wrapf(err, "while upserting label with ID: %q for %q with ID: %q", label.ID, label.ObjectType, label.ObjectID)
 	}
-	log.C(ctx).Debugf("Successfully upserted Label with id %q for %q with id %q", label.ID, label.ObjectType, label.ObjectID)
+	log.C(ctx).Debugf("Successfully upserted label with ID: %q for %q with ID: %q", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }
@@ -123,9 +125,9 @@ func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, label
 	label := labelInput.ToLabel(id, tenant)
 
 	if err := s.labelRepo.UpdateWithVersion(ctx, tenant, label); err != nil {
-		return errors.Wrapf(err, "while updating Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+		return errors.Wrapf(err, "while updating label with ID: %s for %s with ID: %s", label.ID, label.ObjectType, label.ObjectID)
 	}
-	log.C(ctx).Debugf("Successfully updated Label with id %s for %s with id %s", label.ID, label.ObjectType, label.ObjectID)
+	log.C(ctx).Debugf("Successfully updated label with ID: %s for %s with ID: %s", label.ID, label.ObjectType, label.ObjectID)
 
 	return nil
 }
@@ -134,7 +136,7 @@ func (s *labelService) UpdateLabel(ctx context.Context, tenant, id string, label
 func (s *labelService) GetLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) (*model.Label, error) {
 	label, err := s.labelRepo.GetByKey(ctx, tenant, labelInput.ObjectType, labelInput.ObjectID, labelInput.Key)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while getting Label with key %s for %s with id %s", labelInput.Key, labelInput.ObjectType, labelInput.ObjectID)
+		return nil, errors.Wrapf(err, "while getting Label with key %s for %s with ID: %s", labelInput.Key, labelInput.ObjectType, labelInput.ObjectID)
 	}
 	return label, nil
 }
@@ -142,6 +144,24 @@ func (s *labelService) GetLabel(ctx context.Context, tenant string, labelInput *
 // GetByKey returns label for a given tenant, object and key
 func (s *labelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
 	return s.labelRepo.GetByKey(ctx, tenant, objectType, objectID, key)
+}
+
+// Delete deletes a label with given key, objectID and objectType
+func (s *labelService) Delete(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID, key string) error {
+	if err := s.labelRepo.Delete(ctx, tenantID, objectType, objectID, key); err != nil {
+		return errors.Wrapf(err, "while deleting label with key: %s for %s with ID: %s", key, objectType, objectID)
+	}
+	return nil
+}
+
+// ListForObject retrieves all labels for the provided parameters.
+// The returned map contains the label key as the map's key and for the value - the label itself
+func (s *labelService) ListForObject(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+	labels, err := s.labelRepo.ListForObject(ctx, tenantID, objectType, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting labels for %s with ID: %s", objectType, objectID)
+	}
+	return labels, nil
 }
 
 func (s *labelService) validateLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {

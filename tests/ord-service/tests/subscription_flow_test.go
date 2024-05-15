@@ -208,7 +208,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   formationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -221,7 +221,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
-		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -524,7 +524,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template for the provider application tempalаte type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   formationTmplName,
 			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -537,7 +537,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
-		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -849,7 +849,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   formationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -862,7 +862,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
-		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},

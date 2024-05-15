@@ -3,7 +3,7 @@ mutation {
   result: updateEventDefinitionForApplication(
     id: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      name: "TestUpdatePIDefinitionToApplication"
+      name: "TestUpdateAPIDefinitionToApplication"
       spec: { data: "data", type: ASYNC_API, format: JSON }
     }
   ) {
