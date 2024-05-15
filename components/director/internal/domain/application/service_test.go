@@ -5349,7 +5349,7 @@ func TestService_GetScenariosGlobal(t *testing.T) {
 				svc.On("ListFormationsForObjectGlobal", ctx, applicationID).Return(nil, nil).Once()
 				return svc
 			},
-			ExpectedScenarios: []string{},
+			ExpectedScenarios:  []string{},
 			InputApplicationID: applicationID,
 		},
 		{
