@@ -22,6 +22,7 @@ import (
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	jsonutils "github.com/kyma-incubator/compass/tests/pkg/json"
+	testpkg "github.com/kyma-incubator/compass/tests/pkg/notifications/asserters"
 	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -60,7 +61,7 @@ var (
 	tenantAccessLevels = []string{"account", "global"} // should be a valid tenant access level
 )
 
-func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState) {
+func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.Assignment) {
 	listFormationAssignmentsRequest := fixtures.FixListFormationAssignmentRequest(formationID, 200)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, tenantID, listFormationAssignmentsRequest)
 	assignments := assignmentsPage.Data
@@ -73,24 +74,29 @@ func assertFormationAssignments(t *testing.T, ctx context.Context, tenantID, for
 		assignmentExpectation, ok := targetAssignmentsExpectations[assignment.Target]
 		require.Truef(t, ok, "Could not find expectations for assignment with source %q and target %q", assignment.Source, assignment.Target)
 
-		require.Equal(t, assignmentExpectation.State, assignment.State)
-		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.Config)
+		require.Equal(t, assignmentExpectation.AssignmentStatus.State, assignment.State)
+		expectedAssignmentConfigStr := str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Config)
 		assignmentConfiguration := str.PtrStrToStr(assignment.Configuration)
 		if expectedAssignmentConfigStr != "" && expectedAssignmentConfigStr != "\"\"" && assignmentConfiguration != "" && assignmentConfiguration != "\"\"" {
 			require.JSONEq(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		} else {
 			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		}
-		if str.PtrStrToStr(assignmentExpectation.Value) != "" && str.PtrStrToStr(assignmentExpectation.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
-			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.Value), str.PtrStrToStr(assignment.Value))
+		if str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Value) != "" && str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Value) != "\"\"" && str.PtrStrToStr(assignment.Value) != "" && str.PtrStrToStr(assignment.Value) != "\"\"" {
+			require.JSONEq(t, str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Value), str.PtrStrToStr(assignment.Value))
 		} else {
 			require.Equal(t, expectedAssignmentConfigStr, assignmentConfiguration)
 		}
-		require.Equal(t, str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error))
+		require.Equal(t, str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Error), str.PtrStrToStr(assignment.Error))
+		// assert operations
+		require.Equal(t, len(assignmentExpectation.Operations), len(assignment.AssignmentOperations.Data))
+		for _, expectedOperation := range assignmentExpectation.Operations {
+			require.Truef(t, testpkg.ContainsMatchingOperation(expectedOperation, assignment.AssignmentOperations.Data), "Could not find expected operation %v in assignment with ID %q", expectedOperation, assignment.ID)
+		}
 	}
 }
 
-func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.AssignmentState, timeout, tick time.Duration) {
+func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx context.Context, tenantID, formationID string, expectedAssignmentsCount int, expectedAssignments map[string]map[string]fixtures.Assignment, timeout, tick time.Duration) {
 	t.Logf("Asserting formation assignments with eventually...")
 	tOnce := testingx.NewOnceLogger(t)
 	require.Eventually(t, func() (isOkay bool) {
@@ -118,20 +124,30 @@ func assertFormationAssignmentsAsynchronouslyWithEventually(t *testing.T, ctx co
 				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
-			if assignmentExpectation.State != assignment.State {
-				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.State, assignment.State, assignment.ID)
+			if assignmentExpectation.AssignmentStatus.State != assignment.State {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", assignmentExpectation.AssignmentStatus.State, assignment.State, assignment.ID)
 				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
-			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Error, assignment.Error); !isEqual {
-				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
+			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.AssignmentStatus.Error, assignment.Error); !isEqual {
+				tOnce.Logf("The expected assignment state: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Error), str.PtrStrToStr(assignment.Error), assignment.ID)
 				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
 			}
-			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.Config, assignment.Configuration); !isEqual {
-				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
+			if isEqual := jsonutils.AssertJSONStringEquality(tOnce, assignmentExpectation.AssignmentStatus.Config, assignment.Configuration); !isEqual {
+				tOnce.Logf("The expected assignment config: %s doesn't match the actual: %s for assignment ID: %s", str.PtrStrToStr(assignmentExpectation.AssignmentStatus.Config), str.PtrStrToStr(assignment.Configuration), assignment.ID)
 				tOnce.Logf("The actual assignments are: %s", *jsonutils.MarshalJSON(t, assignmentsPage))
 				return
+			}
+			if len(assignmentExpectation.Operations) != len(assignment.AssignmentOperations.Data) {
+				tOnce.Logf("The expected number of operations: %d doesn't match the actual number: %d", len(assignmentExpectation.Operations), len(assignment.AssignmentOperations.Data))
+				return
+			}
+			for _, expectedOperation := range assignmentExpectation.Operations {
+				if !testpkg.ContainsMatchingOperation(expectedOperation, assignment.AssignmentOperations.Data) {
+					tOnce.Logf("Could not find expected operation %v in assignment with ID %q", expectedOperation, assignment.ID)
+					return
+				}
 			}
 		}
 

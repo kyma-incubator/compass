@@ -10,6 +10,8 @@ import (
 	"os"
 	"time"
 
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/dataproduct"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
@@ -290,8 +292,12 @@ func main() {
 	systemAuthConverter := systemauth.NewConverter(authConverter)
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
-	timeSvc := directorTime.NewService()
 	uidSvc := uid.NewService()
+	assignmentOperationConv := assignmentOp.NewConverter()
+	assignmentOperationRepo := assignmentOp.NewRepository(assignmentOperationConv)
+	assignmentOperationSvc := assignmentOp.NewService(assignmentOperationRepo, uidSvc)
+
+	timeSvc := directorTime.NewService()
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	scenariosSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
 	fetchRequestSvc := fetchrequest.NewServiceWithRetry(fetchRequestRepo, httpClient, accessStrategyExecutorProviderWithoutTenant, retryHTTPExecutor)
@@ -325,9 +331,9 @@ func main() {
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo, formationAssignmentRepo, formationRepo)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, assignmentOperationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
-	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, assignmentOperationSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	packageSvc := ordpackage.NewService(pkgRepo, uidSvc)
 	productSvc := product.NewService(productRepo, uidSvc)

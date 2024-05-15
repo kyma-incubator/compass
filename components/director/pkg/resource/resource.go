@@ -94,6 +94,8 @@ const (
 	FormationTemplate Type = "formationTemplate"
 	// FormationAssignment type represents formation assignment resource.
 	FormationAssignment Type = "formationAssignment"
+	// AssignmentOperation type represents assignment operation resource.
+	AssignmentOperation Type = "assignmentOperation"
 	// FormationConstraint type represents formation constraint resource.
 	FormationConstraint Type = "formationConstraint"
 	// FormationTemplateConstraintReference type represents formationTemplate-constraint reference resource.

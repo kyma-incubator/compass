@@ -579,7 +579,7 @@ func executeFormationStatusUpdateReqWithExpectedStatusCode(t *testing.T, certSec
 	require.Equal(t, expectedStatusCode, response.StatusCode)
 }
 
-func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formationID, parentTenantID string, expectedAssignmentsCount int) *graphql.FormationAssignmentPage {
+func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formationID, parentTenantID string, expectedAssignmentsCount int) *graphql.FormationAssignmentPageExt {
 	t.Logf("List formation assignments for formation with ID: %q", formationID)
 	listFormationAssignmentsReq := fixtures.FixListFormationAssignmentRequest(formationID, 100)
 	assignmentsPage := fixtures.ListFormationAssignments(t, ctx, certSecuredGraphQLClient, parentTenantID, listFormationAssignmentsReq)
@@ -588,7 +588,7 @@ func assertFormationAssignmentsCount(t *testing.T, ctx context.Context, formatio
 	return assignmentsPage
 }
 
-func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, targetType graphql.FormationAssignmentType, sourceID string) string {
+func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPage *graphql.FormationAssignmentPageExt, targetType graphql.FormationAssignmentType, sourceID string) string {
 	var formationAssignmentID string
 	for _, a := range assignmentsPage.Data {
 		if a.TargetType == targetType && a.Source == sourceID && a.Target != sourceID {
@@ -599,7 +599,7 @@ func getFormationAssignmentIDByTargetTypeAndSourceID(t *testing.T, assignmentsPa
 	return formationAssignmentID
 }
 
-func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPage, sourceID, targetID string) string {
+func getFormationAssignmentIDBySourceAndTarget(t *testing.T, assignmentsPage *graphql.FormationAssignmentPageExt, sourceID, targetID string) string {
 	var formationAssignmentID string
 	for _, a := range assignmentsPage.Data {
 		if a.Source == sourceID && a.Target == targetID {

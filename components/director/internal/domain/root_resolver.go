@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/aspecteventresource"
@@ -238,6 +240,9 @@ func NewRootResolver(
 	destinationRepo := destination.NewRepository(destinationConv)
 
 	uidSvc := uid.NewService()
+	assignmentOperationConv := assignmentOp.NewConverter()
+	assignmentOperationRepo := assignmentOp.NewRepository(assignmentOperationConv)
+	assignmentOperationSvc := assignmentOp.NewService(assignmentOperationRepo, uidSvc)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeService)
 	labelDefSvc := labeldef.NewService(labelDefRepo, labelRepo, scenarioAssignmentRepo, tenantRepo, uidSvc)
@@ -275,9 +280,9 @@ func NewRootResolver(
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo, formationAssignmentRepo, formationRepo)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, assignmentOperationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, labelDefSvc, notificationSvc, constraintEngine)
-	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(transact, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, labelDefSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, assignmentOperationSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	appSvc := application.NewService(appNameNormalizer, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, selfRegConfig.SelfRegisterDistinguishLabelKey, ordWebhookMappings)
 	runtimeContextSvc := runtimectx.NewService(runtimeContextRepo, labelRepo, runtimeRepo, labelSvc, formationSvc, tenantSvc, uidSvc)
 	runtimeSvc := runtime.NewService(runtimeRepo, labelRepo, labelSvc, uidSvc, formationSvc, tenantSvc, webhookSvc, runtimeContextSvc, featuresConfig.ProtectedLabelPattern, featuresConfig.ImmutableLabelPattern, featuresConfig.RuntimeTypeLabelKey, featuresConfig.KymaRuntimeTypeLabelValue, featuresConfig.KymaApplicationNamespaceValue, featuresConfig.KymaAdapterWebhookMode, featuresConfig.KymaAdapterWebhookType, featuresConfig.KymaAdapterWebhookURLTemplate, featuresConfig.KymaAdapterWebhookInputTemplate, featuresConfig.KymaAdapterWebhookHeaderTemplate, featuresConfig.KymaAdapterWebhookOutputTemplate)
@@ -310,7 +315,7 @@ func NewRootResolver(
 		integrationDependency: integrationdependency.NewResolver(transact, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, appSvc, appTemplateSvc, packageSvc),
 		doc:                   document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc, tenantSvc),
-		formationAssignment:   formationassignment.NewResolver(transact, applicationRepo, appConverter, runtimeRepo, runtimeConverter, runtimeContextRepo, runtimeContextConverter),
+		formationAssignment:   formationassignment.NewResolver(transact, applicationRepo, appConverter, runtimeRepo, runtimeConverter, runtimeContextRepo, runtimeContextConverter, assignmentOperationSvc, assignmentOperationConv),
 		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc, tenantSvc),
 		runtimeContext:        runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:           healthcheck.NewResolver(healthCheckSvc),
@@ -396,6 +401,11 @@ func (r *RootResolver) StatusDataLoader(ids []dataloader.ParamFormationStatus) (
 // FormationConstraintsDataLoader is the FormationConstraint dataloader used in the graphql API router
 func (r *RootResolver) FormationConstraintsDataLoader(ids []dataloader.ParamFormationConstraint) ([][]*graphql.FormationConstraint, []error) {
 	return r.formationTemplate.FormationConstraintsDataLoader(ids)
+}
+
+// AssignmentOperationsDataLoader is the AssignmentOperations dataloader used in the graphql API router
+func (r *RootResolver) AssignmentOperationsDataLoader(ids []dataloader.ParamAssignmentOperation) ([]*graphql.AssignmentOperationPage, []error) {
+	return r.formationAssignment.AssignmentOperationsDataLoader(ids)
 }
 
 // Mutation missing godoc
@@ -1396,6 +1406,10 @@ func (r *formationAssignmentResolver) SourceEntity(ctx context.Context, obj *gra
 
 func (r *formationAssignmentResolver) TargetEntity(ctx context.Context, obj *graphql.FormationAssignment) (graphql.FormationParticipant, error) {
 	return r.formationAssignment.TargetEntity(ctx, obj)
+}
+
+func (r *formationAssignmentResolver) AssignmentOperations(ctx context.Context, obj *graphql.FormationAssignment, first *int, after *graphql.PageCursor) (*graphql.AssignmentOperationPage, error) {
+	return r.formationAssignment.AssignmentOperations(ctx, obj, first, after)
 }
 
 // BundleResolver missing godoc
