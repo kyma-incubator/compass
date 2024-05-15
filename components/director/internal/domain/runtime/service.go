@@ -282,6 +282,10 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 		in.ApplicationNamespace = &s.kymaApplicationNamespaceValue
 	}
 
+	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
+	}
+
 	rtm := in.ToRuntime(id, time.Now(), time.Now())
 
 	if err = s.repo.Create(ctx, rtmTenant, rtm); err != nil {
@@ -303,10 +307,6 @@ func (s *service) CreateWithMandatoryLabels(ctx context.Context, in model.Runtim
 
 	for key, value := range mandatoryLabels {
 		in.Labels[key] = value
-	}
-
-	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
-		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
 	}
 
 	if isConsumerIntegrationSystem {
@@ -377,6 +377,10 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 		return errors.Wrapf(err, "while getting Runtime with id %s", id)
 	}
 
+	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
+	}
+
 	rtm.SetFromUpdateInput(in, id, rtm.CreationTimestamp, time.Now())
 
 	if err = s.repo.Update(ctx, rtmTenant, rtm); err != nil {
@@ -388,10 +392,6 @@ func (s *service) Update(ctx context.Context, id string, in model.RuntimeUpdateI
 			in.Labels = make(map[string]interface{}, 1)
 		}
 		in.Labels[IsNormalizedLabel] = "true"
-	}
-
-	if _, areScenariosInLabels := in.Labels[model.ScenariosKey]; areScenariosInLabels {
-		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
 	}
 
 	log.C(ctx).Debugf("Removing protected labels. Labels before: %+v", in.Labels)

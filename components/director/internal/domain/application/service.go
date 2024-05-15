@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"dario.cat/mergo"
@@ -283,6 +285,18 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 	formations, err := s.formationService.ListFormationsForObject(ctx, runtimeID.String())
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formations for runtime with ID %s", runtimeID.String())
+	}
+
+	if len(formations) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
 	}
 
 	formationNames := make([]string, 0, len(formations))

@@ -2975,64 +2975,6 @@ func TestService_DeleteAutomaticScenarioAssignment(t *testing.T) {
 	})
 }
 
-func TestService_GetFormationsForObject(t *testing.T) {
-	id := "rtmID"
-	testErr := "testErr"
-
-	scenarios := []interface{}{"scenario1", "scenario2"}
-
-	labelInput := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		ObjectID:   id,
-		ObjectType: model.RuntimeLabelableObject,
-	}
-
-	label := &model.Label{
-		ID:         id,
-		Key:        "scenarios",
-		Value:      scenarios,
-		ObjectID:   id,
-		ObjectType: model.RuntimeLabelableObject,
-	}
-
-	t.Run("Success", func(t *testing.T) {
-		// GIVEN
-		ctx := context.TODO()
-
-		labelService := &automock.LabelService{}
-		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(label, nil).Once()
-
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
-
-		// WHEN
-		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)
-
-		// THEN
-		require.NoError(t, err)
-		require.ElementsMatch(t, formations, scenarios)
-		mock.AssertExpectationsForObjects(t, labelService)
-	})
-
-	t.Run("Returns error while getting label", func(t *testing.T) {
-		// GIVEN
-		ctx := context.TODO()
-
-		labelService := &automock.LabelService{}
-		labelService.On("GetLabel", ctx, tenantID.String(), labelInput).Return(nil, errors.New(testErr)).Once()
-
-		svc := formation.NewService(nil, nil, nil, nil, nil, nil, labelService, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
-
-		// WHEN
-		formations, err := svc.GetFormationsForObject(ctx, tenantID.String(), model.RuntimeLabelableObject, id)
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "while fetching scenario label for")
-		require.Nil(t, formations)
-		mock.AssertExpectationsForObjects(t, labelService)
-	})
-}
-
 func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, TntInternalID, TntExternalID)

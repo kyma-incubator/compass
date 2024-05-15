@@ -81,6 +81,9 @@ func TestService_Create(t *testing.T) {
 	appModel := modelFromInput(modelInput, tnt, id, applicationMatcher(modelInput.Name, modelInput.Description))
 	normalizedAppModel := modelFromInput(normalizedModelInput, tnt, id, applicationMatcher(normalizedModelInput.Name, normalizedModelInput.Description))
 
+	appWithScenariosLabel := applicationRegisterInput()
+	appWithScenariosLabel.Labels[model.ScenariosKey] = []string{testScenario}
+
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 
@@ -417,6 +420,31 @@ func TestService_Create(t *testing.T) {
 			},
 			Input:       applicationRegisterInput(),
 			ExpectedErr: testErr,
+		},
+		{
+			Name:              "Returns success when trying to create application with scenarios label",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
+				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
+				return repo
+			},
+			WebhookRepoFn: UnusedWebhookRepository,
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn:  UnusedLabelService,
+			BundleServiceFn: UnusedBundleService,
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			Input:       appWithScenariosLabel,
+			ExpectedErr: errors.New(fmt.Sprintf("label with key %s cannot be set explicitly", model.ScenariosKey)),
 		},
 	}
 
@@ -1323,6 +1351,34 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				return modelInputWithInvalidPpmsProductVersion
 			},
 			ExpectedErr: nil,
+		},
+		{
+			Name:              "Error when scenarios label is provided explicitly",
+			AppNameNormalizer: &normalizer.DefaultNormalizator{},
+			AppRepoFn: func(upsertMethodName string) *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On(upsertMethodName, ctx, mock.Anything, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return("foo", nil).Once()
+				return repo
+			},
+			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
+				repo := &automock.IntegrationSystemRepository{}
+				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
+				return repo
+			},
+			LabelServiceFn: UnusedLabelService,
+			UIDServiceFn: func() *automock.UIDService {
+				svc := &automock.UIDService{}
+				svc.On("Generate").Return(id)
+				return svc
+			},
+			WebhookRepoFn:     UnusedWebhookRepository,
+			OrdWebhookMapping: ordWebhookMapping,
+			GetInput: func() model.ApplicationRegisterInput {
+				app := applicationRegisterInput()
+				app.Labels[model.ScenariosKey] = []string{testScenario}
+				return app
+			},
+			ExpectedErr: errors.New(fmt.Sprintf("label with key %s cannot be set explicitly", model.ScenariosKey)),
 		},
 	}
 
@@ -2418,18 +2474,7 @@ func TestService_Delete(t *testing.T) {
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
-	scenarios := []interface{}{"Easter"}
-	scenarioLabel := &model.Label{
-		ID:    uuid.New().String(),
-		Key:   model.ScenariosKey,
-		Value: scenarios,
-	}
-
-	emptyScenarioLabel := &model.Label{
-		ID:    uuid.New().String(),
-		Key:   model.ScenariosKey,
-		Value: []interface{}{},
-	}
+	formations := []*model.Formation{{Name: testScenario}}
 
 	applicationModel := &model.Application{
 		Name:        "foo",
@@ -2444,6 +2489,7 @@ func TestService_Delete(t *testing.T) {
 		Name               string
 		AppRepoFn          func() *automock.ApplicationRepository
 		LabelRepoFn        func() *automock.LabelRepository
+		FormationServiceFn func() *automock.FormationService
 		Input              model.ApplicationRegisterInput
 		InputID            string
 		ExpectedErrMessage string
@@ -2453,13 +2499,12 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, tnt, applicationModel.ID).Return(nil).Once()
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil).Once()
-				return repo
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, nil).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			ExpectedErrMessage: "",
@@ -2468,32 +2513,39 @@ func TestService_Delete(t *testing.T) {
 			Name: "Return error when application is part of a scenario",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil).Once()
-				return repo
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(formations, nil).Once()
+				return formationSvc
 			},
 			InputID:            id,
-			ExpectedErrMessage: "System foo is part of the following formations : Easter",
+			ExpectedErrMessage: fmt.Sprintf("System foo is part of the following formations : %s", testScenario),
+		},
+		{
+			Name: "Return error when application is part of a scenario",
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, testErr).Once()
+				return formationSvc
+			},
+			InputID:            id,
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "Return error when fails to get application by ID",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(nil, testErr).Once()
 				return repo
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil).Once()
-				return repo
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(formations, nil).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
@@ -2503,13 +2555,12 @@ func TestService_Delete(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Delete", ctx, tnt, applicationModel.ID).Return(testErr).Once()
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				return repo
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil).Once()
-				return repo
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, nil).Once()
+				return formationSvc
 			},
 			InputID:            id,
 			ExpectedErrMessage: testErr.Error(),
@@ -2518,9 +2569,19 @@ func TestService_Delete(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			appRepo := testCase.AppRepoFn()
-			labelRepo := testCase.LabelRepoFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
+			appRepo := &automock.ApplicationRepository{}
+			if testCase.AppRepoFn != nil {
+				appRepo = testCase.AppRepoFn()
+			}
+			labelRepo := &automock.LabelRepository{}
+			if testCase.LabelRepoFn != nil {
+				labelRepo = testCase.LabelRepoFn()
+			}
+			formationSvc := &automock.FormationService{}
+			if testCase.FormationServiceFn != nil {
+				formationSvc = testCase.FormationServiceFn()
+			}
+			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			err := svc.Delete(ctx, testCase.InputID)
@@ -2541,23 +2602,19 @@ func TestService_Delete(t *testing.T) {
 func TestService_Unpair(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
-	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
+	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: test-scenario. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
 	desc := "Lorem ipsum"
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
-	scenarios := []interface{}{"Easter"}
+	formations := []*model.Formation{{Name: testScenario}}
+
+	scenarios := []interface{}{testScenario}
 	scenarioLabel := &model.Label{
 		ID:    uuid.New().String(),
 		Key:   model.ScenariosKey,
 		Value: scenarios,
-	}
-
-	emptyScenarioLabel := &model.Label{
-		ID:    uuid.New().String(),
-		Key:   model.ScenariosKey,
-		Value: []interface{}{},
 	}
 
 	timestamp := time.Now()
@@ -2594,6 +2651,7 @@ func TestService_Unpair(t *testing.T) {
 		AppRepoFn          func() *automock.ApplicationRepository
 		LabelRepoFn        func() *automock.LabelRepository
 		RuntimeRepoFn      func() *automock.RuntimeRepository
+		FormationServiceFn func() *automock.FormationService
 		Input              model.ApplicationRegisterInput
 		ContextFn          func() context.Context
 		InputID            string
@@ -2604,19 +2662,18 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Update", ctx, tnt, applicationModelWithInitialStatus).Return(nil).Once()
-				repo.On("Exists", ctx, tnt, applicationModelWithInitialStatus.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModelWithInitialStatus.ID).Return(applicationModelWithInitialStatus, nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.AssertNotCalled(t, "ListAll")
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, nil).Once()
+				return formationSvc
 			},
 			ContextFn: func() context.Context {
 				ctx := context.Background()
@@ -2630,19 +2687,18 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Update", ctx, tnt, applicationModel).Return(nil).Once()
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(formations, nil).Once()
+				return formationSvc
 			},
 			ContextFn: func() context.Context {
 				ctx := context.Background()
@@ -2656,14 +2712,13 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Update", mock.Anything, tnt, applicationModelWithInitialStatus).Return(nil).Once()
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				return repo
 			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
-				return repo
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(formations, nil).Once()
+				return formationSvc
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
@@ -2681,19 +2736,18 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("Update", mock.Anything, tnt, applicationModel).Return(nil).Once()
-				repo.On("Exists", mock.Anything, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", mock.Anything, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", mock.Anything, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListAll", mock.Anything, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", mock.Anything, applicationModel.ID).Return(formations, nil).Once()
+				return formationSvc
 			},
 			InputID: id,
 			ContextFn: func() context.Context {
@@ -2703,23 +2757,48 @@ func TestService_Unpair(t *testing.T) {
 			},
 		},
 		{
-			Name: "Returns error when application fetch failed",
+			Name: "Returns error when listing formations for object failed",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(nil, testErr).Once()
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
+				repo.AssertNotCalled(t, "GetByID")
 				repo.AssertNotCalled(t, "Update")
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.AssertNotCalled(t, "ListAll")
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, testErr).Once()
+				return formationSvc
+			},
+			ContextFn: func() context.Context {
+				ctx := context.Background()
+
+				return ctx
+			},
+			InputID:            id,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name: "Returns error when application fetch failed",
+			AppRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(nil, testErr).Once()
+				repo.AssertNotCalled(t, "Update")
+				return repo
+			},
+			RuntimeRepoFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.AssertNotCalled(t, "ListAll")
+				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, nil).Once()
+				return formationSvc
 			},
 			ContextFn: func() context.Context {
 				ctx := context.Background()
@@ -2734,20 +2813,19 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
 				repo.AssertNotCalled(t, "Update")
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{scenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.On("ListAll", ctx, tnt, mock.Anything).Return(scenarioLabel).Return([]*model.Runtime{runtimeModel}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(formations, nil).Once()
+				return formationSvc
 			},
 			ContextFn: func() context.Context {
 				ctx := context.Background()
@@ -2763,19 +2841,18 @@ func TestService_Unpair(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.AssertNotCalled(t, "Delete")
 				repo.On("Update", ctx, tnt, applicationModel).Return(testErr).Once()
-				repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(applicationModel, nil).Once()
-				return repo
-			},
-			LabelRepoFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationModel.ID}, model.ScenariosKey).Return([]*model.Label{emptyScenarioLabel}, nil)
 				return repo
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
 				repo.AssertNotCalled(t, "ListAll")
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, nil).Once()
+				return formationSvc
 			},
 			ContextFn: func() context.Context {
 				ctx := context.Background()
@@ -2790,11 +2867,18 @@ func TestService_Unpair(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
-			labelRepo := testCase.LabelRepoFn()
+			labelRepo := &automock.LabelRepository{}
+			if testCase.LabelRepoFn != nil {
+				labelRepo = testCase.LabelRepoFn()
+			}
 			runtimeRepo := testCase.RuntimeRepoFn()
+			formationSvc := &automock.FormationService{}
+			if testCase.FormationServiceFn != nil {
+				formationSvc = testCase.FormationServiceFn()
+			}
 			ctx := testCase.ContextFn()
 			ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, nil, "", nil)
+			svc := application.NewService(nil, nil, appRepo, nil, runtimeRepo, labelRepo, nil, nil, nil, nil, formationSvc, "", nil)
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 			// WHEN
 			err := svc.Unpair(ctx, testCase.InputID)
@@ -2888,6 +2972,7 @@ func TestService_Merge(t *testing.T) {
 		AppRepoFn                      func() *automock.ApplicationRepository
 		LabelRepoFn                    func() *automock.LabelRepository
 		LabelUpsertSvcFn               func() *automock.LabelService
+		FormationServiceFn             func() *automock.FormationService
 		ExpectedDestinationApplication *model.Application
 		Ctx                            context.Context
 		SourceID                       string
@@ -2901,18 +2986,21 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -2932,18 +3020,21 @@ func TestService_Merge(t *testing.T) {
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, destModel).Return(nil).Once()
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabelsWithFalseManaged, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -2968,7 +3059,6 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "ListGlobalByKeyAndObjects")
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -2988,16 +3078,19 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(nil, testErr).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3021,7 +3114,6 @@ func TestService_Merge(t *testing.T) {
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.AssertNotCalled(t, "ListGlobalByKeyAndObjects")
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
 			},
@@ -3041,18 +3133,21 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelWithDifferentTemplateID, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3070,18 +3165,21 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelWithDifferentBaseURL, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.AssertNotCalled(t, "ListForObject")
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3099,18 +3197,21 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModelConnected, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3128,18 +3229,21 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.AssertNotCalled(t, "Update")
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(testErr).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3157,18 +3261,21 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, mergedDestModel).Return(testErr)
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3186,18 +3293,21 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Twice()
 				repo.On("Update", ctx, tnt, mergedDestModel).Return(nil)
 				repo.On("Delete", ctx, tnt, srcModel.ID).Return(nil).Once()
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(map[string]*model.Label{}, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3215,19 +3325,22 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(appTemplateLabelsWithSelfRegDistLabelKey, nil)
 
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3245,19 +3358,22 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(srcAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				repo.On("ListForObject", ctx, tnt, model.AppTemplateLabelableObject, *srcModel.ApplicationTemplateID).Return(nil, testErr)
 
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3270,16 +3386,20 @@ func TestService_Merge(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
-			Name: "Error while checking if source app exists",
+			Name: "Error while listing formations for application",
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(false, testErr).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: UnusedLabelRepository,
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, testErr).Once()
+				return svc
+			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
 				svc.AssertNotCalled(t, "UpsertMultipleLabels")
@@ -3296,17 +3416,20 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, srcModel.ID).Return(nil, testErr)
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(destAppLabels, nil)
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3324,17 +3447,20 @@ func TestService_Merge(t *testing.T) {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, destModel.ID).Return(destModel, nil).Once()
 				repo.On("GetByID", ctx, tnt, srcModel.ID).Return(srcModel, nil).Once()
-				repo.On("Exists", ctx, tnt, srcModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				repo.AssertNotCalled(t, "Delete")
 				return repo
 			},
 			LabelRepoFn: func() *automock.LabelRepository {
 				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{srcModel.ID}, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id"))
 				repo.On("ListForObject", ctx, tnt, model.ApplicationLabelableObject, destModel.ID).Return(nil, testErr)
 
 				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListFormationsForObject", ctx, srcModel.ID).Return(nil, nil).Twice()
+				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
 				svc := &automock.LabelService{}
@@ -3353,7 +3479,11 @@ func TestService_Merge(t *testing.T) {
 			appRepo := testCase.AppRepoFn()
 			labelRepo := testCase.LabelRepoFn()
 			labelUpserSvc := testCase.LabelUpsertSvcFn()
-			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, labelUpserSvc, nil, nil, nil, selfRegDistLabelKey, nil)
+			formationSvc := &automock.FormationService{}
+			if testCase.FormationServiceFn != nil {
+				formationSvc = testCase.FormationServiceFn()
+			}
+			svc := application.NewService(nil, nil, appRepo, nil, nil, labelRepo, nil, labelUpserSvc, nil, nil, formationSvc, selfRegDistLabelKey, nil)
 
 			// WHEN
 			destApp, err := svc.Merge(testCase.Ctx, testCase.DestinationID, testCase.SourceID)
@@ -3869,22 +3999,15 @@ func TestService_ListByRuntimeID(t *testing.T) {
 	first := 10
 	cursor := "test"
 	scenarios := []interface{}{"Easter", "Christmas", "Winter-Sale"}
-	scenarioLabel := model.Label{
-		ID:    uuid.New().String(),
-		Key:   model.ScenariosKey,
-		Value: scenarios,
-	}
 	hidingSelectors := map[string][]string{"foo": {"bar", "baz"}}
+
+	formations := []*model.Formation{{Name: "Easter"}, {Name: "Christmas"}, {Name: "Winter-Sale"}}
 
 	applications := []*model.Application{
 		fixModelApplication("test1", "tenant-foo", "test1", "test1"),
 		fixModelApplication("test2", "tenant-foo", "test2", "test2"),
 	}
 	applicationPage := fixApplicationPage(applications)
-	emptyPage := model.ApplicationPage{
-		TotalCount: 0,
-		Data:       []*model.Application{},
-		PageInfo:   &pagination.Page{StartCursor: "", EndCursor: "", HasNextPage: false}}
 
 	testCases := []struct {
 		Name                string
@@ -3892,6 +4015,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		RuntimeRepositoryFn func() *automock.RuntimeRepository
 		LabelRepositoryFn   func() *automock.LabelRepository
 		AppRepositoryFn     func() *automock.ApplicationRepository
+		FormationServiceFn  func() *automock.FormationService
 		ConfigProviderFn    func() *automock.ApplicationHideCfgProvider
 		ExpectedResult      *model.ApplicationPage
 		ExpectedError       error
@@ -3905,17 +4029,16 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&scenarioLabel, nil).Once()
-				return labelRepository
-			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
 				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, hidingSelectors).
 					Return(applicationPage, nil).Once()
 				return appRepository
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(formations, nil).Once()
+				return formationSvc
 			},
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
 				cfgProvider := &automock.ApplicationHideCfgProvider{}
@@ -3926,7 +4049,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			ExpectedResult: applicationPage,
 		},
 		{
-			Name:  "Success when scenarios label not set",
+			Name:  "Success when runtime is not part of any formations",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -3934,11 +4057,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, apperrors.NewNotFoundError(resource.Application, "")).Once()
-				return labelRepository
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(nil, nil).Once()
+				return formationSvc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
@@ -3995,7 +4117,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			ExpectedResult: nil,
 		},
 		{
-			Name:  "Return error when getting runtime scenarios by RuntimeID failed",
+			Name:  "Return error when listing formations for runtime failed",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -4003,11 +4125,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(nil, testError).Once()
-				return labelRepository
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(nil, testError).Once()
+				return formationSvc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
@@ -4026,11 +4147,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&scenarioLabel, nil).Once()
-				return labelRepository
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(formations, nil).Once()
+				return formationSvc
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
@@ -4047,29 +4167,6 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			ExpectedResult: nil,
 		},
 		{
-			Name:  "Return empty page when runtime is not assigned to any scenario",
-			Input: runtimeUUID,
-			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
-				runtimeRepository := &automock.RuntimeRepository{}
-				runtimeRepository.On("Exists", ctx, tenantUUID.String(), runtimeUUID.String()).
-					Return(true, nil).Once()
-				return runtimeRepository
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&model.Label{ID: uuid.New().String(), Key: model.ScenariosKey, Value: []interface{}{}}, nil).Once()
-				return labelRepository
-			},
-			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  nil,
-			ExpectedResult: &emptyPage,
-		},
-		{
 			Name:  "Return error when config provider returns error",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
@@ -4078,11 +4175,10 @@ func TestService_ListByRuntimeID(t *testing.T) {
 					Return(true, nil).Once()
 				return runtimeRepository
 			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				labelRepository := &automock.LabelRepository{}
-				labelRepository.On("GetByKey", ctx, tenantUUID.String(), model.RuntimeLabelableObject, runtimeUUID.String(), model.ScenariosKey).
-					Return(&scenarioLabel, nil).Once()
-				return labelRepository
+			FormationServiceFn: func() *automock.FormationService {
+				formationSvc := &automock.FormationService{}
+				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(formations, nil).Once()
+				return formationSvc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
 			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
@@ -4099,10 +4195,17 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			// GIVEN
 			runtimeRepository := testCase.RuntimeRepositoryFn()
-			labelRepository := testCase.LabelRepositoryFn()
+			labelRepository := UnusedLabelRepository()
+			if testCase.LabelRepositoryFn != nil {
+				labelRepository = testCase.LabelRepositoryFn()
+			}
 			appRepository := testCase.AppRepositoryFn()
 			cfgProvider := testCase.ConfigProviderFn()
-			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, nil, "", nil)
+			formationSvc := UnusedFormationService()
+			if testCase.FormationServiceFn != nil {
+				formationSvc = testCase.FormationServiceFn()
+			}
+			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -4456,6 +4559,13 @@ func TestService_SetLabel(t *testing.T) {
 		ObjectType: model.ApplicationLabelableObject,
 	}
 
+	scenariosLabel := &model.LabelInput{
+		Key:        model.ScenariosKey,
+		Value:      []string{"value1"},
+		ObjectID:   applicationID,
+		ObjectType: model.ApplicationLabelableObject,
+	}
+
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.ApplicationRepository
@@ -4480,6 +4590,19 @@ func TestService_SetLabel(t *testing.T) {
 			InputApplicationID: applicationID,
 			InputLabel:         label,
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error when trying to set scenarios label explicitly",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+
+				return repo
+			},
+			LabelServiceFn:     UnusedLabelUpsertService,
+			InputApplicationID: applicationID,
+			InputLabel:         scenariosLabel,
+			ExpectedErrMessage: fmt.Sprintf("label with key %s cannot be set explicitly", model.ScenariosKey),
 		},
 		{
 			Name: "Returns error when label set failed",
@@ -4646,165 +4769,6 @@ func TestService_GetLabel(t *testing.T) {
 			labelRepo.AssertExpectations(t)
 		})
 	}
-}
-
-func TestService_GetScenariosGlobal(t *testing.T) {
-	// GIVEN
-	tnt := "tenant"
-	externalTnt := "external-tnt"
-
-	ctx := context.TODO()
-	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
-
-	testErr := errors.New("Test error")
-
-	scenario := "value1"
-	scenario2 := "value2"
-	applicationID := "foo"
-	labelValue := []interface{}{scenario}
-
-	modelLabel := &model.Label{
-		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     str.Ptr(tnt),
-		Key:        model.ScenariosKey,
-		Value:      labelValue,
-		ObjectID:   applicationID,
-		ObjectType: model.ApplicationLabelableObject,
-	}
-
-	labelValue2 := []interface{}{scenario2}
-
-	modelLabel2 := &model.Label{
-		ID:         "5d23d9d9-3d04-4fa9-95e6-d22e1ae62c11",
-		Tenant:     str.Ptr(tnt),
-		Key:        model.ScenariosKey,
-		Value:      labelValue2,
-		ObjectID:   applicationID,
-		ObjectType: model.ApplicationLabelableObject,
-	}
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.ApplicationRepository
-		LabelRepositoryFn  func() *automock.LabelRepository
-		InputApplicationID string
-		ExpectedScenarios  []string
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return([]*model.Label{modelLabel}, nil).Once()
-				return repo
-			},
-			InputApplicationID: applicationID,
-			ExpectedScenarios:  []string{scenario},
-		},
-		{
-			Name: "Success when no labels are found",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return(nil, nil).Once()
-				return repo
-			},
-			InputApplicationID: applicationID,
-		},
-		{
-			Name: "Success when multiple scenarios labels are present",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return([]*model.Label{modelLabel, modelLabel2}, nil).Once()
-				return repo
-			},
-			InputApplicationID: applicationID,
-			ExpectedScenarios:  []string{scenario, scenario2},
-		},
-		{
-			Name: "Returns error when label receiving failed",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
-
-				return repo
-			},
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("ListGlobalByKeyAndObjects", ctx, model.ApplicationLabelableObject, []string{applicationID}, model.ScenariosKey).Return(nil, testErr).Once()
-				return repo
-			},
-			InputApplicationID: applicationID,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when fails to check for application existence",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("Exists", ctx, tnt, applicationID).Return(false, testErr).Once()
-
-				return repo
-			},
-			LabelRepositoryFn:  UnusedLabelRepository,
-			InputApplicationID: applicationID,
-			ExpectedErrMessage: testErr.Error(),
-		},
-		{
-			Name: "Returns error when application doesn't exist",
-			RepositoryFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("Exists", ctx, tnt, applicationID).Return(false, nil).Once()
-
-				return repo
-			},
-			LabelRepositoryFn:  UnusedLabelRepository,
-			InputApplicationID: applicationID,
-			ExpectedErrMessage: fmt.Sprintf("application with ID %s doesn't exist", applicationID),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			labelRepo := testCase.LabelRepositoryFn()
-			svc := application.NewService(nil, nil, repo, nil, nil, labelRepo, nil, nil, nil, nil, nil, "", nil)
-
-			// WHEN
-			scenarios, err := svc.GetScenariosGlobal(ctx, testCase.InputApplicationID)
-
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedScenarios, scenarios)
-			} else {
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			repo.AssertExpectations(t)
-			labelRepo.AssertExpectations(t)
-		})
-	}
-
-	t.Run("Returns error on loading tenant", func(t *testing.T) {
-		svc := application.NewService(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", nil)
-		// WHEN
-		_, err := svc.GetScenariosGlobal(context.TODO(), applicationID)
-		assert.Contains(t, err.Error(), "while loading tenant from context")
-	})
 }
 
 func TestService_ListLabel(t *testing.T) {
@@ -5066,6 +5030,18 @@ func TestService_DeleteLabel(t *testing.T) {
 			InputApplicationID: applicationID,
 			InputKey:           labelKey,
 			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error when trying to delete scenarios label explicitly",
+			RepositoryFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+				repo.On("Exists", ctx, tnt, applicationID).Return(true, nil).Once()
+				return repo
+			},
+			LabelRepositoryFn:  UnusedLabelRepository,
+			InputApplicationID: applicationID,
+			InputKey:           model.ScenariosKey,
+			ExpectedErrMessage: fmt.Sprintf("label with key %s cannot be deleted explicitly", model.ScenariosKey),
 		},
 		{
 			Name: "Returns error when label delete failed",
