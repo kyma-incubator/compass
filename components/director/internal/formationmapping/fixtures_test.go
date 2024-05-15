@@ -36,9 +36,10 @@ var (
 	externalTntID = "testExternalID"
 
 	// Formation Assignment variables
-	faSourceID                = "testSourceID"
-	faTargetID                = "testTargetID"
-	testFormationAssignmentID = "testFormationAssignmentID"
+	faSourceID                       = "testSourceID"
+	faTargetID                       = "testTargetID"
+	testFormationAssignmentID        = "testFormationAssignmentID"
+	testReverseFormationAssignmentID = "testReverseFormationAssignmentID"
 
 	// Formation variables
 	testFormationID         = "testFormationID"

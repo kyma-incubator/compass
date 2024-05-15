@@ -82,6 +82,11 @@ enum ArtifactType {
 	ENVIRONMENT_INSTANCE
 }
 
+enum AssignmentOperationType {
+	ASSIGN
+	UNASSIGN
+}
+
 enum BundleInstanceAuthSetStatusConditionInput {
 	SUCCEEDED
 	FAILED
@@ -181,6 +186,13 @@ enum OperationStatus {
 	IN_PROGRESS
 	COMPLETED
 	FAILED
+}
+
+enum OperationTrigger {
+	ASSIGN_OBJECT
+	UNASSIGN_OBJECT
+	RESET
+	RESYNC
 }
 
 enum OperationType {
@@ -1137,6 +1149,22 @@ type AspectEventDefinitionSubset {
 	eventType: String
 }
 
+type AssignmentOperation {
+	id: ID!
+	operationType: AssignmentOperationType!
+	formationAssignmentID: ID!
+	formationID: ID!
+	triggeredBy: OperationTrigger!
+	startedAtTimestamp: Timestamp
+	finishedAtTimestamp: Timestamp
+}
+
+type AssignmentOperationPage implements Pageable {
+	data: [AssignmentOperation!]!
+	pageInfo: PageInfo!
+	totalCount: Int!
+}
+
 type Auth {
 	credential: CredentialData
 	accessStrategy: String
@@ -1378,6 +1406,7 @@ type FormationAssignment {
 	error: String
 	lastStateChangeTimestamp: Timestamp
 	lastNotificationSentTimestamp: Timestamp
+	assignmentOperations(first: Int = 200, after: PageCursor): AssignmentOperationPage
 }
 
 type FormationAssignmentPage implements Pageable {

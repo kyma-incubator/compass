@@ -106,7 +106,7 @@ func (o *UpdateWebhookOperation) Execute(t *testing.T, ctx context.Context, gqlC
 	}
 	require.NotEmpty(t, webhook)
 
-	input := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.headerTemplate)
+	input := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, "", o.headerTemplate)
 	updatedWebhook := fixtures.UpdateWebhook(t, ctx, gqlClient, o.tenantID, webhook.ID, input)
 	require.Equal(t, updatedWebhook.ID, webhook.ID)
 	for _, asserter := range o.asserters {

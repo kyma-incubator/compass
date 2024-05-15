@@ -5,17 +5,17 @@ import (
 )
 
 type FAExpectationsBuilder struct {
-	// target: source: state
-	expectations map[string]map[string]fixtures.AssignmentState
+	// source: target: state
+	expectations map[string]map[string]fixtures.Assignment
 }
 
 func NewFAExpectationsBuilder() *FAExpectationsBuilder {
 	return &FAExpectationsBuilder{
-		expectations: map[string]map[string]fixtures.AssignmentState{},
+		expectations: map[string]map[string]fixtures.Assignment{},
 	}
 }
 
-func (b *FAExpectationsBuilder) GetExpectations() map[string]map[string]fixtures.AssignmentState {
+func (b *FAExpectationsBuilder) GetExpectations() map[string]map[string]fixtures.Assignment {
 	return b.expectations
 }
 
@@ -46,18 +46,45 @@ func (b *FAExpectationsBuilder) WithParticipantAndStates(newParticipantID, targe
 	}
 
 	// add records for assignments where the new participant is target and a participant that was already added to the expectations structure is source
-	for _, expectationsForPreviouslyAddedParticipantAsSource := range b.expectations {
-		expectationsForPreviouslyAddedParticipantAsSource[newParticipantID] = fixtures.AssignmentState{State: targetState, Config: nil, Value: nil, Error: nil}
+	for previousParticipant, expectationsForPreviouslyAddedParticipantAsSource := range b.expectations {
+		expectationsForPreviouslyAddedParticipantAsSource[newParticipantID] = fixtures.Assignment{
+			AssignmentStatus: fixtures.AssignmentState{State: targetState, Config: nil, Value: nil, Error: nil},
+			Operations: []*fixtures.Operation{{
+				SourceID:    previousParticipant,
+				TargetID:    newParticipantID,
+				Type:        "ASSIGN",
+				TriggeredBy: "ASSIGN_OBJECT",
+				IsFinished:  true,
+			}},
+		}
 	}
 
 	currentParticipantIDs := b.getCurrentParticipantIDs()
 	// add expectations where the newly added participant is source
-	b.expectations[newParticipantID] = make(map[string]fixtures.AssignmentState, len(currentParticipantIDs)+1)
+	b.expectations[newParticipantID] = make(map[string]fixtures.Assignment, len(currentParticipantIDs)+1)
 	// add record for the loop assignment
-	b.expectations[newParticipantID][newParticipantID] = fixtures.AssignmentState{State: selfState, Config: nil, Value: nil, Error: nil}
+	b.expectations[newParticipantID][newParticipantID] = fixtures.Assignment{
+		AssignmentStatus: fixtures.AssignmentState{State: selfState, Config: nil, Value: nil, Error: nil},
+		Operations: []*fixtures.Operation{{
+			SourceID:    newParticipantID,
+			TargetID:    newParticipantID,
+			Type:        "ASSIGN",
+			TriggeredBy: "ASSIGN_OBJECT",
+			IsFinished:  true,
+		}},
+	}
 	// add records for assignments where the new participant is source and the target is a participant that was already added to the expectations structure
 	for _, previouslyAddedParticipantID := range currentParticipantIDs {
-		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.AssignmentState{State: sourceState, Config: nil, Value: nil, Error: nil}
+		b.expectations[newParticipantID][previouslyAddedParticipantID] = fixtures.Assignment{
+			AssignmentStatus: fixtures.AssignmentState{State: sourceState, Config: nil, Value: nil, Error: nil},
+			Operations: []*fixtures.Operation{{
+				SourceID:    newParticipantID,
+				TargetID:    previouslyAddedParticipantID,
+				Type:        "ASSIGN",
+				TriggeredBy: "ASSIGN_OBJECT",
+				IsFinished:  true,
+			}},
+		}
 	}
 
 	return b
@@ -65,13 +92,34 @@ func (b *FAExpectationsBuilder) WithParticipantAndStates(newParticipantID, targe
 
 func (b *FAExpectationsBuilder) WithCustomParticipants(newParticipantIDs []string) *FAExpectationsBuilder {
 	for _, participant := range newParticipantIDs {
-		b.expectations[participant] = make(map[string]fixtures.AssignmentState)
+		b.expectations[participant] = make(map[string]fixtures.Assignment)
 	}
 	return b
 }
+
 func (b *FAExpectationsBuilder) WithNotifications(notifications []*NotificationData) *FAExpectationsBuilder {
 	for _, notification := range notifications {
-		b.expectations[notification.SourceID][notification.TargetID] = notification.getAssignmentState()
+		assignmentExpectation := b.expectations[notification.SourceID][notification.TargetID]
+		assignmentExpectation.AssignmentStatus = notification.getAssignmentState()
+		b.expectations[notification.SourceID][notification.TargetID] = assignmentExpectation
+	}
+	return b
+}
+
+func (b *FAExpectationsBuilder) WithOperations(operations []*fixtures.Operation) *FAExpectationsBuilder {
+	// Remove operations generated from adding the participant to the expectations only for the assignments where operations are provided externally.
+	// We can not directly replace as we can have two or more operations provided externally for one and the same assignment(in case of successful assign and then reset)
+	for _, operation := range operations {
+		assignmentExpectation := b.expectations[operation.SourceID][operation.TargetID]
+		assignmentExpectation.Operations = nil
+		b.expectations[operation.SourceID][operation.TargetID] = assignmentExpectation
+	}
+
+	// add the new operations
+	for _, operation := range operations {
+		assignmentExpectation := b.expectations[operation.SourceID][operation.TargetID]
+		assignmentExpectation.Operations = append(assignmentExpectation.Operations, operation)
+		b.expectations[operation.SourceID][operation.TargetID] = assignmentExpectation
 	}
 	return b
 }
