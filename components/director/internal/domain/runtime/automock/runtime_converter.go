@@ -18,10 +18,6 @@ type RuntimeConverter struct {
 func (_m *RuntimeConverter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Runtime {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for MultipleToGraphQL")
-	}
-
 	var r0 []*graphql.Runtime
 	if rf, ok := ret.Get(0).(func([]*model.Runtime) []*graphql.Runtime); ok {
 		r0 = rf(in)
@@ -37,10 +33,6 @@ func (_m *RuntimeConverter) MultipleToGraphQL(in []*model.Runtime) []*graphql.Ru
 // RegisterInputFromGraphQL provides a mock function with given fields: in
 func (_m *RuntimeConverter) RegisterInputFromGraphQL(in graphql.RuntimeRegisterInput) (model.RuntimeRegisterInput, error) {
 	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for RegisterInputFromGraphQL")
-	}
 
 	var r0 model.RuntimeRegisterInput
 	var r1 error
@@ -66,10 +58,6 @@ func (_m *RuntimeConverter) RegisterInputFromGraphQL(in graphql.RuntimeRegisterI
 func (_m *RuntimeConverter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
-
 	var r0 *graphql.Runtime
 	if rf, ok := ret.Get(0).(func(*model.Runtime) *graphql.Runtime); ok {
 		r0 = rf(in)
@@ -85,10 +73,6 @@ func (_m *RuntimeConverter) ToGraphQL(in *model.Runtime) *graphql.Runtime {
 // UpdateInputFromGraphQL provides a mock function with given fields: in
 func (_m *RuntimeConverter) UpdateInputFromGraphQL(in graphql.RuntimeUpdateInput) model.RuntimeUpdateInput {
 	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UpdateInputFromGraphQL")
-	}
 
 	var r0 model.RuntimeUpdateInput
 	if rf, ok := ret.Get(0).(func(graphql.RuntimeUpdateInput) model.RuntimeUpdateInput); ok {

@@ -28,17 +28,17 @@ func (_m *SystemFieldDiscoveryEngine) CreateLabelForApplicationWebhook(ctx conte
 	return r0
 }
 
-// EnrichApplicationWebhookIfNeeded provides a mock function with given fields: ctx, appCreateInputModel, systemFieldDiscovery, region, subacountID, appTemplateName, appName
-func (_m *SystemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region string, subacountID string, appTemplateName string, appName string) ([]*model.WebhookInput, bool) {
-	ret := _m.Called(ctx, appCreateInputModel, systemFieldDiscovery, region, subacountID, appTemplateName, appName)
+// EnrichApplicationWebhookIfNeeded provides a mock function with given fields: ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplateName, appName
+func (_m *SystemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region string, subaccountID string, appTemplateName string, appName string) ([]*model.WebhookInput, bool) {
+	ret := _m.Called(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplateName, appName)
 
 	var r0 []*model.WebhookInput
 	var r1 bool
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, bool, string, string, string, string) ([]*model.WebhookInput, bool)); ok {
-		return rf(ctx, appCreateInputModel, systemFieldDiscovery, region, subacountID, appTemplateName, appName)
+		return rf(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplateName, appName)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput, bool, string, string, string, string) []*model.WebhookInput); ok {
-		r0 = rf(ctx, appCreateInputModel, systemFieldDiscovery, region, subacountID, appTemplateName, appName)
+		r0 = rf(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplateName, appName)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.WebhookInput)
@@ -46,7 +46,7 @@ func (_m *SystemFieldDiscoveryEngine) EnrichApplicationWebhookIfNeeded(ctx conte
 	}
 
 	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationRegisterInput, bool, string, string, string, string) bool); ok {
-		r1 = rf(ctx, appCreateInputModel, systemFieldDiscovery, region, subacountID, appTemplateName, appName)
+		r1 = rf(ctx, appCreateInputModel, systemFieldDiscovery, region, subaccountID, appTemplateName, appName)
 	} else {
 		r1 = ret.Get(1).(bool)
 	}

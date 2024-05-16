@@ -18,10 +18,6 @@ type RuntimeContextService struct {
 func (_m *RuntimeContextService) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Delete")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
@@ -35,10 +31,6 @@ func (_m *RuntimeContextService) Delete(ctx context.Context, id string) error {
 // GetForRuntime provides a mock function with given fields: ctx, id, runtimeID
 func (_m *RuntimeContextService) GetForRuntime(ctx context.Context, id string, runtimeID string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, id, runtimeID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetForRuntime")
-	}
 
 	var r0 *model.RuntimeContext
 	var r1 error
@@ -66,10 +58,6 @@ func (_m *RuntimeContextService) GetForRuntime(ctx context.Context, id string, r
 func (_m *RuntimeContextService) ListAllForRuntime(ctx context.Context, runtimeID string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, runtimeID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListAllForRuntime")
-	}
-
 	var r0 []*model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.RuntimeContext, error)); ok {
@@ -95,10 +83,6 @@ func (_m *RuntimeContextService) ListAllForRuntime(ctx context.Context, runtimeI
 // ListByRuntimeIDs provides a mock function with given fields: ctx, runtimeIDs, pageSize, cursor
 func (_m *RuntimeContextService) ListByRuntimeIDs(ctx context.Context, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
 	ret := _m.Called(ctx, runtimeIDs, pageSize, cursor)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByRuntimeIDs")
-	}
 
 	var r0 []*model.RuntimeContextPage
 	var r1 error
