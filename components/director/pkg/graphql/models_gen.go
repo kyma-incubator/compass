@@ -1801,20 +1801,22 @@ func (e OneTimeTokenType) MarshalGQL(w io.Writer) {
 type OperationErrorSeverity string
 
 const (
-	OperationErrorSeverityInfo    OperationErrorSeverity = "Info"
-	OperationErrorSeverityWarning OperationErrorSeverity = "Warning"
-	OperationErrorSeverityError   OperationErrorSeverity = "Error"
+	OperationErrorSeverityInfo    OperationErrorSeverity = "INFO"
+	OperationErrorSeverityWarning OperationErrorSeverity = "WARNING"
+	OperationErrorSeverityError   OperationErrorSeverity = "ERROR"
+	OperationErrorSeverityNone    OperationErrorSeverity = "NONE"
 )
 
 var AllOperationErrorSeverity = []OperationErrorSeverity{
 	OperationErrorSeverityInfo,
 	OperationErrorSeverityWarning,
 	OperationErrorSeverityError,
+	OperationErrorSeverityNone,
 }
 
 func (e OperationErrorSeverity) IsValid() bool {
 	switch e {
-	case OperationErrorSeverityInfo, OperationErrorSeverityWarning, OperationErrorSeverityError:
+	case OperationErrorSeverityInfo, OperationErrorSeverityWarning, OperationErrorSeverityError, OperationErrorSeverityNone:
 		return true
 	}
 	return false

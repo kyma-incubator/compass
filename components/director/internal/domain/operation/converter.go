@@ -126,7 +126,9 @@ func (c *converter) operationErrorSeverityToGraphQL(in model.OperationErrorSever
 		return graphql.OperationErrorSeverityWarning
 	case model.OperationErrorSeverityInfo:
 		return graphql.OperationErrorSeverityInfo
+	case model.OperationErrorSeverityNone:
+		return graphql.OperationErrorSeverityNone
 	default:
-		return ""
+		return graphql.OperationErrorSeverityNone
 	}
 }
