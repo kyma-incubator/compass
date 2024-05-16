@@ -4852,7 +4852,7 @@ func TestService_SetLabel(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("AssignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: newScenario}).Return(nil, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}).Return(nil, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}, false).Return(nil, nil).Once()
 				return svc
 			},
 			InputApplicationID: applicationID,
@@ -4913,7 +4913,7 @@ func TestService_SetLabel(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("AssignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: newScenario}).Return(nil, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}).Return(nil, testErr).Once()
+				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}, false).Return(nil, testErr).Once()
 				return svc
 			},
 			InputApplicationID: applicationID,
@@ -5580,7 +5580,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
-				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}, false).Return(nil, nil).Once()
 				return service
 			},
 			InputApplicationID: applicationID,
@@ -5601,7 +5601,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
-				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, testErr).Once()
+				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}, false).Return(nil, testErr).Once()
 				return service
 			},
 			InputApplicationID: applicationID,
