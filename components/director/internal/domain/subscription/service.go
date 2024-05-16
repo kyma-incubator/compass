@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -40,6 +38,8 @@ const (
 	SubscriptionsLabelKey = "subscriptions"
 	// PreviousSubscriptionID represents a previous subscription id. This is needed, because before introducing this change there might be subscriptions which we don't know that they existed.
 	PreviousSubscriptionID = "00000000-0000-0000-0000-000000000000"
+	// SystemFieldDiscoveryLabelKey is the label key of the application template system field discovery label, based on it an operation is created.
+	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -485,16 +485,16 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 	}
 
 	var systemFieldDiscoveryValue, ok bool
-	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, webhookprocessor.SystemFieldDiscoveryLabelKey)
+	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, SystemFieldDiscoveryLabelKey)
 	if err != nil && !apperrors.IsNotFoundError(err) {
 		return "", false, err
 	} else {
 		if apperrors.IsNotFoundError(err) {
-			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
+			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", SystemFieldDiscoveryLabelKey, appTemplate.ID)
 		} else {
 			systemFieldDiscoveryValue, ok = systemFieldDiscoveryLabel.Value.(bool)
 			if !ok {
-				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
+				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", SystemFieldDiscoveryLabelKey, appTemplate.ID)
 			}
 		}
 	}
