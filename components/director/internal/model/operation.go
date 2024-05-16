@@ -23,12 +23,14 @@ const (
 type OperationErrorSeverity string
 
 const (
+	// OperationErrorSeverityNone scheduled operation status
+	OperationErrorSeverityNone OperationErrorSeverity = "NONE"
 	// OperationErrorSeverityError scheduled operation status
-	OperationErrorSeverityError OperationErrorSeverity = "Error"
+	OperationErrorSeverityError OperationErrorSeverity = "ERROR"
 	// OperationErrorSeverityWarning in progress operation status
-	OperationErrorSeverityWarning OperationErrorSeverity = "Warning"
+	OperationErrorSeverityWarning OperationErrorSeverity = "WARNING"
 	// OperationErrorSeverityInfo completed operation status
-	OperationErrorSeverityInfo OperationErrorSeverity = "Info"
+	OperationErrorSeverityInfo OperationErrorSeverity = "INFO"
 )
 
 // OperationType defines supported operation types

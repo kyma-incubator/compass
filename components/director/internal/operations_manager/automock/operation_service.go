@@ -294,13 +294,12 @@ func (_m *OperationService) Update(ctx context.Context, input *model.Operation) 
 	return r0
 }
 
-type mockConstructorTestingTNewOperationService interface {
+// NewOperationService creates a new instance of OperationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewOperationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewOperationService creates a new instance of OperationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewOperationService(t mockConstructorTestingTNewOperationService) *OperationService {
+}) *OperationService {
 	mock := &OperationService{}
 	mock.Mock.Test(t)
 

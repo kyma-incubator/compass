@@ -3,9 +3,9 @@ BEGIN;
 DROP VIEW IF EXISTS scheduled_operations;
 
 CREATE TYPE operation_error_severity AS ENUM (
-    'Error',
-    'Warning',
-    'Info'
+    'ERROR',
+    'WARNING',
+    'INFO'
 );
 
 ALTER TABLE operation

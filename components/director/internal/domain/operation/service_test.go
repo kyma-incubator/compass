@@ -861,6 +861,122 @@ func TestService_MarkAsFailed(t *testing.T) {
 	}
 }
 
+func TestService_SetErrorSeverity(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name          string
+		RepositoryFn  func() *automock.OperationRepository
+		ErrorSeverity model.OperationErrorSeverity
+		ExpectedErr   error
+	}{
+		{
+			Name: "Success when set Error severity to Info",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityInfo := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityInfo)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityInfo).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityInfo,
+		},
+		{
+			Name: "Success when set Error severity to Warning",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityWarning := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityWarning)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityWarning).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityWarning,
+		},
+		{
+			Name: "Success when set Error severity to Error",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityError := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityError)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityError).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityError,
+		},
+		{
+			Name: "Success when set Error severity to None",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityError := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityError)
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityError, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityNone).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityNone,
+		},
+		{
+			Name: "Error while getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, testErr).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityInfo,
+			ExpectedErr:   testErr,
+		},
+		{
+			Name: "Error while updating operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityInfo := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityInfo)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityInfo).Return(testErr).Once()
+
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityInfo,
+			ExpectedErr:   testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.SetErrorSeverity(ctx, operationID, testCase.ErrorSeverity)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_ListAllByType(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")

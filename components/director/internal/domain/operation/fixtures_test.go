@@ -3,6 +3,7 @@ package operation_test
 import (
 	"database/sql/driver"
 	"encoding/json"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -85,6 +86,20 @@ func fixOperationModelWithIDAndTimestamp(id string, opType model.OperationType, 
 		Priority:      priority,
 		CreatedAt:     timestamp,
 		UpdatedAt:     timestamp,
+	}
+}
+
+func fixOperationModelWithErrorSeverity(errorSeverity model.OperationErrorSeverity) *model.Operation {
+	return &model.Operation{
+		ID:            operationID,
+		OpType:        testOpType,
+		Status:        model.OperationStatusFailed,
+		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
+		Error:         json.RawMessage(errorMsg),
+		ErrorSeverity: errorSeverity,
+		Priority:      1,
+		CreatedAt:     &time.Time{},
+		UpdatedAt:     &time.Time{},
 	}
 }
 
