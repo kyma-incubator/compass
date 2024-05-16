@@ -1,5 +1,0 @@
-apiVersion: v1
-appVersion: "0.1.0"
-description: System Broker Helm chart for Kubernetes
-name: system-broker
-version: 0.1.0

@@ -24,10 +24,6 @@ type DestinationCreatorService struct {
 func (_m *DestinationCreatorService) CreateCertificate(ctx context.Context, destinationsDetails []operators.Destination, destinationAuthType destinationcreator.AuthType, formationAssignment *model.FormationAssignment, depth uint8, skipSubaccountValidation bool, useSelfSignedCert bool) (*operators.CertificateData, error) {
 	ret := _m.Called(ctx, destinationsDetails, destinationAuthType, formationAssignment, depth, skipSubaccountValidation, useSelfSignedCert)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateCertificate")
-	}
-
 	var r0 *operators.CertificateData
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, destinationcreator.AuthType, *model.FormationAssignment, uint8, bool, bool) (*operators.CertificateData, error)); ok {
@@ -54,10 +50,6 @@ func (_m *DestinationCreatorService) CreateCertificate(ctx context.Context, dest
 func (_m *DestinationCreatorService) EnrichAssignmentConfigWithCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *operators.CertificateData) (json.RawMessage, error) {
 	ret := _m.Called(assignmentConfig, destinationTypePath, certData)
 
-	if len(ret) == 0 {
-		panic("no return value specified for EnrichAssignmentConfigWithCertificateData")
-	}
-
 	var r0 json.RawMessage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(json.RawMessage, string, *operators.CertificateData) (json.RawMessage, error)); ok {
@@ -83,10 +75,6 @@ func (_m *DestinationCreatorService) EnrichAssignmentConfigWithCertificateData(a
 // EnrichAssignmentConfigWithSAMLCertificateData provides a mock function with given fields: assignmentConfig, destinationTypePath, certData
 func (_m *DestinationCreatorService) EnrichAssignmentConfigWithSAMLCertificateData(assignmentConfig json.RawMessage, destinationTypePath string, certData *operators.CertificateData) (json.RawMessage, error) {
 	ret := _m.Called(assignmentConfig, destinationTypePath, certData)
-
-	if len(ret) == 0 {
-		panic("no return value specified for EnrichAssignmentConfigWithSAMLCertificateData")
-	}
 
 	var r0 json.RawMessage
 	var r1 error

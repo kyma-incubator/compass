@@ -361,7 +361,7 @@ func AssertUpdateApplicationTemplate(t *testing.T, in graphql.ApplicationTemplat
 	assert.Equal(t, in.AccessLevel, actualApplicationTemplate.AccessLevel)
 }
 
-func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
+func AssertFormationTemplateFromRegisterInput(t *testing.T, in *graphql.FormationTemplateRegisterInput, actual *graphql.FormationTemplate) {
 	assert.Equal(t, in.Name, actual.Name)
 	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
 	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
@@ -377,7 +377,22 @@ func AssertFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, a
 	AssertWebhooks(t, in.Webhooks, webhooks)
 }
 
-func AssertAppOnlyFormationTemplate(t *testing.T, in *graphql.FormationTemplateInput, actual *graphql.FormationTemplate) {
+func AssertFormationTemplateFromUpdateInput(t *testing.T, in *graphql.FormationTemplateUpdateInput, actual *graphql.FormationTemplate) {
+	assert.Equal(t, in.Name, actual.Name)
+	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
+	assert.ElementsMatch(t, in.RuntimeTypes, actual.RuntimeTypes)
+	assert.Equal(t, in.RuntimeTypeDisplayName, actual.RuntimeTypeDisplayName)
+	assert.Equal(t, in.RuntimeArtifactKind, actual.RuntimeArtifactKind)
+	var webhooks []graphql.Webhook
+	for _, webhook := range actual.Webhooks {
+		webhooks = append(webhooks, *webhook)
+	}
+	if in.SupportsReset != nil {
+		assert.Equal(t, *in.SupportsReset, actual.SupportsReset)
+	}
+}
+
+func AssertAppOnlyFormationTemplateFromRegisterInput(t *testing.T, in *graphql.FormationTemplateRegisterInput, actual *graphql.FormationTemplate) {
 	assert.Equal(t, in.Name, actual.Name)
 	assert.ElementsMatch(t, in.ApplicationTypes, actual.ApplicationTypes)
 	assert.Empty(t, actual.RuntimeTypes)
@@ -423,29 +438,8 @@ func AssertBundleInstanceAuthInput(t *testing.T, expectedAuth graphql.BundleInst
 	AssertGraphQLJSON(t, expectedAuth.InputParams, actualAuth.InputParams)
 }
 
-func AssertBundleInstanceAuth(t *testing.T, expectedAuth graphql.BundleInstanceAuth, actualAuth graphql.BundleInstanceAuth) {
-	assert.Equal(t, expectedAuth.ID, actualAuth.ID)
-	assert.Equal(t, expectedAuth.Context, actualAuth.Context)
-	assert.Equal(t, expectedAuth.InputParams, actualAuth.InputParams)
-}
-
 func AssertGraphQLJSON(t *testing.T, inExpected *graphql.JSON, inActual *graphql.JSON) {
 	inExpectedStr, ok := json2.UnmarshalJSON(t, inExpected).(string)
-	assert.True(t, ok)
-
-	var expected map[string]interface{}
-	err := json.Unmarshal([]byte(inExpectedStr), &expected)
-	require.NoError(t, err)
-
-	var actual map[string]interface{}
-	err = json.Unmarshal([]byte(*inActual), &actual)
-	require.NoError(t, err)
-
-	assert.Equal(t, expected, actual)
-}
-
-func AssertGraphQLJSONSchema(t *testing.T, inExpected *graphql.JSONSchema, inActual *graphql.JSONSchema) {
-	inExpectedStr, ok := json2.UnmarshalJSONSchema(t, inExpected).(string)
 	assert.True(t, ok)
 
 	var expected map[string]interface{}

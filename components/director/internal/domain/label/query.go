@@ -80,6 +80,8 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 	var cond repo.Condition
 	if queryFor == model.TenantLabelableObject {
 		cond = repo.NewEqualCondition("tenant_id", tenant)
+	} else if queryFor == model.FormationTemplateLabelableObject {
+		cond = repo.NewNullCondition("tenant_id") // the tenant isolation for the formation template is handled in its repository layer
 	} else {
 		var err error
 		cond, err = repo.NewTenantIsolationCondition(queryFor.GetResourceType(), tenant.String(), false)
@@ -91,7 +93,9 @@ func filterQuery(queryFor model.LabelableObject, setCombination SetCombination, 
 	stmtPrefixFormatWithTenantIsolation := stmtPrefixFormat + " " + cond.GetQueryPart()
 	stmtPrefix := fmt.Sprintf(stmtPrefixFormatWithTenantIsolation, objectField, tableName, objectField)
 	var stmtPrefixArgs []interface{}
-	stmtPrefixArgs = append(stmtPrefixArgs, tenant)
+	if queryFor != model.FormationTemplateLabelableObject {
+		stmtPrefixArgs = append(stmtPrefixArgs, tenant)
+	}
 
 	return buildFilterQuery(stmtPrefix, stmtPrefixArgs, setCombination, filter, isSubQuery)
 }

@@ -17,10 +17,6 @@ type SubscriptionService struct {
 func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionAppName string, subscriptionID string) (bool, error) {
 	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for SubscribeTenantToRuntime")
-	}
-
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string) (bool, error)); ok {
@@ -44,10 +40,6 @@ func (_m *SubscriptionService) SubscribeTenantToRuntime(ctx context.Context, pro
 // UnsubscribeTenantFromRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID
 func (_m *SubscriptionService) UnsubscribeTenantFromRuntime(ctx context.Context, providerID string, subaccountTenantID string, providerSubaccountID string, consumerTenantID string, region string, subscriptionID string) (bool, error) {
 	ret := _m.Called(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UnsubscribeTenantFromRuntime")
-	}
 
 	var r0 bool
 	var r1 error

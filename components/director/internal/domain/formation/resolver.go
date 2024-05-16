@@ -30,7 +30,7 @@ type Service interface {
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 	FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error)
 }
@@ -329,7 +329,7 @@ func (r *Resolver) UnassignFormation(ctx context.Context, objectID string, objec
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	newFormation, err := r.service.UnassignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
+	newFormation, err := r.service.UnassignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation), false)
 	if err != nil {
 		return nil, err
 	}
@@ -358,7 +358,7 @@ func (r *Resolver) UnassignFormationGlobal(ctx context.Context, objectID string,
 
 	ctx = tenant.SaveToContext(ctx, formation.TenantID, "")
 
-	newFormation, err := r.service.UnassignFormation(ctx, formation.TenantID, objectID, objectType, *formation)
+	newFormation, err := r.service.UnassignFormation(ctx, formation.TenantID, objectID, objectType, *formation, false)
 	if err != nil {
 		return nil, err
 	}

@@ -65,6 +65,7 @@ type RuntimeCtxService interface {
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelService is responsible updating already existing labels, and their label definitions.
@@ -317,7 +318,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 	for _, rtmCtx := range rtmCtxPage.Data {
 		// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated, delete the record from the DB
 		if rtmCtx.Value == consumerTenantID {
-			if err := s.deleteOnUnsubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID, subscriptionID, s.runtimeCtxSvc.Delete); err != nil {
+			if err := s.deleteOnUnsubscribeForParents(ctx, model.RuntimeContextLabelableObject, rtmCtx.ID, subscriptionID, s.runtimeCtxSvc.Delete); err != nil {
 				return false, err
 			}
 			break
@@ -622,6 +623,28 @@ func (s *service) manageSubscriptionsLabelOnSubscribe(ctx context.Context, tenan
 	}
 
 	log.C(ctx).Infof("Successfully added the new value %q to the label %q for %q with id %q", subscriptionID, SubscriptionsLabelKey, objectType, objectID)
+	return nil
+}
+
+func (s *service) deleteOnUnsubscribeForParents(ctx context.Context, objectType model.LabelableObject, objectID, subscriptionID string, deleteObject func(context.Context, string) error) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "An error occurred while loading tenant from context")
+	}
+
+	tntMapping, err := s.tenantSvc.GetTenantByID(ctx, tnt)
+	if err != nil {
+		return err
+	}
+
+	for _, parentTenantID := range tntMapping.Parents {
+		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
+
+		if err := s.deleteOnUnsubscribe(ctxWithParentTenant, parentTenantID, objectType, objectID, subscriptionID, deleteObject); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

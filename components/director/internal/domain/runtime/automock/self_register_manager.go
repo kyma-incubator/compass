@@ -18,10 +18,6 @@ type SelfRegisterManager struct {
 func (_m *SelfRegisterManager) CleanupSelfRegistration(ctx context.Context, selfRegisterLabelValue string, region string) error {
 	ret := _m.Called(ctx, selfRegisterLabelValue, region)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CleanupSelfRegistration")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, selfRegisterLabelValue, region)
@@ -36,10 +32,6 @@ func (_m *SelfRegisterManager) CleanupSelfRegistration(ctx context.Context, self
 func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 	ret := _m.Called()
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetSelfRegDistinguishingLabelKey")
-	}
-
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()
@@ -53,10 +45,6 @@ func (_m *SelfRegisterManager) GetSelfRegDistinguishingLabelKey() string {
 // PrepareForSelfRegistration provides a mock function with given fields: ctx, resourceType, labels, id, validate
 func (_m *SelfRegisterManager) PrepareForSelfRegistration(ctx context.Context, resourceType resource.Type, labels map[string]interface{}, id string, validate func() error) (map[string]interface{}, error) {
 	ret := _m.Called(ctx, resourceType, labels, id, validate)
-
-	if len(ret) == 0 {
-		panic("no return value specified for PrepareForSelfRegistration")
-	}
 
 	var r0 map[string]interface{}
 	var r1 error
