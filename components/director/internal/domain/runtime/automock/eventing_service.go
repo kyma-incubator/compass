@@ -20,10 +20,6 @@ type EventingService struct {
 func (_m *EventingService) GetForRuntime(ctx context.Context, runtimeID uuid.UUID) (*model.RuntimeEventingConfiguration, error) {
 	ret := _m.Called(ctx, runtimeID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetForRuntime")
-	}
-
 	var r0 *model.RuntimeEventingConfiguration
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.RuntimeEventingConfiguration, error)); ok {

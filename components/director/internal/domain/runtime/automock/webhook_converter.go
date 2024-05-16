@@ -18,10 +18,6 @@ type WebhookConverter struct {
 func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput) ([]*model.WebhookInput, error) {
 	ret := _m.Called(in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for MultipleInputFromGraphQL")
-	}
-
 	var r0 []*model.WebhookInput
 	var r1 error
 	if rf, ok := ret.Get(0).(func([]*graphql.WebhookInput) ([]*model.WebhookInput, error)); ok {
@@ -47,10 +43,6 @@ func (_m *WebhookConverter) MultipleInputFromGraphQL(in []*graphql.WebhookInput)
 // MultipleToGraphQL provides a mock function with given fields: in
 func (_m *WebhookConverter) MultipleToGraphQL(in []*model.Webhook) ([]*graphql.Webhook, error) {
 	ret := _m.Called(in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MultipleToGraphQL")
-	}
 
 	var r0 []*graphql.Webhook
 	var r1 error

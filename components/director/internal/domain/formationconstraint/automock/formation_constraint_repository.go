@@ -21,10 +21,6 @@ type FormationConstraintRepository struct {
 func (_m *FormationConstraintRepository) Create(ctx context.Context, item *model.FormationConstraint) error {
 	ret := _m.Called(ctx, item)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationConstraint) error); ok {
 		r0 = rf(ctx, item)
@@ -39,10 +35,6 @@ func (_m *FormationConstraintRepository) Create(ctx context.Context, item *model
 func (_m *FormationConstraintRepository) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Delete")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
@@ -56,10 +48,6 @@ func (_m *FormationConstraintRepository) Delete(ctx context.Context, id string) 
 // Get provides a mock function with given fields: ctx, id
 func (_m *FormationConstraintRepository) Get(ctx context.Context, id string) (*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Get")
-	}
 
 	var r0 *model.FormationConstraint
 	var r1 error
@@ -87,10 +75,6 @@ func (_m *FormationConstraintRepository) Get(ctx context.Context, id string) (*m
 func (_m *FormationConstraintRepository) ListAll(ctx context.Context) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListAll")
-	}
-
 	var r0 []*model.FormationConstraint
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.FormationConstraint, error)); ok {
@@ -116,10 +100,6 @@ func (_m *FormationConstraintRepository) ListAll(ctx context.Context) ([]*model.
 // ListByIDsAndGlobal provides a mock function with given fields: ctx, formationConstraintIDs
 func (_m *FormationConstraintRepository) ListByIDsAndGlobal(ctx context.Context, formationConstraintIDs []string) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, formationConstraintIDs)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByIDsAndGlobal")
-	}
 
 	var r0 []*model.FormationConstraint
 	var r1 error
@@ -147,10 +127,6 @@ func (_m *FormationConstraintRepository) ListByIDsAndGlobal(ctx context.Context,
 func (_m *FormationConstraintRepository) ListMatchingFormationConstraints(ctx context.Context, formationConstraintIDs []string, location pkgformationconstraint.JoinPointLocation, details pkgformationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, formationConstraintIDs, location, details)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListMatchingFormationConstraints")
-	}
-
 	var r0 []*model.FormationConstraint
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string, pkgformationconstraint.JoinPointLocation, pkgformationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)); ok {
@@ -176,10 +152,6 @@ func (_m *FormationConstraintRepository) ListMatchingFormationConstraints(ctx co
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *FormationConstraintRepository) Update(ctx context.Context, _a1 *model.FormationConstraint) error {
 	ret := _m.Called(ctx, _a1)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationConstraint) error); ok {

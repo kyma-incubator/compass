@@ -18,10 +18,6 @@ type FormationAssignmentRepository struct {
 func (_m *FormationAssignmentRepository) Update(ctx context.Context, _a1 *model.FormationAssignment) error {
 	ret := _m.Called(ctx, _a1)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) error); ok {
 		r0 = rf(ctx, _a1)
