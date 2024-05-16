@@ -1,0 +1,8 @@
+reviewers:
+  - team-falcon
+  - team-raptor
+approvers:
+  - team-falcon
+  - team-raptor
+options:
+  no_parent_owners: true
