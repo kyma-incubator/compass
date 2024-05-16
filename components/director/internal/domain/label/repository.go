@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", keyColumn, "value", "version", "webhook_id"}
+	tableColumns       = []string{"id", tenantColumn, "app_id", "runtime_id", "runtime_context_id", "app_template_id", "formation_template_id", keyColumn, "value", "version", "webhook_id"}
 	updatableColumns   = []string{"value"}
 	idColumns          = []string{"id"}
 	versionedIDColumns = append(idColumns, "version")
@@ -112,7 +112,7 @@ func (r *repository) Upsert(ctx context.Context, tenant string, label *model.Lab
 	if label.ObjectType == model.TenantLabelableObject {
 		return r.embeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
-	if label.ObjectType == model.AppTemplateLabelableObject {
+	if label.ObjectType == model.AppTemplateLabelableObject || label.ObjectType == model.FormationTemplateLabelableObject {
 		return r.updaterGlobal.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
 
@@ -151,7 +151,7 @@ func (r *repository) UpdateWithVersion(ctx context.Context, tenant string, label
 	if err != nil {
 		return errors.Wrap(err, "while creating label entity from model")
 	}
-	if label.ObjectType == model.TenantLabelableObject {
+	if label.ObjectType == model.TenantLabelableObject || label.ObjectType == model.FormationTemplateLabelableObject {
 		return r.versionedEmbeddedTenantUpdater.UpdateSingleWithVersionGlobal(ctx, labelEntity)
 	}
 	return r.versionedUpdater.UpdateSingleWithVersion(ctx, label.ObjectType.GetResourceType(), tenant, labelEntity)
@@ -168,7 +168,7 @@ func (r *repository) Create(ctx context.Context, tenant string, label *model.Lab
 		return errors.Wrap(err, "while creating label entity from model")
 	}
 
-	if label.ObjectType == model.TenantLabelableObject || label.ObjectType == model.AppTemplateLabelableObject {
+	if label.ObjectType == model.TenantLabelableObject || label.ObjectType == model.AppTemplateLabelableObject || (label.ObjectType == model.FormationTemplateLabelableObject && tenant == "") {
 		return r.globalCreator.Create(ctx, labelEntity)
 	}
 
@@ -190,7 +190,7 @@ func (r *repository) CreateGlobal(ctx context.Context, label *model.Label) error
 }
 
 // GetByKey missing godoc
-func (r *repository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
+func (r *repository) GetByKey(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID, key string) (*model.Label, error) {
 	getter := r.getter
 	if objectType == model.TenantLabelableObject {
 		getter = r.embeddedTenantGetter
@@ -203,12 +203,12 @@ func (r *repository) GetByKey(ctx context.Context, tenant string, objectType mod
 
 	var entity Entity
 
-	if objectType == model.AppTemplateLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.FormationTemplateLabelableObject {
 		if err := r.getterGlobal.GetGlobal(ctx, conds, repo.NoOrderBy, &entity); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := getter.Get(ctx, objectType.GetResourceType(), tenant, conds, repo.NoOrderBy, &entity); err != nil {
+		if err := getter.Get(ctx, objectType.GetResourceType(), tenantID, conds, repo.NoOrderBy, &entity); err != nil {
 			return nil, err
 		}
 	}
@@ -254,6 +254,7 @@ func (r *repository) ListForGlobalObject(ctx context.Context, objectType model.L
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.FormationTemplateLabelableObject)))
 	} else {
 		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
@@ -283,7 +284,7 @@ func (r *repository) ListForGlobalObject(ctx context.Context, objectType model.L
 }
 
 // ListForObject missing godoc
-func (r *repository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
+func (r *repository) ListForObject(ctx context.Context, tenantID string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	var entities Collection
 
 	var conditions []repo.Condition
@@ -295,16 +296,17 @@ func (r *repository) ListForObject(ctx context.Context, tenant string, objectTyp
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.FormationTemplateLabelableObject)))
 	} else {
 		conditions = append(conditions, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
 
-	if objectType == model.AppTemplateLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.FormationTemplateLabelableObject {
 		if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := lister.List(ctx, objectType.GetResourceType(), tenant, &entities, conditions...); err != nil {
+		if err := lister.List(ctx, objectType.GetResourceType(), tenantID, &entities, conditions...); err != nil {
 			return nil, err
 		}
 	}
@@ -339,9 +341,10 @@ func (r *repository) ListForObjectIDs(ctx context.Context, tenant string, object
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeContextLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.RuntimeLabelableObject)))
 		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.AppTemplateLabelableObject)))
+		conditions = append(conditions, repo.NewNullCondition(labelableObjectField(model.FormationTemplateLabelableObject)))
 	}
 
-	if objectType == model.AppTemplateLabelableObject || objectType == model.TenantLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.TenantLabelableObject || objectType == model.FormationTemplateLabelableObject {
 		if err := r.listerGlobal.ListGlobal(ctx, &entities, conditions...); err != nil {
 			return nil, err
 		}
@@ -412,7 +415,7 @@ func (r *repository) Delete(ctx context.Context, tenant string, objectType model
 	} else {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
-	if objectType == model.AppTemplateLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.FormationTemplateLabelableObject {
 		return r.deleterGlobal.DeleteManyGlobal(ctx, conds)
 	}
 	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
@@ -427,7 +430,7 @@ func (r *repository) DeleteAll(ctx context.Context, tenant string, objectType mo
 	} else {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
-	if objectType == model.AppTemplateLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.FormationTemplateLabelableObject {
 		return r.deleterGlobal.DeleteManyGlobal(ctx, conds)
 	}
 	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
@@ -442,7 +445,7 @@ func (r *repository) DeleteByKeyNegationPattern(ctx context.Context, tenant stri
 	} else {
 		conds = append(conds, repo.NewEqualCondition(labelableObjectField(objectType), objectID))
 	}
-	if objectType == model.AppTemplateLabelableObject {
+	if objectType == model.AppTemplateLabelableObject || objectType == model.FormationTemplateLabelableObject {
 		return r.deleterGlobal.DeleteManyGlobal(ctx, conds)
 	}
 	return deleter.DeleteMany(ctx, objectType.GetResourceType(), tenant, conds)
@@ -528,6 +531,8 @@ func labelableObjectField(objectType model.LabelableObject) string {
 		return "app_template_id"
 	case model.WebhookLabelableObject:
 		return "webhook_id"
+	case model.FormationTemplateLabelableObject:
+		return "formation_template_id"
 	}
 
 	return ""

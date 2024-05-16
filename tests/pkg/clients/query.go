@@ -37,7 +37,7 @@ func (qp *queryProvider) signCSR(csr string) string {
 }
 
 func (qp *queryProvider) revokeCert() string {
-	return fmt.Sprintf(`mutation {
+	return fmt.Sprint(`mutation {
 	result: revokeCertificate
 }`)
 }

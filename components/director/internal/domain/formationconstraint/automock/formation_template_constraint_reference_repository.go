@@ -19,10 +19,6 @@ type FormationTemplateConstraintReferenceRepository struct {
 func (_m *FormationTemplateConstraintReferenceRepository) ListByConstraintID(ctx context.Context, constraintID string) ([]*model.FormationTemplateConstraintReference, error) {
 	ret := _m.Called(ctx, constraintID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByConstraintID")
-	}
-
 	var r0 []*model.FormationTemplateConstraintReference
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationTemplateConstraintReference, error)); ok {
@@ -49,10 +45,6 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByConstraintID(ctx
 func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplateID(ctx context.Context, formationTemplateID string) ([]*model.FormationTemplateConstraintReference, error) {
 	ret := _m.Called(ctx, formationTemplateID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationTemplateID")
-	}
-
 	var r0 []*model.FormationTemplateConstraintReference
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationTemplateConstraintReference, error)); ok {
@@ -78,10 +70,6 @@ func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplat
 // ListByFormationTemplateIDs provides a mock function with given fields: ctx, formationTemplateIDs
 func (_m *FormationTemplateConstraintReferenceRepository) ListByFormationTemplateIDs(ctx context.Context, formationTemplateIDs []string) ([]*model.FormationTemplateConstraintReference, error) {
 	ret := _m.Called(ctx, formationTemplateIDs)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationTemplateIDs")
-	}
 
 	var r0 []*model.FormationTemplateConstraintReference
 	var r1 error

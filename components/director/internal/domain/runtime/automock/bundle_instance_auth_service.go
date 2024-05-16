@@ -18,10 +18,6 @@ type BundleInstanceAuthService struct {
 func (_m *BundleInstanceAuthService) ListByRuntimeID(ctx context.Context, runtimeID string) ([]*model.BundleInstanceAuth, error) {
 	ret := _m.Called(ctx, runtimeID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByRuntimeID")
-	}
-
 	var r0 []*model.BundleInstanceAuth
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.BundleInstanceAuth, error)); ok {
@@ -47,10 +43,6 @@ func (_m *BundleInstanceAuthService) ListByRuntimeID(ctx context.Context, runtim
 // Update provides a mock function with given fields: ctx, instanceAuth
 func (_m *BundleInstanceAuthService) Update(ctx context.Context, instanceAuth *model.BundleInstanceAuth) error {
 	ret := _m.Called(ctx, instanceAuth)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.BundleInstanceAuth) error); ok {
