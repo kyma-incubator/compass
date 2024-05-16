@@ -329,7 +329,7 @@ export APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH="tokenUrl"
 export APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH="clientCert"
 export APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH="clientKey"
 export APP_SELF_REGISTER_SAAS_APP_NAME_PATH="localSaaSAppNamePath"
-export APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH="localSaaSRegistryPath"
+export APP_SYSTEM_FIELD_DISCOVERY_SAAS_REGISTRY_URL_PATH="localSaaSRegistryPath"
 
 # Pairing Adapters Properties
 export APP_PAIRING_ADAPTER_CM_NAME="pairing-adapter-config-local"
