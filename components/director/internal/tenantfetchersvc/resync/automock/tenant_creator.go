@@ -80,13 +80,12 @@ func (_m *TenantCreator) TenantsToCreate(ctx context.Context, region string, fro
 	return r0, r1
 }
 
-type mockConstructorTestingTNewTenantCreator interface {
+// NewTenantCreator creates a new instance of TenantCreator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewTenantCreator(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewTenantCreator creates a new instance of TenantCreator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewTenantCreator(t mockConstructorTestingTNewTenantCreator) *TenantCreator {
+}) *TenantCreator {
 	mock := &TenantCreator{}
 	mock.Mock.Test(t)
 

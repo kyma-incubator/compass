@@ -42,8 +42,8 @@ func (s *ASAEngine) EnsureScenarioAssigned(ctx context.Context, in *model.Automa
 	return s.processScenario(ctx, in, processScenarioFunc, model.AssignFormation)
 }
 
-// RemoveAssignedScenario removes all the scenarios that are coming from the provided ASA
-func (s *ASAEngine) RemoveAssignedScenario(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error {
+// UnassignFormationComingFromASA removes all the scenarios that are coming from the provided ASA
+func (s *ASAEngine) UnassignFormationComingFromASA(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error {
 	return s.processScenario(ctx, in, processScenarioFunc, model.UnassignFormation)
 }
 

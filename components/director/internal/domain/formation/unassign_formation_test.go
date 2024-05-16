@@ -275,6 +275,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			ObjectType                    graphql.FormationObjectType
 			ObjectID                      string
 			InputFormation                model.Formation
+			ShouldSkipASA                 bool
 			ExpectedFormation             *model.Formation
 			ExpectedErrMessage            string
 		}{
@@ -2486,6 +2487,71 @@ func TestServiceUnassignFormation(t *testing.T) {
 				InputFormation:    in,
 				ExpectedFormation: expected,
 			},
+			{
+				Name: "success when formation is coming from ASA but ignoreASA is true",
+				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+					return txGen.ThatSucceedsMultipleTimes(4)
+				},
+				LabelServiceFn: func() *automock.LabelService {
+					labelService := &automock.LabelService{}
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
+					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
+						Key:        model.ScenariosKey,
+						Value:      []string{secondTestFormationName},
+						ObjectID:   objectTypeData.ObjectID,
+						ObjectType: objectTypeData.LabelType,
+						Version:    0,
+					}).Return(nil).Once()
+					return labelService
+				},
+				FormationRepositoryFn: func() *automock.FormationRepository {
+					formationRepo := &automock.FormationRepository{}
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
+					return formationRepo
+				},
+				NotificationServiceFN: func() *automock.NotificationsService {
+					svc := &automock.NotificationsService{}
+					svc.On("GenerateFormationAssignmentNotifications", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ObjectID, expected, model.UnassignFormation, objectTypeData.ObjectType).Return(requests, nil).Once()
+					return svc
+				},
+				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+					formationAssignmentSvc := &automock.FormationAssignmentService{}
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
+					return formationAssignmentSvc
+				},
+				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+					repo := &automock.FormationTemplateRepository{}
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					return repo
+				},
+				ConstraintEngineFn: func() *automock.ConstraintEngine {
+					engine := &automock.ConstraintEngine{}
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					return engine
+				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(true, nil)
+					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
+					return svc
+				},
+				ObjectType:        objectTypeData.ObjectType,
+				ObjectID:          objectTypeData.ObjectID,
+				InputFormation:    in,
+				ShouldSkipASA:     true,
+				ExpectedFormation: expected,
+			},
 		}
 
 		for _, testCase := range testCases {
@@ -2546,7 +2612,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, labelRepo, formationRepo, formationTemplateRepo, labelService, nil, nil, nil, nil, nil, nil, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationsSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil, assignmentOperationSvc)
 
 				// WHEN
-				actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
+				actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation, testCase.ShouldSkipASA)
 
 				// THEN
 				if testCase.ExpectedErrMessage == "" {
@@ -2600,6 +2666,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 		ObjectType                    graphql.FormationObjectType
 		ObjectID                      string
 		InputFormation                model.Formation
+		ShouldSkipASA                 bool
 		ExpectedFormation             *model.Formation
 		ExpectedErrMessage            string
 	}{
@@ -2641,7 +2708,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
 				engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				engine.On("RemoveAssignedScenario", ctxWithTenantAndLoggerMatcher(), asa, mock.Anything).Return(nil).Once()
+				engine.On("UnassignFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), asa, mock.Anything).Return(nil).Once()
 				return engine
 			},
 			ObjectType:        graphql.FormationObjectTypeTenant,
@@ -2729,7 +2796,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			ASAEngineFn: func() *automock.AsaEngine {
 				engine := &automock.AsaEngine{}
 				engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), TargetTenant, testFormationName, graphql.FormationObjectTypeTenant).Return(false, nil)
-				engine.On("RemoveAssignedScenario", ctxWithTenantAndLoggerMatcher(), asa, mock.Anything).Return(nil).Once()
+				engine.On("UnassignFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), asa, mock.Anything).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2821,7 +2888,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			svc := formation.NewServiceWithAsaEngine(transact, nil, nil, nil, formationRepo, formationTemplateRepo, nil, nil, nil, asaRepo, asaService, tenantSvc, nil, nil, nil, nil, nil, nil, constraintEngine, runtimeType, applicationType, asaEngine, nil, nil)
 
 			// WHEN
-			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
+			actual, err := svc.UnassignFormation(ctx, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation, testCase.ShouldSkipASA)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

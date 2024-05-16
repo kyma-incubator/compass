@@ -18,10 +18,6 @@ type GqlConverter struct {
 func (_m *GqlConverter) ToGraphQL(in *model.AutomaticScenarioAssignment, targetTenantExternalID string) graphql.AutomaticScenarioAssignment {
 	ret := _m.Called(in, targetTenantExternalID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ToGraphQL")
-	}
-
 	var r0 graphql.AutomaticScenarioAssignment
 	if rf, ok := ret.Get(0).(func(*model.AutomaticScenarioAssignment, string) graphql.AutomaticScenarioAssignment); ok {
 		r0 = rf(in, targetTenantExternalID)
