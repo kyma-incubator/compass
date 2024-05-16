@@ -5,13 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
-	"github.com/tidwall/gjson"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 
@@ -26,8 +27,8 @@ var (
 	testSecretKey                                              = []byte("testSecretKey")
 	noAuthDestIdentifierWithSubaccountID                       = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, noAuthDestName, testSubaccountID, "")
 	samlAssertionDestIdentifierWithSubaccountIDAndInstanceID   = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, samlAssertionDestName, testSubaccountID, testServiceInstanceID)
-	destinationCertIdentifierWithSubaccountID                  = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, "")
-	destinationCertIdentifierWithSubaccountIDAndInstanceID     = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestinationCertWithExtension, testSubaccountID, testServiceInstanceID)
+	destinationCertIdentifierWithSubaccountID                  = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestinationCertName, testSubaccountID, "")
+	destinationCertIdentifierWithSubaccountIDAndInstanceID     = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestinationCertName, testSubaccountID, testServiceInstanceID)
 	samlDestinationCertIdentifierWithSubaccountIDAndInstanceID = fmt.Sprintf(destinationsvc.UniqueEntityNameIdentifier, testDestKeyStoreLocation, testSubaccountID, testServiceInstanceID)
 )
 
@@ -717,7 +718,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			Name:                 "Success when getting certificate by name from Destination Service",
 			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusOK,
-			CertNameParam:        testDestinationCertWithExtension,
+			CertNameParam:        testDestinationCertName,
 			ExistingCertificate:  fixCertMappings(destinationCertIdentifierWithSubaccountIDAndInstanceID, json.RawMessage(destinationServiceCertResponseBody)),
 			ExpectedCertificate:  json.RawMessage(destinationServiceCertResponseBody),
 		},
@@ -752,7 +753,7 @@ func TestHandler_GetDestinationCertificateByNameFromDestinationSvc(t *testing.T)
 			Name:                 "Error when marshalling",
 			AuthorizationToken:   tokenWithSubaccountIDAndInstanceID,
 			ExpectedResponseCode: http.StatusInternalServerError,
-			CertNameParam:        testDestinationCertWithExtension,
+			CertNameParam:        testDestinationCertName,
 			ExistingCertificate:  map[string]json.RawMessage{destinationCertIdentifierWithSubaccountIDAndInstanceID: json.RawMessage("invalid-json")},
 		},
 	}
