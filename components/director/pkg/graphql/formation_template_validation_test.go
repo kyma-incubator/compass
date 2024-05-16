@@ -17,7 +17,7 @@ const (
 	runtimeTypesField           = "RuntimeTypes"
 )
 
-func TestFormationTemplateInput_ValidateName(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -43,10 +43,10 @@ func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.Name = testCase.Value
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
+			formationTemplateRegisterInput.Name = testCase.Value
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -57,7 +57,7 @@ func TestFormationTemplateInput_ValidateName(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateRuntimeDisplayName(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateRuntimeDisplayName(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         string
@@ -83,10 +83,10 @@ func TestFormationTemplateInput_ValidateRuntimeDisplayName(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.RuntimeTypeDisplayName = &testCase.Value
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
+			formationTemplateRegisterInput.RuntimeTypeDisplayName = &testCase.Value
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -97,7 +97,7 @@ func TestFormationTemplateInput_ValidateRuntimeDisplayName(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateRuntimeArtifactKind(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateRuntimeArtifactKind(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         graphql.ArtifactType
@@ -133,10 +133,10 @@ func TestFormationTemplateInput_ValidateRuntimeArtifactKind(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.RuntimeArtifactKind = &testCase.Value
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
+			formationTemplateRegisterInput.RuntimeArtifactKind = &testCase.Value
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -147,7 +147,7 @@ func TestFormationTemplateInput_ValidateRuntimeArtifactKind(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateApplicationTypes(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateApplicationTypes(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         []string
@@ -178,10 +178,10 @@ func TestFormationTemplateInput_ValidateApplicationTypes(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.ApplicationTypes = testCase.Value
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
+			formationTemplateRegisterInput.ApplicationTypes = testCase.Value
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -192,7 +192,7 @@ func TestFormationTemplateInput_ValidateApplicationTypes(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateRuntimeTypes(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         []string
@@ -223,10 +223,10 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.RuntimeTypes = testCase.Value
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
+			formationTemplateRegisterInput.RuntimeTypes = testCase.Value
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -237,7 +237,7 @@ func TestFormationTemplateInput_ValidateRuntimeTypes(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateDiscoveryConsumers(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateDiscoveryConsumers(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		Value         []string
@@ -273,10 +273,10 @@ func TestFormationTemplateInput_ValidateDiscoveryConsumers(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
-			formationTemplateInput.DiscoveryConsumers = testCase.Value
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
+			formationTemplateRegisterInput.DiscoveryConsumers = testCase.Value
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -287,7 +287,7 @@ func TestFormationTemplateInput_ValidateDiscoveryConsumers(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_Validate_Webhooks(t *testing.T) {
+func TestFormationTemplateRegisterInput_Validate_Webhooks(t *testing.T) {
 	webhookInput := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	webhookInputWithInvalidOutputTemplate := fixValidWebhookInput(inputvalidationtest.ValidURL)
 	webhookInputWithInvalidMode := fixValidWebhookInput(inputvalidationtest.ValidURL)
@@ -336,7 +336,7 @@ func TestFormationTemplateInput_Validate_Webhooks(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			sut := fixValidFormationTemplateInput()
+			sut := fixValidFormationTemplateRegisterInput()
 			sut.Webhooks = testCase.Value
 			// WHEN
 			err := sut.Validate()
@@ -350,7 +350,7 @@ func TestFormationTemplateInput_Validate_Webhooks(t *testing.T) {
 	}
 }
 
-func TestFormationTemplateInput_ValidateRuntimeRelatedFields(t *testing.T) {
+func TestFormationTemplateRegisterInput_ValidateRuntimeRelatedFields(t *testing.T) {
 	testCases := []struct {
 		Name          string
 		EmptyFields   []string
@@ -401,21 +401,21 @@ func TestFormationTemplateInput_ValidateRuntimeRelatedFields(t *testing.T) {
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			//GIVEN
-			formationTemplateInput := fixValidFormationTemplateInput()
+			formationTemplateRegisterInput := fixValidFormationTemplateRegisterInput()
 
 			for _, field := range testCase.EmptyFields {
 				switch field {
 				case runtimeTypesField:
-					formationTemplateInput.RuntimeTypes = []string{}
+					formationTemplateRegisterInput.RuntimeTypes = []string{}
 				case runtimeArtifactKindField:
-					formationTemplateInput.RuntimeArtifactKind = nil
+					formationTemplateRegisterInput.RuntimeArtifactKind = nil
 				case runtimeTypeDisplayNameField:
-					formationTemplateInput.RuntimeTypeDisplayName = nil
+					formationTemplateRegisterInput.RuntimeTypeDisplayName = nil
 				}
 			}
 
 			// WHEN
-			err := formationTemplateInput.Validate()
+			err := formationTemplateRegisterInput.Validate()
 			// THEN
 			if testCase.ExpectedValid {
 				require.NoError(t, err)
@@ -426,9 +426,9 @@ func TestFormationTemplateInput_ValidateRuntimeRelatedFields(t *testing.T) {
 	}
 }
 
-func fixValidFormationTemplateInput() graphql.FormationTemplateInput {
+func fixValidFormationTemplateRegisterInput() graphql.FormationTemplateRegisterInput {
 	kind := graphql.ArtifactTypeSubscription
-	return graphql.FormationTemplateInput{
+	return graphql.FormationTemplateRegisterInput{
 		Name:                   "formation-template-name",
 		ApplicationTypes:       []string{"some-application-type"},
 		RuntimeTypes:           []string{"some-runtime-type"},

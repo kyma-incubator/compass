@@ -5,6 +5,8 @@ package automock
 import (
 	context "context"
 
+	labelfilter "github.com/kyma-incubator/compass/components/director/internal/labelfilter"
+
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
@@ -43,8 +45,8 @@ func (_m *FormationTemplateRepository) Delete(ctx context.Context, id string, te
 	return r0
 }
 
-// Exists provides a mock function with given fields: ctx, id
-func (_m *FormationTemplateRepository) Exists(ctx context.Context, id string) (bool, error) {
+// ExistsGlobal provides a mock function with given fields: ctx, id
+func (_m *FormationTemplateRepository) ExistsGlobal(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)
 
 	var r0 bool
@@ -93,25 +95,25 @@ func (_m *FormationTemplateRepository) Get(ctx context.Context, id string) (*mod
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, name, tenantID, pageSize, cursor
-func (_m *FormationTemplateRepository) List(ctx context.Context, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
-	ret := _m.Called(ctx, name, tenantID, pageSize, cursor)
+// List provides a mock function with given fields: ctx, filters, name, tenantID, pageSize, cursor
+func (_m *FormationTemplateRepository) List(ctx context.Context, filters []*labelfilter.LabelFilter, name *string, tenantID string, pageSize int, cursor string) (*model.FormationTemplatePage, error) {
+	ret := _m.Called(ctx, filters, name, tenantID, pageSize, cursor)
 
 	var r0 *model.FormationTemplatePage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *string, string, int, string) (*model.FormationTemplatePage, error)); ok {
-		return rf(ctx, name, tenantID, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *string, string, int, string) (*model.FormationTemplatePage, error)); ok {
+		return rf(ctx, filters, name, tenantID, pageSize, cursor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *string, string, int, string) *model.FormationTemplatePage); ok {
-		r0 = rf(ctx, name, tenantID, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, *string, string, int, string) *model.FormationTemplatePage); ok {
+		r0 = rf(ctx, filters, name, tenantID, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.FormationTemplatePage)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *string, string, int, string) error); ok {
-		r1 = rf(ctx, name, tenantID, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter, *string, string, int, string) error); ok {
+		r1 = rf(ctx, filters, name, tenantID, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}

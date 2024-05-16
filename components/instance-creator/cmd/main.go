@@ -12,7 +12,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client"
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/client/paths"
-
 	"github.com/kyma-incubator/compass/components/instance-creator/internal/handler"
 
 	"github.com/gorilla/mux"
@@ -110,7 +109,7 @@ func exitOnError(err error, context string) {
 
 func createServer(ctx context.Context, address string, handler http.Handler, name string, timeout time.Duration) (func(), func()) {
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, timeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              address,

@@ -60,8 +60,3 @@ type FormationPage struct {
 	PageInfo   *pagination.Page
 	TotalCount int
 }
-
-// SetLastNotificationSentTimestamp updates the time when a formation notification was last sent.
-func (f *Formation) SetLastNotificationSentTimestamp(t time.Time) {
-	f.LastNotificationSentTimestamp = &t
-}

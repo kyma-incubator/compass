@@ -20,10 +20,6 @@ type RuntimeService struct {
 func (_m *RuntimeService) CreateWithMandatoryLabels(ctx context.Context, in model.RuntimeRegisterInput, id string, mandatoryLabels map[string]interface{}) error {
 	ret := _m.Called(ctx, in, id, mandatoryLabels)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateWithMandatoryLabels")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, model.RuntimeRegisterInput, string, map[string]interface{}) error); ok {
 		r0 = rf(ctx, in, id, mandatoryLabels)
@@ -37,10 +33,6 @@ func (_m *RuntimeService) CreateWithMandatoryLabels(ctx context.Context, in mode
 // Delete provides a mock function with given fields: ctx, id
 func (_m *RuntimeService) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Delete")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
@@ -56,10 +48,6 @@ func (_m *RuntimeService) Delete(ctx context.Context, id string) error {
 func (_m *RuntimeService) DeleteLabel(ctx context.Context, runtimeID string, key string) error {
 	ret := _m.Called(ctx, runtimeID, key)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteLabel")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, runtimeID, key)
@@ -73,10 +61,6 @@ func (_m *RuntimeService) DeleteLabel(ctx context.Context, runtimeID string, key
 // Get provides a mock function with given fields: ctx, id
 func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, error) {
 	ret := _m.Called(ctx, id)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Get")
-	}
 
 	var r0 *model.Runtime
 	var r1 error
@@ -104,10 +88,6 @@ func (_m *RuntimeService) Get(ctx context.Context, id string) (*model.Runtime, e
 func (_m *RuntimeService) GetByFilters(ctx context.Context, filters []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	ret := _m.Called(ctx, filters)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetByFilters")
-	}
-
 	var r0 *model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
@@ -133,10 +113,6 @@ func (_m *RuntimeService) GetByFilters(ctx context.Context, filters []*labelfilt
 // GetByTokenIssuer provides a mock function with given fields: ctx, issuer
 func (_m *RuntimeService) GetByTokenIssuer(ctx context.Context, issuer string) (*model.Runtime, error) {
 	ret := _m.Called(ctx, issuer)
-
-	if len(ret) == 0 {
-		panic("no return value specified for GetByTokenIssuer")
-	}
 
 	var r0 *model.Runtime
 	var r1 error
@@ -164,10 +140,6 @@ func (_m *RuntimeService) GetByTokenIssuer(ctx context.Context, issuer string) (
 func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, runtimeID, key)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetLabel")
-	}
-
 	var r0 *model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
@@ -193,10 +165,6 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
 func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
-
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
 
 	var r0 *model.RuntimePage
 	var r1 error
@@ -224,10 +192,6 @@ func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelF
 func (_m *RuntimeService) ListLabels(ctx context.Context, runtimeID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, runtimeID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListLabels")
-	}
-
 	var r0 map[string]*model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
@@ -254,10 +218,6 @@ func (_m *RuntimeService) ListLabels(ctx context.Context, runtimeID string) (map
 func (_m *RuntimeService) SetLabel(ctx context.Context, label *model.LabelInput) error {
 	ret := _m.Called(ctx, label)
 
-	if len(ret) == 0 {
-		panic("no return value specified for SetLabel")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
 		r0 = rf(ctx, label)
@@ -271,10 +231,6 @@ func (_m *RuntimeService) SetLabel(ctx context.Context, label *model.LabelInput)
 // UnsafeExtractModifiableLabels provides a mock function with given fields: labels
 func (_m *RuntimeService) UnsafeExtractModifiableLabels(labels map[string]interface{}) (map[string]interface{}, error) {
 	ret := _m.Called(labels)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UnsafeExtractModifiableLabels")
-	}
 
 	var r0 map[string]interface{}
 	var r1 error
@@ -301,10 +257,6 @@ func (_m *RuntimeService) UnsafeExtractModifiableLabels(labels map[string]interf
 // Update provides a mock function with given fields: ctx, id, in
 func (_m *RuntimeService) Update(ctx context.Context, id string, in model.RuntimeUpdateInput) error {
 	ret := _m.Called(ctx, id, in)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.RuntimeUpdateInput) error); ok {

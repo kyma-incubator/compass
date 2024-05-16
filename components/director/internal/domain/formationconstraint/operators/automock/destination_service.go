@@ -20,10 +20,6 @@ type DestinationService struct {
 func (_m *DestinationService) CreateBasicCredentialDestinations(ctx context.Context, destinationsDetails []operators.Destination, basicAuthenticationCredentials operators.BasicAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateBasicCredentialDestinations")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, operators.BasicAuthentication, *model.FormationAssignment, []string, bool) error); ok {
 		r0 = rf(ctx, destinationsDetails, basicAuthenticationCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
@@ -37,10 +33,6 @@ func (_m *DestinationService) CreateBasicCredentialDestinations(ctx context.Cont
 // CreateClientCertificateAuthenticationDestination provides a mock function with given fields: ctx, destinationsDetails, clientCertAuthCredentials, formationAssignment, correlationIDs, skipSubaccountValidation
 func (_m *DestinationService) CreateClientCertificateAuthenticationDestination(ctx context.Context, destinationsDetails []operators.Destination, clientCertAuthCredentials *operators.ClientCertAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, clientCertAuthCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateClientCertificateAuthenticationDestination")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *operators.ClientCertAuthentication, *model.FormationAssignment, []string, bool) error); ok {
@@ -56,10 +48,6 @@ func (_m *DestinationService) CreateClientCertificateAuthenticationDestination(c
 func (_m *DestinationService) CreateDesignTimeDestinations(ctx context.Context, destinationsDetails []operators.DestinationRaw, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateDesignTimeDestinations")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.DestinationRaw, *model.FormationAssignment, bool) error); ok {
 		r0 = rf(ctx, destinationsDetails, formationAssignment, skipSubaccountValidation)
@@ -73,10 +61,6 @@ func (_m *DestinationService) CreateDesignTimeDestinations(ctx context.Context, 
 // CreateOAuth2ClientCredentialsDestinations provides a mock function with given fields: ctx, destinationsDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation
 func (_m *DestinationService) CreateOAuth2ClientCredentialsDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2ClientCredsCredentials *operators.OAuth2ClientCredentialsAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, oauth2ClientCredsCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for CreateOAuth2ClientCredentialsDestinations")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *operators.OAuth2ClientCredentialsAuthentication, *model.FormationAssignment, []string, bool) error); ok {
@@ -92,10 +76,6 @@ func (_m *DestinationService) CreateOAuth2ClientCredentialsDestinations(ctx cont
 func (_m *DestinationService) CreateOAuth2mTLSDestinations(ctx context.Context, destinationsDetails []operators.Destination, oauth2mTLSCredentials *operators.OAuth2mTLSAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, oauth2mTLSCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateOAuth2mTLSDestinations")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *operators.OAuth2mTLSAuthentication, *model.FormationAssignment, []string, bool) error); ok {
 		r0 = rf(ctx, destinationsDetails, oauth2mTLSCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
@@ -110,10 +90,6 @@ func (_m *DestinationService) CreateOAuth2mTLSDestinations(ctx context.Context, 
 func (_m *DestinationService) CreateSAMLAssertionDestination(ctx context.Context, destinationsDetails []operators.Destination, samlAssertionAuthCredentials *operators.SAMLAssertionAuthentication, formationAssignment *model.FormationAssignment, correlationIDs []string, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, destinationsDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for CreateSAMLAssertionDestination")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []operators.Destination, *operators.SAMLAssertionAuthentication, *model.FormationAssignment, []string, bool) error); ok {
 		r0 = rf(ctx, destinationsDetails, samlAssertionAuthCredentials, formationAssignment, correlationIDs, skipSubaccountValidation)
@@ -127,10 +103,6 @@ func (_m *DestinationService) CreateSAMLAssertionDestination(ctx context.Context
 // DeleteDestinations provides a mock function with given fields: ctx, formationAssignment, skipSubaccountValidation
 func (_m *DestinationService) DeleteDestinations(ctx context.Context, formationAssignment *model.FormationAssignment, skipSubaccountValidation bool) error {
 	ret := _m.Called(ctx, formationAssignment, skipSubaccountValidation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteDestinations")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, bool) error); ok {

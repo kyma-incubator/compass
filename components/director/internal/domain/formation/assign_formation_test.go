@@ -66,18 +66,20 @@ func TestServiceAssignFormation(t *testing.T) {
 	}}
 
 	formationAssignmentInputs := []*model.FormationAssignmentInput{{
-		FormationID: "fid1",
+		FormationID: FormationID,
 	}}
 
 	formationAssignments := []*model.FormationAssignment{{
-		ID: "faid1",
+		ID:          FormationAssignmentID,
+		FormationID: FormationID,
 	}}
 
 	formationAssignments2 := []*model.FormationAssignment{
 		{
-			ID:         "faid1",
-			TargetType: model.FormationAssignmentTypeApplication,
-			Target:     ApplicationID,
+			ID:          FormationAssignmentID,
+			FormationID: FormationID,
+			TargetType:  model.FormationAssignmentTypeApplication,
+			Target:      ApplicationID,
 		},
 	}
 
@@ -229,8 +231,10 @@ func TestServiceAssignFormation(t *testing.T) {
 
 	assignments := []*model.FormationAssignment{
 		{
-			Target:     RuntimeContextID,
-			TargetType: model.FormationAssignmentTypeRuntimeContext,
+			ID:          FormationAssignmentID,
+			FormationID: FormationID,
+			Target:      RuntimeContextID,
+			TargetType:  model.FormationAssignmentTypeRuntimeContext,
 		},
 	}
 	asa := &model.AutomaticScenarioAssignment{
@@ -240,6 +244,10 @@ func TestServiceAssignFormation(t *testing.T) {
 	}
 
 	runtime := &model.Runtime{ID: RuntimeID}
+
+	assignmentOperation := mock.MatchedBy(func(op *model.AssignmentOperationInput) bool {
+		return op.Type == model.Assign && op.FormationAssignmentID == FormationAssignmentID && op.FormationID == FormationID && op.TriggeredBy == model.AssignObject
+	})
 
 	testCases := []struct {
 		Name                          string
@@ -259,6 +267,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		FormationAssignmentServiceFn  func() *automock.FormationAssignmentService
 		ConstraintEngineFn            func() *automock.ConstraintEngine
 		ASAEngineFn                   func() *automock.AsaEngine
+		AssignmentOperationServiceFn  func() *automock.AssignmentOperationService
 		ObjectID                      string
 		ObjectType                    graphql.FormationObjectType
 		InputFormation                model.Formation
@@ -267,7 +276,9 @@ func TestServiceAssignFormation(t *testing.T) {
 	}{
 		{
 			Name: "success for application if label does not exist",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -309,6 +320,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
 			ObjectID:          ApplicationID,
 			InputFormation:    inputFormation,
@@ -316,7 +333,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application if formation is already added",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -353,6 +372,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
 			ObjectID:          ApplicationID,
 			InputFormation:    inputFormation,
@@ -360,7 +385,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application with new formation",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -414,6 +441,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
 			ObjectID:          ApplicationID,
 			InputFormation:    inputSecondFormation,
@@ -421,7 +454,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application when formation does not support runtime, runtime context and tenant",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
@@ -475,6 +510,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
 			ObjectID:          ApplicationID,
 			InputFormation:    inputSecondFormation,
@@ -482,7 +523,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime if label does not exist",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -528,6 +571,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeRuntime,
 			ObjectID:          RuntimeID,
 			InputFormation:    inputFormation,
@@ -535,7 +584,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime if formation is already added",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
@@ -576,6 +627,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignRuntimeDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeRuntime,
 			ObjectID:          RuntimeID,
 			InputFormation:    inputFormation,
@@ -583,7 +640,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime with new formation",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
@@ -636,6 +695,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignRuntimeDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeRuntime,
 			ObjectID:          RuntimeID,
 			InputFormation:    inputSecondFormation,
@@ -643,7 +708,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime context if label does not exist",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -689,6 +756,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:          RuntimeContextID,
 			InputFormation:    inputFormation,
@@ -696,7 +769,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime context if formation is already added",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
@@ -738,6 +813,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:          RuntimeContextID,
 			InputFormation:    inputFormation,
@@ -745,7 +826,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for runtime context with new formation",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			LabelServiceFn: func() *automock.LabelService {
 				labelService := &automock.LabelService{}
 				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &runtimeTypeLblInput).Return(runtimeTypeLbl, nil).Twice()
@@ -799,6 +882,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignRuntimeCtxDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:        graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:          RuntimeContextID,
 			InputFormation:    inputSecondFormation,
@@ -851,6 +940,68 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:          TargetTenant,
 			InputFormation:    inputFormation,
 			ExpectedFormation: expectedFormation,
+		},
+		{
+			Name: "error when creating operation",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(1)
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
+				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, applicationLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormationName, secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil).Once()
+				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), secondTestFormationName, TntInternalID).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedSecondFormation).Return(formationAssignmentInputs, nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(formationAssignments2, nil).Once()
+				return formationAssignmentSvc
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", testErr).Once()
+
+				return svc
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputSecondFormation,
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "error for application when label does not exist and can't create it",
@@ -1923,7 +2074,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application when formation is in initial state",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: txGen.ThatSucceedsTwice,
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -1954,13 +2105,19 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInInitialState).Return(formationAssignmentInputs, nil).Once()
-				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(nil, nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(assignments, nil).Once()
 				return formationAssignmentSvc
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
 			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
 			ObjectID:          ApplicationID,
@@ -1969,7 +2126,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "success for application when formation is in draft state",
-			TxFn: txGen.ThatSucceeds,
+			TxFn: txGen.ThatSucceedsTwice,
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -2000,13 +2157,19 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, formationInDraftState).Return(formationAssignmentInputs, nil).Once()
-				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(nil, nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(assignments, nil).Once()
 				return formationAssignmentSvc
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
 			},
 			ObjectType:        graphql.FormationObjectTypeApplication,
 			ObjectID:          ApplicationID,
@@ -2042,8 +2205,10 @@ func TestServiceAssignFormation(t *testing.T) {
 			ExpectedErrMessage: "cannot assign to formation with ID",
 		},
 		{
-			Name:              "error for application if generating notifications fails",
-			TxFn:              txGen.ThatSucceedsTwice,
+			Name: "error for application if generating notifications fails",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
@@ -2070,7 +2235,7 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation).Return(formationAssignmentInputs, nil).Once()
-				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(nil, nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(assignments, nil).Once()
 				formationAssignmentSvc.On("DeleteAssignmentsForObjectID", txtest.CtxWithDBMatcher(), fixUUID(), ApplicationID).Return(nil).Once()
 				return formationAssignmentSvc
 			},
@@ -2083,6 +2248,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
@@ -2185,7 +2356,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name: "error for application if processing formation assignments fails",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(2)
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(3)
 			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
@@ -2228,6 +2399,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
 			InputFormation:     inputFormation,
@@ -2235,7 +2412,9 @@ func TestServiceAssignFormation(t *testing.T) {
 		},
 		{
 			Name: "error for runtime context if generating notifications fails",
-			TxFn: txGen.ThatSucceedsTwice,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimes(3)
+			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
 				uidService.On("Generate").Return(fixUUID()).Once()
@@ -2335,7 +2514,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name: "error for runtime context if processing formation assignments fails",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(2)
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(3)
 			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
@@ -2382,6 +2561,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignRuntimeCtxDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
+			},
 			ObjectType:         graphql.FormationObjectTypeRuntimeContext,
 			ObjectID:           RuntimeContextID,
 			InputFormation:     inputFormation,
@@ -2390,7 +2575,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name: "error for application if generating formation assignments fails",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(2)
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(3)
 			},
 			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			UIDServiceFn: func() *automock.UuidService {
@@ -2432,6 +2617,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
@@ -2441,7 +2632,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name: "error for application if processing formation assignments fails",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(2)
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(3)
 			},
 			ApplicationRepoFn: expectEmptySliceApplicationAndReadyApplicationRepo,
 			UIDServiceFn: func() *automock.UuidService {
@@ -2483,6 +2674,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine := &automock.ConstraintEngine{}
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
@@ -2521,7 +2718,7 @@ func TestServiceAssignFormation(t *testing.T) {
 		{
 			Name: "error while enforcing constraints post operation",
 			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				return txGen.ThatSucceedsMultipleTimes(3)
+				return txGen.ThatSucceedsMultipleTimes(4)
 			},
 			UIDServiceFn: func() *automock.UuidService {
 				uidService := &automock.UuidService{}
@@ -2564,6 +2761,12 @@ func TestServiceAssignFormation(t *testing.T) {
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
 				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(testErr).Once()
 				return engine
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
+
+				return svc
 			},
 			ObjectType:         graphql.FormationObjectTypeApplication,
 			ObjectID:           ApplicationID,
@@ -2862,8 +3065,12 @@ func TestServiceAssignFormation(t *testing.T) {
 			if testCase.ASAEngineFn != nil {
 				asaEngine = testCase.ASAEngineFn()
 			}
+			assignmentOperationService := &automock.AssignmentOperationService{}
+			if testCase.AssignmentOperationServiceFn != nil {
+				assignmentOperationService = testCase.AssignmentOperationServiceFn()
+			}
 
-			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil)
+			svc := formation.NewServiceWithAsaEngine(transact, applicationRepository, nil, nil, formationRepo, formationTemplateRepo, labelService, uidService, labelDefService, asaRepo, asaService, tenantSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, nil, nil, notificationSvc, constraintEngine, runtimeType, applicationType, asaEngine, nil, assignmentOperationService)
 
 			// WHEN
 			actual, err := svc.AssignFormation(ctxWithTenant, TntInternalID, testCase.ObjectID, testCase.ObjectType, testCase.InputFormation)
@@ -2878,7 +3085,7 @@ func TestServiceAssignFormation(t *testing.T) {
 				require.Nil(t, actual)
 			}
 
-			mock.AssertExpectationsForObjects(t, persist, uidService, applicationRepository, labelService, asaRepo, asaService, tenantSvc, labelDefService, runtimeContextRepo, runtimeRepo, formationRepo, formationTemplateRepo, webhookClient, notificationSvc, formationAssignmentSvc, constraintEngine, asaEngine)
+			mock.AssertExpectationsForObjects(t, persist, uidService, applicationRepository, labelService, asaRepo, asaService, tenantSvc, labelDefService, runtimeContextRepo, runtimeRepo, formationRepo, formationTemplateRepo, webhookClient, notificationSvc, formationAssignmentSvc, constraintEngine, asaEngine, assignmentOperationService)
 		})
 	}
 }

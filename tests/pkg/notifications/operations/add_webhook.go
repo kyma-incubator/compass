@@ -21,6 +21,7 @@ const (
 type AddWebhookToObjectOperation struct {
 	webhookType    graphql.WebhookType
 	webhookMode    graphql.WebhookMode
+	url            string
 	urlTemplate    string
 	inputTemplate  string
 	outputTemplate string
@@ -38,6 +39,11 @@ func NewAddWebhookToObjectOperation(webhookType graphql.WebhookType, webhookObje
 
 func (o *AddWebhookToObjectOperation) WithWebhookMode(webhookMode graphql.WebhookMode) *AddWebhookToObjectOperation {
 	o.webhookMode = webhookMode
+	return o
+}
+
+func (o *AddWebhookToObjectOperation) WithURL(url string) *AddWebhookToObjectOperation {
+	o.url = url
 	return o
 }
 
@@ -74,7 +80,7 @@ func (o *AddWebhookToObjectOperation) WithAsserters(asserters ...asserters.Asser
 }
 
 func (o *AddWebhookToObjectOperation) Execute(t *testing.T, ctx context.Context, gqlClient *gcli.Client) {
-	webhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.headerTemplate)
+	webhookInput := fixtures.FixFormationNotificationWebhookInput(o.webhookType, o.webhookMode, o.urlTemplate, o.inputTemplate, o.outputTemplate, o.url, o.headerTemplate)
 	var wh *graphql.Webhook
 	switch o.objectType {
 	case WebhookReferenceObjectTypeApplication:

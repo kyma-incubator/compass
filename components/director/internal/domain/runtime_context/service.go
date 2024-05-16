@@ -58,7 +58,7 @@ type formationService interface {
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 }
 
 //go:generate mockery --exported --name=tenantService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -163,8 +163,8 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 			}
 
 			if ownedRuntimeExists {
-				if _, err := s.formationService.UnassignFormation(ctxWithParentTenant, parentTenantID, in.RuntimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
-					return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
+				if _, err := s.formationService.UnassignFormation(ctxWithParentTenant, parentTenantID, in.RuntimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true); err != nil {
+					return "", errors.Wrapf(err, "while unassigning formation with name %q for runtime", scenario)
 				}
 			}
 		}
@@ -205,7 +205,7 @@ func (s *service) Delete(ctx context.Context, id string) error {
 	}
 
 	for _, f := range formations {
-		if _, err := s.formationService.UnassignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: f}); err != nil {
+		if _, err := s.formationService.UnassignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: f}, true); err != nil {
 			return errors.Wrapf(err, "while unassigning formation with name %q for runtime context", f)
 		}
 	}

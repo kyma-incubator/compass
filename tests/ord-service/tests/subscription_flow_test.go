@@ -32,7 +32,6 @@ import (
 
 	"github.com/tidwall/sjson"
 
-	"github.com/kyma-incubator/compass/tests/pkg/assertions"
 	"github.com/kyma-incubator/compass/tests/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -209,7 +208,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   formationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -222,7 +221,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
-		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -241,7 +240,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
-		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, "TENANT", consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -254,7 +253,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -433,9 +432,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.ElementsMatch(stdT, []string{destination.Name, destinationSecond.Name}, []string{destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String(), destinationsFromResponse[1].Get("sensitiveData.destinationConfiguration.Name").String()})
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
-		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
-		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
-
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
@@ -528,7 +524,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template for the provider application tempalаte type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   formationTmplName,
 			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -541,7 +537,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
-		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType), "SAP provider-app-template"},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -853,7 +849,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template for the provider runtime type %q with name %q", conf.SubscriptionProviderAppNameValue, formationTmplName)
 		var ft graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ft)
-		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ft = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   formationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -866,7 +862,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		stdT.Logf("Creating formation template with name %q, without discovery consumers configured", secondFormationTmplName)
 		var ftWithoutDiscoveryConsumers graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 		defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &ftWithoutDiscoveryConsumers)
-		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateInput{
+		ftWithoutDiscoveryConsumers = fixtures.CreateFormationTemplate(stdT, ctx, certSecuredGraphQLClient, graphql.FormationTemplateRegisterInput{
 			Name:                   secondFormationTmplName,
 			ApplicationTypes:       []string{string(applicationType)},
 			RuntimeTypes:           []string{conf.SubscriptionProviderAppNameValue},
@@ -885,7 +881,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, consumerApp.ID, string(graphql.FormationObjectTypeApplication), consumerFormationName, secondaryTenant)
 
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
-		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
 
 		noDiscoveryConsumptionFormationName := "no-discovery-consumption-scenario"
 		stdT.Logf("Creating formation with name: %q from template with name: %q", noDiscoveryConsumptionFormationName, secondFormationTmplName)
@@ -898,7 +894,7 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		defer unassignFromFormation(stdT, ctx, appInAnotherFormation.ID, string(graphql.FormationObjectTypeApplication), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		assignToFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
-		defer cleanupFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
+		defer unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
 
 		selfRegLabelValue, ok := runtime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)
 		require.True(stdT, ok)
@@ -961,9 +957,15 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		// After successful subscription from above we call the director component with "double authentication(token + user_context header)" in order to test claims validation is successful
 		consumerToken := token.GetUserToken(stdT, ctx, conf.ConsumerTokenURL+conf.TokenPath, conf.ProviderClientID, conf.ProviderClientSecret, conf.BasicUsername, conf.BasicPassword, claims.SubscriptionClaimKey)
 		consumerClaims := token.FlattenTokenClaims(stdT, consumerToken)
-		consumerClaimsWithEncodedValue, err := sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
-		require.NoError(t, err)
-		headers := map[string][]string{subscription.UserContextHeader: {consumerClaimsWithEncodedValue}}
+		clientID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.ClientIDKey).String()
+		require.NotEmpty(t, clientID)
+		subaccountID := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey).String()
+		require.NotEmpty(t, subaccountID)
+		userName := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey).String()
+		require.NotEmpty(t, userName)
+		subdomain := gjson.Get(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey).String()
+		userContextHeader := buildUserContextHeader(t, clientID, subaccountID, userName, subdomain)
+		headers := map[string][]string{subscription.UserContextHeader: {userContextHeader}}
 
 		stdT.Log("Calling director to verify claims validation is successful...")
 		getRtmReq := fixtures.FixGetRuntimeRequest(runtime.ID)
@@ -1080,9 +1082,6 @@ func TestConsumerProviderFlow(stdT *testing.T) {
 		require.ElementsMatch(stdT, []string{destination.Name, destinationSecond.Name}, []string{destinationsFromResponse[0].Get("sensitiveData.destinationConfiguration.Name").String(), destinationsFromResponse[1].Get("sensitiveData.destinationConfiguration.Name").String()})
 		stdT.Log("Successfully fetched system with bundles and destinations")
 
-		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), consumerFormationName, secondaryTenant)
-		unassignFromFormation(stdT, ctx, subscriptionConsumerSubaccountID, string(graphql.FormationObjectTypeTenant), noDiscoveryConsumptionFormationName, secondaryTenant)
-
 		subscription.BuildAndExecuteUnsubscribeRequest(stdT, runtime.ID, runtime.Name, httpClient, conf.SubscriptionConfig.URL, apiPath, subscriptionToken, conf.SubscriptionConfig.PropagatedProviderSubaccountHeader, subscriptionConsumerSubaccountID, "", subscriptionProviderSubaccountID, conf.SubscriptionConfig.StandardFlow, conf.SubscriptionConfig.SubscriptionFlowHeaderKey)
 
 		stdT.Log("Validating no application is returned after successful unsubscription request...")
@@ -1116,16 +1115,6 @@ func unassignFromFormation(t *testing.T, ctx context.Context, objectID, objectTy
 	t.Logf("Unassign object with type %s and id %s from formation %s", objectType, objectID, formationName)
 	unassignReq := fixtures.FixUnassignFormationRequest(objectID, objectType, formationName)
 	executeGQLRequest(t, ctx, unassignReq, formationName, tenantID)
-	t.Logf("Successfully unassigned object with type %s and id %s from formation %s", objectType, objectID, formationName)
-}
-
-func cleanupFormation(t *testing.T, ctx context.Context, objectID, objectType, formationName, tenantID string) {
-	t.Logf("Unassign object with type %s and id %s from formation %s", objectType, objectID, formationName)
-	unassignReq := fixtures.FixUnassignFormationRequest(objectID, objectType, formationName)
-
-	var formation graphql.Formation
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
-	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 	t.Logf("Successfully unassigned object with type %s and id %s from formation %s", objectType, objectID, formationName)
 }
 
@@ -1168,4 +1157,18 @@ func verifyFormationDetails(stdT *testing.T, systemInstance gjson.Result, expect
 
 func generateDestinationName(name string) string {
 	return fmt.Sprintf("%s-%s", name, strconv.FormatInt(time.Now().Unix(), 10))
+}
+
+func buildUserContextHeader(t *testing.T, clientID, subaccountID, userName, subdomain string) string {
+	consumerClaims, err := sjson.Set("{}", conf.ConsumerClaimsKeysConfig.ClientIDKey, clientID)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.TenantIDKey, subaccountID)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.UserNameKey, userName)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, conf.ConsumerClaimsKeysConfig.SubdomainKey, subdomain)
+	require.NoError(t, err)
+	consumerClaims, err = sjson.Set(consumerClaims, "encodedValue", "test+n%C3%B8n+as%C3%A7ii+ch%C3%A5%C2%AEacte%C2%AE")
+	require.NoError(t, err)
+	return consumerClaims
 }

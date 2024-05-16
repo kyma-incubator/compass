@@ -7,6 +7,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/pkg/errors"
+
 	"golang.org/x/text/language"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
@@ -141,4 +143,19 @@ func ValueIn(value string, in []string) bool {
 		}
 	}
 	return false
+}
+
+// ConvertToStringArray converts array of interfaces to string array
+func ConvertToStringArray(arr []interface{}) ([]string, error) {
+	stringArr := make([]string, 0, len(arr))
+	for _, value := range arr {
+		str, ok := value.(string)
+		if !ok {
+			return nil, errors.New("cannot convert interface value into a string")
+		}
+
+		stringArr = append(stringArr, str)
+	}
+
+	return stringArr, nil
 }
