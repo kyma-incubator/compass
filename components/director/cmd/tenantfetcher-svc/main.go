@@ -94,7 +94,7 @@ type config struct {
 	SystemFieldDiscoveryEngineConfig systemfielddiscoveryenginecfg.SystemFieldDiscoveryEngineConfig
 
 	OperationsManagerConfig       operationsmanager.OperationsManagerConfig
-	ParallelOperationProcessors   int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"` // add env vars
+	ParallelOperationProcessors   int           `envconfig:"APP_PARALLEL_OPERATION_PROCESSORS,default=10"`
 	OperationProcessorQuietPeriod time.Duration `envconfig:"APP_OPERATION_PROCESSORS_QUIET_PERIOD,default=5s"`
 }
 
@@ -225,15 +225,15 @@ func main() {
 	}
 
 	go func() {
-		if err := saasRegistryOperationsManager.StartRescheduleOperationsJob(ctx, []string{model.OperationStatusCompleted.ToString()}); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
+		if err := saasRegistryOperationsManager.StartRescheduleOperationsJob(ctx, []string{model.OperationStatusFailed.ToString()}); err != nil {
+			log.C(ctx).WithError(err).Error("Failed to run RescheduleOperationsJob. Stopping app...")
 			cancel()
 		}
 	}()
 
 	go func() {
 		if err := saasRegistryOperationsManager.StartDeleteOperationsJob(ctx); err != nil {
-			log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
+			log.C(ctx).WithError(err).Error("Failed to run StartDeleteOperationsJob. Stopping app...")
 			cancel()
 		}
 	}()
