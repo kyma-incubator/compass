@@ -157,8 +157,8 @@ func (cl *certSubjectMappingLoader) loadCertSubjectMappings(ctx context.Context,
 
 func convertGQLCertSubjectMappings(gqlMappings []*schema.CertificateSubjectMapping) []certsubjmapping.SubjectConsumerTypeMapping {
 	m := make([]certsubjmapping.SubjectConsumerTypeMapping, 0, len(gqlMappings))
-	var internalConsumerID string
 	for _, e := range gqlMappings {
+		var internalConsumerID string
 		if e.InternalConsumerID != nil {
 			internalConsumerID = *e.InternalConsumerID
 		}
