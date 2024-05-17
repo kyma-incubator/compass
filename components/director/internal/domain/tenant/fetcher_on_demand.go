@@ -4,8 +4,10 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
 )
@@ -48,8 +50,12 @@ func NewFetchOnDemandService(client Client, config FetchOnDemandAPIConfig) Fetch
 	}
 }
 
-// FetchOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created.
+// FetchOnDemand calls an API which fetches details for the given tenant from an external tenancy service, stores the tenant in the Compass DB and returns 200 OK if the tenant was successfully created. Note that tenants with slash in their name are ignored!
 func (s *fetchOnDemandService) FetchOnDemand(ctx context.Context, tenant, parentTenant string) error {
+	if strings.Contains(tenant, "/") {
+		log.C(ctx).Warn(fmt.Sprintf("ignore fetching of tenant %s, as fetch on demand cannot be used for URM tenants that contains slashes", tenant))
+		return nil
+	}
 	reqURL := s.buildRequestURL(tenant, parentTenant)
 	req, err := http.NewRequest(http.MethodPost, reqURL, nil)
 	if err != nil {
