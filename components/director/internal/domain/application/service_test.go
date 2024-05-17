@@ -444,7 +444,7 @@ func TestService_Create(t *testing.T) {
 				return svc
 			},
 			Input:       appWithScenariosLabel,
-			ExpectedErr: errors.New(fmt.Sprintf("label with key %s cannot be set explicitly", model.ScenariosKey)),
+			ExpectedErr: fmt.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey),
 		},
 	}
 
@@ -1378,7 +1378,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 				app.Labels[model.ScenariosKey] = []string{testScenario}
 				return app
 			},
-			ExpectedErr: errors.New(fmt.Sprintf("label with key %s cannot be set explicitly", model.ScenariosKey)),
+			ExpectedErr: fmt.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey),
 		},
 	}
 
