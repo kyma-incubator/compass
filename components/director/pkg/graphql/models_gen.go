@@ -1903,6 +1903,10 @@ func (e *OperationErrorSeverity) UnmarshalGQL(v interface{}) error {
 		return fmt.Errorf("enums must be strings")
 	}
 
+	if len(str) == 0 {
+		str = string(OperationErrorSeverityNone)
+	}
+
 	*e = OperationErrorSeverity(str)
 	if !e.IsValid() {
 		return fmt.Errorf("%s is not a valid OperationErrorSeverity", str)
@@ -1911,7 +1915,12 @@ func (e *OperationErrorSeverity) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OperationErrorSeverity) MarshalGQL(w io.Writer) {
-	fmt.Fprint(w, strconv.Quote(e.String()))
+	if len(e.String()) == 0 {
+		fmt.Fprint(w, strconv.Quote(string(OperationErrorSeverityNone)))
+	} else {
+		fmt.Fprint(w, strconv.Quote(e.String()))
+	}
+
 }
 
 type OperationMode string
