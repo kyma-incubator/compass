@@ -8,8 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -45,6 +43,7 @@ type formationAssignmentStatusService interface {
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
 	Finish(ctx context.Context, assignmentID, formationID string) error
+	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
 }
 
 type malformedRequest struct {
@@ -190,8 +189,15 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	formationOperation := determineOperationBasedOnFormationAssignmentState(fa)
-	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa)
+	latestAssignmentOperation, err := h.assignmentOperationService.GetLatestOperation(ctx, fa.ID, fa.FormationID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error when getting latest operation for assignment with ID: %s. X-Request-ID: %s", fa.ID, correlationID)
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type) // todo::: placeholder
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa, latestAssignmentOperation.Type)
 	originalStateFromStatusReport := notificationStatusReport.State
 	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
@@ -275,7 +281,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 
 	if formationOperation == model.UnassignFormation {
 		log.C(ctx).Infof("Processing status update for formation assignment with ID: %s during %q operation", fa.ID, model.UnassignFormation)
-		isFADeleted, err := h.processFormationAssignmentUnassignStatusUpdate(ctx, fa, notificationStatusReport)
+		isFADeleted, err := h.processFormationAssignmentUnassignStatusUpdate(ctx, fa, notificationStatusReport, latestAssignmentOperation.Type)
 
 		if commitErr := tx.Commit(); commitErr != nil {
 			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
@@ -524,10 +530,10 @@ func (b FormationRequestBody) Validate() error {
 }
 
 // processFormationAssignmentUnassignStatusUpdate handles the async unassign formation assignment status update
-func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, statusReport *statusreport.NotificationStatusReport) (bool, error) {
+func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, statusReport *statusreport.NotificationStatusReport, latestAssignmentOperationType model.AssignmentOperationType) (bool, error) {
 	stateFromStatusReport := model.FormationAssignmentState(statusReport.State)
 
-	if !fa.IsInRegularUnassignState() {
+	if latestAssignmentOperationType == model.InstanceCreatorUnassign { // todo::: there won't be IC state anymore so think how to adapt -> maybe get fa latestOP and if it's IC_UNASSIGN enter the if
 		consumerInfo, err := consumer.LoadFromContext(ctx)
 		if err != nil {
 			return false, err
@@ -775,17 +781,6 @@ func decodeJSONBody(w http.ResponseWriter, r *http.Request, dst interface{}) err
 	return nil
 }
 
-func determineOperationBasedOnFormationAssignmentState(fa *model.FormationAssignment) model.FormationOperation {
-	assignOperationStates := []string{string(model.InitialAssignmentState),
-		string(model.ConfigPendingAssignmentState),
-		string(model.ReadyAssignmentState),
-		string(model.CreateErrorAssignmentState)}
-	if str.ValueIn(fa.State, assignOperationStates) {
-		return model.AssignFormation
-	}
-	return model.UnassignFormation
-}
-
 func (mr *malformedRequest) Error() string {
 	return mr.msg
 }
@@ -795,11 +790,11 @@ type responseError struct {
 	errorMessage string
 }
 
-func newNotificationStatusReportFromRequestBody(requestBody FormationAssignmentRequestBody, fa *model.FormationAssignment) *statusreport.NotificationStatusReport {
-	return statusreport.NewNotificationStatusReport(requestBody.Configuration, calculateState(requestBody, fa), requestBody.Error)
+func newNotificationStatusReportFromRequestBody(requestBody FormationAssignmentRequestBody, fa *model.FormationAssignment, assignmentOperationType model.AssignmentOperationType) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(requestBody.Configuration, calculateState(requestBody, fa, assignmentOperationType), requestBody.Error)
 }
 
-func calculateState(requestBody FormationAssignmentRequestBody, fa *model.FormationAssignment) string {
+func calculateState(requestBody FormationAssignmentRequestBody, fa *model.FormationAssignment, assignmentOperationType model.AssignmentOperationType) string {
 	if requestBody.State != "" {
 		return string(requestBody.State)
 	}
@@ -808,9 +803,9 @@ func calculateState(requestBody FormationAssignmentRequestBody, fa *model.Format
 		return fa.State
 	}
 
-	operation := determineOperationBasedOnFormationAssignmentState(fa)
+	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperationType) // todo::: placeholder
 
-	if operation == model.AssignFormation {
+	if formationOperation == model.AssignFormation {
 		return string(model.CreateErrorAssignmentState)
 	}
 

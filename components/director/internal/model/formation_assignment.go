@@ -156,7 +156,7 @@ func (fa *FormationAssignment) IsInProgressState() bool {
 }
 
 // IsInRegularUnassignState returns if the formation assignment is in regular unassign stage
-func (fa *FormationAssignment) IsInRegularUnassignState() bool {
+func (fa *FormationAssignment) IsInRegularUnassignState() bool { // todo::: can be deleted
 	unassignOperationStates := []string{string(DeletingAssignmentState),
 		string(DeleteErrorAssignmentState)}
 	return str.ValueIn(fa.State, unassignOperationStates)
@@ -176,7 +176,7 @@ func (fa *FormationAssignment) SetStateToDeleting() bool {
 }
 
 // GetOperation returns the formation operation that is determined based on the state of the assignment
-func (fa *FormationAssignment) GetOperation() FormationOperation {
+func (fa *FormationAssignment) GetOperation() FormationOperation { // todo::: can be deleted
 	operation := AssignFormation
 	if strings.HasSuffix(fa.State, string(DeleteErrorAssignmentState)) || strings.HasSuffix(fa.State, string(DeletingAssignmentState)) {
 		operation = UnassignFormation
