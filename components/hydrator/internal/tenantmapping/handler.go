@@ -170,7 +170,7 @@ func (h *Handler) getObjectContexts(ctx context.Context, reqData oathkeeper.ReqD
 
 			objectContext, err := provider.GetObjectContext(ctx, reqData, *details)
 			if err != nil {
-				return nil, errors.Wrap(err, "while getting objectContexts: ")
+				return nil, err
 			}
 
 			objectContexts = append(objectContexts, objectContext)

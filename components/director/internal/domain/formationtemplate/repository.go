@@ -219,7 +219,9 @@ func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 
 	if tenantID == "" {
 		conditions = append(conditions, repo.NewNullCondition(tenantIDColumn))
-		return r.deleterGlobal.DeleteOneGlobal(ctx, conditions)
+		if err := r.deleterGlobal.DeleteOneGlobal(ctx, conditions); apperrors.IsInternalServerError(err) {
+			return apperrors.NewTenantRequiredError()
+		}
 	}
 
 	return r.deleterWithEmbeddedTenant.DeleteOne(ctx, resource.FormationTemplate, tenantID, conditions)
