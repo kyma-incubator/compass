@@ -5,9 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/golang-jwt/jwt/v5"
-
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/api/internal"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/errors"
 	"github.com/kyma-incubator/compass/components/ias-adapter/internal/jwk"
@@ -19,17 +18,17 @@ const (
 	keyIDHeader         = "kid"
 )
 
-type JWTMiddleware struct {
+type IDTokenMiddleware struct {
 	cache jwk.Cache
 }
 
-func NewJWTMiddleware(cache jwk.Cache) JWTMiddleware {
-	return JWTMiddleware{
+func NewIDTokenMiddleware(cache jwk.Cache) IDTokenMiddleware {
+	return IDTokenMiddleware{
 		cache: cache,
 	}
 }
 
-func (m JWTMiddleware) JWT(ctx *gin.Context) {
+func (m IDTokenMiddleware) VerifyIDToken(ctx *gin.Context) {
 	log := logger.FromContext(ctx)
 
 	bearerToken, err := getBearerToken(ctx.Request)
@@ -58,11 +57,11 @@ func getBearerToken(r *http.Request) (string, error) {
 }
 
 type jwtClaims struct {
-	Tenants string `json:"tenant"`
+	Tenant string `json:"tenant"`
 	jwt.RegisteredClaims
 }
 
-func (m JWTMiddleware) verifyJWT(ctx context.Context, jwtToken string) (jwtClaims, error) {
+func (m IDTokenMiddleware) verifyJWT(ctx context.Context, jwtToken string) (jwtClaims, error) {
 	claims := jwtClaims{}
 	token, err := jwt.ParseWithClaims(jwtToken, &claims, func(token *jwt.Token) (any, error) {
 		keyID, ok := token.Header[keyIDHeader]
