@@ -74,6 +74,7 @@ type FormationRepository interface {
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
 	Update(ctx context.Context, model *model.Formation) error
+	UpdateLastNotificationSentTimestamps(ctx context.Context, formationID string) error
 }
 
 // FormationTemplateRepository represents the FormationTemplate repository layer
@@ -155,10 +156,19 @@ type constraintEngine interface {
 //go:generate mockery --exported --name=asaEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
 type asaEngine interface {
 	EnsureScenarioAssigned(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
-	RemoveAssignedScenario(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
+	UnassignFormationComingFromASA(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
 	GetMatchingFuncByFormationObjectType(objType graphql.FormationObjectType) (MatchingFunc, error)
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error)
+}
+
+//go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type assignmentOperationService interface {
+	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
+	Finish(ctx context.Context, assignmentID, formationID string) error
+	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
+	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
+	DeleteByIDs(ctx context.Context, ids []string) error
 }
 
 type service struct {
@@ -176,6 +186,7 @@ type service struct {
 	runtimeRepo                            runtimeRepository
 	runtimeContextRepo                     runtimeContextRepository
 	formationAssignmentService             formationAssignmentService
+	assignmentOperationService             assignmentOperationService
 	formationAssignmentNotificationService FormationAssignmentNotificationsService
 	notificationsService                   NotificationsService
 	constraintEngine                       constraintEngine
@@ -203,6 +214,7 @@ func NewService(
 	tenantSvc tenantService, runtimeRepo runtimeRepository,
 	runtimeContextRepo runtimeContextRepository,
 	formationAssignmentService formationAssignmentService,
+	assignmentOperationService assignmentOperationService,
 	formationAssignmentNotificationService FormationAssignmentNotificationsService,
 	notificationsService NotificationsService,
 	constraintEngine constraintEngine,
@@ -226,6 +238,7 @@ func NewService(
 		runtimeContextRepo:                     runtimeContextRepo,
 		formationAssignmentNotificationService: formationAssignmentNotificationService,
 		formationAssignmentService:             formationAssignmentService,
+		assignmentOperationService:             assignmentOperationService,
 		notificationsService:                   notificationsService,
 		constraintEngine:                       constraintEngine,
 		runtimeTypeLabelKey:                    runtimeTypeLabelKey,
@@ -598,6 +611,25 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil, terr
 		}
 
+		// create operations in a transaction similar to how we persist the FAs above (using terr as well)
+		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API, and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
+		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+			for _, a := range assignments {
+				if _, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+					Type:                  model.Assign,
+					FormationAssignmentID: a.ID,
+					FormationID:           a.FormationID,
+					TriggeredBy:           model.AssignObject,
+				}); terr != nil {
+					return errors.Wrapf(terr, "while creating %s Operation for assignment with ID: %s", model.Assign, a.ID)
+				}
+			}
+
+			return nil
+		}); terr != nil {
+			return nil, terr
+		}
+
 		// If the assigning of the object fails, the transaction opened in the resolver will be rolled back.
 		// The FA records and the labels for the object will not be reverted as they were persisted as part of another
 		// transaction. The leftover resources should be deleted separately.
@@ -620,7 +652,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}()
 
 		// When it is in initial state, the notification generation will be handled by the async API via resynchronizing the formation later
-		// If we are in create error state, the formation is not ready, and we should not send notifications
+		// If we are in create error or draft state, the formation is not ready, and we should not send notifications
 		if formationFromDB.State == model.InitialFormationState || formationFromDB.State == model.CreateErrorFormationState || formationFromDB.State == model.DraftFormationState {
 			log.C(ctx).Infof("Formation with id %q is not in %q state. Waiting for state to be updated...", formationFromDB.ID, model.ReadyFormationState)
 			return ft.formation, nil
@@ -870,8 +902,8 @@ func (s *service) checkFormationTemplateTypes(ctx context.Context, tnt, objectID
 //
 // For objectType graphql.FormationObjectTypeTenant it will
 // delete the automatic scenario assignment with the caller and target tenant which then will unassign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
-func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
-	log.C(ctx).Infof("Unassigning object with ID: %q of type: %q from formation %q", objectID, objectType, formation.Name)
+func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (f *model.Formation, err error) {
+	log.C(ctx).Infof("Unassigning object with ID: %q of type: %q from formation %q, should ignore ASA: %v", objectID, objectType, formation.Name, ignoreASA)
 
 	if !isObjectTypeAllowed(objectType) {
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
@@ -890,7 +922,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	if isFormationComingFromASA, err := s.asaEngine.IsFormationComingFromASA(ctx, objectID, formation.Name, objectType); err != nil {
 		return nil, err
-	} else if isFormationComingFromASA {
+	} else if !ignoreASA && isFormationComingFromASA {
 		return formationFromDB, nil
 	}
 
@@ -980,6 +1012,27 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, err
 	}
 
+	// create `Unassign` Operation here in separate transaction similar to the `Assign` case
+	var operationAssignmentIDs []string
+	if opErr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+		for _, ia := range initialAssignmentsData {
+			opID, err := s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+				Type:                  model.Unassign,
+				FormationAssignmentID: ia.ID,
+				FormationID:           ia.FormationID,
+				TriggeredBy:           model.UnassignObject,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.Unassign, ia.ID)
+			}
+			operationAssignmentIDs = append(operationAssignmentIDs, opID)
+		}
+
+		return nil
+	}); opErr != nil {
+		return nil, opErr
+	}
+
 	defer func() {
 		if err == nil {
 			return
@@ -1001,6 +1054,16 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 			return nil
 		}); terr != nil {
 			log.C(ctx).WithError(terr).Error("An error occurred while reverting formation assignments with their original data")
+		}
+
+		log.C(ctx).Infof("Deleting Operations related to assignments that were updated to DELETING state...")
+		if terr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
+			if deleteErr := s.assignmentOperationService.DeleteByIDs(ctxWithTransact, operationAssignmentIDs); deleteErr != nil {
+				return deleteErr
+			}
+			return nil
+		}); terr != nil {
+			log.C(ctx).WithError(terr).Errorf("while deleting Operations for formation assignments with IDs: %s", operationAssignmentIDs)
 		}
 	}()
 
@@ -1089,6 +1152,14 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	}
 
 	return formationFromDB, nil
+}
+
+func (s *service) UnassignFormationIgnoreASA(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
+	return s.UnassignFormation(ctx, tnt, objectID, objectType, formation, true)
+}
+
+func (s *service) UnassignFormationRespectASA(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
+	return s.UnassignFormation(ctx, tnt, objectID, objectType, formation, false)
 }
 
 // FinalizeDraftFormation changes the formation state to initial and start processing the formation and formation assignment notifications
@@ -1199,6 +1270,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
 
+	assignmentOperationTriggeredBy := model.ResyncAssignment
 	formationID := formation.ID
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		if shouldReset {
@@ -1218,6 +1290,15 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				formationassignment.ResetAssignmentConfigAndError(assignment) // reset the assignments
 				err = s.formationAssignmentService.Update(ctxWithTransact, assignment.ID, assignment)
 				if err != nil {
+					return err
+				}
+				assignmentOperationTriggeredBy = model.ResetAssignment
+				if _, err = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+					Type:                  model.Assign,
+					FormationAssignmentID: assignment.ID,
+					FormationID:           assignment.FormationID,
+					TriggeredBy:           assignmentOperationTriggeredBy,
+				}); err != nil {
 					return err
 				}
 			}
@@ -1272,6 +1353,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
 				}
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
+					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Unassign, faClone.ID, assignmentOperationTriggeredBy)
+				}
 			}
 			if operation == model.AssignFormation {
 				faClone.State = string(model.InitialAssignmentState)
@@ -1279,6 +1363,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				faClone.Error = nil
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
 					return errors.Wrapf(err, "while updating formation assignment with ID: '%s' to '%s' state", faClone.ID, faClone.State)
+				}
+				if err := s.assignmentOperationService.Update(ctxWithTransact, faClone.ID, faClone.FormationID, assignmentOperationTriggeredBy); err != nil {
+					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Assign, faClone.ID, assignmentOperationTriggeredBy)
 				}
 			}
 
@@ -1483,17 +1570,17 @@ func (s *service) DeleteAutomaticScenarioAssignment(ctx context.Context, in *mod
 		return errors.Wrap(err, "while deleting the Assignment")
 	}
 
-	if err = s.asaEngine.RemoveAssignedScenario(ctx, in, s.UnassignFormation); err != nil {
+	if err = s.asaEngine.UnassignFormationComingFromASA(ctx, in, s.UnassignFormationRespectASA); err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 
 	return nil
 }
 
-// RemoveAssignedScenarios removes all the scenarios that are coming from any of the provided ASAs
-func (s *service) RemoveAssignedScenarios(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+// UnassignFormationsComingFromASA removes all the scenarios that are coming from any of the provided ASAs
+func (s *service) UnassignFormationsComingFromASA(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
 	for _, asa := range in {
-		if err := s.asaEngine.RemoveAssignedScenario(ctx, asa, s.UnassignFormation); err != nil {
+		if err := s.asaEngine.UnassignFormationComingFromASA(ctx, asa, s.UnassignFormationIgnoreASA); err != nil {
 			return errors.Wrapf(err, "while deleting automatic scenario assigment: %s", asa.ScenarioName)
 		}
 	}
@@ -1517,7 +1604,7 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 		return errors.Wrap(err, "while deleting the Assignments")
 	}
 
-	if err = s.RemoveAssignedScenarios(ctx, in); err != nil {
+	if err = s.UnassignFormationsComingFromASA(ctx, in); err != nil {
 		return errors.Wrap(err, "while unassigning scenario from runtimes")
 	}
 

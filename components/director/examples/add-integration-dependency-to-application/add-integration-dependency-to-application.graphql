@@ -5,6 +5,7 @@ mutation {
     in: {
       name: "Int dep name"
       description: "int dep desc"
+      ordID: "sap.foo.bar:integrationDependency:CustomerOrder:v1"
       visibility: "public"
       releaseStatus: "active"
       mandatory: false
@@ -13,15 +14,16 @@ mutation {
           name: "Aspect name"
           description: "aspect desc"
           mandatory: false
-          apiResources: [{ ordID: "ns:apiResource:API_ID:v1" }]
+          apiResources: [{ ordId: "ns:apiResource:API_ID:v1" }]
           eventResources: [
             {
-              ordID: "ns:eventResource:EVENT_ID:v1"
+              ordId: "ns:eventResource:EVENT_ID:v1"
               subset: [{ eventType: "sap.billing.sb.Subscription.Created.v1" }]
             }
           ]
         }
       ]
+      labels: { displayName: "bar", test: ["val", "val2"] }
     }
   ) {
     id
@@ -35,6 +37,7 @@ mutation {
     version {
       value
     }
+    labels
     aspects {
       id
       name

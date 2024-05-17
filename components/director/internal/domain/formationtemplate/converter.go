@@ -21,8 +21,8 @@ type converter struct {
 	webhook WebhookConverter
 }
 
-// FromInputGraphQL converts from GraphQL input to internal model input
-func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model.FormationTemplateInput, error) {
+// FromRegisterInputGraphQL converts from GraphQL register input to internal model input
+func (c *converter) FromRegisterInputGraphQL(in *graphql.FormationTemplateRegisterInput) (*model.FormationTemplateRegisterInput, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -48,7 +48,7 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		supportsReset = *in.SupportsReset
 	}
 
-	return &model.FormationTemplateInput{
+	return &model.FormationTemplateRegisterInput{
 		Name:                   in.Name,
 		ApplicationTypes:       in.ApplicationTypes,
 		RuntimeTypes:           in.RuntimeTypes,
@@ -58,11 +58,46 @@ func (c *converter) FromInputGraphQL(in *graphql.FormationTemplateInput) (*model
 		LeadingProductIDs:      in.LeadingProductIDs,
 		SupportsReset:          supportsReset,
 		DiscoveryConsumers:     in.DiscoveryConsumers,
+		Labels:                 in.Labels,
 	}, nil
 }
 
-// FromModelInputToModel converts from internal model input and id to internal model
-func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id, tenantID string) *model.FormationTemplate {
+// FromUpdateInputGraphQL converts from GraphQL update input to internal model input
+func (c *converter) FromUpdateInputGraphQL(in *graphql.FormationTemplateUpdateInput) (*model.FormationTemplateUpdateInput, error) {
+	if in == nil {
+		return nil, nil
+	}
+
+	var runtimeTypeDisplayName *string
+	if in.RuntimeTypeDisplayName != nil {
+		runtimeTypeDisplayName = in.RuntimeTypeDisplayName
+	}
+
+	var runtimeArtifactKind *model.RuntimeArtifactKind
+	if in.RuntimeArtifactKind != nil {
+		kind := model.RuntimeArtifactKind(*in.RuntimeArtifactKind)
+		runtimeArtifactKind = &kind
+	}
+
+	supportsReset := false
+	if in.SupportsReset != nil {
+		supportsReset = *in.SupportsReset
+	}
+
+	return &model.FormationTemplateUpdateInput{
+		Name:                   in.Name,
+		ApplicationTypes:       in.ApplicationTypes,
+		RuntimeTypes:           in.RuntimeTypes,
+		RuntimeTypeDisplayName: runtimeTypeDisplayName,
+		RuntimeArtifactKind:    runtimeArtifactKind,
+		LeadingProductIDs:      in.LeadingProductIDs,
+		SupportsReset:          supportsReset,
+		DiscoveryConsumers:     in.DiscoveryConsumers,
+	}, nil
+}
+
+// FromModelRegisterInputToModel converts from internal model register input and id to internal model
+func (c *converter) FromModelRegisterInputToModel(in *model.FormationTemplateRegisterInput, id, tenantID string) *model.FormationTemplate {
 	if in == nil {
 		return nil
 	}
@@ -88,6 +123,32 @@ func (c *converter) FromModelInputToModel(in *model.FormationTemplateInput, id, 
 		RuntimeArtifactKind:    in.RuntimeArtifactKind,
 		TenantID:               tntID,
 		Webhooks:               webhooks,
+		LeadingProductIDs:      in.LeadingProductIDs,
+		SupportsReset:          in.SupportsReset,
+		DiscoveryConsumers:     in.DiscoveryConsumers,
+		Labels:                 in.Labels,
+	}
+}
+
+// FromModelUpdateInputToModel converts from internal model update input and id to internal model
+func (c *converter) FromModelUpdateInputToModel(in *model.FormationTemplateUpdateInput, id, tenantID string) *model.FormationTemplate {
+	if in == nil {
+		return nil
+	}
+
+	var tntID *string
+	if tenantID != "" {
+		tntID = &tenantID
+	}
+
+	return &model.FormationTemplate{
+		ID:                     id,
+		Name:                   in.Name,
+		ApplicationTypes:       in.ApplicationTypes,
+		RuntimeTypes:           in.RuntimeTypes,
+		RuntimeTypeDisplayName: in.RuntimeTypeDisplayName,
+		RuntimeArtifactKind:    in.RuntimeArtifactKind,
+		TenantID:               tntID,
 		LeadingProductIDs:      in.LeadingProductIDs,
 		SupportsReset:          in.SupportsReset,
 		DiscoveryConsumers:     in.DiscoveryConsumers,
@@ -127,6 +188,8 @@ func (c *converter) ToGraphQL(in *model.FormationTemplate) (*graphql.FormationTe
 		LeadingProductIDs:      in.LeadingProductIDs,
 		SupportsReset:          in.SupportsReset,
 		DiscoveryConsumers:     in.DiscoveryConsumers,
+		CreatedAt:              graphql.Timestamp(in.CreatedAt),
+		UpdatedAt:              graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
 	}, nil
 }
 
@@ -250,5 +313,7 @@ func (c *converter) FromEntity(in *Entity) (*model.FormationTemplate, error) {
 		TenantID:               repo.StringPtrFromNullableString(in.TenantID),
 		SupportsReset:          in.SupportsReset,
 		DiscoveryConsumers:     unmarshalledDiscoveryConsumers,
+		CreatedAt:              in.CreatedAt,
+		UpdatedAt:              in.UpdatedAt,
 	}, nil
 }

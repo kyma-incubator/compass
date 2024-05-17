@@ -36,6 +36,12 @@ func TestConverter_ToEntity(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name:               "All properties given for formation template",
+			Input:              fixFormationTemplateLabelModel(labelID, arrayValue, version),
+			Expected:           fixFormationTemplateLabelEntity(labelID, marshalledArrayValue, version),
+			ExpectedErrMessage: "",
+		},
+		{
 			Name:               "String value",
 			Input:              fixLabelModel("1", stringValue, version),
 			Expected:           fixLabelEntity("1", marshalledStringValue, version),
@@ -107,6 +113,12 @@ func TestConverter_FromEntity(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name:               "All properties given for formation template",
+			Input:              fixFormationTemplateLabelEntity(labelID, marshalledArrayValue, version),
+			Expected:           fixFormationTemplateLabelModel(labelID, arrayValue, version),
+			ExpectedErrMessage: "",
+		},
+		{
 			Name:               "String value",
 			Input:              fixLabelEntity("1", marshalledStringValue, version),
 			Expected:           fixLabelModel("1", stringValue, version),
@@ -165,12 +177,37 @@ func fixLabelEntity(id string, value []byte, version int) *label.Entity {
 		Version:  version,
 	}
 }
+
+func fixFormationTemplateLabelEntity(labelID string, value []byte, version int) *label.Entity {
+	return &label.Entity{
+		ID: labelID,
+		FormationTemplateID: sql.NullString{
+			String: testFormationTemplateID,
+			Valid:  true,
+		},
+		Key:     key,
+		Value:   string(value),
+		Version: version,
+	}
+}
+
 func fixLabelModel(id string, value interface{}, version int) *model.Label {
 	return &model.Label{
 		ID:         id,
 		Key:        "test",
 		ObjectType: model.RuntimeLabelableObject,
 		ObjectID:   "321",
+		Value:      value,
+		Version:    version,
+	}
+}
+
+func fixFormationTemplateLabelModel(labelID string, value interface{}, version int) *model.Label {
+	return &model.Label{
+		ID:         labelID,
+		Key:        key,
+		ObjectType: model.FormationTemplateLabelableObject,
+		ObjectID:   testFormationTemplateID,
 		Value:      value,
 		Version:    version,
 	}

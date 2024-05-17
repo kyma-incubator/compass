@@ -1085,8 +1085,8 @@ func TestService_Delete(t *testing.T) {
 				engine := &automock.FormationService{}
 				engine.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
 
-				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: formations[0].Name}).Return(&model.Formation{Name: "scenario1"}, nil)
-				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: formations[1].Name}).Return(&model.Formation{Name: "scenario2"}, nil)
+				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: formations[0].Name}, true).Return(&model.Formation{Name: "scenario1"}, nil)
+				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: formations[1].Name}, true).Return(&model.Formation{Name: "scenario2"}, nil)
 				return engine
 			},
 			InputID:            id,
@@ -1176,7 +1176,7 @@ func TestService_Delete(t *testing.T) {
 				engine := &automock.FormationService{}
 				engine.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
 
-				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: formations[0].Name}).Return(nil, testErr)
+				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: formations[0].Name}, true).Return(nil, testErr)
 				return engine
 			},
 			InputID:            id,

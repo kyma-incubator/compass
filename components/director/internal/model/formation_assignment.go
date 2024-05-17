@@ -210,8 +210,3 @@ func (fa *FormationAssignment) isInProgressUnassignState() bool {
 func (fa *FormationAssignment) GetAddress() uintptr {
 	return uintptr(unsafe.Pointer(fa))
 }
-
-// SetLastNotificationSentTimestamp updates the time when a formation notification was last sent.
-func (fa *FormationAssignment) SetLastNotificationSentTimestamp(t time.Time) {
-	fa.LastNotificationSentTimestamp = &t
-}

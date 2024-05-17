@@ -200,3 +200,63 @@ func TestService_List(t *testing.T) {
 		assert.Contains(t, err.Error(), "cannot read tenant from context")
 	})
 }
+
+func TestService_ListForScenarioNames(t *testing.T) {
+	// GIVEN
+	testError := errors.New("Test error")
+	scenarioNames := []string{"foo", "bar"}
+	assignments := []*model.AutomaticScenarioAssignment{
+		fixModelWithScenarioName("foo"),
+		fixModelWithScenarioName("bar"),
+	}
+	ctx := context.TODO()
+	ctx = tenant.SaveToContext(ctx, tenantID, externalTenantID)
+
+	testCases := []struct {
+		Name               string
+		RepositoryFn       func() *automock.Repository
+		ExpectedResult     []*model.AutomaticScenarioAssignment
+		ExpectedErrMessage string
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListForScenarioNames", ctx, tenantID, scenarioNames).Return(assignments, nil).Once()
+				return repo
+			},
+			ExpectedResult: assignments,
+		},
+		{
+			Name: "Returns error when Assignments listing failed",
+			RepositoryFn: func() *automock.Repository {
+				repo := &automock.Repository{}
+				repo.On("ListForScenarioNames", ctx, tenantID, scenarioNames).Return(nil, testError).Once()
+				return repo
+			},
+			ExpectedErrMessage: testError.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.RepositoryFn()
+
+			svc := scenarioassignment.NewService(repo, nil)
+
+			// WHEN
+			items, err := svc.ListForScenarioNames(ctx, scenarioNames)
+
+			// THEN
+			if testCase.ExpectedErrMessage == "" {
+				require.NoError(t, err)
+				assert.Equal(t, testCase.ExpectedResult, items)
+			} else {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
+			}
+
+			repo.AssertExpectations(t)
+		})
+	}
+}

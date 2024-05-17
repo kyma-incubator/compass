@@ -308,16 +308,21 @@ func TestInstanceCreator(t *testing.T) {
 		expectedInstanceCreatorConfig := str.Ptr(`{"credentials": {"outboundCommunication": {"basicAuthentication": {"password": "password", "uri": "uri", "username": "username"}}}}`)
 		expectedNotSubstitutedConfig := str.Ptr(`{"credentials": {"inboundCommunication": {"basicAuthentication": {"uri": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.uri", "password": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.password", "username": "$.credentials.inboundCommunication.basicAuthentication.serviceInstances[0].serviceBinding.credentials.username", "serviceInstances": [{"plan": "standard", "service": "feature-flags", "serviceBinding": {}}]}}}}`)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1ID: {
-				app1ID: fixtures.AssignmentState{State: readyAssignmentState, Config: nil, Value: nil, Error: nil},
-				app2ID: fixtures.AssignmentState{State: readyAssignmentState, Config: expectedNotSubstitutedConfig, Value: nil, Error: nil},
-			},
-			app2ID: {
-				app1ID: fixtures.AssignmentState{State: readyAssignmentState, Config: expectedInstanceCreatorConfig, Value: nil, Error: nil},
-				app2ID: fixtures.AssignmentState{State: readyAssignmentState, Config: nil, Value: nil, Error: nil},
-			},
-		}
+		expectationsBuilder = mock_data.NewFAExpectationsBuilder().
+			WithParticipant(app1ID).
+			WithParticipant(app2ID).
+			WithNotifications([]*mock_data.NotificationData{
+				mock_data.NewNotificationData(app1ID, app1ID, readyAssignmentState, nil, nil),
+				mock_data.NewNotificationData(app1ID, app2ID, readyAssignmentState, expectedNotSubstitutedConfig, nil),
+				mock_data.NewNotificationData(app2ID, app2ID, readyAssignmentState, nil, nil),
+				mock_data.NewNotificationData(app2ID, app1ID, readyAssignmentState, expectedInstanceCreatorConfig, nil),
+			}).
+			WithOperations([]*fixtures.Operation{
+				fixtures.NewOperation(app1ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
+				fixtures.NewOperation(app1ID, app2ID, "ASSIGN", "ASSIGN_OBJECT", true),
+				fixtures.NewOperation(app2ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
+				fixtures.NewOperation(app2ID, app2ID, "ASSIGN", "ASSIGN_OBJECT", true),
+			})
 
 		configMatcher := func(t require.TestingT, expectedConfig, actualConfig *string) bool {
 			if expectedConfig != nil && strings.Contains(*expectedConfig, "outboundCommunication") {
@@ -326,7 +331,7 @@ func TestInstanceCreator(t *testing.T) {
 			return assertExactConfig(t, expectedConfig, actualConfig)
 		}
 
-		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectedAssignments, 4, certSecuredGraphQLClient, tnt).
+		asserterWithCustomConfigMatcher := asserters.NewFormationAssignmentsAsyncCustomConfigMatcherAsserter(configMatcher, expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt).
 			WithTimeout(eventuallyTimeoutForInstances).
 			WithTick(eventuallyTickForInstances)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)

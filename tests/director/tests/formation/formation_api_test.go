@@ -391,7 +391,7 @@ func TestApplicationOnlyFormationFlow(t *testing.T) {
 	subaccountID := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
 
 	t.Log("Create formation template")
-	input := graphql.FormationTemplateInput{Name: "application-only-formation-template", ApplicationTypes: []string{string(util.ApplicationTypeC4C)}}
+	input := graphql.FormationTemplateRegisterInput{Name: "application-only-formation-template", ApplicationTypes: []string{string(util.ApplicationTypeC4C)}}
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
 	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, input)
@@ -763,7 +763,7 @@ func TestSubaccountInAtMostOneFormationOfType(t *testing.T) {
 	secondFormationInputGql := graphql.FormationInput{Name: secondFormationName}
 
 	formationTemplateName := "create-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	t.Logf("Create formation template with name: %q", formationTemplateName)
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
@@ -848,12 +848,12 @@ func TestApplicationOfGivenTypeInAtMostOneFormationOfGivenType(t *testing.T) {
 	formationInputGql := graphql.FormationInput{Name: formationName}
 
 	formationTemplateName := "create-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithApplicationTypes(formationTemplateName, []string{applicationType})
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithApplicationTypes(formationTemplateName, []string{applicationType})
 
 	t.Logf("Create formation template with name: %q", formationTemplateName)
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	in := graphql.FormationConstraintInput{
 		Name:            "SystemOfGivenTypeInAtMostOneFormationOfGivenType",
@@ -919,12 +919,12 @@ func TestSystemInAtMostOneFormationOfType(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
 	formationTemplateName := "e2e-tests-formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithApplicationTypes(formationTemplateName, applicationTypes)
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithApplicationTypes(formationTemplateName, applicationTypes)
 
 	t.Logf("Create formation template with name: %q", formationTemplateName)
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
-	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	formationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	in := graphql.FormationConstraintInput{
 		Name:            "TestSystemInAtMostOneFormationOfType",
@@ -1030,11 +1030,11 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 		t.Run("Create Automatic Scenario Assignment BEFORE runtime creation", func(t *testing.T) {
 			// Create Automatic Scenario Assignment for kyma formation
-			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 
 			// Create Automatic Scenario Assignment for provider formation
-			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 
 			// Register kyma runtime
@@ -1092,9 +1092,6 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 
 			// Validate kyma and provider runtimes scenarios labels
 			validateRuntimesScenariosLabels(t, ctx, subscriptionConsumerAccountID, kymaFormationName, providerFormationName, kymaRuntime.ID, providerRuntime.ID)
-
-			unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
-			unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 		})
 
 		t.Run("Create Automatic Scenario Assignment AFTER runtime creation", func(t *testing.T) {
@@ -1153,11 +1150,11 @@ func TestRuntimeContextsFormationProcessingFromASA(stdT *testing.T) {
 			subscription.CreateRuntimeSubscription(t, conf.SubscriptionConfig, httpClient, providerRuntime, subscriptionToken, apiPath, subscriptionConsumerTenantID, subscriptionConsumerSubaccountID, subscriptionProviderSubaccountID, conf.SubscriptionProviderAppNameValue, true, conf.SubscriptionConfig.StandardFlow)
 
 			// Create Automatic Scenario Assignment for kyma formation
-			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, kymaFormationName)
 
 			// Create Automatic Scenario Assignment for provider formation
-			defer cleanupTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
+			defer unassignTenantFromFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 			assignTenantToFormation(t, ctx, subscriptionConsumerSubaccountID, subscriptionConsumerAccountID, providerFormationName)
 
 			// Validate kyma and provider runtimes scenarios labels
@@ -1214,10 +1211,10 @@ func TestFormationRuntimeTypeWhileAssigning(t *testing.T) {
 
 	tenantId := tenant.TestTenants.GetDefaultTenantID()
 
-	formationTemplateInput := fixtures.FixFormationTemplateInputWithRuntimeTypes(formationTemplateName, []string{runtimeType})
+	formationTemplateRegisterInput := fixtures.FixFormationTemplateRegisterInputWithRuntimeTypes(formationTemplateName, []string{runtimeType})
 	var actualFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &actualFormationTemplate)
-	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateInput)
+	actualFormationTemplate = fixtures.CreateFormationTemplate(t, ctx, certSecuredGraphQLClient, formationTemplateRegisterInput)
 
 	formation := fixtures.FixFormationInput(formationName, str.Ptr(formationTemplateName))
 	formationInputGQL, err := testctx.Tc.Graphqlizer.FormationInputToGQL(formation)
@@ -1272,18 +1269,8 @@ func unassignTenantFromFormation(t *testing.T, ctx context.Context, objectID, te
 	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
 }
 
-func cleanupTenantFromFormation(t *testing.T, ctx context.Context, objectID, tenantID, formationName string) {
-	t.Logf("Unassign tenant: %q from formation with name: %q...", objectID, formationName)
-	unassignReq := fixtures.FixUnassignFormationRequest(objectID, string(graphql.FormationObjectTypeTenant), formationName)
-	var formation graphql.Formation
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, unassignReq, &formation)
-	assertions.AssertNoErrorForOtherThanNotFound(t, err)
-
-	t.Logf("Successfully unassigned tenant: %q from formation with name: %q", objectID, formationName)
-}
-
 func createFormationTemplateWithMultipleRuntimeTypes(t *testing.T, ctx context.Context, formationTemplateName string, runtimeTypes []string, applicationTypes []string, runtimeArtifactKind graphql.ArtifactType) graphql.FormationTemplate {
-	formationTmplInput := graphql.FormationTemplateInput{
+	formationTmplRegisterInput := graphql.FormationTemplateRegisterInput{
 		Name:                   formationTemplateName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,
@@ -1291,7 +1278,7 @@ func createFormationTemplateWithMultipleRuntimeTypes(t *testing.T, ctx context.C
 		RuntimeArtifactKind:    &runtimeArtifactKind,
 	}
 
-	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateInputToGQL(formationTmplInput)
+	formationTmplGQLInput, err := testctx.Tc.Graphqlizer.FormationTemplateRegisterInputToGQL(formationTmplRegisterInput)
 	require.NoError(t, err)
 	formationTmplRequest := fixtures.FixCreateFormationTemplateRequest(formationTmplGQLInput)
 

@@ -1,10 +1,13 @@
 package runtime_test
 
 import (
+	"context"
 	"fmt"
 	"net/url"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
 
@@ -18,9 +21,10 @@ import (
 )
 
 const (
-	tenantID    = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-	runtimeID   = "runtimeID"
-	runtimeType = "runtimeType"
+	tenantID       = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+	parentTenantID = "a25c62c1-3678-1sc1-scc1-ssa211012cb2"
+	runtimeID      = "runtimeID"
+	runtimeType    = "runtimeType"
 )
 
 var (
@@ -323,4 +327,8 @@ func fixRtmCtxPage(rtmCtxs []*model.RuntimeContext) *model.RuntimeContextPage {
 
 func givenTenant() string {
 	return "8f237125-50be-4bb4-96ce-389e2b931f46"
+}
+
+func fixContextWithTenant(internalID, externalID string) context.Context {
+	return context.WithValue(context.TODO(), tenant.TenantContextKey, tenant.TenantCtx{InternalID: internalID, ExternalID: externalID})
 }

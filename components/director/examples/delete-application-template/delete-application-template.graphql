@@ -84,5 +84,7 @@ mutation {
     }
     labels
     accessLevel
+    createdAt
+    updatedAt
   }
 }

@@ -591,7 +591,7 @@ func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runti
 	}
 
 	for _, formation := range formations {
-		if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: formation.Name}); err != nil {
+		if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: formation.Name}, true); err != nil {
 			return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", formation.Name, runtimeID)
 		}
 	}
