@@ -19,20 +19,23 @@ import (
 
 func TestFetchOnDemand(t *testing.T) {
 	var (
-		fetchTenantURL = "https://compass-tenant-fetcher.kyma.local/tenants/v1/fetch"
-		tenantID       = "b91b59f7-2563-40b2-aba9-fef726037aa3"
-		parentTenantID = "8d4842ed-0307-4808-85d5-6bbed114c4ff"
-		testErr        = errors.New("error")
+		fetchTenantURL    = "https://compass-tenant-fetcher.kyma.local/tenants/v1/fetch"
+		tenantID          = "b91b59f7-2563-40b2-aba9-fef726037aa3"
+		tenantIDWithSlash = "/path/tenant"
+		parentTenantID    = "8d4842ed-0307-4808-85d5-6bbed114c4ff"
+		testErr           = errors.New("error")
 	)
 
 	testCases := []struct {
 		Name             string
+		TenantID         string
 		ParentTenantID   string
 		Client           func() *automock.Client
 		ExpectedErrorMsg string
 	}{
 		{
 			Name:           "Success when parent ID is present",
+			TenantID:       tenantID,
 			ParentTenantID: parentTenantID,
 			Client: func() *automock.Client {
 				client := &automock.Client{}
@@ -44,6 +47,7 @@ func TestFetchOnDemand(t *testing.T) {
 		},
 		{
 			Name:           "Success when parent ID is missing",
+			TenantID:       tenantID,
 			ParentTenantID: "",
 			Client: func() *automock.Client {
 				client := &automock.Client{}
@@ -54,7 +58,17 @@ func TestFetchOnDemand(t *testing.T) {
 			},
 		},
 		{
+			Name:           "Success when tenant id contain slash",
+			TenantID:       tenantIDWithSlash,
+			ParentTenantID: "",
+			Client: func() *automock.Client {
+				client := &automock.Client{}
+				return client
+			},
+		},
+		{
 			Name:           "Error when cannot make the request",
+			TenantID:       tenantID,
 			ParentTenantID: parentTenantID,
 			Client: func() *automock.Client {
 				client := &automock.Client{}
@@ -65,6 +79,7 @@ func TestFetchOnDemand(t *testing.T) {
 		},
 		{
 			Name:           "Error when status code is not 200",
+			TenantID:       tenantID,
 			ParentTenantID: parentTenantID,
 			Client: func() *automock.Client {
 				client := &automock.Client{}
@@ -87,7 +102,7 @@ func TestFetchOnDemand(t *testing.T) {
 			svc := tenant.NewFetchOnDemandService(httpClient, config)
 
 			// WHEN
-			err := svc.FetchOnDemand(context.TODO(), tenantID, testCase.ParentTenantID)
+			err := svc.FetchOnDemand(context.TODO(), testCase.TenantID, testCase.ParentTenantID)
 
 			// THEN
 			if len(testCase.ExpectedErrorMsg) > 0 {
