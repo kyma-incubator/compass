@@ -23,6 +23,7 @@ type Config struct {
 	APITenantMappingsEndpoint string        `envconfig:"API_TENANT_MAPPINGS_ENDPOINT,default=/v1/tenantMappings/{tenant-id}"`
 	
 	Address                   string        `envconfig:"APP_ADDRESS,default=localhost:8080"`
+	
 	SkipSSLValidation         bool          `envconfig:"APP_HTTP_CLIENT_SKIP_SSL_VALIDATION,default=false"`
 	JWKSEndpoint              string        `envconfig:"APP_JWKS_ENDPOINT,default=file://hack/default-jwks.json"`
 	
