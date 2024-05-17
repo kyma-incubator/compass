@@ -32,25 +32,27 @@ func TestEntityConverter_ToEntity(t *testing.T) {
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
 		opModel := &model.Operation{
-			ID:        operationID,
-			OpType:    testOpType,
-			Status:    model.OperationStatusScheduled,
-			Data:      nil,
-			Error:     nil,
-			Priority:  1,
-			CreatedAt: nil,
-			UpdatedAt: nil,
+			ID:            operationID,
+			OpType:        testOpType,
+			Status:        model.OperationStatusScheduled,
+			Data:          nil,
+			Error:         nil,
+			ErrorSeverity: model.OperationErrorSeverityNone,
+			Priority:      1,
+			CreatedAt:     nil,
+			UpdatedAt:     nil,
 		}
 
 		expectedEntity := &operation.Entity{
-			ID:        operationID,
-			Type:      string(testOpType),
-			Status:    string(model.OperationStatusScheduled),
-			Data:      sql.NullString{},
-			Error:     sql.NullString{},
-			Priority:  1,
-			CreatedAt: nil,
-			UpdatedAt: nil,
+			ID:            operationID,
+			Type:          string(testOpType),
+			Status:        string(model.OperationStatusScheduled),
+			Data:          sql.NullString{},
+			Error:         sql.NullString{},
+			ErrorSeverity: sql.NullString{},
+			Priority:      1,
+			CreatedAt:     nil,
+			UpdatedAt:     nil,
 		}
 		conv := operation.NewConverter()
 
@@ -79,24 +81,26 @@ func TestEntityConverter_FromEntity(t *testing.T) {
 	t.Run("success all nullable properties empty", func(t *testing.T) {
 		// GIVEN
 		entity := &operation.Entity{
-			ID:        operationID,
-			Type:      string(testOpType),
-			Status:    string(model.OperationStatusScheduled),
-			Data:      sql.NullString{},
-			Error:     sql.NullString{},
-			Priority:  1,
-			CreatedAt: nil,
-			UpdatedAt: nil,
+			ID:            operationID,
+			Type:          string(testOpType),
+			Status:        string(model.OperationStatusScheduled),
+			Data:          sql.NullString{},
+			Error:         sql.NullString{},
+			ErrorSeverity: sql.NullString{},
+			Priority:      1,
+			CreatedAt:     nil,
+			UpdatedAt:     nil,
 		}
 		expectedModel := &model.Operation{
-			ID:        operationID,
-			OpType:    testOpType,
-			Status:    model.OperationStatusScheduled,
-			Data:      nil,
-			Error:     nil,
-			Priority:  1,
-			CreatedAt: nil,
-			UpdatedAt: nil,
+			ID:            operationID,
+			OpType:        testOpType,
+			Status:        model.OperationStatusScheduled,
+			Data:          nil,
+			Error:         nil,
+			ErrorSeverity: model.OperationErrorSeverityNone,
+			Priority:      1,
+			CreatedAt:     nil,
+			UpdatedAt:     nil,
 		}
 		conv := operation.NewConverter()
 
