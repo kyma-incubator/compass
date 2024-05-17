@@ -74,13 +74,18 @@ func (i *OperationInput) ToOperation(id string) *Operation {
 		return nil
 	}
 
+	errorSeverity := i.ErrorSeverity
+	if len(errorSeverity) == 0 {
+		errorSeverity = OperationErrorSeverityNone
+	}
+
 	return &Operation{
 		ID:            id,
 		OpType:        i.OpType,
 		Status:        i.Status,
 		Data:          i.Data,
 		Error:         i.Error,
-		ErrorSeverity: i.ErrorSeverity,
+		ErrorSeverity: errorSeverity,
 		Priority:      i.Priority,
 		CreatedAt:     i.CreatedAt,
 		UpdatedAt:     i.UpdatedAt,

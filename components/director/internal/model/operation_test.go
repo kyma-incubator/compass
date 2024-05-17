@@ -21,13 +21,14 @@ func TestOperationInput_ToOperation(t *testing.T) {
 		{
 			Name: "All properties given",
 			Input: &model.OperationInput{
-				OpType:    "OP_TYPE",
-				Status:    "OP_STATUS",
-				Data:      json.RawMessage("{}"),
-				Error:     json.RawMessage("{}"),
-				Priority:  1,
-				CreatedAt: &time.Time{},
-				UpdatedAt: &time.Time{},
+				OpType:        "OP_TYPE",
+				Status:        "OP_STATUS",
+				Data:          json.RawMessage("{}"),
+				Error:         json.RawMessage("{}"),
+				ErrorSeverity: model.OperationErrorSeverityNone,
+				Priority:      1,
+				CreatedAt:     &time.Time{},
+				UpdatedAt:     &time.Time{},
 			},
 			Expected: &model.Operation{
 				ID:        id,
