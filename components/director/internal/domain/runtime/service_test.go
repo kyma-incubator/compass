@@ -1050,7 +1050,7 @@ func TestService_Update(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, runtimeModelWithFirstScenario.Labels, runtimeID).Return(scenariosLabelValueFirst, nil)
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}, true).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
 				return svc
 			},
 			InputID:            runtimeID,
@@ -1079,7 +1079,7 @@ func TestService_Update(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, runtimeModelWithFirstScenario.Labels, runtimeID).Return(scenariosLabelValueFirst, nil)
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}, true).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
 				svc.On("AssignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}).Return(&model.Formation{Name: scenario}, nil).Once()
 				return svc
 			},
@@ -1173,7 +1173,7 @@ func TestService_Update(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, runtimeModelWithFirstScenario.Labels, runtimeID).Return(scenariosLabelValueFirst, nil)
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}).Return(nil, testErr).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}, true).Return(nil, testErr).Once()
 				return svc
 			},
 			InputID:            runtimeID,
@@ -1398,8 +1398,8 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				engine := &automock.FormationService{}
-				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: "scenario1"}).Return(&model.Formation{Name: "scenario1"}, nil)
-				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: "scenario2"}).Return(&model.Formation{Name: "scenario2"}, nil)
+				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: "scenario1"}, true).Return(&model.Formation{Name: "scenario1"}, nil)
+				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: "scenario2"}, true).Return(&model.Formation{Name: "scenario2"}, nil)
 				return engine
 			},
 			InputID:            id,
@@ -1496,7 +1496,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				engine := &automock.FormationService{}
-				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: "scenario1"}).Return(nil, testErr)
+				engine.On("UnassignFormation", ctx, tnt, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: "scenario1"}, true).Return(nil, testErr)
 				return engine
 			},
 			InputID:            id,
@@ -2356,7 +2356,7 @@ func TestService_SetLabel(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValueFirst}, runtimeID).Return(scenariosLabelValueFirst, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}, true).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -2426,7 +2426,7 @@ func TestService_SetLabel(t *testing.T) {
 				svc := &automock.FormationService{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValueFirst}, runtimeID).Return(scenariosLabelValueFirst, nil).Once()
 				svc.On("AssignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}).Return(&model.Formation{Name: scenario}, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}, true).Return(&model.Formation{Name: scenarioSecond}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -2558,7 +2558,7 @@ func TestService_SetLabel(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("MergeScenariosFromInputLabelsAndAssignments", ctx, map[string]interface{}{model.ScenariosKey: scenariosLabelValueFirst}, runtimeID).Return(scenariosLabelValueFirst, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}).Return(nil, testErr).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenarioSecond}, true).Return(nil, testErr).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -2691,8 +2691,8 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}).Return(&model.Formation{Name: scenario}, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: secondScenario}).Return(&model.Formation{Name: secondScenario}, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true).Return(&model.Formation{Name: scenario}, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: secondScenario}, true).Return(&model.Formation{Name: secondScenario}, nil).Once()
 				return svc
 			},
 			InputRuntimeID:     runtimeID,
@@ -2773,7 +2773,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}).Return(nil, testErr)
+				svc.On("UnassignFormation", ctx, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true).Return(nil, testErr)
 				return svc
 			},
 			InputRuntimeID:     runtimeID,

@@ -172,13 +172,12 @@ func (_m *CertMappingRepository) Update(ctx context.Context, _a1 *model.CertSubj
 	return r0
 }
 
-type mockConstructorTestingTNewCertMappingRepository interface {
+// NewCertMappingRepository creates a new instance of CertMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertMappingRepository(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertMappingRepository creates a new instance of CertMappingRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertMappingRepository(t mockConstructorTestingTNewCertMappingRepository) *CertMappingRepository {
+}) *CertMappingRepository {
 	mock := &CertMappingRepository{}
 	mock.Mock.Test(t)
 

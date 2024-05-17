@@ -18,10 +18,6 @@ type AsaService struct {
 func (_m *AsaService) GetForScenarioName(ctx context.Context, scenarioName string) (*model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, scenarioName)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetForScenarioName")
-	}
-
 	var r0 *model.AutomaticScenarioAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.AutomaticScenarioAssignment, error)); ok {
@@ -48,10 +44,6 @@ func (_m *AsaService) GetForScenarioName(ctx context.Context, scenarioName strin
 func (_m *AsaService) List(ctx context.Context, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor)
 
-	if len(ret) == 0 {
-		panic("no return value specified for List")
-	}
-
 	var r0 *model.AutomaticScenarioAssignmentPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.AutomaticScenarioAssignmentPage, error)); ok {
@@ -77,10 +69,6 @@ func (_m *AsaService) List(ctx context.Context, pageSize int, cursor string) (*m
 // ListForTargetTenant provides a mock function with given fields: ctx, targetTenantInternalID
 func (_m *AsaService) ListForTargetTenant(ctx context.Context, targetTenantInternalID string) ([]*model.AutomaticScenarioAssignment, error) {
 	ret := _m.Called(ctx, targetTenantInternalID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListForTargetTenant")
-	}
 
 	var r0 []*model.AutomaticScenarioAssignment
 	var r1 error

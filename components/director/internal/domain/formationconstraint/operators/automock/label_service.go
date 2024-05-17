@@ -18,10 +18,6 @@ type LabelService struct {
 func (_m *LabelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetByKey")
-	}
-
 	var r0 *model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) (*model.Label, error)); ok {

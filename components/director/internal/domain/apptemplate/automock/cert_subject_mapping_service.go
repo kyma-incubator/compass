@@ -78,13 +78,12 @@ func (_m *CertSubjectMappingService) ListAll(ctx context.Context) ([]*model.Cert
 	return r0, r1
 }
 
-type mockConstructorTestingTNewCertSubjectMappingService interface {
+// NewCertSubjectMappingService creates a new instance of CertSubjectMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewCertSubjectMappingService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewCertSubjectMappingService creates a new instance of CertSubjectMappingService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewCertSubjectMappingService(t mockConstructorTestingTNewCertSubjectMappingService) *CertSubjectMappingService {
+}) *CertSubjectMappingService {
 	mock := &CertSubjectMappingService{}
 	mock.Mock.Test(t)
 

@@ -35,10 +35,6 @@ func (_m *WebhookService) ListByTypeAndLabelFilter(ctx context.Context, webhookT
 	ret := _m.Called(ctx, webhookType, filter)
 
 	var r0 []*model.Webhook
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.WebhookType, *labelfilter.LabelFilter) ([]*model.Webhook, error)); ok {
-		return rf(ctx, webhookType, filter)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, model.WebhookType, *labelfilter.LabelFilter) []*model.Webhook); ok {
 		r0 = rf(ctx, webhookType, filter)
 	} else {
@@ -47,6 +43,7 @@ func (_m *WebhookService) ListByTypeAndLabelFilter(ctx context.Context, webhookT
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, model.WebhookType, *labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, webhookType, filter)
 	} else {
@@ -56,12 +53,13 @@ func (_m *WebhookService) ListByTypeAndLabelFilter(ctx context.Context, webhookT
 	return r0, r1
 }
 
-// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewWebhookService(t interface {
+type mockConstructorTestingTNewWebhookService interface {
 	mock.TestingT
 	Cleanup(func())
-}) *WebhookService {
+}
+
+// NewWebhookService creates a new instance of WebhookService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewWebhookService(t mockConstructorTestingTNewWebhookService) *WebhookService {
 	mock := &WebhookService{}
 	mock.Mock.Test(t)
 
