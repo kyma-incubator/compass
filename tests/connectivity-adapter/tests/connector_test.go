@@ -67,8 +67,8 @@ func TestConnector(t *testing.T) {
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
 
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, runtime.ID, testConfig.Tenant)
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, runtime.ID, testConfig.Tenant)
+	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, runtime.ID, testConfig.Tenant)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, runtime.ID, testConfig.Tenant)
 
 	err = directorClient.SetDefaultEventing(runtime.ID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)
