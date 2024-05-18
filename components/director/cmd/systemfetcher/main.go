@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -709,15 +710,15 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 }
 
 func getTopParentFromJSONPath(jsonPath string) string {
-	infix := "."
+	trimmedJSONPath := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
 
-	topParent := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
-	firstInfixIndex := strings.Index(topParent, infix)
-	if firstInfixIndex == -1 {
-		return topParent
+	regexForTopParent := regexp.MustCompile(`^[^\[.]+`)
+	topParent := regexForTopParent.FindStringSubmatch(trimmedJSONPath)
+	if len(topParent) > 0 {
+		return topParent[0]
 	}
 
-	return topParent[:firstInfixIndex]
+	return trimmedJSONPath
 }
 
 func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {

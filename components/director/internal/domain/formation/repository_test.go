@@ -3,6 +3,7 @@ package formation_test
 import (
 	"context"
 	"database/sql/driver"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"regexp"
 	"testing"
 	"time"
@@ -247,6 +248,147 @@ func TestRepository_ListByIDsGlobal(t *testing.T) {
 	}
 
 	suite.Run(t)
+}
+
+func TestRepository_ListByIDs(t *testing.T) {
+	tnt := "tnt"
+	externalTnt := "wxternal"
+
+	suite := testdb.RepoListTestSuite{
+		Name:       "List Formations by IDs globally",
+		MethodName: "ListByIDs",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:    regexp.QuoteMeta(`SELECT id, tenant_id, formation_template_id, name, state, error, last_state_change_timestamp, last_notification_sent_timestamp FROM public.formations WHERE tenant_id = $1 AND id IN ($2)`),
+				Args:     []driver.Value{tnt, formationModel.ID},
+				IsSelect: true,
+				ValidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns()).AddRow(FormationID, TntInternalID, FormationTemplateID, testFormationName, initialFormationState, testFormationEmptyError, &defaultTime, &defaultTime)}
+				},
+				InvalidRowsProvider: func() []*sqlmock.Rows {
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns())}
+				},
+			},
+		},
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		RepoConstructorFunc:       formation.NewRepository,
+		ExpectedModelEntities:     []interface{}{formationModel},
+		ExpectedDBEntities:        []interface{}{formationEntity},
+		MethodArgs:                []interface{}{[]string{formationModel.ID}},
+		DisableConverterErrorTest: true,
+		Context:                   tenant.SaveToContext(context.TODO(), tnt, externalTnt),
+	}
+
+	suite.Run(t)
+}
+
+func TestRepository_ListObjectIDsOfTypeForFormations(t *testing.T) {
+	tnt := "tnt"
+	formationName := "formation_name"
+	dbQuery := "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($1) AND f.tenant_id = $2 AND fa.source_type = $3;"
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"source"}).AddRow(ApplicationID)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(formationName, tnt, model.FormationAssignmentTypeApplication).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := formation.NewRepository(nil)
+		res, err := repo.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationName}, model.FormationAssignmentTypeApplication)
+
+		require.NoError(t, err)
+		require.Equal(t, []string{ApplicationID}, res)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error while executing query", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(formationName, tnt, model.FormationAssignmentTypeApplication).
+			WillReturnError(testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := formation.NewRepository(nil)
+		_, err := repo.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationName}, model.FormationAssignmentTypeApplication)
+
+		require.Error(t, err)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error while getting persistence from context", func(t *testing.T) {
+		ctx := context.TODO()
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := formation.NewRepository(nil)
+		_, err := repo.ListObjectIDsOfTypeForFormations(ctx, tnt, []string{formationName}, model.FormationAssignmentTypeApplication)
+
+		require.Error(t, err)
+	})
+}
+
+func TestRepository_ListObjectIDsOfTypeForFormationsGlobal(t *testing.T) {
+	formationName := "formation_name"
+	dbQuery := "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($1) AND fa.source_type = $2;"
+	t.Run("Success", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		rowsToReturn := sqlmock.NewRows([]string{"source"}).AddRow(ApplicationID)
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(formationName, model.FormationAssignmentTypeApplication).
+			WillReturnRows(rowsToReturn)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := formation.NewRepository(nil)
+		res, err := repo.ListObjectIDsOfTypeForFormationsGlobal(ctx, []string{formationName}, model.FormationAssignmentTypeApplication)
+
+		require.NoError(t, err)
+		require.Equal(t, []string{ApplicationID}, res)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error while executing query", func(t *testing.T) {
+		db, dbMock := testdb.MockDatabase(t)
+
+		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
+			WithArgs(formationName, model.FormationAssignmentTypeApplication).
+			WillReturnError(testErr)
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := formation.NewRepository(nil)
+		_, err := repo.ListObjectIDsOfTypeForFormationsGlobal(ctx, []string{formationName}, model.FormationAssignmentTypeApplication)
+
+		require.Error(t, err)
+		dbMock.AssertExpectations(t)
+	})
+
+	t.Run("Error while getting persistence from context", func(t *testing.T) {
+		ctx := context.TODO()
+		mockConverter := &automock.Converter{}
+		defer mockConverter.AssertExpectations(t)
+
+		repo := formation.NewRepository(nil)
+		_, err := repo.ListObjectIDsOfTypeForFormationsGlobal(ctx, []string{formationName}, model.FormationAssignmentTypeApplication)
+
+		require.Error(t, err)
+	})
 }
 
 func TestRepository_Update(t *testing.T) {

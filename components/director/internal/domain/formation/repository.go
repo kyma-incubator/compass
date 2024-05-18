@@ -203,7 +203,6 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 		return nil, err
 	}
 
-	var objectIDs []string
 	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
 	args, _ := inCond.GetQueryArgs()
 
@@ -212,7 +211,8 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
 
 	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
-	err = persist.SelectContext(ctx, objectIDs, listObjectIDsOfTypeForFormationStatement, args)
+	var objectIDs []string
+	err = persist.SelectContext(ctx, &objectIDs, listObjectIDsOfTypeForFormationStatement, args...)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, persistence.MapSQLError(ctx, err, "objectIDsInFormation", resource.List, "while listing object IDs of type %q for formations %q", objectType, formationNames)
 	}
@@ -220,7 +220,7 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 	return objectIDs, nil
 }
 
-// ListObjectIDsOfTypeForFormations returns all object IDs of type `objectType` for Formations with names in `formationNames`
+// ListObjectIDsOfTypeForFormationsGlobal returns all object IDs of type `objectType` for Formations with names in `formationNames` globally
 func (r *repository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
 	if len(formationNames) == 0 {
 		return nil, nil
@@ -240,7 +240,7 @@ func (r *repository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context,
 	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
 
 	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
-	err = persist.SelectContext(ctx, objectIDs, listObjectIDsOfTypeForFormationStatement, args)
+	err = persist.SelectContext(ctx, &objectIDs, listObjectIDsOfTypeForFormationStatement, args...)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return nil, persistence.MapSQLError(ctx, err, "objectIDsInFormation", resource.List, "while listing object IDs of type %q for formations %q", objectType, formationNames)
 	}

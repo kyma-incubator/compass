@@ -20,10 +20,6 @@ type FormationConstraintSvc struct {
 func (_m *FormationConstraintSvc) ListMatchingConstraints(ctx context.Context, formationTemplateID string, location formationconstraint.JoinPointLocation, details formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error) {
 	ret := _m.Called(ctx, formationTemplateID, location, details)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListMatchingConstraints")
-	}
-
 	var r0 []*model.FormationConstraint
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, formationconstraint.JoinPointLocation, formationconstraint.MatchingDetails) ([]*model.FormationConstraint, error)); ok {

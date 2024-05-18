@@ -44,6 +44,36 @@ func (_m *ScenarioAssignmentService) GetForScenarioName(ctx context.Context, sce
 	return r0, r1
 }
 
+// ListForScenarioNames provides a mock function with given fields: ctx, scenarioNames
+func (_m *ScenarioAssignmentService) ListForScenarioNames(ctx context.Context, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error) {
+	ret := _m.Called(ctx, scenarioNames)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForScenarioNames")
+	}
+
+	var r0 []*model.AutomaticScenarioAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.AutomaticScenarioAssignment, error)); ok {
+		return rf(ctx, scenarioNames)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.AutomaticScenarioAssignment); ok {
+		r0 = rf(ctx, scenarioNames)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.AutomaticScenarioAssignment)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, scenarioNames)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // NewScenarioAssignmentService creates a new instance of ScenarioAssignmentService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewScenarioAssignmentService(t interface {

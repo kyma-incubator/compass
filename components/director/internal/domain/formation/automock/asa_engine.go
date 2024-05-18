@@ -45,10 +45,6 @@ func (_m *AsaEngine) GetMatchingFuncByFormationObjectType(objType graphql.Format
 	}
 
 	var r0 formation.MatchingFunc
-	var r1 error
-	if rf, ok := ret.Get(0).(func(graphql.FormationObjectType) (formation.MatchingFunc, error)); ok {
-		return rf(objType)
-	}
 	if rf, ok := ret.Get(0).(func(graphql.FormationObjectType) formation.MatchingFunc); ok {
 		r0 = rf(objType)
 	} else {
@@ -57,6 +53,7 @@ func (_m *AsaEngine) GetMatchingFuncByFormationObjectType(objType graphql.Format
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(graphql.FormationObjectType) error); ok {
 		r1 = rf(objType)
 	} else {
@@ -75,10 +72,6 @@ func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID 
 	}
 
 	var r0 []string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) ([]string, error)); ok {
-		return rf(ctx, objectID, objType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
 		r0 = rf(ctx, objectID, objType)
 	} else {
@@ -87,6 +80,7 @@ func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID 
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, objectID, objType)
 	} else {
@@ -105,16 +99,13 @@ func (_m *AsaEngine) IsFormationComingFromASA(ctx context.Context, objectID stri
 	}
 
 	var r0 bool
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType) (bool, error)); ok {
-		return rf(ctx, objectID, _a2, objectType)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType) bool); ok {
 		r0 = rf(ctx, objectID, _a2, objectType)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, objectID, _a2, objectType)
 	} else {
@@ -124,8 +115,8 @@ func (_m *AsaEngine) IsFormationComingFromASA(ctx context.Context, objectID stri
 	return r0, r1
 }
 
-// RemoveAssignedScenario provides a mock function with given fields: ctx, in, processScenarioFunc
-func (_m *AsaEngine) RemoveAssignedScenario(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc formation.ProcessScenarioFunc) error {
+// UnassignFormationComingFromASA provides a mock function with given fields: ctx, in, processScenarioFunc
+func (_m *AsaEngine) UnassignFormationComingFromASA(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc formation.ProcessScenarioFunc) error {
 	ret := _m.Called(ctx, in, processScenarioFunc)
 
 	if len(ret) == 0 {
@@ -142,12 +133,13 @@ func (_m *AsaEngine) RemoveAssignedScenario(ctx context.Context, in *model.Autom
 	return r0
 }
 
-// NewAsaEngine creates a new instance of AsaEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewAsaEngine(t interface {
+type mockConstructorTestingTNewAsaEngine interface {
 	mock.TestingT
 	Cleanup(func())
-}) *AsaEngine {
+}
+
+// NewAsaEngine creates a new instance of AsaEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewAsaEngine(t mockConstructorTestingTNewAsaEngine) *AsaEngine {
 	mock := &AsaEngine{}
 	mock.Mock.Test(t)
 

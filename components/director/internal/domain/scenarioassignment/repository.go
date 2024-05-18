@@ -111,6 +111,26 @@ func (r *repository) GetForScenarioName(ctx context.Context, tenantID, scenarioN
 	return assignmentModel, nil
 }
 
+// ListForScenarioNames list ASAs for given scenario names
+func (r *repository) ListForScenarioNames(ctx context.Context, tenantID string, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error) {
+	var collection EntityCollection
+
+	condition := repo.NewInConditionForStringValues(scenarioColumn, scenarioNames)
+
+	if err := r.lister.List(ctx, resource.AutomaticScenarioAssigment, tenantID, &collection, condition); err != nil {
+		return nil, errors.Wrapf(err, "while getting automatic scenario assignments for scenario names: %v", scenarioNames)
+	}
+
+	items := make([]*model.AutomaticScenarioAssignment, 0, len(collection))
+
+	for _, ent := range collection {
+		m := r.conv.FromEntity(ent)
+		items = append(items, m)
+	}
+
+	return items, nil
+}
+
 // List missing godoc
 func (r *repository) List(ctx context.Context, tenantID string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error) {
 	var collection EntityCollection
