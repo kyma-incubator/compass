@@ -10,6 +10,9 @@ mutation {
       webhooks: [
         { type: FORMATION_LIFECYCLE, url: "http://localhost:6439/", mode: SYNC }
       ]
+      labels: {
+        someTestKey: "someTestValue"
+      }
     }
   ) {
     id

@@ -118,11 +118,11 @@ type WebhookRepository interface {
 //go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationService interface {
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
-	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
 	ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error)
 	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 	ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 }
 
 // RuntimeRepository missing godoc
@@ -224,7 +224,6 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 		}
 	}
 	return s.appRepo.ListByIDsAndFilters(ctx, appTenant, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
-
 }
 
 // ListAll lists tenant scoped applications
@@ -883,7 +882,7 @@ func (s *service) GetScenariosGlobal(ctx context.Context, applicationID string) 
 		return nil, errors.Wrapf(err, "while getting formations for Application with ID: %s", applicationID)
 	}
 
-	var scenarios []string
+	scenarios := make([]string, 0, len(formations))
 	for _, formation := range formations {
 		scenarios = append(scenarios, formation.Name)
 	}
@@ -1264,64 +1263,6 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	return id, nil
 }
 
-func (s *service) filterUniqueNonExistingApplications(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) ([]model.ApplicationRegisterInputWithTemplate, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while loading tenant from context")
-	}
-
-	allApps, err := s.appRepo.ListAll(ctx, appTenant)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
-	}
-	log.C(ctx).Debugf("Found %d existing systems", len(allApps))
-
-	type key struct {
-		name         string
-		systemNumber string
-	}
-
-	uniqueNonExistingApps := make(map[key]int)
-	keys := make([]key, 0)
-	for index, ai := range applicationInputs {
-		alreadyExits := false
-		systemNumber := ""
-		if ai.SystemNumber != nil {
-			systemNumber = *ai.SystemNumber
-		}
-		aiKey := key{
-			name:         ai.Name,
-			systemNumber: systemNumber,
-		}
-
-		if _, found := uniqueNonExistingApps[aiKey]; found {
-			continue
-		}
-
-		for _, a := range allApps {
-			bothSystemsAreWithoutSystemNumber := (ai.SystemNumber == nil && a.SystemNumber == nil)
-			bothSystemsHaveSystemNumber := (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))
-			if ai.Name == a.Name && (bothSystemsAreWithoutSystemNumber || bothSystemsHaveSystemNumber) {
-				alreadyExits = true
-				break
-			}
-		}
-
-		if !alreadyExits {
-			uniqueNonExistingApps[aiKey] = index
-			keys = append(keys, aiKey)
-		}
-	}
-
-	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(uniqueNonExistingApps))
-	for _, key := range keys {
-		appInputIndex := uniqueNonExistingApps[key]
-		result = append(result, applicationInputs[appInputIndex])
-	}
-
-	return result, nil
-}
-
 func createLabel(key string, value string, objectID string) *model.LabelInput {
 	return &model.LabelInput{
 		Key:        key,
@@ -1563,7 +1504,7 @@ func (s *service) assignFormations(ctx context.Context, appTenant, objectID stri
 func (s *service) unassignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldUnassignCriteria func(string) bool) error {
 	for _, f := range formations {
 		if shouldUnassignCriteria(f) {
-			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
+			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}, false); err != nil {
 				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
 			}
 		}

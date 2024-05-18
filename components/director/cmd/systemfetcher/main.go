@@ -6,9 +6,12 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	assignmentOp "github.com/kyma-incubator/compass/components/director/internal/domain/assignmentoperation"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 
@@ -544,6 +547,9 @@ func createSystemFetcher(ctx context.Context, cfg config, tx persistence.Transac
 	systemAuthRepo := systemauth.NewRepository(systemAuthConverter)
 
 	uidSvc := uid.NewService()
+	assignmentOperationConv := assignmentOp.NewConverter()
+	assignmentOperationRepo := assignmentOp.NewRepository(assignmentOperationConv)
+	assignmentOperationSvc := assignmentOp.NewService(assignmentOperationRepo, uidSvc)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	labelSvc := label.NewLabelService(labelRepo, labelDefRepo, uidSvc)
@@ -570,9 +576,9 @@ func createSystemFetcher(ctx context.Context, cfg config, tx persistence.Transac
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo, formationAssignmentRepo, formationRepo)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
-	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationAssignmentSvc := formationassignment.NewService(formationAssignmentRepo, uidSvc, applicationRepo, runtimeRepo, runtimeContextRepo, notificationSvc, faNotificationSvc, assignmentOperationSvc, labelSvc, formationRepo, formationAssignmentStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	formationStatusSvc := formation.NewFormationStatusService(formationRepo, labelDefRepo, scenariosSvc, notificationSvc, constraintEngine)
-	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
+	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, assignmentOperationSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
 
@@ -680,15 +686,15 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 }
 
 func getTopParentFromJSONPath(jsonPath string) string {
-	infix := "."
+	trimmedJSONPath := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
 
-	topParent := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
-	firstInfixIndex := strings.Index(topParent, infix)
-	if firstInfixIndex == -1 {
-		return topParent
+	regexForTopParent := regexp.MustCompile(`^[^\[.]+`)
+	topParent := regexForTopParent.FindStringSubmatch(trimmedJSONPath)
+	if len(topParent) > 0 {
+		return topParent[0]
 	}
 
-	return topParent[:firstInfixIndex]
+	return trimmedJSONPath
 }
 
 func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {

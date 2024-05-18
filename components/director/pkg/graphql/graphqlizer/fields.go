@@ -218,6 +218,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
         leadingProductIDs
         supportsReset
 		discoveryConsumers
+        labels
         webhooks {%s}
 		formationConstraints {%s}
 	`, fp.ForWebhooks(), fp.ForFormationConstraint())
@@ -225,7 +226,7 @@ func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
 
 // ForFormationAssignment missing godoc
 func (fp *GqlFieldsProvider) ForFormationAssignment() string {
-	return `
+	return fmt.Sprintf(`
 			id
 			source
 			sourceType
@@ -235,6 +236,20 @@ func (fp *GqlFieldsProvider) ForFormationAssignment() string {
 			value
 			configuration
 			error
+			assignmentOperations{%s}
+	`, fp.Page(fp.ForAssignmentOperation()))
+}
+
+// ForAssignmentOperation missing godoc
+func (fp *GqlFieldsProvider) ForAssignmentOperation() string {
+	return `
+			id
+			operationType
+			formationAssignmentID
+			formationID
+			triggeredBy
+			startedAtTimestamp
+			finishedAtTimestamp
 	`
 }
 

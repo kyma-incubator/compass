@@ -257,7 +257,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	ctx := context.Background()
 
 	formationTemplateName := "formation-template-name"
-	formationTemplateInput := fixtures.FixFormationTemplateInput(formationTemplateName)
+	formationTemplateInput := fixtures.FixFormationTemplateRegisterInput(formationTemplateName)
 
 	var formationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &formationTemplate)
@@ -280,7 +280,7 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	require.Len(t, constraintsForFormationTemplate, len(globalFormationConstraints))
 
 	secondFormationTemplateName := "second-formation-template-name"
-	secondFormationTemplateInput := fixtures.FixFormationTemplateInput(secondFormationTemplateName)
+	secondFormationTemplateInput := fixtures.FixFormationTemplateRegisterInput(secondFormationTemplateName)
 
 	var secondFormationTemplate graphql.FormationTemplate // needed so the 'defer' can be above the formation template creation
 	defer fixtures.CleanupFormationTemplate(t, ctx, certSecuredGraphQLClient, &secondFormationTemplate)
@@ -313,6 +313,8 @@ func TestListFormationConstraintsForFormationTemplate(t *testing.T) {
 	t.Logf("Get formation template with name %q and id %q, and assert there are no constraints attached to it", secondFormationTemplate.Name, secondFormationTemplate.ID)
 	secondFormationTemplateOutput := fixtures.QueryFormationTemplateWithConstraints(t, ctx, certSecuredGraphQLClient, secondFormationTemplate.ID)
 	require.ElementsMatch(t, secondFormationTemplateOutput.FormationConstraints, globalFormationConstraints) // only global constraints and no attached ones
+	require.NotEmpty(t, secondFormationTemplateOutput.Labels)
+	require.Equal(t, secondFormationTemplateOutput.Labels[fixtures.FormationTemplateLabelKey], fixtures.FormationTemplateLabelValue)
 
 	defer fixtures.DetachConstraintFromFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, formationTemplate.ID)
 	fixtures.AttachConstraintToFormationTemplate(t, ctx, certSecuredGraphQLClient, constraint.ID, constraint.Name, formationTemplate.ID, formationTemplate.Name)

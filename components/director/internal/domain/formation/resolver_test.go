@@ -471,7 +471,7 @@ func TestUnassignFormation(t *testing.T) {
 			ObjectType: graphql.FormationObjectTypeTenant,
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", graphql.FormationObjectTypeTenant, modelFormation).Return(&modelFormation, nil)
+				svc.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", graphql.FormationObjectTypeTenant, modelFormation, false).Return(&modelFormation, nil)
 				return svc
 			},
 			ExpectedFormation: &graphqlFormation,
@@ -514,7 +514,7 @@ func TestUnassignFormation(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", graphql.FormationObjectTypeTenant, modelFormation).Return(&modelFormation, nil)
+				svc.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", graphql.FormationObjectTypeTenant, modelFormation, false).Return(&modelFormation, nil)
 				return svc
 			},
 			ExpectedError: testErr,
@@ -530,7 +530,7 @@ func TestUnassignFormation(t *testing.T) {
 			},
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
-				svc.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", graphql.FormationObjectTypeTenant, modelFormation).Return(nil, testErr)
+				svc.On("UnassignFormation", contextThatHasTenant(tnt), tnt, "", graphql.FormationObjectTypeTenant, modelFormation, false).Return(nil, testErr)
 				return svc
 			},
 			ExpectedError: testErr,
@@ -589,7 +589,7 @@ func TestUnassignFormationGlobal(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
-				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant, false).Return(&modelFormationWithTenant, nil)
 				return svc
 			},
 			ExpectedFormation: &graphqlFormation,
@@ -614,7 +614,7 @@ func TestUnassignFormationGlobal(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
-				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(&modelFormationWithTenant, nil)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant, false).Return(&modelFormationWithTenant, nil)
 				return svc
 			},
 			ExpectedError: testErr,
@@ -626,7 +626,7 @@ func TestUnassignFormationGlobal(t *testing.T) {
 			ServiceFn: func() *automock.Service {
 				svc := &automock.Service{}
 				svc.On("GetGlobalByID", mock.Anything, FormationID).Return(&modelFormationWithTenant, nil)
-				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant).Return(nil, testErr)
+				svc.On("UnassignFormation", mock.Anything, TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, modelFormationWithTenant, false).Return(nil, testErr)
 				return svc
 			},
 			ExpectedError: testErr,

@@ -18,10 +18,6 @@ type FormationRepository struct {
 func (_m *FormationRepository) ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, formationNames, tenantID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationNames")
-	}
-
 	var r0 []*model.Formation
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string, string) ([]*model.Formation, error)); ok {

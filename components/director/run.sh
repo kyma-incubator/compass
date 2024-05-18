@@ -121,7 +121,7 @@ trap cleanup EXIT
 
 echo -e "${GREEN}Creating k3d cluster...${NC}"
 curl -s https://raw.githubusercontent.com/rancher/k3d/main/install.sh | TAG=v5.2.2 bash
-k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.22.4-k3s1 --kubeconfig-update-default --wait
+k3d cluster create k3d-cluster --api-port 6550 --servers 1 --port 443:443@loadbalancer --image rancher/k3s:v1.27.11-k3s1 --kubeconfig-update-default --wait
 
 if [[ ${REUSE_DB} = true ]]; then
     echo -e "${GREEN}Will reuse existing Postgres container${NC}"
@@ -303,7 +303,15 @@ export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/a
 export APP_FORMATION_ASSIGNMENT_ASYNC_STATUS_RESET_API_ENDPOINT='/{ucl-formation-id}/assignments/{ucl-assignment-id}/status/reset'
 export APP_FORMATION_ASYNC_STATUS_API_ENDPOINT='/{ucl-formation-id}/status'
 export APP_UCL_CERT_OU_SUBACCOUNT_ID='f8075207-1478-4a80-bd26-24a4785a2bfd'
-export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
+# This file previously was created with the help of the Helm values.yaml
+# However, the chart was moved in the internal repository and the tenant-mappings need to be created manually
+# Created manually with `yq eval ".global.director.tenantMappings" chart/compass/values.yaml  -o=json > /tmp/tenant-mapping-config.json`
+if [ -f /tmp/tenant-mapping-config.json ]; then
+    export APP_TENANT_MAPPING_CONFIG_PATH="/tmp/tenant-mapping-config.json"
+else
+    echo "Tenant mapping configuration is missing and should be manually created with (yq eval ".global.director.tenantMappings" chart/compass/values.yaml  -o=json > /tmp/tenant-mapping-config.json) from BOM repo"
+    exit 1
+fi
 export APP_TENANT_MAPPING_CALLBACK_URL="http://director.not.configured.url"
 export APP_APPLICATION_TEMPLATE_PRODUCT_LABEL="systemRole"
 
@@ -402,9 +410,6 @@ cat <<EOF > /tmp/dependencies.json
         "eu-2": "{\n \"xsappname\": \"xsappname2\", \"clientid\": \"clientid-2\", \"certificate\": \"client-cert-2\", \"key\": \"client-cert-key-2\", \"url\": \"http://token-url\", \"uri\": \"http://destination-service\"\n}"
     }
 EOF
-
-# This file contains tenant mapping configuration
-yq eval ".global.director.tenantMappings" ../../chart/compass/values.yaml  -o=json > /tmp/tenant-mapping-config.json
 
 kubectl create secret generic "$CLIENT_CERT_SECRET_NAME" --from-literal="$APP_EXTERNAL_CLIENT_CERT_KEY"="$APP_EXTERNAL_CLIENT_CERT_VALUE" --from-literal="$APP_EXTERNAL_CLIENT_KEY_KEY"="$APP_EXTERNAL_CLIENT_KEY_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -
 kubectl create secret generic "$APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_NAME" --from-literal="$APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_DATA_KEY"="$APP_APP_SYSTEM_FETCHER_EXTERNAL_KEYS_SECRET_VALUE" --save-config --dry-run=client -o yaml | kubectl apply -f -

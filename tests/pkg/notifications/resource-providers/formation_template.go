@@ -69,7 +69,7 @@ func (p *FormationTemplateProvider) Provide(t *testing.T, ctx context.Context, g
 		}
 	}
 
-	in := graphql.FormationTemplateInput{
+	in := graphql.FormationTemplateRegisterInput{
 		Name:                   p.formationTypeName,
 		ApplicationTypes:       applicationTypes,
 		RuntimeTypes:           runtimeTypes,

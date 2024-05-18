@@ -88,6 +88,43 @@ query {
       }
       createdAt
     }
+    integrationDependencies {
+      data {
+        id
+        name
+        description
+        ordID
+        partOfPackage
+        visibility
+        releaseStatus
+        mandatory
+        version {
+          value
+        }
+        labels
+        aspects {
+          id
+          name
+          description
+          mandatory
+          apiResources {
+            ordID
+          }
+          eventResources {
+            ordID
+            subset {
+              eventType
+            }
+          }
+        }
+      }
+      pageInfo {
+        startCursor
+        endCursor
+        hasNextPage
+      }
+      totalCount
+    }
     healthCheckURL
     bundles {
       data {
@@ -524,6 +561,14 @@ query {
           }
         }
       }
+    }
+    operations {
+      id
+      operationType
+      status
+      error
+      createdAt
+      updatedAt
     }
     eventingConfiguration {
       defaultURL

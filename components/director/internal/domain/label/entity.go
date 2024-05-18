@@ -8,16 +8,17 @@ import (
 
 // Entity is a label entity.
 type Entity struct {
-	ID               string         `db:"id"`
-	TenantID         sql.NullString `db:"tenant_id"`
-	Key              string         `db:"key"`
-	AppID            sql.NullString `db:"app_id"`
-	RuntimeID        sql.NullString `db:"runtime_id"`
-	RuntimeContextID sql.NullString `db:"runtime_context_id"`
-	AppTemplateID    sql.NullString `db:"app_template_id"`
-	WebhookID        sql.NullString `db:"webhook_id"`
-	Value            string         `db:"value"`
-	Version          int            `db:"version"`
+	ID                  string         `db:"id"`
+	TenantID            sql.NullString `db:"tenant_id"`
+	Key                 string         `db:"key"`
+	AppID               sql.NullString `db:"app_id"`
+	RuntimeID           sql.NullString `db:"runtime_id"`
+	RuntimeContextID    sql.NullString `db:"runtime_context_id"`
+	AppTemplateID       sql.NullString `db:"app_template_id"`
+	WebhookID           sql.NullString `db:"webhook_id"`
+	FormationTemplateID sql.NullString `db:"formation_template_id"`
+	Value               string         `db:"value"`
+	Version             int            `db:"version"`
 }
 
 // GetID returns the ID of the label.
@@ -35,6 +36,8 @@ func (e *Entity) GetParent(_ resource.Type) (resource.Type, string) {
 		return resource.RuntimeContext, e.RuntimeContextID.String
 	} else if e.WebhookID.Valid {
 		return resource.Webhook, e.WebhookID.String
+	} else if e.FormationTemplateID.Valid {
+		return resource.FormationTemplate, e.FormationTemplateID.String
 	}
 	return resource.Tenant, e.TenantID.String
 }

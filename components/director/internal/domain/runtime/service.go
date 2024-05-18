@@ -3,10 +3,11 @@ package runtime
 import (
 	"context"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"k8s.io/utils/strings/slices"
 
@@ -625,7 +626,7 @@ func (s *service) unassignRuntimeScenarios(ctx context.Context, rtmTenant, runti
 		}
 
 		for _, scenario := range scenariosStr {
-			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true); err != nil {
 				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, runtimeID)
 			}
 		}
@@ -672,7 +673,7 @@ func (s *service) updateScenariosLabel(ctx context.Context, rtmTenant, rtmID str
 
 	for scenario := range currentScenariosMap {
 		if _, found := mergedScenariosMap[scenario]; !found {
-			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+			if _, err = s.formationService.UnassignFormation(ctx, rtmTenant, rtmID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true); err != nil {
 				return errors.Wrapf(err, "while unassigning formation %q from runtime with ID %q", scenario, rtmID)
 			}
 		}

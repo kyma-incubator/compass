@@ -2829,7 +2829,7 @@ func TestService_Unpair(t *testing.T) {
 	testErr := errors.New("Test error")
 	formationAndRuntimeError := errors.New("The operation is not allowed [reason=System foo is still used and cannot be deleted. Unassign the system from the following formations first: Easter. Then, unassign the system from the following runtimes, too: test-runtime]")
 	id := "foo"
-	rtmId := "bar"
+	rtmID := "bar"
 	desc := "Lorem ipsum"
 	tnt := "tenant"
 	externalTnt := "external-tnt"
@@ -3029,12 +3029,12 @@ func TestService_Unpair(t *testing.T) {
 			},
 			RuntimeRepoFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", mock.Anything, tnt, []string{rtmId}).Return([]*model.Runtime{runtimeModel}, nil).Once()
+				repo.On("ListByIDs", mock.Anything, tnt, []string{rtmID}).Return([]*model.Runtime{runtimeModel}, nil).Once()
 				return repo
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{rtmId}, nil).Once()
+				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{rtmID}, nil).Once()
 				svc.On("ListFormationsForObjectGlobal", mock.Anything, id).Return(formations, nil).Once()
 				return svc
 			},
@@ -4973,7 +4973,7 @@ func TestService_SetLabel(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("AssignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: newScenario}).Return(nil, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}).Return(nil, nil).Once()
+				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}, false).Return(nil, nil).Once()
 				return svc
 			},
 			InputApplicationID: applicationID,
@@ -5034,7 +5034,7 @@ func TestService_SetLabel(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("AssignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: newScenario}).Return(nil, nil).Once()
-				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}).Return(nil, testErr).Once()
+				svc.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: extraScenario}, false).Return(nil, testErr).Once()
 				return svc
 			},
 			InputApplicationID: applicationID,
@@ -5280,6 +5280,7 @@ func TestService_GetScenariosGlobal(t *testing.T) {
 				svc.On("ListFormationsForObjectGlobal", ctx, applicationID).Return(nil, nil).Once()
 				return svc
 			},
+			ExpectedScenarios:  []string{},
 			InputApplicationID: applicationID,
 		},
 		{
@@ -5688,7 +5689,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
-				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, nil).Once()
+				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}, false).Return(nil, nil).Once()
 				return service
 			},
 			InputApplicationID: applicationID,
@@ -5709,7 +5710,7 @@ func TestService_DeleteLabel(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				service := &automock.FormationService{}
-				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}).Return(nil, testErr).Once()
+				service.On("UnassignFormation", ctx, tnt, applicationID, graphql.FormationObjectTypeApplication, model.Formation{Name: testScenario}, false).Return(nil, testErr).Once()
 				return service
 			},
 			InputApplicationID: applicationID,

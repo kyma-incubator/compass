@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/mock"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label/lbltest"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -33,7 +35,6 @@ func TestLabelService_UpsertMultipleLabels(t *testing.T) {
 	id := "foo"
 
 	notFoundErr := errors.New("Label not found")
-	testErr := errors.New("Test error")
 
 	runtimeType := model.RuntimeLabelableObject
 	runtimeID := "bar"
@@ -166,8 +167,6 @@ func TestLabelService_UpsertLabel(t *testing.T) {
 		Schema:  &scenarioSchema,
 		Version: version,
 	}
-
-	testErr := errors.New("Test error")
 
 	testCases := []struct {
 		Name           string
@@ -378,8 +377,6 @@ func TestLabelService_UpsertLabelGlobal(t *testing.T) {
 	id := "foo"
 	version := 0
 
-	testErr := errors.New("Test error")
-
 	testCases := []struct {
 		Name         string
 		LabelRepoFn  func() *automock.LabelRepository
@@ -489,8 +486,6 @@ func TestLabelService_CreateLabel(t *testing.T) {
 		Schema:  &scenarioSchema,
 		Version: version,
 	}
-
-	testErr := errors.New("Test error")
 
 	testCases := []struct {
 		Name           string
@@ -683,8 +678,6 @@ func TestLabelService_UpdateLabel(t *testing.T) {
 		Version: version,
 	}
 
-	testErr := errors.New("Test error")
-
 	testCases := []struct {
 		Name           string
 		LabelRepoFn    func() *automock.LabelRepository
@@ -867,8 +860,6 @@ func TestLabelService_GetLabel(t *testing.T) {
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
 	version := 0
 
-	testErr := errors.New("Test error")
-
 	testCases := []struct {
 		Name           string
 		LabelRepoFn    func() *automock.LabelRepository
@@ -972,6 +963,107 @@ func TestLabelService_GetLabel(t *testing.T) {
 			labelRepo.AssertExpectations(t)
 			labelDefRepo.AssertExpectations(t)
 			uidService.AssertExpectations(t)
+		})
+	}
+}
+
+func TestLabelService_Delete(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name          string
+		LabelRepoFn   func() *automock.LabelRepository
+		ExpectedError error
+	}{
+		{
+			Name: "Success",
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Delete", ctx, tenantID, model.FormationTemplateLabelableObject, refID, key).Return(nil).Once()
+				return repo
+			},
+		},
+		{
+			Name: "Error when deleting label fail",
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("Delete", ctx, tenantID, model.FormationTemplateLabelableObject, refID, key).Return(testErr).Once()
+				return repo
+			},
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+
+			svc := label.NewLabelService(labelRepo, nil, nil)
+
+			// WHEN
+			err := svc.Delete(ctx, tenantID, model.FormationTemplateLabelableObject, refID, key)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, labelRepo)
+		})
+	}
+}
+
+func TestLabelService_ListForObject(t *testing.T) {
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name           string
+		LabelRepoFn    func() *automock.LabelRepository
+		ExpectedOutput map[string]*model.Label
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tenantID, model.FormationTemplateLabelableObject, refID).Return(modelLabels, nil).Once()
+				return repo
+			},
+			ExpectedOutput: modelLabels,
+		},
+		{
+			Name: "Error when deleting label fail",
+			LabelRepoFn: func() *automock.LabelRepository {
+				repo := &automock.LabelRepository{}
+				repo.On("ListForObject", ctx, tenantID, model.FormationTemplateLabelableObject, refID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedError: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			labelRepo := testCase.LabelRepoFn()
+
+			svc := label.NewLabelService(labelRepo, nil, nil)
+
+			// WHEN
+			labels, err := svc.ListForObject(ctx, tenantID, model.FormationTemplateLabelableObject, refID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, testCase.ExpectedOutput, labels)
+			}
+
+			mock.AssertExpectationsForObjects(t, labelRepo)
 		})
 	}
 }

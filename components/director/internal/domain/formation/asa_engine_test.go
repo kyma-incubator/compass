@@ -359,7 +359,7 @@ func TestService_EnsureScenarioAssigned(t *testing.T) {
 	}
 }
 
-func TestService_RemoveAssignedScenario(t *testing.T) {
+func TestService_UnassignFormationComingFromASA(t *testing.T) {
 	ctx := fixCtxWithTenant()
 
 	testErr := errors.New("test err")
@@ -682,7 +682,7 @@ func TestService_RemoveAssignedScenario(t *testing.T) {
 			svc := formation.NewASAEngine(nil, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, runtimeType, applicationType)
 
 			// WHEN
-			err := svc.RemoveAssignedScenario(ctx, testCase.InputASA, processFuncMock.ProcessScenarioFunc)
+			err := svc.UnassignFormationComingFromASA(ctx, testCase.InputASA, processFuncMock.ProcessScenarioFunc)
 
 			// THEN
 			if testCase.ExpectedErrMessage == "" {

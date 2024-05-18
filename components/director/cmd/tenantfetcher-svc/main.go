@@ -231,7 +231,7 @@ func createServer(ctx context.Context, cfg config, handler http.Handler, name st
 	logger := log.C(ctx)
 
 	handlerWithTimeout, err := timeouthandler.WithTimeout(handler, cfg.ServerTimeout)
-	exitOnError(err, "Error while configuring tenant mapping handler")
+	exitOnError(err, "Error while creating handler with timeout")
 
 	srv := &http.Server{
 		Addr:              cfg.Address,

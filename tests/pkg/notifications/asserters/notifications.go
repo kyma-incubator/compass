@@ -39,14 +39,14 @@ type NotificationsAsserter struct {
 	region                             string
 	tenant                             string
 	tenantParentCustomer               string
-	config                             string
+	config                             *string
 	formationName                      string // used when the test operates with formation different from the one provided in pre  setup
 	externalServicesMockMtlsSecuredURL string
 	certSecuredGraphQLClient           *graphql.Client
 	client                             *http.Client
 }
 
-func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, config string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
+func NewNotificationsAsserter(expectedNotificationsCount int, op string, targetObjectID, sourceObjectID string, localTenantID string, appNamespace string, region string, tenant string, tenantParentCustomer string, config *string, externalServicesMockMtlsSecuredURL string, client *http.Client) *NotificationsAsserter {
 	return &NotificationsAsserter{
 		expectedNotificationsCount:         expectedNotificationsCount,
 		op:                                 op,
@@ -111,7 +111,7 @@ func (a *NotificationsAsserter) AssertExpectations(t *testing.T, ctx context.Con
 	notificationsForTarget := gjson.GetBytes(body, a.targetObjectID)
 	assignNotificationAboutSource := notificationsForTarget.Array()[0]
 	if a.useItemsStruct {
-		assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, &a.config)
+		assertFormationAssignmentsNotificationWithConfigContainingItemsStructure(t, assignNotificationAboutSource, assignOperation, formationID, a.sourceObjectID, a.localTenantID, a.appNamespace, a.region, a.tenant, a.tenantParentCustomer, a.config)
 		if a.assertTrustDetails {
 			require.NotEmpty(t, a.expectedSubjects)
 			assertTrustDetailsForTargetAndNoTrustDetailsForSource(t, assignNotificationAboutSource, a.expectedSubjects)
@@ -189,7 +189,7 @@ func assertTrustDetailsForTargetAndNoTrustDetailsForSource(t *testing.T, assignN
 	require.Equal(t, 0, len(sourceTrustDetails.Array()))
 }
 
-func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectNamespace, expectedObjectRegion, expectedConfiguration, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool, expectedState *string) error {
+func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Result, op, formationID, expectedObjectID, expectedAppLocalTenantID, expectedObjectNamespace, expectedObjectRegion string, expectedConfiguration *string, expectedTenant, expectedCustomerID string, shouldRemoveDestinationCertificateData bool, expectedState *string) error {
 	actualOp := notification.Get("Operation").String()
 	if op != actualOp {
 		return errors.Errorf("Operation does not match - expected: %q, but got: %q", op, actualOp)
@@ -266,11 +266,13 @@ func verifyFormationAssignmentNotification(t *testing.T, notification gjson.Resu
 		}
 
 		modifiedConfig := gjson.Get(modifiedNotification, "RequestBody.receiverTenant.configuration").String()
-		assert.JSONEq(t, expectedConfiguration, modifiedConfig, "RequestBody.receiverTenant.configuration does not match")
+		if expectedConfiguration != nil {
+			assert.JSONEq(t, *expectedConfiguration, modifiedConfig, "RequestBody.receiverTenant.configuration does not match")
+		}
 	} else {
 		actualConfiguration := notification.Get("RequestBody.receiverTenant.configuration").String()
-		if expectedConfiguration != "" && expectedConfiguration != actualConfiguration {
-			return errors.Errorf("RequestBody.receiverTenant.configuration does not match - expected: %q, but got: %q", expectedConfiguration, actualConfiguration)
+		if expectedConfiguration != nil && *expectedConfiguration != "" && *expectedConfiguration != actualConfiguration {
+			return errors.Errorf("RequestBody.receiverTenant.configuration does not match - expected: %q, but got: %q", *expectedConfiguration, actualConfiguration)
 		}
 	}
 

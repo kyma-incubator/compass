@@ -29,7 +29,7 @@ RUN chmod +x ./migrate
 RUN mv migrate /usr/local/bin/migrate
 
 # kubectl is supported within one minor version (older or newer) of kube-apiserver
-ENV CLUSTER_VERSION=1.26.6
+ENV CLUSTER_VERSION=1.27.11
 
 RUN curl -L https://dl.k8s.io/release/v${CLUSTER_VERSION}/bin/linux/${TARGETARCH}/kubectl -o /usr/local/bin/kubectl  && chmod +x /usr/local/bin/kubectl
 

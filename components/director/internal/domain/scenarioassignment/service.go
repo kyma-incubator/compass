@@ -17,6 +17,7 @@ type Repository interface {
 	ListForTargetTenant(ctx context.Context, tenantID string, targetTenantID string) ([]*model.AutomaticScenarioAssignment, error)
 	GetForScenarioName(ctx context.Context, tenantID, scenarioName string) (*model.AutomaticScenarioAssignment, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.AutomaticScenarioAssignmentPage, error)
+	ListForScenarioNames(ctx context.Context, tenantID string, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
 // ScenariosDefService missing godoc
@@ -65,6 +66,21 @@ func (s *service) GetForScenarioName(ctx context.Context, scenarioName string) (
 		return nil, errors.Wrap(err, "while getting Assignment")
 	}
 	return sa, nil
+}
+
+// ListForScenarioNames lists all assignments for given scenario names
+func (s *service) ListForScenarioNames(ctx context.Context, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error) {
+	tenantID, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	assignments, err := s.repo.ListForScenarioNames(ctx, tenantID, scenarioNames)
+	if err != nil {
+		return nil, errors.Wrap(err, "while getting the assignments")
+	}
+
+	return assignments, nil
 }
 
 // List missing godoc

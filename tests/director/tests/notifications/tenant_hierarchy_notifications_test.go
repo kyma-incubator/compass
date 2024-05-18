@@ -168,8 +168,13 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		expectedAssignments := map[string]map[string]fixtures.AssignmentState{
-			app1.ID: {app1.ID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil}},
+		expectedAssignments := map[string]map[string]fixtures.Assignment{
+			app1.ID: {
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+			},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 1, expectedAssignments)
 		assertFormationStatus(t, ctx, subscriptionConsumerAccountID, formation.ID, graphql.FormationStatus{Condition: graphql.FormationStatusConditionReady, Errors: nil})
@@ -181,14 +186,26 @@ func TestFormationAssignmentNotificationsTenantHierarchy(stdT *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, providerFormationName, assignedFormation.Name)
 
-		expectedAssignments = map[string]map[string]fixtures.AssignmentState{
+		expectedAssignments = map[string]map[string]fixtures.Assignment{
 			app1.ID: {
-				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				runtimeContextID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: fixtures.StatusAPISyncConfigJSON, Value: fixtures.StatusAPISyncConfigJSON, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(app1.ID, runtimeContextID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 			runtimeContextID: {
-				runtimeContextID: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
-				app1.ID:          fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+				app1.ID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(runtimeContextID, app1.ID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
+				runtimeContextID: fixtures.Assignment{
+					AssignmentStatus: fixtures.AssignmentState{State: "READY", Config: nil, Value: nil, Error: nil},
+					Operations:       []*fixtures.Operation{fixtures.NewOperation(runtimeContextID, runtimeContextID, "ASSIGN", "ASSIGN_OBJECT", true)},
+				},
 			},
 		}
 		assertFormationAssignments(t, ctx, subscriptionConsumerAccountID, formation.ID, 4, expectedAssignments)
