@@ -170,7 +170,7 @@ func TestConverter_MultipleToGraphQL(t *testing.T) {
 		nil,
 	}
 	expected := []*graphql.Operation{
-		fixOperationGraphqlWithIDAndTimestamp("operation-id-1", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, graphql.OperationErrorSeverityNone,&now),
+		fixOperationGraphqlWithIDAndTimestamp("operation-id-1", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, graphql.OperationErrorSeverityNone, &now),
 		fixOperationGraphqlWithIDAndTimestamp("operation-id-2", graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusScheduled, errorMsg, graphql.OperationErrorSeverityNone, &now),
 	}
 
