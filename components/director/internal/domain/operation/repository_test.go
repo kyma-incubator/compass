@@ -17,8 +17,8 @@ import (
 )
 
 func TestPgRepository_ListAllByType(t *testing.T) {
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List operations by Type",
@@ -51,8 +51,8 @@ func TestPgRepository_ListAllByType(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	var nilOperationModel *model.Operation
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Operation",
@@ -80,8 +80,8 @@ func TestPgRepository_Create(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	var nilOperationModel *model.Operation
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Operation",
@@ -109,8 +109,8 @@ func TestPgRepository_Update(t *testing.T) {
 }
 
 func TestPgRepository_Get(t *testing.T) {
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Operation",
@@ -142,8 +142,8 @@ func TestPgRepository_Get(t *testing.T) {
 }
 
 func TestPgRepository_GetByDataAndType(t *testing.T) {
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Operation by Data and Type",
@@ -222,8 +222,8 @@ func TestPgRepository_DeleteMultiple(t *testing.T) {
 }
 
 func TestRepository_PriorityQueueListByType(t *testing.T) {
-	operationModel := fixOperationModel(model.OperationTypeOrdAggregation, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, model.OperationTypeOrdAggregation, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(model.OperationTypeOrdAggregation, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, model.OperationTypeOrdAggregation, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "PriorityQueue ListByType",

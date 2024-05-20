@@ -809,13 +809,13 @@ type OneTimeTokenInput struct {
 }
 
 type Operation struct {
-	ID            string                  `json:"id"`
-	OperationType ScheduledOperationType  `json:"operationType"`
-	Status        OperationStatus         `json:"status"`
-	Error         *string                 `json:"error,omitempty"`
-	ErrorSeverity *OperationErrorSeverity `json:"errorSeverity,omitempty"`
-	CreatedAt     *Timestamp              `json:"createdAt,omitempty"`
-	UpdatedAt     *Timestamp              `json:"updatedAt,omitempty"`
+	ID            string                 `json:"id"`
+	OperationType ScheduledOperationType `json:"operationType"`
+	Status        OperationStatus        `json:"status"`
+	Error         *string                `json:"error,omitempty"`
+	ErrorSeverity OperationErrorSeverity `json:"errorSeverity"`
+	CreatedAt     *Timestamp             `json:"createdAt,omitempty"`
+	UpdatedAt     *Timestamp             `json:"updatedAt,omitempty"`
 }
 
 type PageInfo struct {

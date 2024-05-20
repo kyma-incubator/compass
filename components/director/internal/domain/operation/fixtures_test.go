@@ -40,49 +40,49 @@ func fixOperationDataAsString(appID, appTemplateID string) string {
 	return string(result)
 }
 
-func fixOperationInput(opType model.OperationType, opStatus model.OperationStatus) *model.OperationInput {
+func fixOperationInput(opType model.OperationType, opStatus model.OperationStatus, errSeverity model.OperationErrorSeverity) *model.OperationInput {
 	return &model.OperationInput{
 		OpType:        opType,
 		Status:        opStatus,
 		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
 		Error:         json.RawMessage(errorMsg),
-		ErrorSeverity: model.OperationErrorSeverityInfo,
+		ErrorSeverity: errSeverity,
 		Priority:      1,
 		CreatedAt:     &time.Time{},
 		UpdatedAt:     &time.Time{},
 	}
 }
 
-func fixOperationModel(opType model.OperationType, status model.OperationStatus) *model.Operation {
-	return fixOperationModelWithID(operationID, opType, status, lowOperationPriority)
+func fixOperationModel(opType model.OperationType, status model.OperationStatus, errSeverity model.OperationErrorSeverity) *model.Operation {
+	return fixOperationModelWithID(operationID, opType, status, lowOperationPriority, errSeverity)
 }
 
-func fixOperationModelWithPriority(opType model.OperationType, status model.OperationStatus, priority int) *model.Operation {
-	return fixOperationModelWithID(operationID, opType, status, priority)
+func fixOperationModelWithPriority(opType model.OperationType, status model.OperationStatus, priority int, errSeverity model.OperationErrorSeverity) *model.Operation {
+	return fixOperationModelWithID(operationID, opType, status, priority, errSeverity)
 }
 
-func fixOperationModelWithID(id string, opType model.OperationType, opStatus model.OperationStatus, priority int) *model.Operation {
+func fixOperationModelWithID(id string, opType model.OperationType, opStatus model.OperationStatus, priority int, errSeverity model.OperationErrorSeverity) *model.Operation {
 	return &model.Operation{
 		ID:            id,
 		OpType:        opType,
 		Status:        opStatus,
 		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
 		Error:         json.RawMessage(errorMsg),
-		ErrorSeverity: model.OperationErrorSeverityInfo,
+		ErrorSeverity: errSeverity,
 		Priority:      priority,
 		CreatedAt:     &time.Time{},
 		UpdatedAt:     &time.Time{},
 	}
 }
 
-func fixOperationModelWithIDAndTimestamp(id string, opType model.OperationType, opStatus model.OperationStatus, errorMsg string, priority int, timestamp *time.Time) *model.Operation {
+func fixOperationModelWithIDAndTimestamp(id string, opType model.OperationType, opStatus model.OperationStatus, errorMsg string, priority int, errSeverity model.OperationErrorSeverity, timestamp *time.Time) *model.Operation {
 	return &model.Operation{
 		ID:            id,
 		OpType:        opType,
 		Status:        opStatus,
 		Data:          json.RawMessage(fixOperationDataAsString(applicationID, applicationTemplateID)),
 		Error:         json.RawMessage(errorMsg),
-		ErrorSeverity: model.OperationErrorSeverityInfo,
+		ErrorSeverity: errSeverity,
 		Priority:      priority,
 		CreatedAt:     timestamp,
 		UpdatedAt:     timestamp,
@@ -103,28 +103,26 @@ func fixOperationModelWithErrorSeverity(errorSeverity model.OperationErrorSeveri
 	}
 }
 
-func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOperationType, opStatus graphql.OperationStatus, errorMsg string, timestamp *time.Time) *graphql.Operation {
-	infoSeverity := graphql.OperationErrorSeverityInfo
-
+func fixOperationGraphqlWithIDAndTimestamp(id string, opType graphql.ScheduledOperationType, opStatus graphql.OperationStatus, errorMsg string, errSeverity graphql.OperationErrorSeverity, timestamp *time.Time) *graphql.Operation {
 	return &graphql.Operation{
 		ID:            id,
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         &errorMsg,
-		ErrorSeverity: &infoSeverity,
+		ErrorSeverity: errSeverity,
 		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
 		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(timestamp),
 	}
 }
 
-func fixEntityOperation(id string, opType model.OperationType, opStatus model.OperationStatus) *operation.Entity {
+func fixEntityOperation(id string, opType model.OperationType, opStatus model.OperationStatus, opErrorSeverity model.OperationErrorSeverity) *operation.Entity {
 	return &operation.Entity{
 		ID:            id,
 		Type:          string(opType),
 		Status:        string(opStatus),
 		Data:          repo.NewValidNullableString(fixOperationDataAsString(applicationID, applicationTemplateID)),
 		Error:         repo.NewValidNullableString(errorMsg),
-		ErrorSeverity: repo.NewValidNullableString(string(model.OperationErrorSeverityInfo)),
+		ErrorSeverity: string(opErrorSeverity),
 		Priority:      1,
 		CreatedAt:     &time.Time{},
 		UpdatedAt:     &time.Time{},
@@ -132,9 +130,9 @@ func fixEntityOperation(id string, opType model.OperationType, opStatus model.Op
 }
 
 func fixOperationCreateArgs(op *model.Operation) []driver.Value {
-	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), repo.NewValidNullableString(string(op.ErrorSeverity)), op.Priority, op.CreatedAt, op.UpdatedAt}
+	return []driver.Value{op.ID, op.OpType, op.Status, repo.NewNullableStringFromJSONRawMessage(op.Data), repo.NewNullableStringFromJSONRawMessage(op.Error), string(op.ErrorSeverity), op.Priority, op.CreatedAt, op.UpdatedAt}
 }
 
 func fixOperationUpdateArgs(op *model.Operation) []driver.Value {
-	return []driver.Value{op.Status, repo.NewNullableStringFromJSONRawMessage(op.Error), repo.NewValidNullableString(string(op.ErrorSeverity)), op.Priority, op.UpdatedAt, op.ID}
+	return []driver.Value{op.Status, repo.NewNullableStringFromJSONRawMessage(op.Error), string(op.ErrorSeverity), op.Priority, op.UpdatedAt, op.ID}
 }

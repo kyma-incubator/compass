@@ -23,14 +23,14 @@ const (
 type OperationErrorSeverity string
 
 const (
-	// OperationErrorSeverityNone scheduled operation status
-	OperationErrorSeverityNone OperationErrorSeverity = "NONE"
-	// OperationErrorSeverityError scheduled operation status
+	// OperationErrorSeverityError represents Error severity
 	OperationErrorSeverityError OperationErrorSeverity = "ERROR"
-	// OperationErrorSeverityWarning in progress operation status
+	// OperationErrorSeverityWarning represents Warning severity
 	OperationErrorSeverityWarning OperationErrorSeverity = "WARNING"
-	// OperationErrorSeverityInfo completed operation status
+	// OperationErrorSeverityInfo represents Info severity
 	OperationErrorSeverityInfo OperationErrorSeverity = "INFO"
+	// OperationErrorSeverityNone represents missing severity
+	OperationErrorSeverityNone OperationErrorSeverity = "NONE"
 )
 
 // OperationType defines supported operation types
@@ -74,18 +74,13 @@ func (i *OperationInput) ToOperation(id string) *Operation {
 		return nil
 	}
 
-	errorSeverity := i.ErrorSeverity
-	if len(errorSeverity) == 0 {
-		errorSeverity = OperationErrorSeverityNone
-	}
-
 	return &Operation{
 		ID:            id,
 		OpType:        i.OpType,
 		Status:        i.Status,
 		Data:          i.Data,
 		Error:         i.Error,
-		ErrorSeverity: errorSeverity,
+		ErrorSeverity: i.ErrorSeverity,
 		Priority:      i.Priority,
 		CreatedAt:     i.CreatedAt,
 		UpdatedAt:     i.UpdatedAt,

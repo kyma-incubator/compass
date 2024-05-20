@@ -12,7 +12,7 @@ type Entity struct {
 	Status        string         `db:"status"`
 	Data          sql.NullString `db:"data"`
 	Error         sql.NullString `db:"error"`
-	ErrorSeverity sql.NullString `db:"error_severity"`
+	ErrorSeverity string         `db:"error_severity"`
 	Priority      int            `db:"priority"`
 	CreatedAt     *time.Time     `db:"created_at"`
 	UpdatedAt     *time.Time     `db:"updated_at"`

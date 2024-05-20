@@ -18,17 +18,13 @@ func NewConverter() *converter {
 
 // FromEntity converts the provided Entity repo-layer representation of an Operation to the service-layer representation model.Operation.
 func (c *converter) FromEntity(entity *Entity) *model.Operation {
-	errorSeverity := repo.StringFromNullableString(entity.ErrorSeverity)
-	if len(errorSeverity) == 0 {
-		errorSeverity = string(model.OperationErrorSeverityNone)
-	}
 	return &model.Operation{
 		ID:            entity.ID,
 		OpType:        model.OperationType(entity.Type),
 		Status:        model.OperationStatus(entity.Status),
 		Data:          repo.JSONRawMessageFromNullableString(entity.Data),
 		Error:         repo.JSONRawMessageFromNullableString(entity.Error),
-		ErrorSeverity: model.OperationErrorSeverity(errorSeverity),
+		ErrorSeverity: model.OperationErrorSeverity(entity.ErrorSeverity),
 		Priority:      entity.Priority,
 		CreatedAt:     entity.CreatedAt,
 		UpdatedAt:     entity.UpdatedAt,
@@ -37,17 +33,13 @@ func (c *converter) FromEntity(entity *Entity) *model.Operation {
 
 // ToEntity converts the provided service-layer representation of an Operation to the repository-layer one.
 func (c *converter) ToEntity(operationModel *model.Operation) *Entity {
-	errorSeverity := operationModel.ErrorSeverity
-	if errorSeverity == model.OperationErrorSeverityNone {
-		errorSeverity = ""
-	}
 	return &Entity{
 		ID:            operationModel.ID,
 		Type:          string(operationModel.OpType),
 		Status:        string(operationModel.Status),
 		Data:          repo.NewNullableStringFromJSONRawMessage(operationModel.Data),
 		Error:         repo.NewNullableStringFromJSONRawMessage(operationModel.Error),
-		ErrorSeverity: repo.NewValidNullableString(string(errorSeverity)),
+		ErrorSeverity: string(operationModel.ErrorSeverity),
 		Priority:      operationModel.Priority,
 		CreatedAt:     operationModel.CreatedAt,
 		UpdatedAt:     operationModel.UpdatedAt,
@@ -70,14 +62,17 @@ func (c *converter) ToGraphQL(in *model.Operation) (*graphql.Operation, error) {
 		return nil, err
 	}
 
-	opErrorSeverity := c.operationErrorSeverityToGraphQL(in.ErrorSeverity)
+	opErrorSeverity, err := c.operationErrorSeverityToGraphQL(in.ErrorSeverity)
+	if err != nil {
+		return nil, err
+	}
 
 	return &graphql.Operation{
 		ID:            in.ID,
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         str.StringifyJSONRawMessage(in.Error),
-		ErrorSeverity: &opErrorSeverity,
+		ErrorSeverity: opErrorSeverity,
 		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
 		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
 	}, nil
@@ -126,17 +121,17 @@ func (c *converter) operationStatusModelToGraphQL(in model.OperationStatus) (gra
 	}
 }
 
-func (c *converter) operationErrorSeverityToGraphQL(in model.OperationErrorSeverity) graphql.OperationErrorSeverity {
+func (c *converter) operationErrorSeverityToGraphQL(in model.OperationErrorSeverity) (graphql.OperationErrorSeverity, error) {
 	switch in {
 	case model.OperationErrorSeverityError:
-		return graphql.OperationErrorSeverityError
+		return graphql.OperationErrorSeverityError, nil
 	case model.OperationErrorSeverityWarning:
-		return graphql.OperationErrorSeverityWarning
+		return graphql.OperationErrorSeverityWarning, nil
 	case model.OperationErrorSeverityInfo:
-		return graphql.OperationErrorSeverityInfo
+		return graphql.OperationErrorSeverityInfo, nil
 	case model.OperationErrorSeverityNone:
-		return graphql.OperationErrorSeverityNone
+		return graphql.OperationErrorSeverityNone, nil
 	default:
-		return graphql.OperationErrorSeverityNone
+		return "", errors.Errorf("unknown operation error severity type %v", in)
 	}
 }

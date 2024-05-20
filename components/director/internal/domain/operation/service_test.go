@@ -23,8 +23,8 @@ func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled)
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -93,8 +93,8 @@ func TestService_CreateMultiple(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled)
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	ctx := context.TODO()
 
@@ -188,7 +188,7 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -245,8 +245,8 @@ func TestService_RescheduleOperation(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModelWithLowPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusCompleted, lowOperationPriority)
-	opModelWithHighPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusScheduled, highOperationPriority)
+	opModelWithLowPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusCompleted, lowOperationPriority, model.OperationErrorSeverityNone)
+	opModelWithHighPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusScheduled, highOperationPriority, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -295,7 +295,7 @@ func TestService_RescheduleOperation(t *testing.T) {
 			Name: "Error while trying to reschedule operation that is in IN_PROGRESS state",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				opModelInProgress := fixOperationModelWithPriority(testOpType, model.OperationStatusInProgress, lowOperationPriority)
+				opModelInProgress := fixOperationModelWithPriority(testOpType, model.OperationStatusInProgress, lowOperationPriority, model.OperationErrorSeverityNone)
 				repo.On("Get", ctx, operationID).Return(opModelInProgress, nil).Once()
 				return repo
 			},
@@ -332,7 +332,7 @@ func TestService_Get(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -392,7 +392,7 @@ func TestService_GetByDataAndType(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -452,7 +452,7 @@ func TestService_ListPriorityQueue(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	operationModels := []*model.Operation{opModel}
 	ctx := context.TODO()
 
@@ -693,7 +693,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -785,7 +785,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -981,7 +981,7 @@ func TestService_ListAllByType(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	operationModels := []*model.Operation{opModel}
 	ctx := context.TODO()
 

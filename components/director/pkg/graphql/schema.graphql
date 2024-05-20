@@ -1591,7 +1591,7 @@ type Operation {
 	operationType: ScheduledOperationType!
 	status: OperationStatus!
 	error: String
-	errorSeverity: OperationErrorSeverity
+	errorSeverity: OperationErrorSeverity!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 }

@@ -36314,11 +36314,14 @@ func (ec *executionContext) _Operation_errorSeverity(ctx context.Context, field 
 		return graphql.Null
 	}
 	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
 		return graphql.Null
 	}
-	res := resTmp.(*OperationErrorSeverity)
+	res := resTmp.(OperationErrorSeverity)
 	fc.Result = res
-	return ec.marshalOOperationErrorSeverity2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx, field.Selections, res)
+	return ec.marshalNOperationErrorSeverity2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Operation_errorSeverity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -54461,6 +54464,9 @@ func (ec *executionContext) _Operation(ctx context.Context, sel ast.SelectionSet
 			out.Values[i] = ec._Operation_error(ctx, field, obj)
 		case "errorSeverity":
 			out.Values[i] = ec._Operation_errorSeverity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createdAt":
 			out.Values[i] = ec._Operation_createdAt(ctx, field, obj)
 		case "updatedAt":
@@ -58584,6 +58590,16 @@ func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkym
 	return ec._OneTimeTokenForRuntime(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalNOperationErrorSeverity2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx context.Context, v interface{}) (OperationErrorSeverity, error) {
+	var res OperationErrorSeverity
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOperationErrorSeverity2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx context.Context, sel ast.SelectionSet, v OperationErrorSeverity) graphql.Marshaler {
+	return v
+}
+
 func (ec *executionContext) unmarshalNOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationStatus(ctx context.Context, v interface{}) (OperationStatus, error) {
 	var res OperationStatus
 	err := res.UnmarshalGQL(v)
@@ -60773,22 +60789,6 @@ func (ec *executionContext) marshalOOperation2ᚖgithubᚗcomᚋkymaᚑincubator
 		return graphql.Null
 	}
 	return ec._Operation(ctx, sel, v)
-}
-
-func (ec *executionContext) unmarshalOOperationErrorSeverity2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx context.Context, v interface{}) (*OperationErrorSeverity, error) {
-	if v == nil {
-		return nil, nil
-	}
-	var res = new(OperationErrorSeverity)
-	err := res.UnmarshalGQL(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalOOperationErrorSeverity2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx context.Context, sel ast.SelectionSet, v *OperationErrorSeverity) graphql.Marshaler {
-	if v == nil {
-		return graphql.Null
-	}
-	return v
 }
 
 func (ec *executionContext) unmarshalOOperationMode2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationMode(ctx context.Context, v interface{}) (*OperationMode, error) {
