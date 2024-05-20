@@ -10,7 +10,7 @@ CREATE TYPE operation_error_severity AS ENUM (
 );
 
 ALTER TABLE operation
-    ADD COLUMN error_severity operation_error_severity;
+    ADD COLUMN error_severity operation_error_severity DEFAULT 'NONE' ::operation_error_severity NOT NULL;
 
 CREATE VIEW scheduled_operations AS
     SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at
