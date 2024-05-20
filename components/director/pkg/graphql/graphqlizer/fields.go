@@ -731,6 +731,7 @@ func (fp *GqlFieldsProvider) ForOperation() string {
         operationType
         status
         error
+		errorSeverity
 		createdAt
         updatedAt
 	`
