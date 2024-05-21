@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	systemfielddiscoveryapiclient "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
+
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/subscription"
@@ -44,7 +46,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, tenantRegion).Return(resource.ApplicationTemplate, nil).Once()
-				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionAppName, subscriptionID, payload).Return(true, appID, appTemplateID, nil).Once()
+				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionAppName, subscriptionID, payload).Return(true, true, appID, appTemplateID, nil).Once()
 				svc.AssertNotCalled(t, "SubscribeTenantToRuntime")
 				return svc
 			},
@@ -100,7 +102,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 			ServiceFn: func() *automock.SubscriptionService {
 				svc := &automock.SubscriptionService{}
 				svc.On("DetermineSubscriptionFlow", txtest.CtxWithDBMatcher(), subscriptionProviderID, tenantRegion).Return(resource.ApplicationTemplate, nil).Once()
-				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionAppName, subscriptionID, payload).Return(false, "", "", testErr).Once()
+				svc.On("SubscribeTenantToApplication", txtest.CtxWithDBMatcher(), subscriptionProviderID, subaccountTenantExtID, providerSubaccountID, consumerTenantID, tenantRegion, subscriptionAppName, subscriptionID, payload).Return(false, false, "", "", testErr).Once()
 				svc.AssertNotCalled(t, "SubscribeTenantToRuntime")
 				return svc
 			},
@@ -186,7 +188,7 @@ func TestResolver_SubscribeTenant(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
-			resolver := subscription.NewResolver(transact, svc, apiclient.OrdAggregatorClientConfig{})
+			resolver := subscription.NewResolver(transact, svc, apiclient.OrdAggregatorClientConfig{}, systemfielddiscoveryapiclient.SystemFieldDiscoveryEngineClientConfig{})
 
 			defer mock.AssertExpectationsForObjects(t, transact, persistTx, svc)
 
@@ -306,7 +308,7 @@ func TestResolver_UnsubscribeTenant(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			persistTx, transact := testCase.TransactionerFn()
 			svc := testCase.ServiceFn()
-			resolver := subscription.NewResolver(transact, svc, apiclient.OrdAggregatorClientConfig{})
+			resolver := subscription.NewResolver(transact, svc, apiclient.OrdAggregatorClientConfig{}, systemfielddiscoveryapiclient.SystemFieldDiscoveryEngineClientConfig{})
 
 			defer mock.AssertExpectationsForObjects(t, transact, persistTx, svc)
 

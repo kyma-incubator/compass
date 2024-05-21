@@ -19,6 +19,11 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+// ToString stringifies OperationStatus
+func (os OperationStatus) ToString() string {
+	return string(os)
+}
+
 // OperationType defines supported operation types
 type OperationType string
 
@@ -27,6 +32,8 @@ const (
 	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
 	// OperationTypeSystemFetching specifies system fetching operation type
 	OperationTypeSystemFetching OperationType = "SYSTEM_FETCHING"
+	// OperationTypeSaasRegistryDiscovery specifies saas registry discovery operation type
+	OperationTypeSaasRegistryDiscovery OperationType = "SAAS_REGISTRY_DISCOVERY"
 )
 
 // Operation represents an Operation

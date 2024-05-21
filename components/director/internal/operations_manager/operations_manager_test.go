@@ -633,9 +633,6 @@ func TestOperationsManager_FindOperationByData(t *testing.T) {
 	}
 }
 
-// TODO test for FindOperationByData
-// TODO test for CreateOperation
-
 func fixOperationModel(id string, opType model.OperationType, opStatus model.OperationStatus, priority int) *model.Operation {
 	return &model.Operation{
 		ID:        id,

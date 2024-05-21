@@ -26,7 +26,8 @@ type OperationRepository interface {
 	DeleteMultiple(ctx context.Context, ids []string) error
 	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
-	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error
 	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
 }
 
@@ -175,9 +176,14 @@ func (s *service) LockOperation(ctx context.Context, operationID string) (bool, 
 	return s.opRepo.LockOperation(ctx, operationID)
 }
 
+// DeleteOperations deletes all old operations
+func (s *service) DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	return s.opRepo.DeleteOperations(ctx, operationType, reschedulePeriod)
+}
+
 // RescheduleOperations reschedules all old operations
-func (s *service) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
-	return s.opRepo.RescheduleOperations(ctx, operationType, reschedulePeriod)
+func (s *service) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error {
+	return s.opRepo.RescheduleOperations(ctx, operationType, reschedulePeriod, operationStatuses)
 }
 
 // RescheduleHangedOperations reschedules all hanged operations
