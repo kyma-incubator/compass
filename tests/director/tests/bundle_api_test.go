@@ -43,6 +43,7 @@ func TestAddAPIToBundle(t *testing.T) {
 	actualApi := graphql.APIDefinitionExt{}
 	req := fixtures.FixAddAPIToBundleRequest(bndl.ID, inStr)
 	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, req, &actualApi)
+	
 	require.NoError(t, err)
 
 	pack := fixtures.GetBundle(t, ctx, certSecuredGraphQLClient, tenantId, application.ID, bndl.ID)
