@@ -360,6 +360,7 @@ export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH="/regions/{region
 export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER="instanceId"
 export APP_ORD_AGGREGATOR_AGGREGATE_API="https://compass-gateway-internal.local.kyma.dev/ord-aggregator/aggregate"
 export APP_SYSTEM_FETCHER_SYNC_API="https://compass-gateway-internal.local.kyma.dev/system-fetcher/sync"
+export APP_SYSTEM_FIELD_DISCOVERY_ENGINE_SAAS_REGISTRY_API="https://compass-gateway-internal.local.kyma.dev/tenants/system-field-discovery"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig
