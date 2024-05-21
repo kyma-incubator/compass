@@ -6,7 +6,6 @@ mutation {
             providerName: "compass"
             labels: {
                 applicationType: "SAP Cloud for Customer"
-                scenarios: ["test-scenario"]
             }
             bundles: [
                 {

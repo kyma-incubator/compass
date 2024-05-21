@@ -329,7 +329,7 @@ export APP_SELF_REGISTER_INSTANCE_TOKEN_URL_PATH="tokenUrl"
 export APP_SELF_REGISTER_INSTANCE_X509_CERT_PATH="clientCert"
 export APP_SELF_REGISTER_INSTANCE_X509_KEY_PATH="clientKey"
 export APP_SELF_REGISTER_SAAS_APP_NAME_PATH="localSaaSAppNamePath"
-export APP_SELF_REGISTER_SAAS_REGISTRY_URL_PATH="localSaaSRegistryPath"
+export APP_SYSTEM_FIELD_DISCOVERY_SAAS_REGISTRY_URL_PATH="localSaaSRegistryPath"
 
 # Pairing Adapters Properties
 export APP_PAIRING_ADAPTER_CM_NAME="pairing-adapter-config-local"
@@ -360,6 +360,7 @@ export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_LEVEL_PATH="/regions/{region
 export APP_DESTINATION_CREATOR_CERTIFICATE_INSTANCE_ID_PARAMETER="instanceId"
 export APP_ORD_AGGREGATOR_AGGREGATE_API="https://compass-gateway-internal.local.kyma.dev/ord-aggregator/aggregate"
 export APP_SYSTEM_FETCHER_SYNC_API="https://compass-gateway-internal.local.kyma.dev/system-fetcher/sync"
+export APP_SYSTEM_FIELD_DISCOVERY_ENGINE_SAAS_REGISTRY_API="https://compass-gateway-internal.local.kyma.dev/tenants/system-field-discovery"
 
 # This file contains necessary configuration for self registration flow
 cat <<EOF > /tmp/keyConfig

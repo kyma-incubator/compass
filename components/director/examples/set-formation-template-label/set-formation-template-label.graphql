@@ -3,8 +3,8 @@ mutation {
   result: setFormationTemplateLabel(
     formationTemplateID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
     in: {
-      key: "someTestKey"
-      value: "someTestValue"
+      key: "e2eTestFormationTemplateLabelKey"
+      value: e2eTestFormationTemplateLabelValue
     }
   ) {
     key

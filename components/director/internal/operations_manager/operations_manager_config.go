@@ -12,10 +12,16 @@ type OperationsManagerConfig struct {
 	RescheduleOpsElectionConfig cronjob.ElectionConfig
 	// RescheduleHangedOpsElectionConfig is a leader election configuration for reschedule hanged operations job
 	RescheduleHangedOpsElectionConfig cronjob.ElectionConfig
+	// DeleteOpsElectionConfig is a leader election configuration for delete operations job
+	DeleteOpsElectionConfig cronjob.ElectionConfig
 	// PriorityQueueLimit is the number of operations returned from priority queue. Should be larger (+1) than the number of pods.
 	PriorityQueueLimit int `envconfig:"APP_OPERATIONS_MANAGER_PRIORITY_QUEUE_LIMIT,default=10"`
 	// RescheduleOperationsJobInterval how frequently the reschedule job for (refresh data) will be executed
 	RescheduleOperationsJobInterval time.Duration `envconfig:"APP_OPERATIONS_MANAGER_RESCHEDULE_JOB_INTERVAL,default=24h"`
+	// DeleteOperationsJobInterval how frequently the delete operations job will be executed
+	DeleteOperationsJobInterval time.Duration `envconfig:"APP_OPERATIONS_MANAGER_DELETE_OPERATIONS_JOB_INTERVAL,default=30m"`
+	// OperationDeletePeriod the period when operation is considered obsolete and need to be deleted
+	OperationDeletePeriod time.Duration `envconfig:"APP_OPERATIONS_MANAGER_DELETE_PERIOD,default=720h"`
 	// OperationReschedulePeriod the period when data harvested from this operation is considered obsolete and need to be refetched
 	OperationReschedulePeriod time.Duration `envconfig:"APP_OPERATIONS_MANAGER_RESCHEDULE_PERIOD,default=72h"`
 	// RescheduleHangedOperationsJobInterval how frequently the reschedule job for hanged operations will be executed

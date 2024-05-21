@@ -609,7 +609,8 @@ func (s *Service) CreateCertificate(ctx context.Context, destinationsDetails []o
 		return nil, errors.Wrapf(err, "while building certificate URL")
 	}
 
-	certReqBody := &CertificateRequestBody{Name: certName}
+	certNameWithFileExtension := certName + destinationcreatorpkg.JavaKeyStoreFileExtension
+	certReqBody := &CertificateRequestBody{FileName: certNameWithFileExtension}
 	if useSelfSignedCert {
 		certReqBody.SelfSigned = true
 	}
@@ -694,8 +695,14 @@ func (s *Service) DeleteCertificate(ctx context.Context, certificateName, extern
 		return errors.Wrapf(err, "while getting region label for tenant with ID: %s", subaccountID)
 	}
 
+	if certificateName == "" {
+		return errors.New("Certificate name should not be empty")
+	}
+
+	certNameWithFileExtension := certificateName + destinationcreatorpkg.JavaKeyStoreFileExtension
+
 	strURL, err := buildCertificateURL(ctx, s.config.CertificateAPIConfig, URLParameters{
-		EntityName:   certificateName,
+		EntityName:   certNameWithFileExtension,
 		Region:       region,
 		SubaccountID: subaccountID,
 		InstanceID:   instanceID,
@@ -704,8 +711,8 @@ func (s *Service) DeleteCertificate(ctx context.Context, certificateName, extern
 		return errors.Wrapf(err, "while building certificate URL")
 	}
 
-	log.C(ctx).Infof("Deleting destination certificate with name: %q and subaccount ID: %q from destination service", certificateName, subaccountID)
-	err = s.executeDeleteRequest(ctx, strURL, certificateName, subaccountID)
+	log.C(ctx).Infof("Deleting destination certificate with name: %q and subaccount ID: %q from destination service", certNameWithFileExtension, subaccountID)
+	err = s.executeDeleteRequest(ctx, strURL, certNameWithFileExtension, subaccountID)
 	if err != nil {
 		return err
 	}

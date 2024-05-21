@@ -569,7 +569,7 @@ func TestService_Delete(t *testing.T) {
 	ctxWithoutTenant := context.TODO()
 	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
 
-	formations := []string{"scenario"}
+	formations := []*model.Formation{{Name: "scenario"}}
 
 	testCases := []struct {
 		Name               string
@@ -589,7 +589,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFN: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("ListFormationsForObject", ctxWithTenant, id).Return(formations, nil).Once()
 				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, true).Return(nil, nil).Once()
 				return formationSvc
 			},
@@ -613,7 +613,7 @@ func TestService_Delete(t *testing.T) {
 			RepositoryFn: unusedRuntimeContextRepo,
 			FormationServiceFN: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(nil, testErr).Once()
+				formationSvc.On("ListFormationsForObject", ctxWithTenant, id).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			InputID:            id,
@@ -625,7 +625,7 @@ func TestService_Delete(t *testing.T) {
 			RepositoryFn: unusedRuntimeContextRepo,
 			FormationServiceFN: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("ListFormationsForObject", ctxWithTenant, id).Return(formations, nil).Once()
 				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, true).Return(nil, testErr).Once()
 				return formationSvc
 			},
@@ -642,7 +642,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFN: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("GetFormationsForObject", ctxWithTenant, tnt, model.RuntimeContextLabelableObject, id).Return(formations, nil).Once()
+				formationSvc.On("ListFormationsForObject", ctxWithTenant, id).Return(formations, nil).Once()
 				formationSvc.On("UnassignFormation", ctxWithTenant, tnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, true).Return(nil, nil).Once()
 				return formationSvc
 			},

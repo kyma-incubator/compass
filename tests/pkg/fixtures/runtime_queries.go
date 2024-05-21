@@ -207,3 +207,21 @@ func RegisterKymaRuntimeBench(b *testing.B, ctx context.Context, gqlClient *gcli
 
 	return kymaRuntime
 }
+
+func AssignRuntimeInScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, runtimeID string, scenarios []string) {
+	for _, scenario := range scenarios {
+		fi := graphql.FormationInput{
+			Name: scenario,
+		}
+		AssignFormationWithRuntimeObjectType(t, ctx, gqlClient, fi, runtimeID, tenantID)
+	}
+}
+
+func UnassignRuntimeFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, runtimeID string, scenarios []string) {
+	for _, scenario := range scenarios {
+		fi := graphql.FormationInput{
+			Name: scenario,
+		}
+		CleanupFormation(t, ctx, gqlClient, fi, runtimeID, graphql.FormationObjectTypeRuntime, tenantID)
+	}
+}
