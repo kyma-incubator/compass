@@ -1904,6 +1904,7 @@ func TestMergeApplications(t *testing.T) {
 	assert.Equal(t, providerName, destApp.ProviderName)
 	assert.Equal(t, managedLabelValue, destApp.Labels[managedLabel])
 	assert.Equal(t, sccLabelValue, destApp.Labels[sccLabel])
+	assert.Contains(t, destApp.Labels["scenarios"], newFormation)
 
 	srcApp := graphql.ApplicationExt{}
 	getSrcAppReq := fixtures.FixGetApplicationRequest(outputSrcApp.ID)
