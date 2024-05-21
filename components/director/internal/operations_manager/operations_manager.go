@@ -17,13 +17,14 @@ var now = time.Now
 
 // OperationsManager provides methods for operations management
 type OperationsManager struct {
-	opType                                 model.OperationType
-	transact                               persistence.Transactioner
-	opSvc                                  OperationService
-	mutex                                  sync.Mutex
-	isRescheduleOperationsJobStarted       bool
-	isRescheduleHangedOperationsJobStarted bool
-	cfg                                    OperationsManagerConfig
+	opType                                   model.OperationType
+	transact                                 persistence.Transactioner
+	opSvc                                    OperationService
+	mutex                                    sync.Mutex
+	isDeleteSaaSRegistryOperationsJobStarted bool
+	isRescheduleOperationsJobStarted         bool
+	isRescheduleHangedOperationsJobStarted   bool
+	cfg                                      OperationsManagerConfig
 }
 
 // NewOperationsManager creates new OperationsManager
@@ -159,7 +160,7 @@ func (om *OperationsManager) RescheduleOperation(ctx context.Context, operationI
 }
 
 // StartRescheduleOperationsJob starts reschedule operations job and blocks.
-func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) error {
+func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context, operationStatuses []string) error {
 	if om.isRescheduleOperationsJobStarted {
 		log.C(ctx).Info("Reschedule operations job is already started")
 		return nil
@@ -176,7 +177,7 @@ func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) e
 			defer om.transact.RollbackUnlessCommitted(ctx, tx)
 			ctx = persistence.SaveToContext(ctx, tx)
 
-			if err := om.opSvc.RescheduleOperations(ctx, om.opType, om.cfg.OperationReschedulePeriod); err != nil {
+			if err := om.opSvc.RescheduleOperations(ctx, om.opType, om.cfg.OperationReschedulePeriod, operationStatuses); err != nil {
 				log.C(jobCtx).Errorf("Error during execution of RescheduleOperationsJob %v", err)
 			}
 			err = tx.Commit()
@@ -190,6 +191,40 @@ func (om *OperationsManager) StartRescheduleOperationsJob(ctx context.Context) e
 	}
 	om.isRescheduleOperationsJobStarted = true
 	return cronjob.RunCronJob(ctx, om.cfg.RescheduleOpsElectionConfig, resyncJob)
+}
+
+// StartDeleteOperationsJob starts delete operations job and blocks.
+func (om *OperationsManager) StartDeleteOperationsJob(ctx context.Context) error {
+	if om.isDeleteSaaSRegistryOperationsJobStarted {
+		log.C(ctx).Info("Delete operations job is already started")
+		return nil
+	}
+	resyncJob := cronjob.CronJob{
+		Name: "DeleteOperationsJob",
+		Fn: func(jobCtx context.Context) {
+			log.C(jobCtx).Info("Starting DeleteOperationsJob...")
+
+			tx, err := om.transact.Begin()
+			if err != nil {
+				log.C(jobCtx).Errorf("Error during opening transaction in DeleteOperationsJob %v", err)
+			}
+			defer om.transact.RollbackUnlessCommitted(ctx, tx)
+			ctx = persistence.SaveToContext(ctx, tx)
+
+			if err := om.opSvc.DeleteOperations(ctx, om.opType, om.cfg.OperationDeletePeriod); err != nil {
+				log.C(jobCtx).Errorf("Error during execution of DeleteOperationsJob %v", err)
+			}
+
+			if err = tx.Commit(); err != nil {
+				log.C(jobCtx).Errorf("Error during committing transaction at DeleteOperationsJob %v", err)
+			}
+
+			log.C(jobCtx).Infof("DeleteOperationsJob finished.")
+		},
+		SchedulePeriod: om.cfg.DeleteOperationsJobInterval,
+	}
+	om.isDeleteSaaSRegistryOperationsJobStarted = true
+	return cronjob.RunCronJob(ctx, om.cfg.DeleteOpsElectionConfig, resyncJob)
 }
 
 // StartRescheduleHangedOperationsJob starts reschedule hanged operations job and blocks.

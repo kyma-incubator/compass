@@ -265,7 +265,7 @@ func main() {
 		}()
 
 		go func() {
-			if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
+			if err := operationsManager.StartRescheduleOperationsJob(ctx, []string{model.OperationStatusCompleted.ToString(), model.OperationStatusFailed.ToString()}); err != nil {
 				log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
 				cancel()
 			}
@@ -348,12 +348,11 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	op, errGetOperation := opManager.GetOperation(ctx)
 	if errGetOperation != nil {
 		if apperrors.IsNoScheduledOperationsError(errGetOperation) {
-			log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", errGetOperation)
+			log.C(ctx).Infof("There are no scheduled operations for processing. Err: %v", errGetOperation)
 			return "", nil
-		} else {
-			log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
-			return "", errGetOperation
 		}
+		log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
+		return "", errGetOperation
 	}
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
