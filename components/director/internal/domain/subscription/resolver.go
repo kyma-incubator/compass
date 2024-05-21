@@ -4,7 +4,10 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	systemfielddiscoveryengine "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine"
+
+	ordapiclient "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
+	systemfielddiscoveryapiclient "github.com/kyma-incubator/compass/components/director/internal/system-field-discovery-engine/apiclient"
 
 	"github.com/tidwall/gjson"
 
@@ -14,7 +17,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-const subscriptionIDKey = "subscriptionGUID"
+const (
+	subscriptionIDKey = "subscriptionGUID"
+)
 
 // DependentServiceInstanceInfo represents the dependent service instance info object in a subscription payload.
 type DependentServiceInstanceInfo struct {
@@ -34,24 +39,26 @@ type DependentServiceInstancesInfo struct {
 type SubscriptionService interface {
 	SubscribeTenantToRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID string) (bool, error)
 	UnsubscribeTenantFromRuntime(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
-	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, string, string, error)
+	SubscribeTenantToApplication(ctx context.Context, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, bool, string, string, error)
 	UnsubscribeTenantFromApplication(ctx context.Context, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionID string) (bool, error)
 	DetermineSubscriptionFlow(ctx context.Context, providerID, region string) (resource.Type, error)
 }
 
 // Resolver is an object responsible for resolver-layer Subscription operations.
 type Resolver struct {
-	transact        persistence.Transactioner
-	subscriptionSvc SubscriptionService
-	ordClient       *apiclient.ORDClient
+	transact                   persistence.Transactioner
+	subscriptionSvc            SubscriptionService
+	ordClient                  *ordapiclient.ORDClient
+	systemFieldDiscoveryClient *systemfielddiscoveryapiclient.SystemFieldDiscoveryEngineClient
 }
 
 // NewResolver returns a new object responsible for resolver-layer Subscription operations.
-func NewResolver(transact persistence.Transactioner, subscriptionSvc SubscriptionService, ordAggregatorClientConfig apiclient.OrdAggregatorClientConfig) *Resolver {
+func NewResolver(transact persistence.Transactioner, subscriptionSvc SubscriptionService, ordAggregatorClientConfig ordapiclient.OrdAggregatorClientConfig, systemFieldDiscoveryClientConfig systemfielddiscoveryapiclient.SystemFieldDiscoveryEngineClientConfig) *Resolver {
 	return &Resolver{
-		transact:        transact,
-		subscriptionSvc: subscriptionSvc,
-		ordClient:       apiclient.NewORDClient(ordAggregatorClientConfig),
+		transact:                   transact,
+		subscriptionSvc:            subscriptionSvc,
+		ordClient:                  ordapiclient.NewORDClient(ordAggregatorClientConfig),
+		systemFieldDiscoveryClient: systemfielddiscoveryapiclient.NewSystemFieldDiscoveryEngineClient(systemFieldDiscoveryClientConfig),
 	}
 }
 
@@ -69,7 +76,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 	if err = json.Unmarshal([]byte(subscriptionPayload), &dependentSvcInstancesInfo); err != nil {
 		return false, errors.Wrapf(err, "while unmarshaling dependent service instances info")
 	}
-	var success bool
+	var success, systemFieldDiscoveryValue bool
 
 	appID := ""
 	appTemplateID := ""
@@ -105,7 +112,7 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		switch flowType {
 		case resource.ApplicationTemplate:
 			log.C(ctx).Infof("Entering application subscription flow")
-			success, appID, appTemplateID, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID, subscriptionPayload)
+			success, systemFieldDiscoveryValue, appID, appTemplateID, err = r.subscriptionSvc.SubscribeTenantToApplication(ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID, subscriptionPayload)
 			if err != nil {
 				return false, err
 			}
@@ -130,6 +137,11 @@ func (r *Resolver) SubscribeTenant(ctx context.Context, providerID, subaccountTe
 		}
 		if err := r.ordClient.Aggregate(ctx, appID, ""); err != nil {
 			log.C(ctx).WithError(err).Errorf("Error while calling aggregate API with AppID %q", appID)
+		}
+		if systemFieldDiscoveryValue {
+			if err := r.systemFieldDiscoveryClient.Discover(ctx, appID, consumerTenantID, systemfielddiscoveryengine.SystemFieldDiscoverySaaSRegistry); err != nil {
+				log.C(ctx).WithError(err).Errorf("Error while calling discover API with AppID %q, tenantID %q, and registry %q", appID, consumerTenantID, systemfielddiscoveryengine.SystemFieldDiscoverySaaSRegistry.ToString())
+			}
 		}
 	}
 
