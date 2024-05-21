@@ -4,10 +4,7 @@ mutation {
     in: {
       name: "create-application-with-documents"
       providerName: "compass"
-      labels: {
-        applicationType: "SAP Cloud for Customer"
-        scenarios: ["test-scenario"]
-      }
+      labels: { applicationType: "SAP Cloud for Customer" }
       bundles: [
         {
           name: "foo"

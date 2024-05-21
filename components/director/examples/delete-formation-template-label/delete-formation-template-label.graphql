@@ -2,7 +2,7 @@
 mutation {
   result: deleteFormationTemplateLabel(
     formationTemplateID: "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"
-    key: "someTestKey"
+    key: "e2eTestFormationTemplateLabelKey"
   ) {
     key
     value

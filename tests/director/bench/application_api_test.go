@@ -41,24 +41,27 @@ func BenchmarkApplicationsForRuntime(b *testing.B) {
 	for i := 0; i < appsCount; i++ {
 		appInput := fixtures.CreateApp(fmt.Sprintf("director-%d", i))
 		appInput.Labels = map[string]interface{}{
-			"scenarios":                  []string{testScenario},
 			conf.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 		}
 		appResp, err := fixtures.RegisterApplicationFromInput(b, ctx, certSecuredGraphQLClient, tenantID, appInput)
 		defer fixtures.CleanupApplication(b, ctx, certSecuredGraphQLClient, tenantID, &appResp)
-		defer fixtures.UnassignFormationWithApplicationObjectType(b, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, appResp.ID, tenantID)
 		require.NoError(b, err)
 		require.NotEmpty(b, appResp.ID)
+
+		defer fixtures.UnassignFormationWithApplicationObjectType(b, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, appResp.ID, tenantID)
+		fixtures.AssignFormationWithApplicationObjectType(b, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, appResp.ID, tenantID)
 	}
 
 	//create runtime without normalization
 	runtimeInput := fixtures.FixRuntimeRegisterInput("runtime")
-	(runtimeInput.Labels)["scenarios"] = []string{testScenario}
 	(runtimeInput.Labels)["isNormalized"] = "false"
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(b, ctx, certSecuredGraphQLClient, tenantID, &runtime)
 	runtime = fixtures.RegisterKymaRuntimeBench(b, ctx, certSecuredGraphQLClient, tenantID, runtimeInput, conf.GatewayOauth)
+
+	defer fixtures.UnassignFormationWithRuntimeObjectType(b, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantID)
+	fixtures.AssignFormationWithRuntimeObjectType(b, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, tenantID)
 
 	request := fixtures.FixApplicationForRuntimeRequestWithPageSize(runtime.ID, appsCount)
 	request.Header.Set("Tenant", tenantID)
