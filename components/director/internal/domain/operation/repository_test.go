@@ -333,7 +333,29 @@ func TestRepository_RescheduleOperations(t *testing.T) {
 		ctx := persistence.SaveToContext(context.TODO(), db)
 
 		// WHEN
-		err := operationRepo.RescheduleOperations(ctx, model.OperationTypeOrdAggregation, time.Second)
+		err := operationRepo.RescheduleOperations(ctx, model.OperationTypeOrdAggregation, time.Second, []string{model.OperationStatusCompleted.ToString(), model.OperationStatusFailed.ToString()})
+
+		// THEN
+		require.NoError(t, err)
+	})
+}
+
+func TestRepository_DeleteOperations(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		mockConverter := &automock.EntityConverter{}
+		defer mockConverter.AssertExpectations(t)
+
+		operationRepo := operation.NewRepository(mockConverter)
+		db, dbMock := testdb.MockDatabase(t)
+		defer dbMock.AssertExpectations(t)
+		expectedQuery := regexp.QuoteMeta("DELETE FROM public.operation WHERE status = $1 AND op_type = $2 AND updated_at < $3")
+		dbMock.ExpectExec(expectedQuery).
+			WillReturnResult(sqlmock.NewResult(-1, 1))
+
+		ctx := persistence.SaveToContext(context.TODO(), db)
+
+		// WHEN
+		err := operationRepo.DeleteOperations(ctx, model.OperationTypeOrdAggregation, time.Second)
 
 		// THEN
 		require.NoError(t, err)
