@@ -61,6 +61,7 @@ type systemAuthService interface {
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationRepository interface {
 	ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error)
+	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 }
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -100,6 +101,7 @@ type formationAssignmentRepository interface {
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 }
 
 //go:generate mockery --exported --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string

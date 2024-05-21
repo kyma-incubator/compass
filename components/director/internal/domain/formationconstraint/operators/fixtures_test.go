@@ -30,6 +30,7 @@ const (
 	formationAssignmentID    = "c54341c4-ca3a-11ed-afa1-0242ac120564"
 	formationTemplateID      = "b87631c4-ca3a-11ed-afa1-0242ac120002"
 	otherFormationTemplateID = "b05731c4-ca3a-11ed-afa1-0242ac120002"
+	formationID              = "a16724q3-ba3a-13ef-a1c7-1247ac120123"
 	webhookID                = "f4aac335-8afa-421f-a5ad-da9ce7a676bc"
 
 	// Certificate constants
@@ -245,17 +246,22 @@ var (
 		{ScenarioName: scenario},
 	}
 
-	scenariosLabel             = &model.Label{Value: []interface{}{scenario}}
-	scenariosLabelInvalidValue = &model.Label{Value: "invalid"}
-
 	formations = []*model.Formation{
 		{
+			Name:                scenario,
 			FormationTemplateID: otherFormationTemplateID,
 		},
 	}
 	formations2 = []*model.Formation{
 		{
+			Name:                scenario,
 			FormationTemplateID: formationTemplateID,
+		},
+	}
+
+	formationAssignments = []*model.FormationAssignment{
+		{
+			FormationID: formationID,
 		},
 	}
 )

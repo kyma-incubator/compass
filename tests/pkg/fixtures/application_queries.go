@@ -332,6 +332,15 @@ func GenerateOneTimeTokenForApplicationWithSuggestedToken(t require.TestingT, ct
 	return oneTimeToken
 }
 
+func AssignApplicationInScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, scenarios []string) {
+	for _, scenario := range scenarios {
+		fi := graphql.FormationInput{
+			Name: scenario,
+		}
+		AssignFormationWithApplicationObjectType(t, ctx, gqlClient, fi, applicationID, tenantID)
+	}
+}
+
 func UnassignApplicationFromScenarios(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenantID, applicationID string, scenarios []string) {
 	for _, scenario := range scenarios {
 		fi := graphql.FormationInput{

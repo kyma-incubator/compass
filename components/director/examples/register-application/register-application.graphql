@@ -8,7 +8,6 @@ mutation {
       labels: {
         applicationType: "SAP Cloud for Customer"
         group: ["production", "experimental"]
-        scenarios: ["test-scenario"]
       }
       healthCheckURL: "http://mywordpress.com/health"
     }

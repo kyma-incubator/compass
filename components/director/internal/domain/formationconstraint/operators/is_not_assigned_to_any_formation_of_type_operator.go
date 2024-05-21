@@ -3,9 +3,7 @@ package operators
 import (
 	"context"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
@@ -33,6 +31,7 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %q, subtype: %q and ID: %q", IsNotAssignedToAnyFormationOfTypeOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID)
 
 	var assignedFormations []string
+	var err error
 	switch i.ResourceType {
 	case model.TenantResourceType:
 		tenantInternalID, err := e.tenantSvc.GetInternalTenant(ctx, i.ResourceID)
@@ -50,14 +49,7 @@ func (e *ConstraintEngine) IsNotAssignedToAnyFormationOfType(ctx context.Context
 			assignedFormations = append(assignedFormations, a.ScenarioName)
 		}
 	case model.ApplicationResourceType:
-		scenariosLabel, err := e.labelRepo.GetByKey(ctx, i.Tenant, model.ApplicationLabelableObject, i.ResourceID, model.ScenariosKey)
-		if err != nil {
-			if apperrors.IsNotFoundError(err) {
-				return true, nil
-			}
-			return false, err
-		}
-		assignedFormations, err = label.ValueToStringsSlice(scenariosLabel.Value)
+		assignedFormations, err = e.listFormationsForObject(ctx, i.ResourceID)
 		if err != nil {
 			return false, err
 		}
@@ -98,4 +90,38 @@ func (e *ConstraintEngine) isAllowedToParticipateInFormationsOfType(ctx context.
 	}
 
 	return true, nil
+}
+
+// listFormationsForObject returns all Formations that `objectID` is part of
+func (e *ConstraintEngine) listFormationsForObject(ctx context.Context, objectID string) ([]string, error) {
+	assignments, err := e.formationAssignmentService.ListAllForObjectGlobal(ctx, objectID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", objectID)
+	}
+
+	if len(assignments) == 0 {
+		return nil, nil
+	}
+
+	uniqueFormationIDsMap := make(map[string]struct{}, len(assignments))
+	for _, assignment := range assignments {
+		uniqueFormationIDsMap[assignment.FormationID] = struct{}{}
+	}
+
+	uniqueFormationIDs := make([]string, 0, len(uniqueFormationIDsMap))
+	for formationID := range uniqueFormationIDsMap {
+		uniqueFormationIDs = append(uniqueFormationIDs, formationID)
+	}
+
+	formations, err := e.formationRepo.ListByIDsGlobal(ctx, uniqueFormationIDs)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting formations by IDs for object with ID %s", objectID)
+	}
+
+	formationNames := make([]string, 0, len(formations))
+	for _, formation := range formations {
+		formationNames = append(formationNames, formation.Name)
+	}
+
+	return formationNames, nil
 }

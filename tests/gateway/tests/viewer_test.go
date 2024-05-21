@@ -56,7 +56,6 @@ func TestViewerQuery(t *testing.T) {
 		appInput := graphql.ApplicationRegisterInput{
 			Name: "test-app",
 			Labels: graphql.Labels{
-				"scenarios":                        []interface{}{testScenario},
 				testConfig.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 			},
 		}
@@ -64,9 +63,11 @@ func TestViewerQuery(t *testing.T) {
 		t.Log("Register Application via Certificate Secured Client")
 		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
-		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, testConfig.DefaultTestTenant)
 		require.NoError(t, err)
 		t.Logf("Registered Application with [id=%s]", app.ID)
+
+		defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, testConfig.DefaultTestTenant)
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, app.ID, testConfig.DefaultTestTenant)
 
 		t.Log("Request Client Credentials for Application")
 		appAuth := fixtures.RequestClientCredentialsForApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app.ID)
@@ -92,17 +93,16 @@ func TestViewerQuery(t *testing.T) {
 	t.Run("Test viewer as Runtime", func(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test-runtime",
-			Labels: graphql.Labels{
-				"scenarios": []interface{}{testScenario},
-			},
 		}
 
 		t.Log("Register Runtime via Certificate Secured Client")
 		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
 		runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtimeInput, testConfig.GatewayOauth)
-
 		t.Logf("Registered Runtime with [id=%s]", runtime.ID)
+
+		defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, testConfig.DefaultTestTenant)
+		fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: testScenario}, runtime.ID, testConfig.DefaultTestTenant)
 
 		t.Log("Request Client Credentials for Runtime")
 		rtmAuth := fixtures.RequestClientCredentialsForRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, runtime.ID)
