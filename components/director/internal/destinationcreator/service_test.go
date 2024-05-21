@@ -2054,6 +2054,7 @@ func Test_CreateCertificate(t *testing.T) {
 		Body:       io.NopCloser(strings.NewReader("{\"invalid")),
 	}
 	faWithSourceAppAndTargetAppAndLongID := fixFormationAssignmentModelWithParameters("some-long-id-0b2de27b-b500-47eb-bf7f-b0c105a65864", testFormationID, testTenantID, testSourceID, testTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), TestConfigValueRawJSON, TestEmptyErrorValueRawJSON)
+	faWithSourceAppAndTargetAppHasDot := fixFormationAssignmentModelWithParameters("contains.when.shouldnt", testFormationID, testTenantID, testSourceID, testTargetID, model.FormationAssignmentTypeApplication, model.FormationAssignmentTypeApplication, string(model.ReadyAssignmentState), TestConfigValueRawJSON, TestEmptyErrorValueRawJSON)
 
 	testCases := []struct {
 		name                string
@@ -2235,6 +2236,23 @@ func Test_CreateCertificate(t *testing.T) {
 				CommonName:       certificateCommonNameValue,
 				CertificateChain: certificateChainValue,
 			},
+		},
+		{
+			name:                "Error when request body validation filed - has more than one . in the name",
+			destinationsDetails: samlAssertionDestsDetailsWithoutName,
+			destinationAuthType: destinationcreatorpkg.AuthTypeClientCertificate,
+			formationAssignment: faWithSourceAppAndTargetAppHasDot,
+			labelRepoFn: func() *automock.LabelRepository {
+				labelRepo := &automock.LabelRepository{}
+				labelRepo.On("GetByKey", emptyCtx, destinationInternalSubaccountID, model.TenantLabelableObject, destinationExternalSubaccountID, destinationcreator.RegionLabelKey).Return(regionLbl, nil).Once()
+				return labelRepo
+			},
+			tenantRepoFn: func() *automock.TenantRepository {
+				tenantRepo := &automock.TenantRepository{}
+				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
+				return tenantRepo
+			},
+			expectedErrMessage: "while validating certificate request body: fileName: file name \"ClientCertificateAuthentication-contains.when.shouldnt.jks\" must contain a single '.'.",
 		},
 		{
 			name:                "Error when executing remote create certificate request fail",
@@ -2480,7 +2498,7 @@ func Test_DeleteCertificate(t *testing.T) {
 				tenantRepo.On("GetByExternalTenant", emptyCtx, destinationExternalSubaccountID).Return(subaccTenant, nil).Once()
 				return tenantRepo
 			},
-			expectedErrMessage: fmt.Sprintf("The entity name should not be empty in case of %s request", http.MethodDelete),
+			expectedErrMessage: "Certificate name should not be empty",
 		},
 		{
 			name:                    "Error when executing remote delete certificate request fail",

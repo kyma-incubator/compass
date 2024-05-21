@@ -3,6 +3,7 @@ package destinationsvc
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/pkg/destinationcreator"
 
@@ -96,7 +97,7 @@ type OAuth2ClientCredsDestRequestBody struct {
 
 // CertificateRequestBody contains the necessary fields for the destination creator certificate request body
 type CertificateRequestBody struct {
-	Name string `json:"name"`
+	FileName string `json:"fileName"`
 }
 
 // CertificateResponseBody contains the response data from the destination creator certificate request
@@ -344,7 +345,22 @@ func (b *OAuth2ClientCredsDestRequestBody) GetDestinationType() string {
 // Validate validates that the SAML assertion certificate request body contains the required fields, and they are valid
 func (c *CertificateRequestBody) Validate() error {
 	return validation.ValidateStruct(c,
-		validation.Field(&c.Name, validation.Required, validation.Length(1, destinationcreatorpkg.MaxDestinationNameLength), validation.Match(regexp.MustCompile(reqBodyNameRegex))),
+		validation.Field(&c.FileName, validation.Required, validation.By(func(value interface{}) error {
+			split := strings.Split(c.FileName, ".")
+			if len(split) != 2 {
+				return fmt.Errorf("file name %q must contain a single '.'", c.FileName)
+			}
+
+			if len(split[0]) > destinationcreatorpkg.MaxDestinationNameLength {
+				return fmt.Errorf("file name %q must have a length of at most %d without the file extension", c.FileName, destinationcreatorpkg.MaxDestinationNameLength)
+			}
+
+			matched := regexp.MustCompile(reqBodyNameRegex).MatchString(split[0])
+			if !matched {
+				return fmt.Errorf("file name %s must match the regex %s without the file extension", c.FileName, reqBodyNameRegex)
+			}
+			return nil
+		})),
 	)
 }
 

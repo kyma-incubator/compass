@@ -5,11 +5,12 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/tidwall/sjson"
 	"io"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/tidwall/sjson"
 
 	"github.com/google/uuid"
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
@@ -181,7 +182,7 @@ func (h *Handler) CreateCertificate(writer http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	certName := reqBody.Name + destinationcreatorpkg.JavaKeyStoreFileExtension
+	certName := reqBody.FileName
 	certificateIdentifier := h.buildDestinationCertificateIdentifier(routeVars, certName)
 	if _, ok := h.DestinationSvcCertificates[certificateIdentifier]; ok {
 		log.C(ctx).Infof("Certificate with name: %q and identifier: %q already exists. Returning 409 Conflict...", certName, certificateIdentifier)
@@ -231,8 +232,7 @@ func (h *Handler) DeleteCertificate(writer http.ResponseWriter, r *http.Request)
 		httphelpers.RespondWithError(ctx, writer, err, err.Error(), correlationID, http.StatusBadRequest)
 		return
 	}
-	certNameParamValue := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
-	certName := certNameParamValue + destinationcreatorpkg.JavaKeyStoreFileExtension
+	certName := routeVars[h.Config.CertificateAPIConfig.CertificateNameParam]
 
 	certificateIdentifier := h.buildDestinationCertificateIdentifier(routeVars, certName)
 	if _, isDestinationSvcCertExists := h.DestinationSvcCertificates[certificateIdentifier]; !isDestinationSvcCertExists {
