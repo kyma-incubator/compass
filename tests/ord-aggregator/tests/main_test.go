@@ -87,6 +87,7 @@ func TestMain(m *testing.M) {
 	ctx := context.Background()
 
 	certCache, err = credloader.StartCertLoader(ctx, testConfig.CertLoaderConfig)
+	
 	if err != nil {
 		log.D().Fatal(errors.Wrap(err, "while starting cert cache"))
 	}
