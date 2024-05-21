@@ -11,7 +11,7 @@ mutation {
         { type: FORMATION_LIFECYCLE, url: "http://localhost:6439/", mode: SYNC }
       ]
       labels: {
-        someTestKey: "someTestValue"
+        e2eTestFormationTemplateLabelKey: "e2eTestFormationTemplateLabelValue"
       }
     }
   ) {

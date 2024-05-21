@@ -69,10 +69,11 @@ type ScenarioAssignmentService interface {
 
 //go:generate mockery --exported --name=formationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationService interface {
-	MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error)
+	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 	UnassignFormationsComingFromASA(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
+	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
 }
 
 // RuntimeConverter missing godoc

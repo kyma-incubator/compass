@@ -21,6 +21,23 @@ mutation {
         value
         configuration
         error
+        assignmentOperations {
+          data {
+            id
+            operationType
+            formationAssignmentID
+            formationID
+            triggeredBy
+            startedAtTimestamp
+            finishedAtTimestamp
+          }
+          pageInfo {
+            startCursor
+            endCursor
+            hasNextPage
+          }
+          totalCount
+        }
       }
       pageInfo {
         startCursor
