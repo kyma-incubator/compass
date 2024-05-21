@@ -215,10 +215,10 @@ func TestORDAggregator(stdT *testing.T) {
 		AccessStrategy: "sap:cmp-mtls:v1",
 	}
 
-	var appInputNone, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput, seventhAppInput directorSchema.ApplicationRegisterInput
+	var appInput, secondAppInput, thirdAppInput, fourthAppInput, fifthAppInput, sixthAppInput, seventhAppInput directorSchema.ApplicationRegisterInput
 	t.Run("Verifying ORD Document to be valid", func(t *testing.T) {
 		// Unsecured config endpoint with full absolute URL in the webhook; unsecured document; doc baseURL from the webhook
-		appInputNone = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
+		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
 		// Unsecured config endpoint with automatic .well-known/open-resource-discovery; unsecured document; doc baseURL from the webhook
 		secondAppInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSecondSystemInstanceName, expectedSecondSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredURL, nil)
 		// Basic secured config endpoint; unsecured document; doc baseURL from the webhook
@@ -400,7 +400,7 @@ func TestORDAggregator(stdT *testing.T) {
 		expectedTotalNumberOfVendors := expectedNumberOfVendors + globalVendorsNumber
 
 		// Register systems
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInputNone)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 
@@ -702,24 +702,20 @@ func TestORDAggregator(stdT *testing.T) {
 	})
 
 	t.Run("Verifying Operation Error Severity is NONE when there is no Errors", func(t *testing.T) {
-		appInputNone = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
+		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks(expectedSystemInstanceName, expectedSystemInstanceDescription, testConfig.ExternalServicesMockAbsoluteURL, nil)
 
 		ctx := context.Background()
 
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInputNone)
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
 		require.NoError(t, err)
 		waitForAppORDOperationToBeProcessed(t, ctx, app.ID)
 		fetchedApp := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app.ID)
 		for _, currentOperation := range fetchedApp.Operations {
-			t.Logf("currentOperation %+v ", currentOperation)
 			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
-				t.Logf("currentOperation2 %+v ", currentOperation)
 				require.Equal(t, directorSchema.OperationErrorSeverityNone, currentOperation.ErrorSeverity)
 			}
 		}
-
-		t.Logf("APP %+v ", fetchedApp)
 
 		require.NoError(t, err)
 		t.Log("Successfully verified Error Severity is NONE when no errors")

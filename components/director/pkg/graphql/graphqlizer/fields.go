@@ -95,11 +95,11 @@ func (fp *GqlFieldsProvider) OmitForApplication(omittedProperties []string) stri
 func (fp *GqlFieldsProvider) ForApplicationWithTenants() string {
 	return fmt.Sprintf(`
 		application{
-            %s
-        }
-        tenants{
-            %s
-        }
+			%s
+		}
+		tenants{
+			%s
+		}
 	`, fp.ForApplication(), fp.ForTenant())
 }
 
@@ -175,7 +175,7 @@ func (fp *GqlFieldsProvider) ForFormation() string {
 		id
 		name
 		formationTemplateId
-        state
+		state
 	`
 }
 
@@ -195,14 +195,14 @@ func (fp *GqlFieldsProvider) ForFormationTemplate() string {
 	return fmt.Sprintf(`
 		id
 		name
-        applicationTypes
-	    runtimeTypes
+		applicationTypes
+		runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
-        leadingProductIDs
-        supportsReset
+		leadingProductIDs
+		supportsReset
 		discoveryConsumers
-        webhooks {%s}
+		webhooks {%s}
 	`, fp.ForWebhooks())
 }
 
@@ -211,15 +211,15 @@ func (fp *GqlFieldsProvider) ForFormationTemplateWithConstraints() string {
 	return fmt.Sprintf(`
 		id
 		name
-        applicationTypes
-	    runtimeTypes
+		applicationTypes
+		runtimeTypes
 		runtimeTypeDisplayName	
 		runtimeArtifactKind
-        leadingProductIDs
-        supportsReset
+		leadingProductIDs
+		supportsReset
 		discoveryConsumers
-        labels
-        webhooks {%s}
+		labels
+		webhooks {%s}
 		formationConstraints {%s}
 	`, fp.ForWebhooks(), fp.ForFormationConstraint())
 }
@@ -266,9 +266,9 @@ func (fp *GqlFieldsProvider) ForFormationStatus() string {
 // ForFormationStatusErrors missing godoc
 func (fp *GqlFieldsProvider) ForFormationStatusErrors() string {
 	return `
-        	assignmentID
-        	message
-        	errorCode
+			assignmentID
+			message
+			errorCode
 	`
 }
 
@@ -277,7 +277,7 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 	return `
 			id
 			name
-            description
+			description
 			constraintType
 			targetOperation
 			operator
@@ -285,8 +285,8 @@ func (fp *GqlFieldsProvider) ForFormationConstraint() string {
 			resourceSubtype
 			inputTemplate
 			constraintScope
-            priority
-            createdAt
+			priority
+			createdAt
 	`
 }
 
@@ -339,7 +339,7 @@ func (fp *GqlFieldsProvider) ForWebhooks() string {
 		outputTemplate
 		statusTemplate
 		auth {
-		  %s
+			%s
 		}
 		createdAt`, fp.ForAuth())
 }
@@ -546,7 +546,7 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 					certificate
 					url
 				}
-   				...  on OAuthCredentialData {
+				...  on OAuthCredentialData {
 					clientId
 					clientSecret
 					url
@@ -563,27 +563,27 @@ func (fp *GqlFieldsProvider) ForAuth() string {
 			additionalHeaders
 			additionalQueryParams
 			requestAuth { 
-			  csrf {
-				tokenEndpointURL
-				credential {
-				  ... on BasicCredentialData {
-				  	username
-					password
-				  }
-				  ...  on OAuthCredentialData {
-					clientId
-					clientSecret
-					url
-				  }
-				  ...  on CertificateOAuthCredentialData {
-					clientId
-					certificate
-					url
-				  }
-			    }
-				additionalHeaders
-				additionalQueryParams
-			  }
+				csrf {
+					tokenEndpointURL
+					credential {
+						... on BasicCredentialData {
+							username
+							password
+						}
+						...  on OAuthCredentialData {
+							clientId
+							clientSecret
+							url
+						}
+						...  on CertificateOAuthCredentialData {
+							clientId
+							certificate
+							url
+						}
+					}
+					additionalHeaders
+					additionalQueryParams
+				}
 			}
 		`
 }
@@ -606,7 +606,7 @@ func (fp *GqlFieldsProvider) ForRuntime(ctx ...FieldCtx) string {
 		metadata { creationTimestamp }
 		auths {%s}
 		runtimeContexts {%s}
-        webhooks {%s}
+		webhooks {%s}
 		eventingConfiguration { defaultURL }`, fp.ForSystemAuth(), fp.Page(fp.ForRuntimeContext()), fp.ForWebhooks()), ctx, []string{"Runtime.runtimeContext"})
 }
 
@@ -728,12 +728,12 @@ func (fp *GqlFieldsProvider) OmitForBundle(omittedProperties []string) string {
 func (fp *GqlFieldsProvider) ForOperation() string {
 	return `
 		id
-        operationType
-        status
-        error
+		operationType
+		status
+		error
 		errorSeverity
 		createdAt
-        updatedAt
+		updatedAt
 	`
 }
 
@@ -808,8 +808,8 @@ func (fp *GqlFieldsProvider) ForCertificateSubjectMapping() string {
 	return `
 		id
 		subject
-        consumerType
-	    internalConsumerID
+		consumerType
+		internalConsumerID
 		tenantAccessLevels	
 	`
 }
@@ -819,7 +819,7 @@ func (fp *GqlFieldsProvider) ForTenantAccess() string {
 	return `
 		tenantID
 		resourceID
-        resourceType
+		resourceType
 		owner
 	`
 }

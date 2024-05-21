@@ -511,7 +511,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 			}
 
 			if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityError); errSetErrorSeverity != nil {
-				log.C(ctx).Errorf("Error while setting operation error severity with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityError, errSetErrorSeverity)
+				log.C(ctx).Errorf("Error while setting error severity to operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityError, errSetErrorSeverity)
 				return op.ID, errSetErrorSeverity
 			}
 			return op.ID, processingError
@@ -525,19 +525,19 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 				}
 
 				if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityError); errSetErrorSeverity != nil {
-					log.C(ctx).Errorf("Error while setting error severity for operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityError, errSetErrorSeverity)
+					log.C(ctx).Errorf("Error while setting error severity to operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityError, errSetErrorSeverity)
 					return op.ID, errSetErrorSeverity
 				}
 
 				return op.ID, processingError
 			} else if validationErrorsWithSeverityExist(processingError.ValidationErrors, ord.WarningSeverity) {
 				if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityWarning); errSetErrorSeverity != nil {
-					log.C(ctx).Errorf("Error while setting error severity for operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityWarning, errSetErrorSeverity)
+					log.C(ctx).Errorf("Error while setting error severity to operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityWarning, errSetErrorSeverity)
 					return op.ID, errSetErrorSeverity
 				}
 			} else if validationErrorsWithSeverityExist(processingError.ValidationErrors, ord.InfoSeverity) {
 				if errSetErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityInfo); errSetErrorSeverity != nil {
-					log.C(ctx).Errorf("Error while setting error severity for operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityInfo, errSetErrorSeverity)
+					log.C(ctx).Errorf("Error while setting error severity to operation with id %q as %q. Err: %v", op.ID, model.OperationErrorSeverityInfo, errSetErrorSeverity)
 					return op.ID, errSetErrorSeverity
 				}
 			}
@@ -555,7 +555,7 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	}
 
 	if errClearErrorSeverity := opManager.SetOperationErrorSeverity(ctx, op.ID, model.OperationErrorSeverityNone); errClearErrorSeverity != nil {
-		log.C(ctx).Errorf("Error while clear error severity for operation with id %q. Err: %v", op.ID, errClearErrorSeverity)
+		log.C(ctx).Errorf("Error while clear error severity from operation with id %q. Err: %v", op.ID, errClearErrorSeverity)
 		return op.ID, errClearErrorSeverity
 	}
 

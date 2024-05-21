@@ -188,15 +188,6 @@ func StringPtrFromNullableString(sqlString sql.NullString) *string {
 	return nil
 }
 
-// StringFromNullableString returns a string based on the given sql.NullString
-func StringFromNullableString(sqlString sql.NullString) string {
-	if sqlString.Valid {
-		return sqlString.String
-	}
-
-	return ""
-}
-
 // JSONRawMessageFromNullableString returns a json.RawMessage based on the given sql.NullString
 func JSONRawMessageFromNullableString(sqlString sql.NullString) json.RawMessage {
 	if sqlString.Valid {
