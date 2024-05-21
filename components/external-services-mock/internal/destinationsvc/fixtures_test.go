@@ -20,11 +20,10 @@ var (
 	testRegion              = "testRegion"
 	testSubaccountID        = "testSubaccountID"
 	testServiceInstanceID   = "testServiceInstanceID"
-	testDestinationCertName = "test-destination-cert-name"
+	testDestinationCertName = "test-destination-cert-name" + destinationcreatorpkg.JavaKeyStoreFileExtension
 	testDestinationName     = "test-dest-name"
 
-	testCertChain                    = esmdestinationcreator.CertChain
-	testDestinationCertWithExtension = testDestinationCertName + destinationcreatorpkg.JavaKeyStoreFileExtension
+	testCertChain = esmdestinationcreator.CertChain
 
 	url = "https://target-url.com"
 
@@ -49,8 +48,8 @@ var (
 
 	destinationCreatorReqBodyWithoutAuthType = fmt.Sprintf(`{"name":"%s","url":"http://localhost","type":"HTTP","proxyType":"Internet","additionalProperties":{"customKey":"customValue"}}`, noAuthDestName)
 
-	destinationCreatorCertReqBody                              = fmt.Sprintf(`{"name":"%s"}`, testDestinationCertName)
-	destinationServiceCertResponseBody                         = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestinationCertWithExtension, testCertChain)
+	destinationCreatorCertReqBody                              = fmt.Sprintf(`{"fileName":"%s"}`, testDestinationCertName)
+	destinationServiceCertResponseBody                         = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestinationCertName, testCertChain)
 	destinationServiceSAMLDestCertResponseBody                 = fmt.Sprintf(`{"Name":"%s","Content":"%s"}`, testDestKeyStoreLocation, testCertChain)
 	destinationServiceFindAPIResponseBodyForSAMLAssertionDest  = fmt.Sprintf(esmdestinationcreator.FindAPISAMLAssertionDestResponseTemplate, testSubaccountID, testServiceInstanceID, samlAssertionDestName, testDestType, testSecureDestURL, "SAMLAssertion", "SAMLAssertion", testDestProxyType, testSecureDestURL, testDestKeyStoreLocation, testDestKeyStoreLocation)
 	destinationServiceFindAPIResponseBodyForBasicAssertionDest = fmt.Sprintf(esmdestinationcreator.FindAPIBasicDestResponseTemplate, testSubaccountID, testServiceInstanceID, basicAuthDestName, testDestType, testSecureDestURL, "BasicAuthentication", "BasicAuthentication", testDestProxyType, basicUsername, basicPassword)
