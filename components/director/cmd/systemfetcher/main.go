@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"sync"
 	"time"
@@ -264,7 +265,7 @@ func main() {
 		}()
 
 		go func() {
-			if err := operationsManager.StartRescheduleOperationsJob(ctx); err != nil {
+			if err := operationsManager.StartRescheduleOperationsJob(ctx, []string{model.OperationStatusCompleted.ToString(), model.OperationStatusFailed.ToString()}); err != nil {
 				log.C(ctx).WithError(err).Error("Failed to run  RescheduleOperationsJob. Stopping app...")
 				cancel()
 			}
@@ -347,12 +348,11 @@ func claimAndProcessOperation(ctx context.Context, opManager *operationsmanager.
 	op, errGetOperation := opManager.GetOperation(ctx)
 	if errGetOperation != nil {
 		if apperrors.IsNoScheduledOperationsError(errGetOperation) {
-			log.C(ctx).Infof("There aro no scheduled operations for processing. Err: %v", errGetOperation)
+			log.C(ctx).Infof("There are no scheduled operations for processing. Err: %v", errGetOperation)
 			return "", nil
-		} else {
-			log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
-			return "", errGetOperation
 		}
+		log.C(ctx).Errorf("Cannot get operation from OperationsManager. Err: %v", errGetOperation)
+		return "", errGetOperation
 	}
 	log.C(ctx).Infof("Taken operation for processing: %s", op.ID)
 	if errProcess := opProcessor.Process(ctx, op); errProcess != nil {
@@ -709,15 +709,15 @@ func calculateTemplateMappings(ctx context.Context, cfg config, transact persist
 }
 
 func getTopParentFromJSONPath(jsonPath string) string {
-	infix := "."
+	trimmedJSONPath := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
 
-	topParent := strings.TrimPrefix(jsonPath, systemfetcher.TrimPrefix)
-	firstInfixIndex := strings.Index(topParent, infix)
-	if firstInfixIndex == -1 {
-		return topParent
+	regexForTopParent := regexp.MustCompile(`^[^\[.]+`)
+	topParent := regexForTopParent.FindStringSubmatch(trimmedJSONPath)
+	if len(topParent) > 0 {
+		return topParent[0]
 	}
 
-	return topParent[:firstInfixIndex]
+	return trimmedJSONPath
 }
 
 func addPropertiesFromAppTemplatePlaceholders(selectFilterProperties map[string]bool, placeholders []model.ApplicationTemplatePlaceholder) {

@@ -20,15 +20,7 @@ type FormationService struct {
 func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
 
-	if len(ret) == 0 {
-		panic("no return value specified for AssignFormation")
-	}
-
 	var r0 *model.Formation
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
-		return rf(ctx, tnt, objectID, objectType, formation)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -37,6 +29,7 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, formation)
 	} else {
@@ -46,16 +39,81 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 	return r0, r1
 }
 
-// DeleteAutomaticScenarioAssignment provides a mock function with given fields: ctx, in
-func (_m *FormationService) DeleteAutomaticScenarioAssignment(ctx context.Context, in *model.AutomaticScenarioAssignment) error {
-	ret := _m.Called(ctx, in)
+// GetScenariosFromMatchingASAs provides a mock function with given fields: ctx, objectID, objType
+func (_m *FormationService) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
+	ret := _m.Called(ctx, objectID, objType)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteAutomaticScenarioAssignment")
+	var r0 []string
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
+		r0 = rf(ctx, objectID, objType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
 	}
 
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, graphql.FormationObjectType) error); ok {
+		r1 = rf(ctx, objectID, objType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListFormationsForObject provides a mock function with given fields: ctx, objectID
+func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	ret := _m.Called(ctx, objectID)
+
+	var r0 []*model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
+		r0 = rf(ctx, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation, ignoreASA
+func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error) {
+	ret := _m.Called(ctx, tnt, objectID, objectType, formation, ignoreASA)
+
+	var r0 *model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) *model.Formation); ok {
+		r0 = rf(ctx, tnt, objectID, objectType, formation, ignoreASA)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) error); ok {
+		r1 = rf(ctx, tnt, objectID, objectType, formation, ignoreASA)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// UnassignFormationsComingFromASA provides a mock function with given fields: ctx, in
+func (_m *FormationService) UnassignFormationsComingFromASA(ctx context.Context, in []*model.AutomaticScenarioAssignment) error {
+	ret := _m.Called(ctx, in)
+
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.AutomaticScenarioAssignment) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []*model.AutomaticScenarioAssignment) error); ok {
 		r0 = rf(ctx, in)
 	} else {
 		r0 = ret.Error(0)
@@ -64,72 +122,13 @@ func (_m *FormationService) DeleteAutomaticScenarioAssignment(ctx context.Contex
 	return r0
 }
 
-// MergeScenariosFromInputLabelsAndAssignments provides a mock function with given fields: ctx, inputLabels, runtimeID
-func (_m *FormationService) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	ret := _m.Called(ctx, inputLabels, runtimeID)
-
-	if len(ret) == 0 {
-		panic("no return value specified for MergeScenariosFromInputLabelsAndAssignments")
-	}
-
-	var r0 []interface{}
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) ([]interface{}, error)); ok {
-		return rf(ctx, inputLabels, runtimeID)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, map[string]interface{}, string) []interface{}); ok {
-		r0 = rf(ctx, inputLabels, runtimeID)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]interface{})
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, map[string]interface{}, string) error); ok {
-		r1 = rf(ctx, inputLabels, runtimeID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation
-func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
-
-	if len(ret) == 0 {
-		panic("no return value specified for UnassignFormation")
-	}
-
-	var r0 *model.Formation
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
-		return rf(ctx, tnt, objectID, objectType, formation)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, objectID, objectType, formation)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Formation)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, objectID, objectType, formation)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
+type mockConstructorTestingTNewFormationService interface {
+	mock.TestingT
+	Cleanup(func())
 }
 
 // NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewFormationService(t interface {
-	mock.TestingT
-	Cleanup(func())
-}) *FormationService {
+func NewFormationService(t mockConstructorTestingTNewFormationService) *FormationService {
 	mock := &FormationService{}
 	mock.Mock.Test(t)
 

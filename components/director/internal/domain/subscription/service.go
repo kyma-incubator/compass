@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/webhookprocessor"
-
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -40,6 +38,8 @@ const (
 	SubscriptionsLabelKey = "subscriptions"
 	// PreviousSubscriptionID represents a previous subscription id. This is needed, because before introducing this change there might be subscriptions which we don't know that they existed.
 	PreviousSubscriptionID = "00000000-0000-0000-0000-000000000000"
+	// SystemFieldDiscoveryLabelKey is the label key of the application template system field discovery label, based on it an operation is created.
+	SystemFieldDiscoveryLabelKey = "systemFieldDiscovery"
 )
 
 // RuntimeService is responsible for Runtime operations
@@ -65,6 +65,7 @@ type RuntimeCtxService interface {
 type TenantService interface {
 	GetLowestOwnerForResource(ctx context.Context, resourceType resource.Type, objectID string) (string, error)
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
+	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 // LabelService is responsible updating already existing labels, and their label definitions.
@@ -113,17 +114,9 @@ type ApplicationConverter interface {
 //
 //go:generate mockery --name=ApplicationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ApplicationService interface {
-	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error)
+	CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryValue bool) (string, error)
 	ListAll(ctx context.Context) ([]*model.Application, error)
 	Delete(ctx context.Context, id string) error
-}
-
-// SystemFieldDiscoveryEngine is responsible for system field discovery operations
-//
-//go:generate mockery --name=SystemFieldDiscoveryEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
-type SystemFieldDiscoveryEngine interface {
-	EnrichApplicationWebhookIfNeeded(ctx context.Context, appCreateInputModel model.ApplicationRegisterInput, systemFieldDiscovery bool, region, subaccountID, appTemplateName, appName string) ([]*model.WebhookInput, bool)
-	CreateLabelForApplicationWebhook(ctx context.Context, appID string) error
 }
 
 type service struct {
@@ -136,7 +129,6 @@ type service struct {
 	appTemplateConv              ApplicationTemplateConverter
 	appSvc                       ApplicationService
 	uidSvc                       uidService
-	systemFieldDiscoveryEngine   SystemFieldDiscoveryEngine
 	globalSubaccountIDLabelKey   string
 	subscriptionLabelKey         string
 	runtimeTypeLabelKey          string
@@ -144,7 +136,7 @@ type service struct {
 }
 
 // NewService returns a new object responsible for service-layer Subscription operations.
-func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appTemplateConv ApplicationTemplateConverter, appSvc ApplicationService, uidService uidService, systemFieldDiscoveryEngine SystemFieldDiscoveryEngine,
+func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tenantSvc TenantService, labelSvc LabelService, appTemplateSvc ApplicationTemplateService, appConv ApplicationConverter, appTemplateConv ApplicationTemplateConverter, appSvc ApplicationService, uidService uidService,
 	globalSubaccountIDLabelKey, subscriptionLabelKey, runtimeTypeLabelKey, subscriptionProviderLabelKey string) *service {
 	return &service{
 		runtimeSvc:                   runtimeSvc,
@@ -156,7 +148,6 @@ func NewService(runtimeSvc RuntimeService, runtimeCtxSvc RuntimeCtxService, tena
 		appTemplateConv:              appTemplateConv,
 		appSvc:                       appSvc,
 		uidSvc:                       uidService,
-		systemFieldDiscoveryEngine:   systemFieldDiscoveryEngine,
 		globalSubaccountIDLabelKey:   globalSubaccountIDLabelKey,
 		subscriptionLabelKey:         subscriptionLabelKey,
 		runtimeTypeLabelKey:          runtimeTypeLabelKey,
@@ -317,7 +308,7 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 	for _, rtmCtx := range rtmCtxPage.Data {
 		// if the current subscription(runtime context) is the one for which the unsubscribe request is initiated, delete the record from the DB
 		if rtmCtx.Value == consumerTenantID {
-			if err := s.deleteOnUnsubscribe(ctx, consumerInternalTenant, model.RuntimeContextLabelableObject, rtmCtx.ID, subscriptionID, s.runtimeCtxSvc.Delete); err != nil {
+			if err := s.deleteOnUnsubscribeForParents(ctx, model.RuntimeContextLabelableObject, rtmCtx.ID, subscriptionID, s.runtimeCtxSvc.Delete); err != nil {
 				return false, err
 			}
 			break
@@ -328,30 +319,30 @@ func (s *service) UnsubscribeTenantFromRuntime(ctx context.Context, providerID, 
 }
 
 // SubscribeTenantToApplication fetches model.ApplicationTemplate by region and provider and registers an Application from that template
-func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, consumerTenantID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, string, string, error) {
+func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, subscribedSubaccountID, providerSubaccountID, consumerTenantID, region, subscribedAppName, subscriptionID string, subscriptionPayload string) (bool, bool, string, string, error) {
 	log.C(ctx).Infof("Subscribe request is triggerred between consumer with tenant: %q and subaccount: %q and provider with subaccount: %q and application name: %q", consumerTenantID, subscribedSubaccountID, providerSubaccountID, subscribedAppName)
 	filters := s.buildLabelFilters(providerID, region)
 	log.C(ctx).Infof("Getting provider application template in tenant %q for labels %q: %q and %q: %q", providerSubaccountID, tenant.RegionLabelKey, region, s.subscriptionProviderLabelKey, providerID)
 	appTemplate, err := s.appTemplateSvc.GetByFilters(ctx, filters)
 	if err != nil {
 		if apperrors.IsNotFoundError(err) {
-			return false, "", "", nil
+			return false, false, "", "", nil
 		}
 
-		return false, "", "", errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
+		return false, false, "", "", errors.Wrapf(err, "while getting application template with filter labels %q and %q", providerID, region)
 	}
 
 	consumerInternalTenant, err := s.tenantSvc.GetInternalTenant(ctx, subscribedSubaccountID)
 	if err != nil {
 		log.C(ctx).Errorf("An error occurred while getting tenant by external ID: %q during application subscription: %v", subscribedSubaccountID, err)
-		return false, "", "", errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
+		return false, false, "", "", errors.Wrapf(err, "while getting tenant with external ID: %q", subscribedSubaccountID)
 	}
 
 	ctx = tenant.SaveToContext(ctx, consumerInternalTenant, subscribedSubaccountID)
 
 	applications, err := s.appSvc.ListAll(ctx)
 	if err != nil {
-		return false, "", "", errors.Wrapf(err, "while listing applications")
+		return false, false, "", "", errors.Wrapf(err, "while listing applications")
 	}
 
 	for _, app := range applications {
@@ -359,16 +350,16 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 			// Already subscribed
 			log.C(ctx).Infof("Consumer %q is already subscribed. Adding the new value %q to the %q label", consumerTenantID, subscriptionID, SubscriptionsLabelKey)
 			if err := s.manageSubscriptionsLabelOnSubscribe(ctx, consumerInternalTenant, model.ApplicationLabelableObject, app.ID, subscriptionID); err != nil {
-				return false, "", "", err
+				return false, false, "", "", err
 			}
-			return true, "", "", nil
+			return true, false, "", "", nil
 		}
 	}
 
 	subdomainLabel, err := s.labelSvc.GetByKey(ctx, consumerInternalTenant, model.TenantLabelableObject, consumerInternalTenant, SubdomainLabelKey)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
-			return false, "", "", errors.Wrapf(err, "while getting label %q for %q with id %q", SubdomainLabelKey, model.TenantLabelableObject, consumerInternalTenant)
+			return false, false, "", "", errors.Wrapf(err, "while getting label %q for %q with id %q", SubdomainLabelKey, model.TenantLabelableObject, consumerInternalTenant)
 		}
 	}
 
@@ -379,12 +370,12 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	appID, err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload)
+	appID, systemFieldDiscoveryValue, err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload)
 	if err != nil {
-		return false, "", "", err
+		return false, systemFieldDiscoveryValue, "", "", err
 	}
 
-	return true, appID, appTemplate.ID, nil
+	return true, systemFieldDiscoveryValue, appID, appTemplate.ID, nil
 }
 
 // UnsubscribeTenantFromApplication fetches model.ApplicationTemplate by region and provider, lists all applications for
@@ -454,33 +445,33 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region, subscriptionID string, subscriptionPayload string) (string, error) {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region, subscriptionID string, subscriptionPayload string) (string, bool, error) {
 	log.C(ctx).Debugf("Preparing Values for Application Template with name %q", appTemplate.Name)
 	values, err := s.preparePlaceholderValues(appTemplate, subdomain, region, subscriptionPayload)
 	if err != nil {
-		return "", errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
 	}
 
 	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
 	if err != nil {
-		return "", errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
 	}
 
 	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	appCreateInputGQL, err := s.appConv.CreateRegisterInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
-		return "", errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	}
 
 	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
-		return "", errors.Wrapf(err, "while validating application input from Application Template with name %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while validating application input from Application Template with name %q", appTemplate.Name)
 	}
 
 	appCreateInputModel, err := s.appConv.CreateInputFromGraphQL(ctx, appCreateInputGQL)
 	if err != nil {
-		return "", errors.Wrap(err, "while converting ApplicationFromTemplate input")
+		return "", false, errors.Wrap(err, "while converting ApplicationFromTemplate input")
 	}
 
 	if appCreateInputModel.Labels == nil {
@@ -493,37 +484,29 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		appCreateInputModel.LocalTenantID = &consumerTenantID
 	}
 
-	var systemFieldDiscoveryLabelIsTrue bool
-	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, webhookprocessor.SystemFieldDiscoveryLabelKey)
+	var systemFieldDiscoveryValue, ok bool
+	systemFieldDiscoveryLabel, err := s.appTemplateSvc.GetLabel(ctx, appTemplate.ID, SystemFieldDiscoveryLabelKey)
 	if err != nil && !apperrors.IsNotFoundError(err) {
-		return "", err
+		return "", false, err
 	} else {
 		if apperrors.IsNotFoundError(err) {
-			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
+			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", SystemFieldDiscoveryLabelKey, appTemplate.ID)
 		} else {
-			systemFieldDiscoveryValue, ok := systemFieldDiscoveryLabel.Value.(bool)
+			systemFieldDiscoveryValue, ok = systemFieldDiscoveryLabel.Value.(bool)
 			if !ok {
-				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", webhookprocessor.SystemFieldDiscoveryLabelKey, appTemplate.ID)
-			} else {
-				appCreateInputModel.Webhooks, systemFieldDiscoveryLabelIsTrue = s.systemFieldDiscoveryEngine.EnrichApplicationWebhookIfNeeded(ctx, appCreateInputModel, systemFieldDiscoveryValue, region, consumerTenantID, appTemplate.Name, subscribedAppName)
+				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", SystemFieldDiscoveryLabelKey, appTemplate.ID)
 			}
 		}
 	}
 
 	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
-	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryLabelIsTrue)
+	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryValue)
 	if err != nil {
-		return "", errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
+		return "", systemFieldDiscoveryValue, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
 	}
 	log.C(ctx).Infof("Successfully created an Application with id %q and name %q from Application Template with name %q", appID, subscribedAppName, appTemplate.Name)
 
-	if systemFieldDiscoveryLabelIsTrue {
-		if err := s.systemFieldDiscoveryEngine.CreateLabelForApplicationWebhook(ctx, appID); err != nil {
-			return "", err
-		}
-	}
-
-	return appID, nil
+	return appID, systemFieldDiscoveryValue, nil
 }
 
 func (s *service) preparePlaceholderValues(appTemplate *model.ApplicationTemplate, subdomain, region string, subscriptionPayload string) ([]*model.ApplicationTemplateValueInput, error) {
@@ -622,6 +605,28 @@ func (s *service) manageSubscriptionsLabelOnSubscribe(ctx context.Context, tenan
 	}
 
 	log.C(ctx).Infof("Successfully added the new value %q to the label %q for %q with id %q", subscriptionID, SubscriptionsLabelKey, objectType, objectID)
+	return nil
+}
+
+func (s *service) deleteOnUnsubscribeForParents(ctx context.Context, objectType model.LabelableObject, objectID, subscriptionID string, deleteObject func(context.Context, string) error) error {
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrapf(err, "An error occurred while loading tenant from context")
+	}
+
+	tntMapping, err := s.tenantSvc.GetTenantByID(ctx, tnt)
+	if err != nil {
+		return err
+	}
+
+	for _, parentTenantID := range tntMapping.Parents {
+		ctxWithParentTenant := tenant.SaveToContext(ctx, parentTenantID, "")
+
+		if err := s.deleteOnUnsubscribe(ctxWithParentTenant, parentTenantID, objectType, objectID, subscriptionID, deleteObject); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

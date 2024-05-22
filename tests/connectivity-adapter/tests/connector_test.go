@@ -46,25 +46,29 @@ func TestConnector(t *testing.T) {
 		Description:    ptr.String("my application"),
 		HealthCheckURL: ptr.String("http://mywordpress.com/health"),
 		Labels: directorSchema.Labels{
-			"scenarios":                        []interface{}{testScenario},
 			testConfig.ApplicationTypeLabelKey: string(util.ApplicationTypeC4C),
 		},
 	}
-
-	descr := "test"
-	runtimeInput := fixRuntimeInput(descr)
 
 	appID, err := directorClient.CreateApplication(appInput)
 	defer func() {
 		err = directorClient.CleanupApplication(appID)
 		require.NoError(t, err)
 	}()
-	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, appID, testConfig.Tenant)
 	require.NoError(t, err)
+
+	defer fixtures.UnassignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, appID, testConfig.Tenant)
+	fixtures.AssignFormationWithApplicationObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, appID, testConfig.Tenant)
+
+	descr := "test"
+	runtimeInput := fixRuntimeInput(descr)
 
 	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, &runtime)
 	runtime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, testConfig.Tenant, runtimeInput, testConfig.GatewayOauth)
+
+	defer fixtures.UnassignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, runtime.ID, testConfig.Tenant)
+	fixtures.AssignFormationWithRuntimeObjectType(t, ctx, certSecuredGraphQLClient, directorSchema.FormationInput{Name: testScenario}, runtime.ID, testConfig.Tenant)
 
 	err = directorClient.SetDefaultEventing(runtime.ID, appID, testConfig.EventsBaseURL)
 	require.NoError(t, err)

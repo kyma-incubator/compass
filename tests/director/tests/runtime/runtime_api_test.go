@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	ScenariosLabel    = "scenarios"
 	IsNormalizedLabel = "isNormalized"
 	testScenario      = "test-scenario"
 )
@@ -225,68 +224,6 @@ func TestModifyRuntimeWebhooks(t *testing.T) {
 	assert.Equal(t, urlUpdated, *actualWebhook.URL)
 }
 
-func TestRuntimeUnregisterDeletesScenarioAssignments(t *testing.T) {
-	// GIVEN
-	ctx := context.Background()
-	subaccount := tenant.TestTenants.GetIDByName(t, tenant.TestProviderSubaccount)
-	tenantID := tenant.TestTenants.GetDefaultTenantID()
-
-	givenInput := fixtures.FixRuntimeRegisterInputWithoutLabels("runtime-with-scenario-assignments")
-	givenInput.Description = ptr.String("runtime-1-description")
-	givenInput.Labels[conf.GlobalSubaccountIDLabelKey] = []interface{}{subaccount}
-
-	// WHEN
-	var actualRuntime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
-	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount, &actualRuntime)
-	actualRuntime = fixtures.RegisterKymaRuntime(t, ctx, certSecuredGraphQLClient, subaccount, givenInput, conf.GatewayOauth)
-
-	//THEN
-	assertions.AssertRuntime(t, givenInput, actualRuntime)
-
-	// update label definition
-	defer fixtures.DeleteFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
-	fixtures.CreateFormationWithinTenant(t, ctx, certSecuredGraphQLClient, tenantID, testScenario)
-
-	// assign to formation
-	givenFormation := graphql.FormationInput{Name: testScenario}
-
-	actualFormation := graphql.Formation{}
-
-	// WHEN
-	assignFormationReq := fixtures.FixAssignFormationRequest(subaccount, string(graphql.FormationObjectTypeTenant), givenFormation.Name)
-	err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, assignFormationReq, &actualFormation)
-
-	// THEN
-	require.NoError(t, err)
-	assert.Equal(t, givenFormation.Name, actualFormation.Name)
-
-	// get runtime - verify it is in scenario
-	getRuntimeReq := fixtures.FixGetRuntimeRequest(actualRuntime.ID)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getRuntimeReq, &actualRuntime)
-
-	require.NoError(t, err)
-	scenarios, hasScenarios := actualRuntime.Labels["scenarios"]
-	assert.True(t, hasScenarios)
-	assert.Len(t, scenarios, 1)
-	assert.Contains(t, scenarios, testScenario)
-
-	// delete runtime
-
-	// WHEN
-	delReq := fixtures.FixUnregisterRuntimeRequest(actualRuntime.ID)
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, delReq, nil)
-
-	//THEN
-	require.NoError(t, err)
-
-	// get automatic scenario assignment - see that it's deleted
-	actualScenarioAssignments := graphql.AutomaticScenarioAssignmentPage{}
-	getScenarioAssignmentsReq := fixtures.FixAutomaticScenarioAssignmentsRequest()
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getScenarioAssignmentsReq, &actualScenarioAssignments)
-	require.NoError(t, err)
-	assert.Equal(t, actualScenarioAssignments.TotalCount, 0)
-}
-
 func TestQueryRuntimes(t *testing.T) {
 	// GIVEN
 	ctx := context.Background()
@@ -466,7 +403,6 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
 	secondInput := fixRuntimeUpdateInput(name)
-	secondInput.Labels[ScenariosLabel] = []interface{}{testScenario}
 	secondInput.Description = ptr.String("runtime-1-description")
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)
 	require.NoError(t, err)
@@ -508,7 +444,6 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	secondRuntime := graphql.RuntimeExt{}
 	secondInput := fixRuntimeUpdateInput(name)
 	secondInput.Description = ptr.String("runtime-1-description")
-	secondInput.Labels[ScenariosLabel] = []interface{}{testScenario}
 	secondInput.Labels[IsNormalizedLabel] = "true"
 
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)

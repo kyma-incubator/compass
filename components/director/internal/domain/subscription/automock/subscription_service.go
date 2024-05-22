@@ -39,14 +39,15 @@ func (_m *SubscriptionService) DetermineSubscriptionFlow(ctx context.Context, pr
 }
 
 // SubscribeTenantToApplication provides a mock function with given fields: ctx, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID, subscriptionPayload
-func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, providerSubaccountID string, region string, subscribedAppName string, subscriptionID string, subscriptionPayload string) (bool, string, string, error) {
+func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context, providerID string, subaccountTenantID string, consumerTenantID string, providerSubaccountID string, region string, subscribedAppName string, subscriptionID string, subscriptionPayload string) (bool, bool, string, string, error) {
 	ret := _m.Called(ctx, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID, subscriptionPayload)
 
 	var r0 bool
-	var r1 string
+	var r1 bool
 	var r2 string
-	var r3 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string, string) (bool, string, string, error)); ok {
+	var r3 string
+	var r4 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string, string) (bool, bool, string, string, error)); ok {
 		return rf(ctx, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID, subscriptionPayload)
 	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string, string, string, string, string) bool); ok {
@@ -55,10 +56,10 @@ func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context,
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string, string) string); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, string, string, string, string, string, string) bool); ok {
 		r1 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID, subscriptionPayload)
 	} else {
-		r1 = ret.Get(1).(string)
+		r1 = ret.Get(1).(bool)
 	}
 
 	if rf, ok := ret.Get(2).(func(context.Context, string, string, string, string, string, string, string, string) string); ok {
@@ -67,13 +68,19 @@ func (_m *SubscriptionService) SubscribeTenantToApplication(ctx context.Context,
 		r2 = ret.Get(2).(string)
 	}
 
-	if rf, ok := ret.Get(3).(func(context.Context, string, string, string, string, string, string, string, string) error); ok {
+	if rf, ok := ret.Get(3).(func(context.Context, string, string, string, string, string, string, string, string) string); ok {
 		r3 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID, subscriptionPayload)
 	} else {
-		r3 = ret.Error(3)
+		r3 = ret.Get(3).(string)
 	}
 
-	return r0, r1, r2, r3
+	if rf, ok := ret.Get(4).(func(context.Context, string, string, string, string, string, string, string, string) error); ok {
+		r4 = rf(ctx, providerID, subaccountTenantID, consumerTenantID, providerSubaccountID, region, subscribedAppName, subscriptionID, subscriptionPayload)
+	} else {
+		r4 = ret.Error(4)
+	}
+
+	return r0, r1, r2, r3, r4
 }
 
 // SubscribeTenantToRuntime provides a mock function with given fields: ctx, providerID, subaccountTenantID, providerSubaccountID, consumerTenantID, region, subscriptionAppName, subscriptionID

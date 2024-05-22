@@ -18,15 +18,7 @@ type FormationRepository struct {
 func (_m *FormationRepository) ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, formationNames, tenantID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationNames")
-	}
-
 	var r0 []*model.Formation
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string, string) ([]*model.Formation, error)); ok {
-		return rf(ctx, formationNames, tenantID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, string) []*model.Formation); ok {
 		r0 = rf(ctx, formationNames, tenantID)
 	} else {
@@ -35,6 +27,7 @@ func (_m *FormationRepository) ListByFormationNames(ctx context.Context, formati
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, string) error); ok {
 		r1 = rf(ctx, formationNames, tenantID)
 	} else {
@@ -44,12 +37,36 @@ func (_m *FormationRepository) ListByFormationNames(ctx context.Context, formati
 	return r0, r1
 }
 
-// NewFormationRepository creates a new instance of FormationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewFormationRepository(t interface {
+// ListByIDsGlobal provides a mock function with given fields: ctx, formationIDs
+func (_m *FormationRepository) ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error) {
+	ret := _m.Called(ctx, formationIDs)
+
+	var r0 []*model.Formation
+	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.Formation); ok {
+		r0 = rf(ctx, formationIDs)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Formation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
+		r1 = rf(ctx, formationIDs)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+type mockConstructorTestingTNewFormationRepository interface {
 	mock.TestingT
 	Cleanup(func())
-}) *FormationRepository {
+}
+
+// NewFormationRepository creates a new instance of FormationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewFormationRepository(t mockConstructorTestingTNewFormationRepository) *FormationRepository {
 	mock := &FormationRepository{}
 	mock.Mock.Test(t)
 
