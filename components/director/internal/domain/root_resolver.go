@@ -120,6 +120,7 @@ type RootResolver struct {
 	formationConstraint   *formationconstraint.Resolver
 	constraintReference   *formationtemplateconstraintreferences.Resolver
 	certSubjectMapping    *certsubjectmapping.Resolver
+	operation             *operation.Resolver
 }
 
 // NewRootResolver missing godoc
@@ -206,6 +207,7 @@ func NewRootResolver(
 	constraintReferencesConverter := formationtemplateconstraintreferences.NewConverter()
 	certSubjectMappingConv := certsubjectmapping.NewConverter()
 	destinationConv := destination.NewConverter()
+	operationConv := operation.NewConverter()
 
 	healthcheckRepo := healthcheck.NewRepository()
 	runtimeRepo := runtime.NewRepository(runtimeConverter)
@@ -238,6 +240,7 @@ func NewRootResolver(
 	constraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(constraintReferencesConverter)
 	certSubjectMappingRepo := certsubjectmapping.NewRepository(certSubjectMappingConv)
 	destinationRepo := destination.NewRepository(destinationConv)
+	operationRepo := operation.NewRepository(operationConv)
 
 	uidSvc := uid.NewService()
 	assignmentOperationConv := assignmentOp.NewConverter()
@@ -292,13 +295,10 @@ func NewRootResolver(
 	formationTemplateSvc := formationtemplate.NewService(formationTemplateRepo, uidSvc, formationTemplateConverter, tenantSvc, webhookRepo, webhookSvc, labelSvc)
 	constraintReferenceSvc := formationtemplateconstraintreferences.NewService(constraintReferencesRepo, constraintReferencesConverter)
 	certSubjectMappingSvc := certsubjectmapping.NewService(certSubjectMappingRepo)
+	operationSvc := operation.NewService(operationRepo, uidSvc)
 
 	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
 	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
-
-	opConv := operation.NewConverter()
-	opRepo := operation.NewRepository(opConv)
-	opSvc := operation.NewService(opRepo, uidSvc)
 
 	selfRegisterManager, err := selfregmanager.NewSelfRegisterManager(selfRegConfig, &selfregmanager.CallerProvider{}, appTemplateProductLabel)
 	if err != nil {
@@ -308,7 +308,7 @@ func NewRootResolver(
 	return &RootResolver{
 		appNameNormalizer:     appNameNormalizer,
 		appTemplate:           apptemplate.NewResolver(transact, appSvc, appConverter, appTemplateSvc, appTemplateConverter, webhookSvc, webhookConverter, labelSvc, selfRegisterManager, uidSvc, certSubjectMappingSvc, appTemplateProductLabel, ordAggregatorClientConfig, environmentConsumerSubjects),
-		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, appWithTenantsConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, opSvc, opConv, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
+		app:                   application.NewResolver(transact, appSvc, webhookSvc, oAuth20Svc, systemAuthSvc, appConverter, appWithTenantsConverter, webhookConverter, systemAuthConverter, eventingSvc, bundleSvc, bundleConverter, specSvc, apiSvc, eventAPISvc, integrationDependencySvc, integrationDependencyConv, aspectSvc, aspectEventResourceSvc, apiConverter, eventAPIConverter, appTemplateSvc, appTemplateConverter, operationSvc, operationConv, selfRegConfig.SelfRegisterDistinguishLabelKey, featuresConfig.TokenPrefix),
 		api:                   api.NewResolver(transact, apiSvc, runtimeSvc, bundleSvc, bundleReferenceSvc, apiConverter, frConverter, specSvc, specConverter, appSvc),
 		eventAPI:              eventdef.NewResolver(transact, eventAPISvc, bundleSvc, bundleReferenceSvc, eventAPIConverter, frConverter, specSvc, specConverter),
 		eventing:              eventing.NewResolver(transact, eventingSvc, appSvc),
@@ -335,6 +335,7 @@ func NewRootResolver(
 		formationConstraint:   formationconstraint.NewResolver(transact, formationConstraintConverter, formationConstraintSvc),
 		constraintReference:   formationtemplateconstraintreferences.NewResolver(transact, constraintReferencesConverter, constraintReferenceSvc),
 		certSubjectMapping:    certsubjectmapping.NewResolver(transact, certSubjectMappingConv, certSubjectMappingSvc, uidSvc),
+		operation:             operation.NewResolver(transact, operationSvc, operationConv),
 	}, nil
 }
 
@@ -731,6 +732,10 @@ func (r *queryResolver) CertificateSubjectMapping(ctx context.Context, id string
 
 func (r *queryResolver) CertificateSubjectMappings(ctx context.Context, first *int, after *graphql.PageCursor) (*graphql.CertificateSubjectMappingPage, error) {
 	return r.certSubjectMapping.CertificateSubjectMappings(ctx, first, after)
+}
+
+func (r *queryResolver) Operation(ctx context.Context, id string) (*graphql.Operation, error) {
+	return r.operation.Operation(ctx, id)
 }
 
 type mutationResolver struct {
@@ -1184,6 +1189,10 @@ func (r *mutationResolver) UpdateCertificateSubjectMapping(ctx context.Context, 
 
 func (r *mutationResolver) DeleteCertificateSubjectMapping(ctx context.Context, id string) (*graphql.CertificateSubjectMapping, error) {
 	return r.certSubjectMapping.DeleteCertificateSubjectMapping(ctx, id)
+}
+
+func (r *mutationResolver) ScheduleOperation(ctx context.Context, id string) (*graphql.Operation, error) {
+	return r.operation.Schedule(ctx, id)
 }
 
 type applicationResolver struct {
