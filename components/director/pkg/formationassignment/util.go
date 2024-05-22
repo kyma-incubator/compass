@@ -11,6 +11,7 @@ func IsConfigEmpty(configuration string) bool {
 	return false
 }
 
+// DetermineFormationOperationFromLatestAssignmentOperation determines what's the Formation Operation based on the provided Assignment Operation type
 func DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperationType model.AssignmentOperationType) model.FormationOperation {
 	if assignmentOperationType == model.Assign {
 		return model.AssignFormation
