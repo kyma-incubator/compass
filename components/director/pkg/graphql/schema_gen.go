@@ -627,7 +627,7 @@ type ComplexityRoot struct {
 		RequestOneTimeTokenForApplication            func(childComplexity int, id string, systemAuthID *string) int
 		RequestOneTimeTokenForRuntime                func(childComplexity int, id string, systemAuthID *string) int
 		ResynchronizeFormationNotifications          func(childComplexity int, formationID string, reset *bool) int
-		ScheduleOperation                            func(childComplexity int, operationID string) int
+		ScheduleOperation                            func(childComplexity int, operationID string, priority *int) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetBundleInstanceAuth                        func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
@@ -1043,7 +1043,7 @@ type MutationResolver interface {
 	DeleteCertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
 	AddTenantAccess(ctx context.Context, in TenantAccessInput) (*TenantAccess, error)
 	RemoveTenantAccess(ctx context.Context, tenantID string, resourceID string, resourceType TenantAccessObjectType) (*TenantAccess, error)
-	ScheduleOperation(ctx context.Context, operationID string) (*Operation, error)
+	ScheduleOperation(ctx context.Context, operationID string, priority *int) (*Operation, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -4205,7 +4205,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.ScheduleOperation(childComplexity, args["operationID"].(string)), true
+		return e.complexity.Mutation.ScheduleOperation(childComplexity, args["operationID"].(string), args["priority"].(*int)), true
 
 	case "Mutation.setApplicationLabel":
 		if e.complexity.Mutation.SetApplicationLabel == nil {
@@ -7978,6 +7978,15 @@ func (ec *executionContext) field_Mutation_scheduleOperation_args(ctx context.Co
 		}
 	}
 	args["operationID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["priority"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priority"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["priority"] = arg1
 	return args, nil
 }
 
@@ -35204,7 +35213,7 @@ func (ec *executionContext) _Mutation_scheduleOperation(ctx context.Context, fie
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().ScheduleOperation(rctx, fc.Args["operationID"].(string))
+			return ec.resolvers.Mutation().ScheduleOperation(rctx, fc.Args["operationID"].(string), fc.Args["priority"].(*int))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.scheduleOperation")

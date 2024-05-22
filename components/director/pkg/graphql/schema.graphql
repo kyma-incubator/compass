@@ -1877,6 +1877,10 @@ type Query {
 	- [query certificate subject mappings](examples/query-certificate-subject-mappings/query-certificate-subject-mappings.graphql)
 	"""
 	certificateSubjectMappings(first: Int = 300, after: PageCursor): CertificateSubjectMappingPage! @hasScopes(path: "graphql.query.certificateSubjectMappings")
+	"""
+	**Examples**
+	- [query operation](examples/query-operation/query-operation.graphql)
+	"""
 	operation(id: ID!): Operation @hasScopes(path: "graphql.query.operation")
 }
 
@@ -2141,21 +2145,21 @@ type Mutation {
 	updateLabelDefinition(in: LabelDefinitionInput! @validate): LabelDefinition! @hasScopes(path: "graphql.mutation.updateLabelDefinition")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
-	
+
 	**Examples**
 	- [set application label](examples/set-application-label/set-application-label.graphql)
 	"""
 	setApplicationLabel(applicationID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setApplicationLabel")
 	"""
 	If a label with given key already exist, it will be replaced with provided value.
-	
+
 	**Examples**
 	- [set tenant label](examples/set-tenant-label/set-tenant-label.graphql)
 	"""
 	setTenantLabel(tenantID: ID!, key: String!, value: Any!): Label! @hasScopes(path: "graphql.mutation.setTenantLabel")
 	"""
 	If Application does not exist or the label key is not found, it returns an error.
-	
+
 	**Examples**
 	- [delete application label](examples/delete-application-label/delete-application-label.graphql)
 	"""
@@ -2171,14 +2175,14 @@ type Mutation {
 	"""
 	Sets the given label key and value from the input to the provided formation template ID.
 	If a label with the provided key doesn't exists, it will be created.
-	
+
 	**Examples**
 	- [set formation template label](examples/set-formation-template-label/set-formation-template-label.graphql)
 	"""
 	setFormationTemplateLabel(formationTemplateID: ID!, in: LabelInput! @validate): Label! @hasScopes(path: "graphql.mutation.setFormationTemplateLabel")
 	"""
 	If formation template does not exist or the label key is not found, it returns an error.
-	
+
 	**Examples**
 	- [delete formation template label](examples/delete-formation-template-label/delete-formation-template-label.graphql)
 	"""
@@ -2187,9 +2191,9 @@ type Mutation {
 	deleteDefaultEventingForApplication(appID: String!): ApplicationEventingConfiguration! @hasScopes(path: "graphql.mutation.deleteDefaultEventingForApplication")
 	"""
 	When BundleInstanceAuth is not in pending state, the operation returns error.
-	
+
 	When used without error, the status of pending auth is set to success.
-	
+
 	**Examples**
 	- [set bundle instance auth](examples/set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 	"""
@@ -2201,14 +2205,14 @@ type Mutation {
 	deleteBundleInstanceAuth(authID: ID!): BundleInstanceAuth! @hasScopes(path: "graphql.mutation.deleteBundleInstanceAuth")
 	"""
 	When defaultInstanceAuth is set, it fires "createBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to PENDING.
-	
+
 	**Examples**
 	- [request bundle instance auth creation](examples/request-bundle-instance-auth-creation/request-bundle-instance-auth-creation.graphql)
 	"""
 	requestBundleInstanceAuthCreation(bundleID: ID!, in: BundleInstanceAuthRequestInput! @validate): BundleInstanceAuth! @hasScenario(applicationProvider: "GetApplicationIDByBundle", idField: "bundleID") @hasScopes(path: "graphql.mutation.requestBundleInstanceAuthCreation")
 	"""
 	When defaultInstanceAuth is set, it fires "deleteBundleInstanceAuth" mutation. Otherwise, the status of the BundleInstanceAuth is set to UNUSED.
-	
+
 	**Examples**
 	- [request bundle instance auth deletion](examples/request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 	"""
@@ -2286,6 +2290,10 @@ type Mutation {
 	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
 	"""
 	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
-	scheduleOperation(operationID: ID!): Operation @hasScopes(path: "graphql.mutation.scheduleOperation")
+	"""
+	**Examples**
+	- [schedule operation](examples/schedule-operation/schedule-operation.graphql)
+	"""
+	scheduleOperation(operationID: ID!, priority: Int = 100): Operation @hasScopes(path: "graphql.mutation.scheduleOperation")
 }
 

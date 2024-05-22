@@ -122,6 +122,7 @@ func TestResolver_Operation(t *testing.T) {
 func TestResolver_Schedule(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("test error")
+	prio := 60
 	now := time.Now()
 	testID := "8ee7ef81-ca8e-4399-a5d2-3a5f96ecc4c8"
 	modelOperation := fixOperationModelWithID(testID, model.OperationTypeOrdAggregation, model.OperationStatusFailed, 1)
@@ -133,11 +134,30 @@ func TestResolver_Schedule(t *testing.T) {
 		TransactionerFn   func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
 		ServiceFn         func() *automock.OperationService
 		ConverterFn       func() *automock.OperationConverter
+		Priority          *int
 		ExpectedOperation *graphql.Operation
 		ExpectedErr       error
 	}{
 		{
-			Name:            "Success",
+			Name:            "Success with explicit priority",
+			TransactionerFn: txGen.ThatSucceeds,
+			ServiceFn: func() *automock.OperationService {
+				svc := &automock.OperationService{}
+				svc.On("RescheduleOperation", txtest.CtxWithDBMatcher(), testID, prio).Return(nil).Once()
+				svc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelOperation, nil).Once()
+				return svc
+			},
+			ConverterFn: func() *automock.OperationConverter {
+				conv := &automock.OperationConverter{}
+				conv.On("ToGraphQL", modelOperation).Return(graphqlOperation, nil).Once()
+				return conv
+			},
+			Priority:          &prio,
+			ExpectedOperation: graphqlOperation,
+			ExpectedErr:       nil,
+		},
+		{
+			Name:            "Success with default priority",
 			TransactionerFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.OperationService {
 				svc := &automock.OperationService{}
@@ -222,7 +242,7 @@ func TestResolver_Schedule(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, transact, persistTx, svc, converter)
 
 			// WHEN
-			result, err := resolver.Schedule(context.TODO(), testID)
+			result, err := resolver.Schedule(context.TODO(), testID, testCase.Priority)
 
 			// then
 			if testCase.ExpectedErr != nil {

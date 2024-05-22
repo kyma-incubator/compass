@@ -62,7 +62,7 @@ func (r *Resolver) Operation(ctx context.Context, id string) (*graphql.Operation
 }
 
 // Schedule reschedules a specified operation
-func (r *Resolver) Schedule(ctx context.Context, id string) (*graphql.Operation, error) {
+func (r *Resolver) Schedule(ctx context.Context, id string, priority *int) (*graphql.Operation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -71,7 +71,12 @@ func (r *Resolver) Schedule(ctx context.Context, id string) (*graphql.Operation,
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	if err = r.service.RescheduleOperation(ctx, id, int(operationsmanager.HighOperationPriority)); err != nil {
+	opPriority := int(operationsmanager.HighOperationPriority)
+	if priority != nil {
+		opPriority = *priority
+	}
+
+	if err = r.service.RescheduleOperation(ctx, id, opPriority); err != nil {
 		return nil, err
 	}
 

@@ -1191,8 +1191,8 @@ func (r *mutationResolver) DeleteCertificateSubjectMapping(ctx context.Context, 
 	return r.certSubjectMapping.DeleteCertificateSubjectMapping(ctx, id)
 }
 
-func (r *mutationResolver) ScheduleOperation(ctx context.Context, id string) (*graphql.Operation, error) {
-	return r.operation.Schedule(ctx, id)
+func (r *mutationResolver) ScheduleOperation(ctx context.Context, id string, priority *int) (*graphql.Operation, error) {
+	return r.operation.Schedule(ctx, id, priority)
 }
 
 type applicationResolver struct {
