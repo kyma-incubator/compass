@@ -30,7 +30,6 @@ const (
 	runtimeCtxID             = "f7156h4-ca3a-11ed-afa1-0242ac121237"
 	formationAssignmentID    = "c54341c4-ca3a-11ed-afa1-0242ac120564"
 	assignmentOperationID    = "3a711086-3cac-4253-97e9-6c0417f5cc67"
-	formationID              = "b60457ed-a1e2-4a99-8c78-8e685ceb641c"
 	formationTemplateID      = "b87631c4-ca3a-11ed-afa1-0242ac120002"
 	otherFormationTemplateID = "b05731c4-ca3a-11ed-afa1-0242ac120002"
 	formationID              = "a16724q3-ba3a-13ef-a1c7-1247ac120123"
