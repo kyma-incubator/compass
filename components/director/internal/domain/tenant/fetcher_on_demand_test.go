@@ -24,6 +24,7 @@ func TestFetchOnDemand(t *testing.T) {
 		tenantIDWithSlash = "/path/tenant"
 		parentTenantID    = "8d4842ed-0307-4808-85d5-6bbed114c4ff"
 		testErr           = errors.New("error")
+		ignoreFetchErr    = errors.New("ignore fetching of tenant")
 	)
 
 	testCases := []struct {
@@ -58,13 +59,14 @@ func TestFetchOnDemand(t *testing.T) {
 			},
 		},
 		{
-			Name:           "Success when tenant id contain slash",
+			Name:           "Error when tenant id contain slash",
 			TenantID:       tenantIDWithSlash,
 			ParentTenantID: "",
 			Client: func() *automock.Client {
 				client := &automock.Client{}
 				return client
 			},
+			ExpectedErrorMsg: ignoreFetchErr.Error(),
 		},
 		{
 			Name:           "Error when cannot make the request",
