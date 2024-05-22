@@ -196,7 +196,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type) // todo::: placeholder
+	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type)
 	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa, latestAssignmentOperation.Type)
 	originalStateFromStatusReport := notificationStatusReport.State
 	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
@@ -803,7 +803,7 @@ func calculateState(requestBody FormationAssignmentRequestBody, fa *model.Format
 		return fa.State
 	}
 
-	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperationType) // todo::: placeholder
+	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperationType)
 
 	if formationOperation == model.AssignFormation {
 		return string(model.CreateErrorAssignmentState)

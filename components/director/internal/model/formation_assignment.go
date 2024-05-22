@@ -71,16 +71,12 @@ const (
 	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
 	// DeletingAssignmentState indicates that async unassign notification is sent and status report is expected from the receiver
 	DeletingAssignmentState FormationAssignmentState = "DELETING"
-	// InstanceCreatorDeletingAssignmentState indicates that async unassign notification is sent and status report is expected from the receiver
-	InstanceCreatorDeletingAssignmentState FormationAssignmentState = "INSTANCE_CREATOR_DELETING"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 	// CreateReadyFormationAssignmentState indicates that the formation assignment is in a ready state and the response is for an assign notification
 	CreateReadyFormationAssignmentState FormationAssignmentState = "CREATE_READY"
 	// DeleteReadyFormationAssignmentState indicates that the formation assignment is in a ready state and the response is for an unassign notification
 	DeleteReadyFormationAssignmentState FormationAssignmentState = "DELETE_READY"
-	// InstanceCreatorDeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment by the instance creator operator
-	InstanceCreatorDeleteErrorAssignmentState FormationAssignmentState = "INSTANCE_CREATOR_DELETE_ERROR"
 	// NotificationRecursionDepthLimit is the maximum count of configuration exchanges during assigning an object to formation
 	NotificationRecursionDepthLimit int = 10
 )
@@ -100,10 +96,8 @@ var SupportedFormationAssignmentStates = map[string]bool{
 // ResynchronizableFormationAssignmentStates is an array of supported assignment states for resynchronization
 var ResynchronizableFormationAssignmentStates = []string{string(InitialAssignmentState),
 	string(DeletingAssignmentState),
-	string(InstanceCreatorDeletingAssignmentState),
 	string(CreateErrorAssignmentState),
-	string(DeleteErrorAssignmentState),
-	string(InstanceCreatorDeleteErrorAssignmentState)}
+	string(DeleteErrorAssignmentState)}
 
 // ToModel converts FormationAssignmentInput to FormationAssignment
 func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssignment {
@@ -186,7 +180,7 @@ func (fa *FormationAssignment) GetOperation() FormationOperation { // todo::: ca
 
 // GetNotificationState returns the assignment state that is to be sent for notifications
 // and is exposed to the GraphQL layer
-func (fa *FormationAssignment) GetNotificationState() string {
+func (fa *FormationAssignment) GetNotificationState() string { // todo::: can be deleted
 	state := fa.State
 	if strings.HasSuffix(state, string(DeleteErrorAssignmentState)) {
 		state = string(DeleteErrorAssignmentState)

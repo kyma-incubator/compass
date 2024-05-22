@@ -51,7 +51,7 @@ var (
 	createReadyAssignmentState                = string(model.CreateReadyFormationAssignmentState)
 	initialAssignmentState                    = string(model.InitialAssignmentState)
 	deleteErrorAssignmentState                = string(model.DeleteErrorAssignmentState)
-	instanceCreatorDeleteErrorAssignmentState = string(model.InstanceCreatorDeleteErrorAssignmentState)
+	instanceCreatorDeleteErrorAssignmentState = string(model.DeleteErrorAssignmentState) // todo::: can be deleted
 	invalidState                              = "invalidState"
 
 	formation = &model.Formation{

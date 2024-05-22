@@ -1329,11 +1329,11 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, fa.ID)
 			ctx = log.ContextWithLogger(ctx, logger)
 
-			latestAssignmentOperation, err := s.assignmentOperationService.GetLatestOperation(ctx, fa.ID, fa.FormationID)
+			latestAssignmentOperation, err := s.assignmentOperationService.GetLatestOperation(ctxWithTransact, fa.ID, fa.FormationID)
 			if err != nil {
 				return err
 			}
-			formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type) // todo::: placeholder
+			formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type)
 
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
 			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, formationOperation)

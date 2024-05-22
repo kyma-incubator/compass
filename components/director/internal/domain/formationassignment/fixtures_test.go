@@ -183,7 +183,7 @@ func fixFormationAssignmentModelWithConfigAndError(configValue, errorValue json.
 	}
 }
 
-func fixFormationAssignmentModelWithState(state string) *model.FormationAssignment {
+func fixFormationAssignmentModelWithState(state string) *model.FormationAssignment { // todo::: can be deleted ?
 	return &model.FormationAssignment{
 		ID:          TestID,
 		FormationID: TestFormationID,
