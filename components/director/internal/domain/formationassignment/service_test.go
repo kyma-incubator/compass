@@ -45,14 +45,13 @@ var (
 	first = 2
 	after = "test"
 
-	readyAssignmentState                      = string(model.ReadyAssignmentState)
-	configPendingAssignmentState              = string(model.ConfigPendingAssignmentState)
-	createErrorAssignmentState                = string(model.CreateErrorAssignmentState)
-	createReadyAssignmentState                = string(model.CreateReadyFormationAssignmentState)
-	initialAssignmentState                    = string(model.InitialAssignmentState)
-	deleteErrorAssignmentState                = string(model.DeleteErrorAssignmentState)
-	instanceCreatorDeleteErrorAssignmentState = string(model.DeleteErrorAssignmentState) // todo::: can be deleted
-	invalidState                              = "invalidState"
+	readyAssignmentState         = string(model.ReadyAssignmentState)
+	configPendingAssignmentState = string(model.ConfigPendingAssignmentState)
+	createErrorAssignmentState   = string(model.CreateErrorAssignmentState)
+	createReadyAssignmentState   = string(model.CreateReadyFormationAssignmentState)
+	initialAssignmentState       = string(model.InitialAssignmentState)
+	deleteErrorAssignmentState   = string(model.DeleteErrorAssignmentState)
+	invalidState                 = "invalidState"
 
 	formation = &model.Formation{
 		ID:                  TestFormationID,

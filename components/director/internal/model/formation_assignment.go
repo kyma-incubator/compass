@@ -7,7 +7,6 @@ import (
 	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 // FormationAssignmentType describes possible source and target types
@@ -149,13 +148,6 @@ func (fa *FormationAssignment) IsInProgressState() bool {
 	return fa.isInProgressAssignState() || fa.isInProgressUnassignState()
 }
 
-// IsInRegularUnassignState returns if the formation assignment is in regular unassign stage
-func (fa *FormationAssignment) IsInRegularUnassignState() bool { // todo::: can be deleted
-	unassignOperationStates := []string{string(DeletingAssignmentState),
-		string(DeleteErrorAssignmentState)}
-	return str.ValueIn(fa.State, unassignOperationStates)
-}
-
 // SetStateToDeleting sets the state to deleting and returns if the formation assignment is updated
 func (fa *FormationAssignment) SetStateToDeleting() bool {
 	if fa.isInProgressUnassignState() {
@@ -167,27 +159,6 @@ func (fa *FormationAssignment) SetStateToDeleting() bool {
 	}
 	fa.State = string(DeletingAssignmentState)
 	return true
-}
-
-// GetOperation returns the formation operation that is determined based on the state of the assignment
-func (fa *FormationAssignment) GetOperation() FormationOperation { // todo::: can be deleted
-	operation := AssignFormation
-	if strings.HasSuffix(fa.State, string(DeleteErrorAssignmentState)) || strings.HasSuffix(fa.State, string(DeletingAssignmentState)) {
-		operation = UnassignFormation
-	}
-	return operation
-}
-
-// GetNotificationState returns the assignment state that is to be sent for notifications
-// and is exposed to the GraphQL layer
-func (fa *FormationAssignment) GetNotificationState() string { // todo::: can be deleted
-	state := fa.State
-	if strings.HasSuffix(state, string(DeleteErrorAssignmentState)) {
-		state = string(DeleteErrorAssignmentState)
-	} else if fa.isInProgressUnassignState() {
-		state = string(DeletingAssignmentState)
-	}
-	return state
 }
 
 func (fa *FormationAssignment) isInProgressAssignState() bool {

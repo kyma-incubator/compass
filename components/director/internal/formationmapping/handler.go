@@ -533,7 +533,7 @@ func (b FormationRequestBody) Validate() error {
 func (h *Handler) processFormationAssignmentUnassignStatusUpdate(ctx context.Context, fa *model.FormationAssignment, statusReport *statusreport.NotificationStatusReport, latestAssignmentOperationType model.AssignmentOperationType) (bool, error) {
 	stateFromStatusReport := model.FormationAssignmentState(statusReport.State)
 
-	if latestAssignmentOperationType == model.InstanceCreatorUnassign { // todo::: there won't be IC state anymore so think how to adapt -> maybe get fa latestOP and if it's IC_UNASSIGN enter the if
+	if latestAssignmentOperationType == model.InstanceCreatorUnassign {
 		consumerInfo, err := consumer.LoadFromContext(ctx)
 		if err != nil {
 			return false, err
