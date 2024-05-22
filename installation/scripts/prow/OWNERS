@@ -4,5 +4,7 @@ reviewers:
 approvers:
   - team-falcon
   - team-raptor
+labels:
+  - "do-not-merge/hold"
 options:
   no_parent_owners: true
