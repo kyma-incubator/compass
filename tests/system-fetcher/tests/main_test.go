@@ -71,6 +71,7 @@ func TestMain(m *testing.M) {
 		},
 	}
 	saTransport := httputil.NewServiceAccountTokenTransportWithHeader(httputil.NewHTTPTransportWrapper(tr), "Authorization")
+	
 	client := &http.Client{
 		Transport: saTransport,
 		Timeout:   time.Second * 30,
