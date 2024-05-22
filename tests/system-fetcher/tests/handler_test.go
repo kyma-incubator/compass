@@ -536,7 +536,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ", "123456789"),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ", ""),
 		},
 	}
 
@@ -998,7 +998,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2, "XYZ", leadingSystemBusinessType1),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2, "XYZ", leadingSystemBusinessType2),
 		},
 	}
 
