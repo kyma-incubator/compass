@@ -157,6 +157,8 @@ func (s *service) RescheduleOperation(ctx context.Context, operationID string, p
 		return apperrors.NewOperationInProgressError(operationID)
 	}
 
+	currentTime := time.Now()
+	op.UpdatedAt = &currentTime
 	op.Status = model.OperationStatusScheduled
 	op.Priority = priority
 

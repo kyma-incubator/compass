@@ -112,6 +112,7 @@ Below you can find a list of mock GraphQL queries and mutations:
 - [request bundle instance auth deletion](./request-bundle-instance-auth-deletion/request-bundle-instance-auth-deletion.graphql)
 - [resynchronize formation notifications](./resynchronize-formation-notifications/resynchronize-formation-notifications.graphql)
 - [resynchronize formation notifications with reset](./resynchronize-formation-notifications-with-reset/resynchronize-formation-notifications-with-reset.graphql)
+- [schedule operation](./schedule-operation/schedule-operation.graphql)
 - [set application label](./set-application-label/set-application-label.graphql)
 - [set bundle instance auth](./set-bundle-instance-auth/set-bundle-instance-auth.graphql)
 - [set formation template label](./set-formation-template-label/set-formation-template-label.graphql)
