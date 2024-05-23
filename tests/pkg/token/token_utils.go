@@ -47,7 +47,7 @@ type OauthConfig struct {
 const (
 	RuntimeScopes                                    = "webhook:write runtime:read runtime:write application:read runtime.auths:read bundle.instance_auths:read"
 	ApplicationScopes                                = "webhook:write application:read application:write application.auths:read application.webhooks:read application.application_template:read bundle.instance_auths:read document.fetch_request:read event_spec.fetch_request:read api_spec.fetch_request:read fetch-request.auth:read"
-	IntegrationSystemScopes                          = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read formation:write operation:schedule operation:read"
+	IntegrationSystemScopes                          = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read integration_system.auths:read application_template.webhooks:read internal_visibility:read application.auths:read formation:write"
 	IntegrationSystemScopesWithoutInternalVisibility = "application.local_tenant_id:write webhook:write application:read application:write application_template:read application_template:write runtime:read runtime:write integration_system:read label_definition:read label_definition:write automatic_scenario_assignment:read integration_system.auths:read application_template.webhooks:read"
 
 	grantTypeFieldName   = "grant_type"
@@ -85,6 +85,8 @@ func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 
 	token, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
+
+	fmt.Println("token,", string(token))
 
 	hydraToken := HydraToken{}
 	err = json.Unmarshal(token, &hydraToken)
@@ -135,6 +137,7 @@ func GetAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialDa
 	oauthCredentials := fmt.Sprintf("%s:%s", oauthCredentialData.ClientID, oauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
 	hydraToken, err := FetchHydraAccessToken(t, encodedCredentials, oauthCredentialData.URL, scopes)
+	fmt.Println("err", err)
 	require.NoError(t, err)
 	return hydraToken.AccessToken
 }
