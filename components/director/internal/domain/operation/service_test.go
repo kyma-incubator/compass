@@ -261,7 +261,13 @@ func TestService_RescheduleOperation(t *testing.T) {
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
 				repo.On("Get", ctx, operationID).Return(opModelWithLowPriority, nil).Once()
-				repo.On("Update", ctx, opModelWithHighPriority).Return(nil).Once()
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusScheduled, arg.Status)
+					assert.Equal(t, highOperationPriority, arg.Priority)
+					assert.Equal(t, testOpType, arg.OpType)
+					assert.Equal(t, json.RawMessage(errorMsg), arg.Error)
+				})
 				return repo
 			},
 			Input:    operationID,
@@ -283,8 +289,13 @@ func TestService_RescheduleOperation(t *testing.T) {
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
 				repo.On("Get", ctx, operationID).Return(opModelWithLowPriority, nil).Once()
-				repo.On("Update", ctx, opModelWithHighPriority).Return(testErr).Once()
-
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(testErr).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusScheduled, arg.Status)
+					assert.Equal(t, highOperationPriority, arg.Priority)
+					assert.Equal(t, testOpType, arg.OpType)
+					assert.Equal(t, json.RawMessage(errorMsg), arg.Error)
+				})
 				return repo
 			},
 			Input:       operationID,
