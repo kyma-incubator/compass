@@ -86,8 +86,6 @@ func FetchHydraAccessToken(t *testing.T, encodedCredentials string, tokenURL str
 	token, err := ioutil.ReadAll(resp.Body)
 	require.NoError(t, err)
 
-	fmt.Println("token,", string(token))
-
 	hydraToken := HydraToken{}
 	err = json.Unmarshal(token, &hydraToken)
 	require.NoError(t, err)
@@ -137,7 +135,6 @@ func GetAccessToken(t *testing.T, oauthCredentialData *graphql.OAuthCredentialDa
 	oauthCredentials := fmt.Sprintf("%s:%s", oauthCredentialData.ClientID, oauthCredentialData.ClientSecret)
 	encodedCredentials := base64.StdEncoding.EncodeToString([]byte(oauthCredentials))
 	hydraToken, err := FetchHydraAccessToken(t, encodedCredentials, oauthCredentialData.URL, scopes)
-	fmt.Println("err", err)
 	require.NoError(t, err)
 	return hydraToken.AccessToken
 }
