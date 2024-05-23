@@ -3,6 +3,9 @@ package operation_test
 import (
 	"context"
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/operation/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -13,8 +16,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 )
 
 func TestResolver_Operation(t *testing.T) {
