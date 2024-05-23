@@ -2,6 +2,7 @@ package operation
 
 import (
 	"context"
+	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	operationsmanager "github.com/kyma-incubator/compass/components/director/internal/operations_manager"
@@ -50,6 +51,7 @@ func (r *Resolver) Operation(ctx context.Context, id string) (*graphql.Operation
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	log.C(ctx).Infof("Getting operation with ID %q", id)
 	op, err := r.service.Get(ctx, id)
 	if err != nil {
 		return nil, err
@@ -62,7 +64,7 @@ func (r *Resolver) Operation(ctx context.Context, id string) (*graphql.Operation
 	return r.conv.ToGraphQL(op)
 }
 
-// Schedule reschedules a specified operation
+// Schedule reschedules a specified operation with a given priority. Default priority is operationsmanager.HighOperationPriority
 func (r *Resolver) Schedule(ctx context.Context, id string, priority *int) (*graphql.Operation, error) {
 	tx, err := r.transact.Begin()
 	if err != nil {
@@ -77,6 +79,7 @@ func (r *Resolver) Schedule(ctx context.Context, id string, priority *int) (*gra
 		opPriority = *priority
 	}
 
+	log.C(ctx).Infof("Rescheduling operation with ID %q and priority %d", id, opPriority)
 	if err = r.service.RescheduleOperation(ctx, id, opPriority); err != nil {
 		return nil, err
 	}
@@ -89,6 +92,8 @@ func (r *Resolver) Schedule(ctx context.Context, id string, priority *int) (*gra
 	if err = tx.Commit(); err != nil {
 		return nil, err
 	}
+
+	log.C(ctx).Infof("Successfully rescheduled operation with ID %q", id)
 
 	return r.conv.ToGraphQL(op)
 }
