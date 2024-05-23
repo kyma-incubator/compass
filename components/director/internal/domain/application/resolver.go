@@ -4,8 +4,9 @@ import (
 	"context"
 	"crypto/sha256"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"strings"
+
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
@@ -1345,9 +1346,13 @@ func (r *Resolver) getOperation(ctx context.Context, obj *graphql.Application) (
 		return op, nil
 	}
 
-	if apperrors.IsNotFoundError(err) && obj.ApplicationTemplateID != nil {
-		op, err = r.opSvc.GetByDataAndType(ctx, data.NewOrdOperationData(obj.ID, *obj.ApplicationTemplateID), model.OperationTypeOrdAggregation)
-		if err == nil || apperrors.IsNotFoundError(err) {
+	if apperrors.IsNotFoundError(err) {
+		if obj.ApplicationTemplateID != nil {
+			op, err = r.opSvc.GetByDataAndType(ctx, data.NewOrdOperationData(obj.ID, *obj.ApplicationTemplateID), model.OperationTypeOrdAggregation)
+			if err == nil || apperrors.IsNotFoundError(err) {
+				return op, nil
+			}
+		} else {
 			return op, nil
 		}
 	}
