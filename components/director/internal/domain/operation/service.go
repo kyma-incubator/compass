@@ -208,6 +208,17 @@ func (s *service) ListAllByType(ctx context.Context, opType model.OperationType)
 	return s.opRepo.ListAllByType(ctx, opType)
 }
 
+func (s *service) SetErrorSeverity(ctx context.Context, id string, errorSeverity model.OperationErrorSeverity) error {
+	op, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	op.ErrorSeverity = errorSeverity
+
+	return s.Update(ctx, op)
+}
+
 type customError struct {
 	ErrorMsg error `json:"message"`
 }

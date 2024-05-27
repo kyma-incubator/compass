@@ -18,8 +18,8 @@ const scheduledOperationsView = `public.scheduled_operations`
 
 var (
 	idTableColumns        = []string{"id"}
-	operationColumns      = []string{"id", "op_type", "status", "data", "error", "priority", "created_at", "updated_at"}
-	updatableTableColumns = []string{"status", "error", "priority", "updated_at"}
+	operationColumns      = []string{"id", "op_type", "status", "data", "error", "error_severity", "priority", "created_at", "updated_at"}
+	updatableTableColumns = []string{"status", "error", "error_severity", "priority", "updated_at"}
 )
 
 // EntityConverter missing godoc

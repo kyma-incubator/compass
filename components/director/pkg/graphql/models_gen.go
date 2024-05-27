@@ -813,6 +813,7 @@ type Operation struct {
 	OperationType ScheduledOperationType `json:"operationType"`
 	Status        OperationStatus        `json:"status"`
 	Error         *string                `json:"error,omitempty"`
+	ErrorSeverity OperationErrorSeverity `json:"errorSeverity"`
 	CreatedAt     *Timestamp             `json:"createdAt,omitempty"`
 	UpdatedAt     *Timestamp             `json:"updatedAt,omitempty"`
 }
@@ -1865,6 +1866,51 @@ func (e *OneTimeTokenType) UnmarshalGQL(v interface{}) error {
 }
 
 func (e OneTimeTokenType) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type OperationErrorSeverity string
+
+const (
+	OperationErrorSeverityInfo    OperationErrorSeverity = "INFO"
+	OperationErrorSeverityWarning OperationErrorSeverity = "WARNING"
+	OperationErrorSeverityError   OperationErrorSeverity = "ERROR"
+	OperationErrorSeverityNone    OperationErrorSeverity = "NONE"
+)
+
+var AllOperationErrorSeverity = []OperationErrorSeverity{
+	OperationErrorSeverityInfo,
+	OperationErrorSeverityWarning,
+	OperationErrorSeverityError,
+	OperationErrorSeverityNone,
+}
+
+func (e OperationErrorSeverity) IsValid() bool {
+	switch e {
+	case OperationErrorSeverityInfo, OperationErrorSeverityWarning, OperationErrorSeverityError, OperationErrorSeverityNone:
+		return true
+	}
+	return false
+}
+
+func (e OperationErrorSeverity) String() string {
+	return string(e)
+}
+
+func (e *OperationErrorSeverity) UnmarshalGQL(v interface{}) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = OperationErrorSeverity(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid OperationErrorSeverity", str)
+	}
+	return nil
+}
+
+func (e OperationErrorSeverity) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -36,6 +36,7 @@ type OperationService interface {
 	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error
 	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
 	RescheduleOperation(ctx context.Context, operationID string, priority int) error
+	SetErrorSeverity(ctx context.Context, id string, errorSeverity model.OperationErrorSeverity) error
 }
 
 // WebhookService is responsible for the service-layer Webhook operations.

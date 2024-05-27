@@ -176,6 +176,13 @@ enum OneTimeTokenType {
 	Application
 }
 
+enum OperationErrorSeverity {
+	INFO
+	WARNING
+	ERROR
+	NONE
+}
+
 enum OperationMode {
 	SYNC
 	ASYNC
@@ -1584,6 +1591,7 @@ type Operation {
 	operationType: ScheduledOperationType!
 	status: OperationStatus!
 	error: String
+	errorSeverity: OperationErrorSeverity!
 	createdAt: Timestamp
 	updatedAt: Timestamp
 }

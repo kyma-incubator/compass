@@ -154,11 +154,12 @@ func (h *handler) ScheduleAggregationForORDData(writer http.ResponseWriter, requ
 		}
 
 		newOperationInput := &model.OperationInput{
-			OpType:    model.OperationTypeOrdAggregation,
-			Status:    model.OperationStatusScheduled,
-			Data:      json.RawMessage(rawData),
-			Priority:  int(operationsmanager.HighOperationPriority),
-			CreatedAt: &now,
+			OpType:        model.OperationTypeOrdAggregation,
+			Status:        model.OperationStatusScheduled,
+			Data:          json.RawMessage(rawData),
+			Priority:      int(operationsmanager.HighOperationPriority),
+			ErrorSeverity: model.OperationErrorSeverityNone,
+			CreatedAt:     &now,
 		}
 
 		opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)

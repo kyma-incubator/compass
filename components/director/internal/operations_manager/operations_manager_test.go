@@ -635,13 +635,14 @@ func TestOperationsManager_FindOperationByData(t *testing.T) {
 
 func fixOperationModel(id string, opType model.OperationType, opStatus model.OperationStatus, priority int) *model.Operation {
 	return &model.Operation{
-		ID:        id,
-		OpType:    opType,
-		Status:    opStatus,
-		Data:      json.RawMessage("[]"),
-		Error:     json.RawMessage("[]"),
-		Priority:  priority,
-		CreatedAt: &time.Time{},
-		UpdatedAt: &time.Time{},
+		ID:            id,
+		OpType:        opType,
+		Status:        opStatus,
+		Data:          json.RawMessage("[]"),
+		Error:         json.RawMessage("[]"),
+		ErrorSeverity: model.OperationErrorSeverityNone,
+		Priority:      priority,
+		CreatedAt:     &time.Time{},
+		UpdatedAt:     &time.Time{},
 	}
 }

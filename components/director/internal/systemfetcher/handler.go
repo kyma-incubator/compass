@@ -166,11 +166,12 @@ func (h *handler) createSystemFetchingOperation(ctx context.Context, tenantID st
 	}
 
 	newOperationInput := &model.OperationInput{
-		OpType:    model.OperationTypeSystemFetching,
-		Status:    model.OperationStatusScheduled,
-		Data:      json.RawMessage(rawData),
-		Priority:  int(operationsmanager.HighOperationPriority),
-		CreatedAt: &now,
+		OpType:        model.OperationTypeSystemFetching,
+		Status:        model.OperationStatusScheduled,
+		Data:          json.RawMessage(rawData),
+		ErrorSeverity: model.OperationErrorSeverityNone,
+		Priority:      int(operationsmanager.HighOperationPriority),
+		CreatedAt:     &now,
 	}
 
 	opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)

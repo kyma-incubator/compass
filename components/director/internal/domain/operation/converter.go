@@ -19,28 +19,30 @@ func NewConverter() *converter {
 // FromEntity converts the provided Entity repo-layer representation of an Operation to the service-layer representation model.Operation.
 func (c *converter) FromEntity(entity *Entity) *model.Operation {
 	return &model.Operation{
-		ID:        entity.ID,
-		OpType:    model.OperationType(entity.Type),
-		Status:    model.OperationStatus(entity.Status),
-		Data:      repo.JSONRawMessageFromNullableString(entity.Data),
-		Error:     repo.JSONRawMessageFromNullableString(entity.Error),
-		Priority:  entity.Priority,
-		CreatedAt: entity.CreatedAt,
-		UpdatedAt: entity.UpdatedAt,
+		ID:            entity.ID,
+		OpType:        model.OperationType(entity.Type),
+		Status:        model.OperationStatus(entity.Status),
+		Data:          repo.JSONRawMessageFromNullableString(entity.Data),
+		Error:         repo.JSONRawMessageFromNullableString(entity.Error),
+		ErrorSeverity: model.OperationErrorSeverity(entity.ErrorSeverity),
+		Priority:      entity.Priority,
+		CreatedAt:     entity.CreatedAt,
+		UpdatedAt:     entity.UpdatedAt,
 	}
 }
 
 // ToEntity converts the provided service-layer representation of an Operation to the repository-layer one.
 func (c *converter) ToEntity(operationModel *model.Operation) *Entity {
 	return &Entity{
-		ID:        operationModel.ID,
-		Type:      string(operationModel.OpType),
-		Status:    string(operationModel.Status),
-		Data:      repo.NewNullableStringFromJSONRawMessage(operationModel.Data),
-		Error:     repo.NewNullableStringFromJSONRawMessage(operationModel.Error),
-		Priority:  operationModel.Priority,
-		CreatedAt: operationModel.CreatedAt,
-		UpdatedAt: operationModel.UpdatedAt,
+		ID:            operationModel.ID,
+		Type:          string(operationModel.OpType),
+		Status:        string(operationModel.Status),
+		Data:          repo.NewNullableStringFromJSONRawMessage(operationModel.Data),
+		Error:         repo.NewNullableStringFromJSONRawMessage(operationModel.Error),
+		ErrorSeverity: string(operationModel.ErrorSeverity),
+		Priority:      operationModel.Priority,
+		CreatedAt:     operationModel.CreatedAt,
+		UpdatedAt:     operationModel.UpdatedAt,
 	}
 }
 
@@ -60,11 +62,17 @@ func (c *converter) ToGraphQL(in *model.Operation) (*graphql.Operation, error) {
 		return nil, err
 	}
 
+	opErrorSeverity, err := c.operationErrorSeverityToGraphQL(in.ErrorSeverity)
+	if err != nil {
+		return nil, err
+	}
+
 	return &graphql.Operation{
 		ID:            in.ID,
 		OperationType: opType,
 		Status:        opStatus,
 		Error:         str.StringifyJSONRawMessage(in.Error),
+		ErrorSeverity: opErrorSeverity,
 		CreatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.CreatedAt),
 		UpdatedAt:     graphql.TimePtrToGraphqlTimestampPtr(in.UpdatedAt),
 	}, nil
@@ -110,5 +118,20 @@ func (c *converter) operationStatusModelToGraphQL(in model.OperationStatus) (gra
 		return graphql.OperationStatusFailed, nil
 	default:
 		return "", errors.Errorf("unknown operation status %v", in)
+	}
+}
+
+func (c *converter) operationErrorSeverityToGraphQL(in model.OperationErrorSeverity) (graphql.OperationErrorSeverity, error) {
+	switch in {
+	case model.OperationErrorSeverityError:
+		return graphql.OperationErrorSeverityError, nil
+	case model.OperationErrorSeverityWarning:
+		return graphql.OperationErrorSeverityWarning, nil
+	case model.OperationErrorSeverityInfo:
+		return graphql.OperationErrorSeverityInfo, nil
+	case model.OperationErrorSeverityNone:
+		return graphql.OperationErrorSeverityNone, nil
+	default:
+		return "", errors.Errorf("unknown operation error severity type %v", in)
 	}
 }
