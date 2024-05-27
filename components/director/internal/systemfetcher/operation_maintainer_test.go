@@ -41,10 +41,11 @@ func TestOperationMaintainer_Maintain(t *testing.T) {
 		},
 	}
 	operation := &model.Operation{
-		ID:     "op-id",
-		OpType: "",
-		Status: "",
-		Data:   json.RawMessage("{}"),
+		ID:            "op-id",
+		OpType:        "",
+		Status:        "",
+		ErrorSeverity: model.OperationErrorSeverityNone,
+		Data:          json.RawMessage("{}"),
 	}
 	operations := []*model.Operation{
 		operation,

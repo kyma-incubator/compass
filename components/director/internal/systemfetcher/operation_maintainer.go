@@ -200,12 +200,13 @@ func (om *SystemFetcherOperationMaintainer) tenantToOperation(tenant *model.Busi
 func buildSystemFetcherOperationInput(data string) *model.OperationInput {
 	now := time.Now()
 	return &model.OperationInput{
-		OpType:    model.OperationTypeSystemFetching,
-		Status:    model.OperationStatusScheduled,
-		Data:      json.RawMessage(data),
-		Error:     nil,
-		Priority:  int(operationsmanager.LowOperationPriority),
-		CreatedAt: &now,
-		UpdatedAt: nil,
+		OpType:        model.OperationTypeSystemFetching,
+		Status:        model.OperationStatusScheduled,
+		Data:          json.RawMessage(data),
+		Error:         nil,
+		ErrorSeverity: model.OperationErrorSeverityNone,
+		Priority:      int(operationsmanager.LowOperationPriority),
+		CreatedAt:     &now,
+		UpdatedAt:     nil,
 	}
 }

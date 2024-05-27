@@ -17,17 +17,17 @@ import (
 )
 
 func TestPgRepository_ListAllByType(t *testing.T) {
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "List operations by Type",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE op_type = $1`),
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.operation WHERE op_type = $1`),
 				Args:  []driver.Value{model.OperationTypeOrdAggregation},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -51,8 +51,8 @@ func TestPgRepository_ListAllByType(t *testing.T) {
 
 func TestPgRepository_Create(t *testing.T) {
 	var nilOperationModel *model.Operation
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoCreateTestSuite{
 		Name: "Create Operation",
@@ -80,14 +80,14 @@ func TestPgRepository_Create(t *testing.T) {
 
 func TestPgRepository_Update(t *testing.T) {
 	var nilOperationModel *model.Operation
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoUpdateTestSuite{
 		Name: "Update Operation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:         regexp.QuoteMeta(`UPDATE public.operation SET status = ?, error = ?, priority = ?, updated_at = ? WHERE id = ?`),
+				Query:         regexp.QuoteMeta(`UPDATE public.operation SET status = ?, error = ?, error_severity = ?, priority = ?, updated_at = ? WHERE id = ?`),
 				Args:          fixOperationUpdateArgs(operationModel),
 				ValidResult:   sqlmock.NewResult(-1, 1),
 				InvalidResult: sqlmock.NewResult(-1, 0),
@@ -109,17 +109,17 @@ func TestPgRepository_Update(t *testing.T) {
 }
 
 func TestPgRepository_Get(t *testing.T) {
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Operation",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE id = $1`),
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.operation WHERE id = $1`),
 				Args:  []driver.Value{operationID},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -142,17 +142,17 @@ func TestPgRepository_Get(t *testing.T) {
 }
 
 func TestPgRepository_GetByDataAndType(t *testing.T) {
-	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoGetTestSuite{
 		Name: "Get Operation by Data and Type",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.operation WHERE data @> $1 AND op_type = $2`),
+				Query: regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.operation WHERE data @> $1 AND op_type = $2`),
 				Args:  []driver.Value{fixOperationDataAsString(applicationID, applicationTemplateID), model.OperationTypeOrdAggregation},
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
@@ -222,18 +222,18 @@ func TestPgRepository_DeleteMultiple(t *testing.T) {
 }
 
 func TestRepository_PriorityQueueListByType(t *testing.T) {
-	operationModel := fixOperationModel(model.OperationTypeOrdAggregation, model.OperationStatusScheduled)
-	operationEntity := fixEntityOperation(operationID, model.OperationTypeOrdAggregation, model.OperationStatusScheduled)
+	operationModel := fixOperationModel(model.OperationTypeOrdAggregation, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	operationEntity := fixEntityOperation(operationID, model.OperationTypeOrdAggregation, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	suite := testdb.RepoListTestSuite{
 		Name: "PriorityQueue ListByType",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
+				Query:    regexp.QuoteMeta(`SELECT id, op_type, status, data, error, error_severity, priority, created_at, updated_at FROM public.scheduled_operations WHERE op_type = $1 LIMIT $2`),
 				Args:     []driver.Value{string(model.OperationTypeOrdAggregation), 10},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
+					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(operationModel.ID, operationModel.OpType, operationModel.Status, operationModel.Data, operationModel.Error, operationModel.ErrorSeverity, operationModel.Priority, operationModel.CreatedAt, operationModel.UpdatedAt)}
 				},
 				InvalidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
