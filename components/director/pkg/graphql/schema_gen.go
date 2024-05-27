@@ -35276,6 +35276,8 @@ func (ec *executionContext) fieldContext_Mutation_scheduleOperation(ctx context.
 				return ec.fieldContext_Operation_status(ctx, field)
 			case "error":
 				return ec.fieldContext_Operation_error(ctx, field)
+			case "errorSeverity":
+				return ec.fieldContext_Operation_errorSeverity(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Operation_createdAt(ctx, field)
 			case "updatedAt":
@@ -40954,6 +40956,8 @@ func (ec *executionContext) fieldContext_Query_operation(ctx context.Context, fi
 				return ec.fieldContext_Operation_status(ctx, field)
 			case "error":
 				return ec.fieldContext_Operation_error(ctx, field)
+			case "errorSeverity":
+				return ec.fieldContext_Operation_errorSeverity(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Operation_createdAt(ctx, field)
 			case "updatedAt":
