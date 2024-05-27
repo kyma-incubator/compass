@@ -627,6 +627,7 @@ type ComplexityRoot struct {
 		RequestOneTimeTokenForApplication            func(childComplexity int, id string, systemAuthID *string) int
 		RequestOneTimeTokenForRuntime                func(childComplexity int, id string, systemAuthID *string) int
 		ResynchronizeFormationNotifications          func(childComplexity int, formationID string, reset *bool) int
+		ScheduleOperation                            func(childComplexity int, operationID string, priority *int) int
 		SetApplicationLabel                          func(childComplexity int, applicationID string, key string, value interface{}) int
 		SetBundleInstanceAuth                        func(childComplexity int, authID string, in BundleInstanceAuthSetInput) int
 		SetDefaultEventingForApplication             func(childComplexity int, appID string, runtimeID string) int
@@ -753,6 +754,7 @@ type ComplexityRoot struct {
 		IntegrationSystems                         func(childComplexity int, first *int, after *PageCursor) int
 		LabelDefinition                            func(childComplexity int, key string) int
 		LabelDefinitions                           func(childComplexity int) int
+		Operation                                  func(childComplexity int, id string) int
 		RootTenants                                func(childComplexity int, externalTenant string) int
 		Runtime                                    func(childComplexity int, id string) int
 		Runtimes                                   func(childComplexity int, filter []*LabelFilter, first *int, after *PageCursor) int
@@ -1042,6 +1044,7 @@ type MutationResolver interface {
 	DeleteCertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
 	AddTenantAccess(ctx context.Context, in TenantAccessInput) (*TenantAccess, error)
 	RemoveTenantAccess(ctx context.Context, tenantID string, resourceID string, resourceType TenantAccessObjectType) (*TenantAccess, error)
+	ScheduleOperation(ctx context.Context, operationID string, priority *int) (*Operation, error)
 }
 type OneTimeTokenForApplicationResolver interface {
 	Raw(ctx context.Context, obj *OneTimeTokenForApplication) (*string, error)
@@ -1095,6 +1098,7 @@ type QueryResolver interface {
 	FormationTemplatesByName(ctx context.Context, name string, first *int, after *PageCursor) (*FormationTemplatePage, error)
 	CertificateSubjectMapping(ctx context.Context, id string) (*CertificateSubjectMapping, error)
 	CertificateSubjectMappings(ctx context.Context, first *int, after *PageCursor) (*CertificateSubjectMappingPage, error)
+	Operation(ctx context.Context, id string) (*Operation, error)
 }
 type RuntimeResolver interface {
 	Labels(ctx context.Context, obj *Runtime, key *string) (Labels, error)
@@ -4192,6 +4196,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.ResynchronizeFormationNotifications(childComplexity, args["formationID"].(string), args["reset"].(*bool)), true
 
+	case "Mutation.scheduleOperation":
+		if e.complexity.Mutation.ScheduleOperation == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_scheduleOperation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.ScheduleOperation(childComplexity, args["operationID"].(string), args["priority"].(*int)), true
+
 	case "Mutation.setApplicationLabel":
 		if e.complexity.Mutation.SetApplicationLabel == nil {
 			break
@@ -5256,6 +5272,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.LabelDefinitions(childComplexity), true
+
+	case "Query.operation":
+		if e.complexity.Query.Operation == nil {
+			break
+		}
+
+		args, err := ec.field_Query_operation_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Operation(childComplexity, args["id"].(string)), true
 
 	case "Query.rootTenants":
 		if e.complexity.Query.RootTenants == nil {
@@ -7946,6 +7974,30 @@ func (ec *executionContext) field_Mutation_resynchronizeFormationNotifications_a
 	return args, nil
 }
 
+func (ec *executionContext) field_Mutation_scheduleOperation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["operationID"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("operationID"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["operationID"] = arg0
+	var arg1 *int
+	if tmp, ok := rawArgs["priority"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("priority"))
+		arg1, err = ec.unmarshalOInt2ᚖint(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["priority"] = arg1
+	return args, nil
+}
+
 func (ec *executionContext) field_Mutation_setApplicationLabel_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
@@ -9851,6 +9903,21 @@ func (ec *executionContext) field_Query_labelDefinition_args(ctx context.Context
 		}
 	}
 	args["key"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_operation_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["id"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+		arg0, err = ec.unmarshalNID2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["id"] = arg0
 	return args, nil
 }
 
@@ -35141,6 +35208,96 @@ func (ec *executionContext) fieldContext_Mutation_removeTenantAccess(ctx context
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_scheduleOperation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_scheduleOperation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Mutation().ScheduleOperation(rctx, fc.Args["operationID"].(string), fc.Args["priority"].(*int))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.scheduleOperation")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Operation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Operation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Operation)
+	fc.Result = res
+	return ec.marshalOOperation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_scheduleOperation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Operation_id(ctx, field)
+			case "operationType":
+				return ec.fieldContext_Operation_operationType(ctx, field)
+			case "status":
+				return ec.fieldContext_Operation_status(ctx, field)
+			case "error":
+				return ec.fieldContext_Operation_error(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Operation_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Operation_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Operation", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_scheduleOperation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _OAuthCredentialData_clientId(ctx context.Context, field graphql.CollectedField, obj *OAuthCredentialData) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_OAuthCredentialData_clientId(ctx, field)
 	if err != nil {
@@ -40723,6 +40880,96 @@ func (ec *executionContext) fieldContext_Query_certificateSubjectMappings(ctx co
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Query_certificateSubjectMappings_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_operation(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_operation(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		directive0 := func(rctx context.Context) (interface{}, error) {
+			ctx = rctx // use context from middleware stack in children
+			return ec.resolvers.Query().Operation(rctx, fc.Args["id"].(string))
+		}
+		directive1 := func(ctx context.Context) (interface{}, error) {
+			path, err := ec.unmarshalNString2string(ctx, "graphql.query.operation")
+			if err != nil {
+				return nil, err
+			}
+			if ec.directives.HasScopes == nil {
+				return nil, errors.New("directive hasScopes is not implemented")
+			}
+			return ec.directives.HasScopes(ctx, nil, directive0, path)
+		}
+
+		tmp, err := directive1(rctx)
+		if err != nil {
+			return nil, graphql.ErrorOnPath(ctx, err)
+		}
+		if tmp == nil {
+			return nil, nil
+		}
+		if data, ok := tmp.(*Operation); ok {
+			return data, nil
+		}
+		return nil, fmt.Errorf(`unexpected type %T from directive, should be *github.com/kyma-incubator/compass/components/director/pkg/graphql.Operation`, tmp)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*Operation)
+	fc.Result = res
+	return ec.marshalOOperation2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_operation(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Operation_id(ctx, field)
+			case "operationType":
+				return ec.fieldContext_Operation_operationType(ctx, field)
+			case "status":
+				return ec.fieldContext_Operation_status(ctx, field)
+			case "error":
+				return ec.fieldContext_Operation_error(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Operation_createdAt(ctx, field)
+			case "updatedAt":
+				return ec.fieldContext_Operation_updatedAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Operation", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_operation_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -54103,6 +54350,10 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_removeTenantAccess(ctx, field)
 			})
+		case "scheduleOperation":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_scheduleOperation(ctx, field)
+			})
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -55481,6 +55732,25 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "operation":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_operation(ctx, field)
 				return res
 			}
 
