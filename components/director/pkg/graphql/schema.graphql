@@ -1877,6 +1877,7 @@ type Query {
 	- [query certificate subject mappings](examples/query-certificate-subject-mappings/query-certificate-subject-mappings.graphql)
 	"""
 	certificateSubjectMappings(first: Int = 300, after: PageCursor): CertificateSubjectMappingPage! @hasScopes(path: "graphql.query.certificateSubjectMappings")
+	operation(id: ID!): Operation @hasScopes(path: "graphql.query.operation")
 }
 
 type Mutation {
@@ -2285,5 +2286,10 @@ type Mutation {
 	- [remove tenant access](examples/remove-tenant-access/remove-tenant-access.graphql)
 	"""
 	removeTenantAccess(tenantID: ID!, resourceID: ID!, resourceType: TenantAccessObjectType!): TenantAccess @hasScopes(path: "graphql.mutation.removeTenantAccess")
+	"""
+	**Examples**
+	- [schedule operation](examples/schedule-operation/schedule-operation.graphql)
+	"""
+	scheduleOperation(operationID: ID!, priority: Int = 100): Operation @hasScopes(path: "graphql.mutation.scheduleOperation")
 }
 
