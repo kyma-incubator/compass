@@ -86,5 +86,5 @@ func waitForOperationToFinish(t *testing.T, ctx context.Context, opID string) {
 
 		t.Logf("Operation with ID %q is still not completed. Current status is: %v.", opID, currentOperation.Status)
 		return false
-	}, time.Second*90, time.Second*1, "Waiting for System operation to be created.")
+	}, time.Second*90, time.Second*1, "Waiting for operation to finish.")
 }
