@@ -5,6 +5,8 @@ const (
 	ErrorSeverity = "error"
 	// WarningSeverity is one of the severity levels of a validation error
 	WarningSeverity = "warning"
+	// InfoSeverity is one of the severity levels of a validation error
+	InfoSeverity = "info"
 )
 
 // ValidationError represents a validation error when aggregating and validating ORD documents

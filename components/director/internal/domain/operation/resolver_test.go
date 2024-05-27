@@ -23,8 +23,8 @@ func TestResolver_Operation(t *testing.T) {
 	testErr := errors.New("test error")
 	now := time.Now()
 	testID := "8ee7ef81-ca8e-4399-a5d2-3a5f96ecc4c8"
-	modelOperation := fixOperationModelWithID(testID, model.OperationTypeOrdAggregation, model.OperationStatusFailed, 1)
-	graphqlOperation := fixOperationGraphqlWithIDAndTimestamp(testID, graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusFailed, "error message", &now)
+	modelOperation := fixOperationModelWithID(testID, model.OperationTypeOrdAggregation, model.OperationStatusFailed, 1, model.OperationErrorSeverityNone)
+	graphqlOperation := fixOperationGraphqlWithIDAndTimestamp(testID, graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusFailed, "error message", graphql.OperationErrorSeverityNone, &now)
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {
@@ -126,8 +126,8 @@ func TestResolver_Schedule(t *testing.T) {
 	prio := 60
 	now := time.Now()
 	testID := "8ee7ef81-ca8e-4399-a5d2-3a5f96ecc4c8"
-	modelOperation := fixOperationModelWithID(testID, model.OperationTypeOrdAggregation, model.OperationStatusFailed, 1)
-	graphqlOperation := fixOperationGraphqlWithIDAndTimestamp(testID, graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusFailed, "error message", &now)
+	modelOperation := fixOperationModelWithID(testID, model.OperationTypeOrdAggregation, model.OperationStatusFailed, 1, model.OperationErrorSeverityNone)
+	graphqlOperation := fixOperationGraphqlWithIDAndTimestamp(testID, graphql.ScheduledOperationTypeOrdAggregation, graphql.OperationStatusFailed, "error message", graphql.OperationErrorSeverityNone, &now)
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
 	testCases := []struct {

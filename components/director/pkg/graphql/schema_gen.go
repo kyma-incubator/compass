@@ -700,6 +700,7 @@ type ComplexityRoot struct {
 	Operation struct {
 		CreatedAt     func(childComplexity int) int
 		Error         func(childComplexity int) int
+		ErrorSeverity func(childComplexity int) int
 		ID            func(childComplexity int) int
 		OperationType func(childComplexity int) int
 		Status        func(childComplexity int) int
@@ -4801,6 +4802,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Operation.Error(childComplexity), true
+
+	case "Operation.errorSeverity":
+		if e.complexity.Operation.ErrorSeverity == nil {
+			break
+		}
+
+		return e.complexity.Operation.ErrorSeverity(childComplexity), true
 
 	case "Operation.id":
 		if e.complexity.Operation.ID == nil {
@@ -12078,6 +12086,8 @@ func (ec *executionContext) fieldContext_Application_operations(ctx context.Cont
 				return ec.fieldContext_Operation_status(ctx, field)
 			case "error":
 				return ec.fieldContext_Operation_error(ctx, field)
+			case "errorSeverity":
+				return ec.fieldContext_Operation_errorSeverity(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Operation_createdAt(ctx, field)
 			case "updatedAt":
@@ -35266,6 +35276,8 @@ func (ec *executionContext) fieldContext_Mutation_scheduleOperation(ctx context.
 				return ec.fieldContext_Operation_status(ctx, field)
 			case "error":
 				return ec.fieldContext_Operation_error(ctx, field)
+			case "errorSeverity":
+				return ec.fieldContext_Operation_errorSeverity(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Operation_createdAt(ctx, field)
 			case "updatedAt":
@@ -36435,6 +36447,50 @@ func (ec *executionContext) fieldContext_Operation_error(ctx context.Context, fi
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Operation_errorSeverity(ctx context.Context, field graphql.CollectedField, obj *Operation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Operation_errorSeverity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ErrorSeverity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(OperationErrorSeverity)
+	fc.Result = res
+	return ec.marshalNOperationErrorSeverity2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Operation_errorSeverity(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Operation",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type OperationErrorSeverity does not have child fields")
 		},
 	}
 	return fc, nil
@@ -40900,6 +40956,8 @@ func (ec *executionContext) fieldContext_Query_operation(ctx context.Context, fi
 				return ec.fieldContext_Operation_status(ctx, field)
 			case "error":
 				return ec.fieldContext_Operation_error(ctx, field)
+			case "errorSeverity":
+				return ec.fieldContext_Operation_errorSeverity(ctx, field)
 			case "createdAt":
 				return ec.fieldContext_Operation_createdAt(ctx, field)
 			case "updatedAt":
@@ -54659,6 +54717,11 @@ func (ec *executionContext) _Operation(ctx context.Context, sel ast.SelectionSet
 			}
 		case "error":
 			out.Values[i] = ec._Operation_error(ctx, field, obj)
+		case "errorSeverity":
+			out.Values[i] = ec._Operation_errorSeverity(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "createdAt":
 			out.Values[i] = ec._Operation_createdAt(ctx, field, obj)
 		case "updatedAt":
@@ -58799,6 +58862,16 @@ func (ec *executionContext) marshalNOneTimeTokenForRuntime2ᚖgithubᚗcomᚋkym
 		return graphql.Null
 	}
 	return ec._OneTimeTokenForRuntime(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNOperationErrorSeverity2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx context.Context, v interface{}) (OperationErrorSeverity, error) {
+	var res OperationErrorSeverity
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNOperationErrorSeverity2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationErrorSeverity(ctx context.Context, sel ast.SelectionSet, v OperationErrorSeverity) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) unmarshalNOperationStatus2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐOperationStatus(ctx context.Context, v interface{}) (OperationStatus, error) {
