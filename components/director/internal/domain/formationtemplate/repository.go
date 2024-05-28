@@ -222,6 +222,7 @@ func (r *repository) Delete(ctx context.Context, id, tenantID string) error {
 		if err := r.deleterGlobal.DeleteOneGlobal(ctx, conditions); apperrors.IsInternalServerError(err) {
 			return apperrors.NewTenantRequiredError()
 		}
+		return nil
 	}
 
 	return r.deleterWithEmbeddedTenant.DeleteOne(ctx, resource.FormationTemplate, tenantID, conditions)
