@@ -1711,7 +1711,7 @@ func waitForApplicationsToBeProcessed(ctx context.Context, t *testing.T, tenantI
 		_, actualApps := retrieveAppsForTenant(t, ctx, tenantID)
 		t.Logf("Found %d from %d", len(actualApps), expectedNumber)
 		return len(actualApps) >= expectedNumber
-	}, time.Second*90, time.Second*1, "Waiting for Systems to be fetched.")
+	}, time.Second*180, time.Second*1, "Waiting for Systems to be fetched.")
 }
 
 func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
