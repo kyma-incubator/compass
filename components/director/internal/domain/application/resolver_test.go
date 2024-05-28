@@ -2847,6 +2847,7 @@ func TestResolver_Operations(t *testing.T) {
 	}
 	applicationTemplateID := ""
 
+	notFoundErr := apperrors.NewNotFoundError(resource.Application, gqlApp.ID)
 	testErr := errors.New("this is a test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -2877,6 +2878,7 @@ func TestResolver_Operations(t *testing.T) {
 			TransactionerFn: txGen.ThatSucceeds,
 			OperationSvcFn: func() *automock.OperationService {
 				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, ""), model.OperationTypeOrdAggregation).Return(nil, notFoundErr).Once()
 				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlAppWithAppTemplateID.ID, *gqlAppWithAppTemplateID.ApplicationTemplateID), model.OperationTypeOrdAggregation).Return(operations[0], nil).Once()
 				return operationSvc
 			},
@@ -2884,6 +2886,41 @@ func TestResolver_Operations(t *testing.T) {
 			Input:           gqlAppWithAppTemplateID,
 			ExpectedOutput:  gqlOperations,
 			ExpectedError:   nil,
+		},
+		{
+			Name:            "Success when there is no operation for application",
+			TransactionerFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, ""), model.OperationTypeOrdAggregation).Return(nil, notFoundErr).Once()
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlAppWithAppTemplateID.ID, *gqlAppWithAppTemplateID.ApplicationTemplateID), model.OperationTypeOrdAggregation).Return(nil, notFoundErr).Once()
+				return operationSvc
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				converter := &automock.OperationConverter{}
+				converter.On("MultipleToGraphQL", []*model.Operation{nil}).Return([]*graphql.Operation{}, nil).Once()
+				return converter
+			},
+			Input:          gqlAppWithAppTemplateID,
+			ExpectedOutput: []*graphql.Operation{},
+			ExpectedError:  nil,
+		},
+		{
+			Name:            "Success when get operation by data and type returns not found error and application does not have application template id",
+			TransactionerFn: txGen.ThatSucceeds,
+			OperationSvcFn: func() *automock.OperationService {
+				operationSvc := &automock.OperationService{}
+				operationSvc.On("GetByDataAndType", txtest.CtxWithDBMatcher(), data.NewOrdOperationData(gqlApp.ID, applicationTemplateID), model.OperationTypeOrdAggregation).Return(nil, notFoundErr).Once()
+				return operationSvc
+			},
+			OperationConvFn: func() *automock.OperationConverter {
+				converter := &automock.OperationConverter{}
+				converter.On("MultipleToGraphQL", []*model.Operation{nil}).Return([]*graphql.Operation{}, nil).Once()
+				return converter
+			},
+			Input:          gqlApp,
+			ExpectedOutput: []*graphql.Operation{},
+			ExpectedError:  nil,
 		},
 		{
 			Name:            "Get operation by data and type returns error",
