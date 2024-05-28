@@ -14,6 +14,8 @@ const (
 	Assign AssignmentOperationType = "ASSIGN"
 	// Unassign denotes the operation is unassigning object from a formation
 	Unassign AssignmentOperationType = "UNASSIGN"
+	// InstanceCreatorUnassign denotes the operation is related to Instance Creator unassign
+	InstanceCreatorUnassign AssignmentOperationType = "INSTANCE_CREATOR_UNASSIGN"
 )
 
 // OperationTrigger denotes what triggered the operation - assign, unassign, reset etc.

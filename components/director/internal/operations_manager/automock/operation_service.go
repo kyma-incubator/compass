@@ -280,6 +280,20 @@ func (_m *OperationService) RescheduleOperations(ctx context.Context, operationT
 	return r0
 }
 
+// SetErrorSeverity provides a mock function with given fields: ctx, id, errorSeverity
+func (_m *OperationService) SetErrorSeverity(ctx context.Context, id string, errorSeverity model.OperationErrorSeverity) error {
+	ret := _m.Called(ctx, id, errorSeverity)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.OperationErrorSeverity) error); ok {
+		r0 = rf(ctx, id, errorSeverity)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Update provides a mock function with given fields: ctx, input
 func (_m *OperationService) Update(ctx context.Context, input *model.Operation) error {
 	ret := _m.Called(ctx, input)

@@ -80,11 +80,12 @@ func (h *handler) ScheduleSaaSRegistryDiscoveryForSystemFieldDiscoveryData(write
 		}
 
 		newOperationInput := &model.OperationInput{
-			OpType:    model.OperationTypeSaasRegistryDiscovery,
-			Status:    model.OperationStatusScheduled,
-			Data:      json.RawMessage(rawData),
-			Priority:  int(operationsmanager.HighOperationPriority),
-			CreatedAt: &now,
+			OpType:        model.OperationTypeSaasRegistryDiscovery,
+			Status:        model.OperationStatusScheduled,
+			Data:          json.RawMessage(rawData),
+			ErrorSeverity: model.OperationErrorSeverityNone,
+			Priority:      int(operationsmanager.HighOperationPriority),
+			CreatedAt:     &now,
 		}
 
 		opID, err := h.opMgr.CreateOperation(ctx, newOperationInput)

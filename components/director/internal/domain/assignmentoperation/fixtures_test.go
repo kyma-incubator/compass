@@ -9,8 +9,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 )
 
-const ()
-
 var (
 	operationID                 = "operationID"
 	operationID2                = "operationID2"

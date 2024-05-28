@@ -305,3 +305,19 @@ func (om *OperationsManager) tryToGetOperation(ctx context.Context, operationID 
 	}
 	return nil, tx.Commit()
 }
+
+// SetOperationErrorSeverity sets the error severity for an operation
+func (om *OperationsManager) SetOperationErrorSeverity(ctx context.Context, id string, errorSeverity model.OperationErrorSeverity) error {
+	tx, err := om.transact.Begin()
+	if err != nil {
+		return err
+	}
+	defer om.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	if err = om.opSvc.SetErrorSeverity(ctx, id, errorSeverity); err != nil {
+		return errors.Wrapf(err, "while setting error severity for operation with id %q", id)
+	}
+
+	return tx.Commit()
+}

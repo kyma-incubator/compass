@@ -618,7 +618,6 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 	if formationAssignment == nil {
 		return &webhook.FormationAssignment{}
 	}
-	state := formationAssignment.GetNotificationState()
 	return &webhook.FormationAssignment{
 		ID:          formationAssignment.ID,
 		FormationID: formationAssignment.FormationID,
@@ -627,7 +626,7 @@ func convertFormationAssignmentFromModel(formationAssignment *model.FormationAss
 		SourceType:  formationAssignment.SourceType,
 		Target:      formationAssignment.Target,
 		TargetType:  formationAssignment.TargetType,
-		State:       state,
+		State:       formationAssignment.State,
 		Value:       str.StringifyJSONRawMessage(formationAssignment.Value),
 		Error:       str.StringifyJSONRawMessage(formationAssignment.Error),
 	}
