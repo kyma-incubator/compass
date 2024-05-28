@@ -3023,10 +3023,8 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 	assignmentOperation4 := mock.MatchedBy(func(op *model.AssignmentOperationInput) bool {
 		return op.Type == model.Assign && op.FormationAssignmentID == "id4" && op.FormationID == FormationID && op.TriggeredBy == model.ResetAssignment
 	})
-	//op1 := fixAssignmentOperationModel(AssignmentOperationID, "id1", model.Assign, model.ResyncAssignment)
-	//op2 := fixAssignmentOperationModel(AssignmentOperationID, "id2", model.Assign, model.ResyncAssignment)
-	//op3 := fixAssignmentOperationModel(AssignmentOperationID, "id3", model.Assign, model.ResyncAssignment)
-	//op4 := fixAssignmentOperationModel(AssignmentOperationID, "id4", model.Assign, model.ResyncAssignment)
+	assignmentOperationWithAssignType := fixAssignmentOperationModelWithTypeAndTrigger(model.Assign, model.AssignObject)
+	assignmentOperationWithUnassignType := fixAssignmentOperationModelWithTypeAndTrigger(model.Unassign, model.UnassignObject)
 
 	formationAssignmentsInDeletingState := cloneFormationAssignments(formationAssignments)
 	setAssignmentsToState(model.DeletingAssignmentState, formationAssignmentsInDeletingState...)
@@ -3162,6 +3160,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3209,6 +3211,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3269,6 +3275,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3323,6 +3333,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			ExpectedErrMessage: testErr.Error(),
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3370,6 +3384,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3418,6 +3436,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3468,6 +3490,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3523,6 +3549,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3572,6 +3602,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3611,6 +3645,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				return svc
+			},
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -3646,6 +3685,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3689,6 +3732,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -3738,10 +3785,37 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
+				return svc
+			},
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
+			Name:                 "returns error when failing to get latest operation",
+			FormationAssignments: formationAssignments,
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatDoesntExpectCommit()
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("GetAssignmentsForFormationWithStates", txtest.CtxWithDBMatcher(), TntInternalID, FormationID, allStates).Return(formationAssignments, nil).Once()
+				return svc
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
+				return repo
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(nil, testErr).Once()
 				return svc
 			},
 			ExpectedErrMessage: testErr.Error(),
@@ -3773,6 +3847,7 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(testErr).Once()
 				return svc
 			},
@@ -3799,6 +3874,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				return svc
+			},
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -3823,6 +3903,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
 			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				return svc
+			},
 			ExpectedErrMessage: testErr.Error(),
 		},
 		{
@@ -3843,6 +3928,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				repo := &automock.FormationRepository{}
 				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationID, TntInternalID).Return(testFormation, nil).Once()
 				return repo
+			},
+			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				return svc
 			},
 			ExpectedErrMessage: testErr.Error(),
 		},
@@ -3937,6 +4027,10 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -4317,6 +4411,11 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation3).Return("", nil).Once()
 				svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation4).Return("", nil).Once()
+
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
 
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResetAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResetAssignment).Return(nil).Once()

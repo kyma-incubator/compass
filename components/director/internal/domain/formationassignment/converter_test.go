@@ -34,16 +34,6 @@ func TestToGraphQL(t *testing.T) {
 			Expected: fixFormationAssignmentGQLModelWithConfigAndError(&TestConfigValueStr, &TestErrorValueStr),
 		},
 		{
-			Name:     "Success when assignment is in INSTANCE_CREATOR_DELETING should return DELETING state",
-			Input:    fixFormationAssignmentModelWithState(string(model.InstanceCreatorDeletingAssignmentState)),
-			Expected: fixFormationAssignmentGQLModelWithState(string(model.DeletingAssignmentState)),
-		},
-		{
-			Name:     "Success when assignment is in INSTANCE_CREATOR_DELETE_ERROR should return DELETE_ERROR state",
-			Input:    fixFormationAssignmentModelWithState(string(model.InstanceCreatorDeleteErrorAssignmentState)),
-			Expected: fixFormationAssignmentGQLModelWithState(string(model.DeleteErrorAssignmentState)),
-		},
-		{
 			Name:     "Success when input is nil",
 			Input:    nil,
 			Expected: nil,

@@ -19,10 +19,6 @@ type AssignmentOperationService struct {
 func (_m *AssignmentOperationService) Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.AssignmentOperationInput) (string, error)); ok {
@@ -47,10 +43,6 @@ func (_m *AssignmentOperationService) Create(ctx context.Context, in *model.Assi
 func (_m *AssignmentOperationService) DeleteByIDs(ctx context.Context, ids []string) error {
 	ret := _m.Called(ctx, ids)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteByIDs")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string) error); ok {
 		r0 = rf(ctx, ids)
@@ -65,10 +57,6 @@ func (_m *AssignmentOperationService) DeleteByIDs(ctx context.Context, ids []str
 func (_m *AssignmentOperationService) Finish(ctx context.Context, assignmentID string, formationID string) error {
 	ret := _m.Called(ctx, assignmentID, formationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Finish")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, assignmentID, formationID)
@@ -79,13 +67,35 @@ func (_m *AssignmentOperationService) Finish(ctx context.Context, assignmentID s
 	return r0
 }
 
+// GetLatestOperation provides a mock function with given fields: ctx, assignmentID, formationID
+func (_m *AssignmentOperationService) GetLatestOperation(ctx context.Context, assignmentID string, formationID string) (*model.AssignmentOperation, error) {
+	ret := _m.Called(ctx, assignmentID, formationID)
+
+	var r0 *model.AssignmentOperation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.AssignmentOperation, error)); ok {
+		return rf(ctx, assignmentID, formationID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.AssignmentOperation); ok {
+		r0 = rf(ctx, assignmentID, formationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AssignmentOperation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, assignmentID, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListByFormationAssignmentIDs provides a mock function with given fields: ctx, formationAssignmentIDs, pageSize, cursor
 func (_m *AssignmentOperationService) ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error) {
 	ret := _m.Called(ctx, formationAssignmentIDs, pageSize, cursor)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByFormationAssignmentIDs")
-	}
 
 	var r0 []*model.AssignmentOperationPage
 	var r1 error
@@ -112,10 +122,6 @@ func (_m *AssignmentOperationService) ListByFormationAssignmentIDs(ctx context.C
 // Update provides a mock function with given fields: ctx, assignmentID, formationID, newTrigger
 func (_m *AssignmentOperationService) Update(ctx context.Context, assignmentID string, formationID string, newTrigger model.OperationTrigger) error {
 	ret := _m.Called(ctx, assignmentID, formationID, newTrigger)
-
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.OperationTrigger) error); ok {

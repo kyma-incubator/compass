@@ -40,6 +40,9 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 	fa4 := fixFormationAssignmentModelWithParameters("id4", FormationID, RuntimeContextID, RuntimeContextID, model.FormationAssignmentTypeRuntimeContext, model.FormationAssignmentTypeRuntimeContext, model.DeleteErrorAssignmentState)
 	formationAssignments := []*model.FormationAssignment{fa1, fa2, fa3, fa4}
 
+	assignmentOperationWithAssignType := fixAssignmentOperationModelWithTypeAndTrigger(model.Assign, model.AssignObject)
+	assignmentOperationWithUnassignType := fixAssignmentOperationModelWithTypeAndTrigger(model.Unassign, model.UnassignObject)
+
 	formationAssignmentsInDeletingState := cloneFormationAssignments(formationAssignments)
 	setAssignmentsToState(model.DeletingAssignmentState, formationAssignmentsInDeletingState...)
 
@@ -148,6 +151,10 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
@@ -222,6 +229,10 @@ func TestServiceFinalizeDraftFormation(t *testing.T) {
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID).Return(assignmentOperationWithAssignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), formationAssignments[3].ID, FormationID).Return(assignmentOperationWithUnassignType, nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, FormationID, model.ResyncAssignment).Return(nil).Once()
 				svc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[2].ID, FormationID, model.ResyncAssignment).Return(nil).Once()

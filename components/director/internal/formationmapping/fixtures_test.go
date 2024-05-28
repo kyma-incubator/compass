@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -45,6 +46,10 @@ var (
 	testFormationID         = "testFormationID"
 	testFormationName       = "testFormationName"
 	testFormationTemplateID = "testFormationTemplateID"
+
+	// Assignment Operation constants
+	assignmentOperationID = "AssignmentOperationID"
+	defaultTime           = time.Time{}
 
 	// UCL Subaccount IDs
 	matchingTestUCLSubaccountID = "testSubaccID"
@@ -281,4 +286,16 @@ func fixNotificationStatusReportWithStateAndConfig(configuration json.RawMessage
 
 func fixNotificationStatusReportWithStateAndError(state, errorMessage string) *statusreport.NotificationStatusReport {
 	return statusreport.NewNotificationStatusReport(nil, state, errorMessage)
+}
+
+func fixAssignmentOperationModelWithTypeAndTrigger(opType model.AssignmentOperationType, opTrigger model.OperationTrigger) *model.AssignmentOperation {
+	return &model.AssignmentOperation{
+		ID:                    assignmentOperationID,
+		Type:                  opType,
+		FormationAssignmentID: assignmentOperationID,
+		FormationID:           testFormationID,
+		TriggeredBy:           opTrigger,
+		StartedAtTimestamp:    &defaultTime,
+		FinishedAtTimestamp:   &defaultTime,
+	}
 }
