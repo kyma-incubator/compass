@@ -175,6 +175,69 @@ func TestService_Finish(t *testing.T) {
 	}
 }
 
+func TestService_GetLatestOperation(t *testing.T) {
+	ctx := context.TODO()
+
+	testErr := errors.New("test error")
+
+	testCases := []struct {
+		Name                    string
+		InputAssignmentID       string
+		InputFormationID        string
+		AssignmentOperationRepo func() *automock.AssignmentOperationRepository
+		ExpectedOutput          *model.AssignmentOperation
+		ExpectedErrorMsg        string
+	}{
+		{
+			Name:              "Success",
+			InputAssignmentID: assignmentID,
+			InputFormationID:  formationID,
+			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
+				repo := &automock.AssignmentOperationRepository{}
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(fixAssignmentOperationModel(), nil).Once()
+				return repo
+			},
+			ExpectedOutput: fixAssignmentOperationModel(),
+		},
+		{
+			Name:              "Error when getting latest operation",
+			InputAssignmentID: assignmentID,
+			InputFormationID:  formationID,
+			AssignmentOperationRepo: func() *automock.AssignmentOperationRepository {
+				repo := &automock.AssignmentOperationRepository{}
+				repo.On("GetLatestOperation", ctx, assignmentID, formationID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			aoRepo := &automock.AssignmentOperationRepository{}
+			if testCase.AssignmentOperationRepo != nil {
+				aoRepo = testCase.AssignmentOperationRepo()
+			}
+
+			svc := assignmentOperation.NewService(aoRepo, nil)
+
+			// WHEN
+			output, err := svc.GetLatestOperation(ctx, testCase.InputAssignmentID, testCase.InputFormationID)
+
+			if testCase.ExpectedErrorMsg != "" {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedErrorMsg)
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, testCase.ExpectedOutput, output)
+
+			mock.AssertExpectationsForObjects(t, aoRepo)
+		})
+	}
+}
+
 func TestService_Update(t *testing.T) {
 	ctx := context.TODO()
 

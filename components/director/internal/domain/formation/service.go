@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	formationassignmentpkg "github.com/kyma-incubator/compass/components/director/pkg/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -166,6 +167,7 @@ type asaEngine interface {
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
 	Finish(ctx context.Context, assignmentID, formationID string) error
+	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
 	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
 	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 	DeleteByIDs(ctx context.Context, ids []string) error
@@ -1320,9 +1322,14 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, fa.ID)
 			ctx = log.ContextWithLogger(ctx, logger)
 
-			operation := fa.GetOperation()
+			latestAssignmentOperation, err := s.assignmentOperationService.GetLatestOperation(ctxWithTransact, fa.ID, fa.FormationID)
+			if err != nil {
+				return err
+			}
+			formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type)
+
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
-			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, operation)
+			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, formationOperation)
 			if err != nil {
 				return err
 			}
@@ -1332,7 +1339,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				return err
 			}
 			if reverseFA != nil {
-				notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, reverseFA, operation)
+				notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, reverseFA, formationOperation)
 				if err != nil && !apperrors.IsNotFoundError(err) {
 					return err
 				}
@@ -1347,7 +1354,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 
 			faClone := fa.Clone()
-			if notificationForFA != nil && operation == model.UnassignFormation {
+			if notificationForFA != nil && formationOperation == model.UnassignFormation {
 				faClone.SetStateToDeleting()
 				formationassignment.ResetAssignmentConfigAndError(faClone)
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
@@ -1357,7 +1364,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Unassign, faClone.ID, assignmentOperationTriggeredBy)
 				}
 			}
-			if operation == model.AssignFormation {
+			if formationOperation == model.AssignFormation {
 				faClone.State = string(model.InitialAssignmentState)
 				// Cleanup the error if present as new notification will be sent. The previous configuration should be left intact.
 				faClone.Error = nil
@@ -1377,7 +1384,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					},
 					ReverseAssignmentReqMapping: reverseReqMapping,
 				},
-				Operation: operation,
+				Operation: formationOperation,
 			}
 
 			// We separate the assignment pairs in 3 groups

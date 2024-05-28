@@ -1700,14 +1700,15 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 				fixtures.NewOperation(app1ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
 				fixtures.NewOperation(app2ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
 				fixtures.NewOperation(app2ID, app1ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+				fixtures.NewOperation(app2ID, app1ID, "INSTANCE_CREATOR_UNASSIGN", "UNASSIGN_OBJECT", false),
 			})
-		faAsserter := asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient).WithCondition(graphql.FormationStatusConditionInProgress)
 		notificationCountAsyncAsserter := asserters.NewNotificationsCountAsyncAsserter(1, unassignOperation, localTenantID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationsUnassignAsserter := asserters.NewUnassignNotificationsAsserter(1, localTenantID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationCountRedirectNotificationAsyncAsserter := asserters.NewNotificationsCountAsyncAsserter(1, unassignOperation, redirectedTntID, conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient)
 		notificationsUnassignRedirectedAsserter := asserters.NewUnassignNotificationsAsserter(1, redirectedTntID, app2ID, localTenantID, appNamespace, appRegion, tnt, tntParentCustomer, "", conf.ExternalServicesMockMtlsSecuredURL, certSecuredHTTPClient).WithState(deletingAssignmentState)
-		op = operations.NewUnassignAppFromFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationCountAsyncAsserter, notificationsUnassignAsserter, notificationCountRedirectNotificationAsyncAsserter, notificationsUnassignRedirectedAsserter).Operation()
+		op = operations.NewUnassignAppFromFormationOperation(app2ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationCountAsyncAsserter, notificationsUnassignAsserter, notificationCountRedirectNotificationAsyncAsserter, notificationsUnassignRedirectedAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
@@ -1727,10 +1728,12 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 				fixtures.NewOperation(app1ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
 				fixtures.NewOperation(app2ID, app1ID, "ASSIGN", "ASSIGN_OBJECT", true),
 				fixtures.NewOperation(app2ID, app1ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+				fixtures.NewOperation(app2ID, app1ID, "INSTANCE_CREATOR_UNASSIGN", "UNASSIGN_OBJECT", false),
 				fixtures.NewOperation(app2ID, app1ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
+				fixtures.NewOperation(app2ID, app1ID, "INSTANCE_CREATOR_UNASSIGN", "UNASSIGN_OBJECT", false),
 			})
-		faAsserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
-		op = operations.NewUnassignAppFromFormationOperation(app2ID, tnt).WithAsserters(faAsserter, statusAsserter, notificationCountRedirectNotificationAsyncAsserter, notificationsUnassignRedirectedAsserter).Operation()
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		op = operations.NewUnassignAppFromFormationOperation(app2ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter, notificationCountRedirectNotificationAsyncAsserter, notificationsUnassignRedirectedAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 
@@ -1743,7 +1746,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			WithFormationAssignment(app2ID, app1ID).
 			WithHTTPClient(appCertClient).
 			WithExternalServicesMockMtlsSecuredURL(conf.DirectorExternalCertFAAsyncStatusURL).
-			WithAsserters(faAsserter, statusAsserter).
+			WithAsserters(faAsyncAsserter, statusAsserter).
 			Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
@@ -1764,9 +1767,9 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 
 		t.Logf("Unassign Application 1 from formation: %s", formationName)
 		expectationsBuilder = mock_data.NewFAExpectationsBuilder()
-		faAsserter = asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
+		faAsyncAsserter = asserters.NewFormationAssignmentAsyncAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
-		op = operations.NewUnassignAppFromFormationOperation(app1ID, tnt).WithAsserters(faAsserter, statusAsserter).Operation()
+		op = operations.NewUnassignAppFromFormationOperation(app1ID, tnt).WithAsserters(faAsyncAsserter, statusAsserter).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 	})

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -28,6 +29,7 @@ const (
 	runtimeID                = "c66341c4-ca3a-11ed-afa1-0242ac120564"
 	runtimeCtxID             = "f7156h4-ca3a-11ed-afa1-0242ac121237"
 	formationAssignmentID    = "c54341c4-ca3a-11ed-afa1-0242ac120564"
+	assignmentOperationID    = "3a711086-3cac-4253-97e9-6c0417f5cc67"
 	formationTemplateID      = "b87631c4-ca3a-11ed-afa1-0242ac120002"
 	otherFormationTemplateID = "b05731c4-ca3a-11ed-afa1-0242ac120002"
 	formationID              = "a16724q3-ba3a-13ef-a1c7-1247ac120123"
@@ -82,6 +84,7 @@ var (
 	ctx            = context.TODO()
 	testErr        = errors.New("test error")
 	corrleationIDs []string
+	defaultTime    = time.Time{}
 
 	preNotificationStatusReturnedLocation = fixJoinPointLocation(model.NotificationStatusReturned, model.PreOperation)
 	preSendNotificationLocation           = fixJoinPointLocation(model.SendNotificationOperation, model.PreOperation)
@@ -381,6 +384,27 @@ func setStatusReportToAsynchronousFlowControlInput(input *formationconstraintpkg
 	input.NotificationStatusReportMemoryAddress = report.GetAddress()
 }
 
+func fixAssignmentOperationModelWithTypeAndTrigger(opType model.AssignmentOperationType, opTrigger model.OperationTrigger) *model.AssignmentOperation {
+	return &model.AssignmentOperation{
+		ID:                    assignmentOperationID,
+		Type:                  opType,
+		FormationAssignmentID: formationAssignmentID,
+		FormationID:           formationID,
+		TriggeredBy:           opTrigger,
+		StartedAtTimestamp:    &defaultTime,
+		FinishedAtTimestamp:   &defaultTime,
+	}
+}
+
+func fixAssignmentOperationInputWithTypeAndTrigger(opType model.AssignmentOperationType, opTrigger model.OperationTrigger) *model.AssignmentOperationInput {
+	return &model.AssignmentOperationInput{
+		Type:                  opType,
+		FormationAssignmentID: formationAssignmentID,
+		FormationID:           formationID,
+		TriggeredBy:           opTrigger,
+	}
+}
+
 // Destination Creator operator fixtures
 
 func fixDestinationCreatorInputWithAssignmentMemoryAddress(operation model.FormationOperation, formationAssignment *model.FormationAssignment, location formationconstraintpkg.JoinPointLocation, report *statusreport.NotificationStatusReport) *formationconstraintpkg.DestinationCreatorInput {
@@ -588,8 +612,9 @@ func fixFormationAssignmentWithConfig(config json.RawMessage) *model.FormationAs
 
 func fixFormationAssignmentWithState(state model.FormationAssignmentState) *model.FormationAssignment {
 	return &model.FormationAssignment{
-		ID:    formationAssignmentID,
-		State: string(state),
+		ID:          formationAssignmentID,
+		FormationID: formationID,
+		State:       string(state),
 	}
 }
 

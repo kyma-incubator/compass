@@ -7,7 +7,6 @@ import (
 	"unsafe"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 )
 
 // FormationAssignmentType describes possible source and target types
@@ -71,16 +70,12 @@ const (
 	CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
 	// DeletingAssignmentState indicates that async unassign notification is sent and status report is expected from the receiver
 	DeletingAssignmentState FormationAssignmentState = "DELETING"
-	// InstanceCreatorDeletingAssignmentState indicates that async unassign notification is sent and status report is expected from the receiver
-	InstanceCreatorDeletingAssignmentState FormationAssignmentState = "INSTANCE_CREATOR_DELETING"
 	// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
 	DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
 	// CreateReadyFormationAssignmentState indicates that the formation assignment is in a ready state and the response is for an assign notification
 	CreateReadyFormationAssignmentState FormationAssignmentState = "CREATE_READY"
 	// DeleteReadyFormationAssignmentState indicates that the formation assignment is in a ready state and the response is for an unassign notification
 	DeleteReadyFormationAssignmentState FormationAssignmentState = "DELETE_READY"
-	// InstanceCreatorDeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment by the instance creator operator
-	InstanceCreatorDeleteErrorAssignmentState FormationAssignmentState = "INSTANCE_CREATOR_DELETE_ERROR"
 	// NotificationRecursionDepthLimit is the maximum count of configuration exchanges during assigning an object to formation
 	NotificationRecursionDepthLimit int = 10
 )
@@ -100,10 +95,8 @@ var SupportedFormationAssignmentStates = map[string]bool{
 // ResynchronizableFormationAssignmentStates is an array of supported assignment states for resynchronization
 var ResynchronizableFormationAssignmentStates = []string{string(InitialAssignmentState),
 	string(DeletingAssignmentState),
-	string(InstanceCreatorDeletingAssignmentState),
 	string(CreateErrorAssignmentState),
-	string(DeleteErrorAssignmentState),
-	string(InstanceCreatorDeleteErrorAssignmentState)}
+	string(DeleteErrorAssignmentState)}
 
 // ToModel converts FormationAssignmentInput to FormationAssignment
 func (i *FormationAssignmentInput) ToModel(id, tenantID string) *FormationAssignment {
@@ -155,13 +148,6 @@ func (fa *FormationAssignment) IsInProgressState() bool {
 	return fa.isInProgressAssignState() || fa.isInProgressUnassignState()
 }
 
-// IsInRegularUnassignState returns if the formation assignment is in regular unassign stage
-func (fa *FormationAssignment) IsInRegularUnassignState() bool {
-	unassignOperationStates := []string{string(DeletingAssignmentState),
-		string(DeleteErrorAssignmentState)}
-	return str.ValueIn(fa.State, unassignOperationStates)
-}
-
 // SetStateToDeleting sets the state to deleting and returns if the formation assignment is updated
 func (fa *FormationAssignment) SetStateToDeleting() bool {
 	if fa.isInProgressUnassignState() {
@@ -173,27 +159,6 @@ func (fa *FormationAssignment) SetStateToDeleting() bool {
 	}
 	fa.State = string(DeletingAssignmentState)
 	return true
-}
-
-// GetOperation returns the formation operation that is determined based on the state of the assignment
-func (fa *FormationAssignment) GetOperation() FormationOperation {
-	operation := AssignFormation
-	if strings.HasSuffix(fa.State, string(DeleteErrorAssignmentState)) || strings.HasSuffix(fa.State, string(DeletingAssignmentState)) {
-		operation = UnassignFormation
-	}
-	return operation
-}
-
-// GetNotificationState returns the assignment state that is to be sent for notifications
-// and is exposed to the GraphQL layer
-func (fa *FormationAssignment) GetNotificationState() string {
-	state := fa.State
-	if strings.HasSuffix(state, string(DeleteErrorAssignmentState)) {
-		state = string(DeleteErrorAssignmentState)
-	} else if fa.isInProgressUnassignState() {
-		state = string(DeletingAssignmentState)
-	}
-	return state
 }
 
 func (fa *FormationAssignment) isInProgressAssignState() bool {

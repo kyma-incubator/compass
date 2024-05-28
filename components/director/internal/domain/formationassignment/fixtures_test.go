@@ -183,20 +183,6 @@ func fixFormationAssignmentModelWithConfigAndError(configValue, errorValue json.
 	}
 }
 
-func fixFormationAssignmentModelWithState(state string) *model.FormationAssignment {
-	return &model.FormationAssignment{
-		ID:          TestID,
-		FormationID: TestFormationID,
-		TenantID:    TestTenantID,
-		Source:      TestSource,
-		SourceType:  TestSourceType,
-		Target:      TestTarget,
-		TargetType:  TestTargetType,
-		State:       state,
-		Error:       nil,
-	}
-}
-
 func fixFormationAssignmentModelWithParameters(id, formationID, tenantID, sourceID, targetID string, sourceType, targetType model.FormationAssignmentType, state string, configValue, errorValue json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:          id,

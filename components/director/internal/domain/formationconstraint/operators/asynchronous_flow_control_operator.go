@@ -52,8 +52,12 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 		if err != nil {
 			return false, err
 		}
-		if formationAssignment.State == string(model.InstanceCreatorDeletingAssignmentState) ||
-			formationAssignment.State == string(model.InstanceCreatorDeleteErrorAssignmentState) {
+		latestAssignmentOperation, err := e.assignmentOperationService.GetLatestOperation(ctx, formationAssignment.ID, formationAssignment.FormationID)
+		if err != nil {
+			return false, err
+		}
+
+		if latestAssignmentOperation.Type == model.InstanceCreatorUnassign {
 			log.C(ctx).Infof("Tenant mapping participant processing unassign notification has alredy finished, redirecting notification for assignment %q with state %q to instance creator", formationAssignment.ID, formationAssignment.State)
 			ri.ShouldRedirect = true
 			return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
@@ -102,12 +106,20 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				if err != nil {
 					log.C(ctx).Warnf(errors.Wrapf(err, "Reverse assignment not found").Error())
 				}
-				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, changing state to %q", formationAssignment.ID, model.InstanceCreatorDeletingAssignmentState)
-				formationAssignment.State = string(model.InstanceCreatorDeletingAssignmentState)
-				statusReport.State = string(model.InstanceCreatorDeletingAssignmentState)
-				if err = e.formationAssignmentRepo.Update(ctx, formationAssignment); err != nil {
-					return false, errors.Wrapf(err, "while updating formation assignment with ID %q", formationAssignment.ID)
+
+				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, will create new %q Assignment Operation", formationAssignment.ID, model.InstanceCreatorUnassign)
+				statusReport.State = string(model.DeletingAssignmentState) // set to DELETING state so that in CleanupFormationAssignment -> DeleteWithConstraints we don't delete the FA
+
+				_, err = e.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
+					Type:                  model.InstanceCreatorUnassign,
+					FormationAssignmentID: formationAssignment.ID,
+					FormationID:           formationAssignment.FormationID,
+					TriggeredBy:           model.UnassignObject,
+				})
+				if err != nil {
+					return false, errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.InstanceCreatorUnassign, formationAssignment.ID)
 				}
+
 				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
 				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation)
 				if err != nil {
@@ -121,15 +133,17 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				return true, nil
 			}
 
+			latestAssignmentOperation, err := e.assignmentOperationService.GetLatestOperation(ctx, formationAssignment.ID, formationAssignment.FormationID)
+			if err != nil {
+				return false, err
+			}
+
+			if latestAssignmentOperation.Type == model.InstanceCreatorUnassign && statusReport.State == string(model.DeleteErrorFormationState) {
+				log.C(ctx).Infof("Instance creator reported %q for formation assignment with ID %q", statusReport.State, formationAssignment.ID)
+				return true, nil
+			}
+
 			if formationAssignment.State == string(model.DeletingAssignmentState) && statusReport.State == string(model.DeleteErrorAssignmentState) {
-				return true, nil
-			}
-			if formationAssignment.State == string(model.InstanceCreatorDeletingAssignmentState) && statusReport.State == string(model.ReadyAssignmentState) {
-				log.C(ctx).Infof("Instance creator reported %q, proceeding with deletion of formation assignment with ID %q", statusReport.State, formationAssignment.ID)
-				return true, nil
-			}
-			if formationAssignment.State == string(model.InstanceCreatorDeletingAssignmentState) && statusReport.State == string(model.DeleteErrorFormationState) {
-				statusReport.State = string(model.InstanceCreatorDeleteErrorAssignmentState)
 				return true, nil
 			}
 		}

@@ -76,6 +76,17 @@ func (s *service) Finish(ctx context.Context, assignmentID, formationID string) 
 	return nil
 }
 
+// GetLatestOperation gets the latest Operation for the provided Assignment and Formation ID
+func (s *service) GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error) {
+	log.C(ctx).Infof("Getting the latest operation for assignment with ID: %s and formation with ID: %s", assignmentID, formationID)
+
+	latestOperation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID)
+	}
+	return latestOperation, nil
+}
+
 // Update updates the Assignment Operation's triggered_by field with the new trigger and sets the started_at timestamp to the current time
 func (s *service) Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error {
 	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID)
