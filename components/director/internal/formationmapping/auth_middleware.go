@@ -29,6 +29,8 @@ const (
 	FormationIDParam = "ucl-formation-id"
 	// FormationAssignmentIDParam is formation assignment URL path parameter placeholder
 	FormationAssignmentIDParam = "ucl-assignment-id"
+	// FormationOperationIDParam is formation operation ID URL path parameter placeholder
+	FormationOperationIDParam = "operationId"
 	// ClientIDFromCertificateHeader contains the name of the header containing the client id from the certificate
 	ClientIDFromCertificateHeader = "Client-Id-From-Certificate"
 )

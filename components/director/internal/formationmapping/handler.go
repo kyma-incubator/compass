@@ -43,7 +43,9 @@ type formationAssignmentStatusService interface {
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
 	Finish(ctx context.Context, assignmentID, formationID string) error
+	FinishByID(ctx context.Context, operationID string) error
 	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
+	GetByID(ctx context.Context, operationID string) (*model.AssignmentOperation, error)
 }
 
 type malformedRequest struct {
@@ -319,6 +321,266 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 		log.C(ctx).Infof("Finish %s Operation for assignment with ID: %s during status report", model.Assign, fa.ID)
 		if finishOpErr := h.assignmentOperationService.Finish(ctx, fa.ID, fa.FormationID); finishOpErr != nil {
 			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation for formation assignment with ID: %q", model.Assign, fa.ID)
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+	}
+
+	if err = tx.Commit(); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+	log.C(ctx).Infof("The formation assignment with ID: %q and formation ID: %q was successfully updated with state: %q", formationAssignmentID, formationID, fa.State)
+
+	if formationassignmentpkg.IsConfigEmpty(string(notificationStatusReport.Configuration)) { // do not generate formation assignment notifications when configuration is empty
+		log.C(ctx).Info("The configuration in the request body is empty. Formation assignment notification won't be generated")
+		httputils.Respond(w, http.StatusOK)
+		return
+	}
+
+	if shouldProcessNotifications {
+		// The formation assignment notifications processing is independent of the status update request handling.
+		// That's why we're executing it in a go routine and in parallel to this returning a response to the client
+		go h.processFormationAssignmentNotifications(fa, correlationID, traceID, spanID, parentSpanID)
+	}
+
+	httputils.Respond(w, http.StatusOK)
+}
+
+// ResetAssignmentOperationStatus handles formation assignment status updates for a given formation operation
+func (h *Handler) ResetAssignmentOperationStatus(w http.ResponseWriter, r *http.Request) {
+	h.updateAssignmentOperationStatus(w, r, true)
+}
+
+// UpdateAssignmentOperationStatus handles formation assignment status updates for a given formation operation
+func (h *Handler) UpdateAssignmentOperationStatus(w http.ResponseWriter, r *http.Request) {
+	h.updateAssignmentOperationStatus(w, r, false)
+}
+
+func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http.Request, reset bool) {
+	ctx := r.Context()
+	correlationID := correlation.CorrelationIDFromContext(ctx)
+	traceID := correlation.TraceIDFromContext(ctx)
+	spanID := correlation.SpanIDFromContext(ctx)
+	parentSpanID := correlation.ParentSpanIDFromContext(ctx)
+
+	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
+
+	var assignmentReqBody FormationAssignmentRequestBody
+	err := decodeJSONBody(w, r, &assignmentReqBody)
+	if err != nil {
+		var mr *malformedRequest
+		if errors.As(err, &mr) {
+			log.C(ctx).Error(mr.msg)
+			respondWithError(ctx, w, mr.status, mr)
+		} else {
+			log.C(ctx).Error(err.Error())
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		}
+		return
+	}
+
+	if formationassignmentpkg.IsConfigEmpty(string(assignmentReqBody.Configuration)) {
+		assignmentReqBody.Configuration = nil
+	}
+
+	log.C(ctx).Info("Validating formation assignment request body...")
+	if err = assignmentReqBody.Validate(ctx); err != nil {
+		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %q. X-Request-Id: %s", err.Error(), correlationID))
+		return
+	}
+
+	routeVars := mux.Vars(r)
+	formationID := routeVars[FormationIDParam]
+	formationAssignmentID := routeVars[FormationAssignmentIDParam]
+	formationOperationID := routeVars[FormationOperationIDParam]
+
+	if formationID == "" || formationAssignmentID == "" || formationOperationID == "" {
+		log.C(ctx).Errorf("Missing required parameters: %q or/and %q or/and %q", FormationIDParam, FormationAssignmentIDParam, FormationOperationIDParam)
+		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
+		return
+	}
+
+	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
+	logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID).
+		WithField(log.FieldFormationOperationID, formationOperationID)
+	ctx = log.ContextWithLogger(ctx, logger)
+
+	tx, err := h.transact.Begin()
+	if err != nil {
+		log.C(ctx).WithError(err).Error("unable to establish connection with database")
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+	defer h.transact.RollbackUnlessCommitted(ctx, tx)
+	ctx = persistence.SaveToContext(ctx, tx)
+
+	fa, err := h.faService.GetGlobalByIDAndFormationID(ctx, formationAssignmentID, formationID)
+	if err != nil {
+		log.C(ctx).Error(err)
+		if apperrors.IsNotFoundError(err) {
+			errResp := errors.Errorf("Formation assignment with ID %q was not found. X-Request-Id: %s", formationAssignmentID, correlationID)
+			respondWithError(ctx, w, http.StatusNotFound, errResp)
+			return
+		}
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	ctx = tenant.SaveToContext(ctx, fa.TenantID, "")
+
+	formation, err := h.formationService.Get(ctx, formationID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("An error occurred while getting formation from formation assignment with ID: %q", fa.FormationID)
+		if apperrors.IsNotFoundError(err) {
+			errResp := errors.Errorf("Formation with ID %q was not found. X-Request-Id: %s", formationID, correlationID)
+			respondWithError(ctx, w, http.StatusNotFound, errResp)
+			return
+		}
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	// Only customers of type BI can push configurations with empty state even if the formation is not yet ready.
+	// This mechanism is used to set up initial configuration before sending the first wave of notifications
+	if len(assignmentReqBody.State) > 0 && formation.State != model.ReadyFormationState {
+		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
+		respondWithError(ctx, w, http.StatusBadRequest, errResp)
+		return
+	}
+
+	assignmentOperation, err := h.assignmentOperationService.GetByID(ctx, formationOperationID)
+	if err != nil {
+		log.C(ctx).WithError(err).Errorf("Error when getting assignment operation with ID: %s. X-Request-ID: %s", formationOperationID, correlationID)
+		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+		return
+	}
+
+	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperation.Type)
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa, assignmentOperation.Type)
+	originalStateFromStatusReport := notificationStatusReport.State
+	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
+		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
+		errResp := errors.Errorf("An invalid state: %s is provided for %s operation. X-Request-Id: %s", originalStateFromStatusReport, formationOperation, correlationID)
+		respondWithError(ctx, w, http.StatusBadRequest, errResp)
+		return
+	}
+
+	changeToRegularReadyStateInStatusReport(notificationStatusReport)
+	stateFromStatusReport := notificationStatusReport.State
+
+	if reset {
+		if stateFromStatusReport != string(model.ReadyAssignmentState) && stateFromStatusReport != string(model.ConfigPendingAssignmentState) {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+
+		if formationassignmentpkg.IsConfigEmpty(string(notificationStatusReport.Configuration)) {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s because provided configuration is empty. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+
+		if fa.State != string(model.ReadyAssignmentState) {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because assignment is not in %q state. X-Request-Id: %s", fa.Source, fa.Target, model.ReadyAssignmentState, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+		reverseFA, err := h.faService.GetReverseBySourceAndTarget(ctx, fa.FormationID, fa.Source, fa.Target)
+		if err != nil {
+			log.C(ctx).Error(err)
+			if apperrors.IsNotFoundError(err) {
+				errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because reverse assignment is missing. X-Request-Id: %s", fa.Source, fa.Target, correlationID)
+				respondWithError(ctx, w, http.StatusBadRequest, errResp)
+				return
+			}
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		if reverseFA.State != string(model.ReadyAssignmentState) {
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q because reverse assignment is not in %q state. X-Request-Id: %s", reverseFA.Source, reverseFA.Target, model.ReadyAssignmentState, correlationID)
+			respondWithError(ctx, w, http.StatusBadRequest, errResp)
+			return
+		}
+
+		log.C(ctx).Infof("Resetting formation assignment with ID: %s to state: %s", fa.ID, stateFromStatusReport)
+		fa.State = stateFromStatusReport
+		if err = h.faService.Update(ctx, fa.ID, fa); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		log.C(ctx).Infof("Creating %s Operation for formation assignment with ID: %s triggered by reset on the status API", model.Assign, fa.ID)
+		if _, err = h.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
+			Type:                  model.Assign,
+			FormationAssignmentID: fa.ID,
+			FormationID:           fa.FormationID,
+			TriggeredBy:           model.ResetAssignment,
+		}); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+
+		log.C(ctx).Infof("Resetting reverse formation assignment with ID: %s to state: %s", reverseFA.ID, model.InitialAssignmentState)
+		reverseFA.State = string(model.InitialAssignmentState)
+		if err = h.faService.Update(ctx, reverseFA.ID, reverseFA); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+		log.C(ctx).Infof("Creating %s Operation for reverse formation assignment with ID: %s triggered by reset on the status API", model.Assign, fa.ID)
+		if _, err = h.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
+			Type:                  model.Assign,
+			FormationAssignmentID: reverseFA.ID,
+			FormationID:           reverseFA.FormationID,
+			TriggeredBy:           model.ResetAssignment,
+		}); err != nil {
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+	}
+
+	if formationOperation == model.UnassignFormation {
+		log.C(ctx).Infof("Processing status update for formation assignment with ID: %s during %q operation", fa.ID, model.UnassignFormation)
+		isFADeleted, err := h.processFormationAssignmentUnassignStatusUpdate(ctx, fa, notificationStatusReport, assignmentOperation.Type)
+
+		if commitErr := tx.Commit(); commitErr != nil {
+			log.C(ctx).WithError(err).Error("An error occurred while closing database transaction")
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("An error occurred while processing formation assignment status update for %q operation", model.UnassignFormation)
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+
+		if isFADeleted {
+			if err = h.processFormationUnassign(ctx, formation, fa); err != nil {
+				log.C(ctx).WithError(err).Error("An error occurred while unassigning from formation")
+				respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+				return
+			}
+		}
+
+		log.C(ctx).Infof("The formation assignment with ID: %q was successfully processed for %q operation", formationAssignmentID, model.UnassignFormation)
+		httputils.Respond(w, http.StatusOK)
+		return
+	}
+
+	log.C(ctx).Infof("Processing status update for formation assignment with ID: %s during %q operation", fa.ID, model.AssignFormation)
+	shouldProcessNotifications, errorResponse := h.processFormationAssignmentAssignStatusUpdate(ctx, fa, notificationStatusReport, correlationID)
+	if errorResponse != nil {
+		respondWithError(ctx, w, errorResponse.statusCode, errors.New(errorResponse.errorMessage))
+		return
+	}
+
+	if fa.State == string(model.ReadyAssignmentState) {
+		log.C(ctx).Infof("Finish %s Operation with ID: %s during status report", model.Assign, formationOperationID)
+		if finishOpErr := h.assignmentOperationService.FinishByID(ctx, formationOperationID); finishOpErr != nil {
+			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation with ID: %q", model.Assign, formationOperationID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}

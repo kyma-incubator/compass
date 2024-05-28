@@ -65,6 +65,7 @@ func (r *repository) Create(ctx context.Context, item *model.AssignmentOperation
 	return r.creator.Create(ctx, r.conv.ToEntity(item))
 }
 
+// GetLatestOperation fetches the latest Assignment Operation for the provided Formation Assignment ID and Formation ID
 func (r *repository) GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string) (*model.AssignmentOperation, error) {
 	var entity Entity
 
@@ -73,6 +74,16 @@ func (r *repository) GetLatestOperation(ctx context.Context, formationAssignment
 		repo.NewEqualCondition("formation_id", formationID),
 	}
 	if err := r.getter.GetGlobal(ctx, conditions, repo.OrderByParams{repo.NewDescOrderBy(startedAtColumn)}, &entity); err != nil {
+		return nil, err
+	}
+
+	return r.conv.FromEntity(&entity), nil
+}
+
+// GetByID fetches the Assignment Operation with the provided ID
+func (r *repository) GetByID(ctx context.Context, id string) (*model.AssignmentOperation, error) {
+	var entity Entity
+	if err := r.getter.GetGlobal(ctx, repo.Conditions{repo.NewEqualCondition(idColumn, id)}, repo.NoOrderBy, &entity); err != nil {
 		return nil, err
 	}
 

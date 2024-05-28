@@ -463,10 +463,17 @@ func main() {
 	asyncFormationStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
 	asyncFormationStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationHandler()) // order is important
 
+	asyncAssignmentOperationStatusRouter := mainRouter.Path(cfg.FormationMappingCfg.AsyncFormationAPIPathPrefix).Subrouter()
+	asyncAssignmentOperationStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationHandler()) // order is important
+
 	logger.Infof("Registering formation tenant mapping endpoints...")
 	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusAPIEndpoint, fmHandler.UpdateFormationAssignmentStatus).Methods(http.MethodPatch)
 	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusResetAPIEndpoint, fmHandler.ResetFormationAssignmentStatus).Methods(http.MethodPatch)
 	asyncFormationStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationStatusAPIEndpoint, fmHandler.UpdateFormationStatus).Methods(http.MethodPatch)
+
+	logger.Infof("Registering formation assignment operation endpoints...")
+	asyncAssignmentOperationStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncAssignmentOperationStatusAPIEndpoint, fmHandler.UpdateAssignmentOperationStatus).Methods(http.MethodPut)
+	asyncAssignmentOperationStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncAssignmentOperationStatusResetAPIEndpoint, fmHandler.ResetAssignmentOperationStatus).Methods(http.MethodPut)
 
 	examplesServer := http.FileServer(http.Dir("./examples/"))
 	mainRouter.PathPrefix("/examples/").Handler(http.StripPrefix("/examples/", examplesServer))
