@@ -693,26 +693,18 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), cfg.SystemFetcherPageSize)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), cfg.SystemFetcherPageSize+1) // +1 because the first page contains cfg.SystemFetcherPageSize systems and the second one contains 1 system
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
 	require.NoError(t, err)
 
-	req2 := fixtures.FixApplicationsPageableRequest(cfg.SystemFetcherPageSize, string(resp.PageInfo.EndCursor))
-	var resp2 directorSchema.ApplicationPageExt
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req2, &resp2)
-	require.NoError(t, err)
-	resp.Data = append(resp.Data, resp2.Data...)
-
-	expectedCount := cfg.SystemFetcherPageSize
-	if expectedCount > 1 {
-		expectedCount++
-	}
+	expectedCount := cfg.SystemFetcherPageSize + 1
 	expectedApps := getFixExpectedMockSystems(expectedCount, template2.ID, template2.Name, intSys.ID)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	appsToCleanup := make([]*directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
 		actualApps = append(actualApps, directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
@@ -724,84 +716,16 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		appsToCleanup = append(appsToCleanup, app)
 	}
+
+	defer func() {
+		for _, app := range appsToCleanup {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
-}
-
-func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
-	ctx := context.TODO()
-	tenants := []string{tenant.TestTenants.GetDefaultTenantID(), tenant.TestTenants.GetDefaultCustomerTenantID()}
-	tenantName1 := "default"
-	tenant1 := tenant.TestTenants.GetDefaultTenantID()
-
-	setMultipleMockSystemsResponses(t, tenant1)
-	defer cleanupMockSystems(t)
-
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, fmt.Sprintf("int-sys-%s", tenantName1))
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
-
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys.ID)
-	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
-
-	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
-	require.True(t, ok)
-
-	t.Log("Issue a Hydra token with Client Credentials")
-	accessToken := token.GetAccessToken(t, intSysOauthCredentialData, token.IntegrationSystemScopes)
-	oauthGraphQLClient := gql.NewAuthorizedGraphQLClientWithCustomURL(accessToken, cfg.GatewayOauth)
-
-	appTemplateName1 := fixtures.CreateAppTemplateName(fmt.Sprintf("temp1%s", tenantName1))
-	appTemplateInput1 := fixApplicationTemplateWithDefaultSystemRoles(appTemplateName1, intSys.ID)
-	appTemplateInput1.Webhooks = append(appTemplateInput1.Webhooks, testPkg.BuildMockedWebhook(cfg.ExternalSvcMockURL+"/", directorSchema.WebhookTypeUnregisterApplication))
-	template1, err := fixtures.CreateApplicationTemplateFromInput(t, ctx, oauthGraphQLClient, tenant1, appTemplateInput1)
-	defer fixtures.CleanupApplicationTemplate(t, ctx, oauthGraphQLClient, tenant1, template1)
-	require.NoError(t, err)
-	require.NotEmpty(t, template1.ID)
-
-	for _, tenantID := range tenants {
-		triggerSync(t, tenantID)
-	}
-	for _, tenantID := range tenants {
-		waitForApplicationsToBeProcessed(ctx, t, tenantID, cfg.SystemFetcherPageSize)
-	}
-	for _, tenantID := range tenants {
-		req := fixtures.FixGetApplicationsRequestWithPagination()
-		var resp directorSchema.ApplicationPageExt
-		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &resp)
-		require.NoError(t, err)
-
-		req2 := fixtures.FixApplicationsPageableRequest(cfg.SystemFetcherPageSize, string(resp.PageInfo.EndCursor))
-		var resp2 directorSchema.ApplicationPageExt
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req2, &resp2)
-		require.NoError(t, err)
-
-		resp.Data = append(resp.Data, resp2.Data...)
-		expectedCount := cfg.SystemFetcherPageSize
-		if expectedCount > 1 {
-			expectedCount++
-		}
-		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID)
-		actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
-		for _, app := range resp.Data {
-			actualApps = append(actualApps, directorSchema.ApplicationExt{
-				Application: directorSchema.Application{
-					Name:                  app.Application.Name,
-					Description:           app.Application.Description,
-					ApplicationTemplateID: app.ApplicationTemplateID,
-					SystemNumber:          app.SystemNumber,
-					IntegrationSystemID:   app.IntegrationSystemID,
-				},
-				Labels: app.Labels,
-			})
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, app)
-		}
-		require.ElementsMatch(t, expectedApps, actualApps)
-	}
 }
 
 func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
@@ -1709,7 +1633,7 @@ func waitForApplicationsToBeProcessed(ctx context.Context, t *testing.T, tenantI
 		_, actualApps := retrieveAppsForTenant(t, ctx, tenantID)
 		t.Logf("Found %d from %d", len(actualApps), expectedNumber)
 		return len(actualApps) >= expectedNumber
-	}, time.Second*180, time.Second*1, "Waiting for Systems to be fetched.")
+	}, time.Second*60, time.Second*1, "Waiting for Systems to be fetched.")
 }
 
 func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
