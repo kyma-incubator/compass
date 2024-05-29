@@ -700,18 +700,17 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
 	require.NoError(t, err)
 
-	req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
+	req2 := fixtures.FixApplicationsPageableRequest(cfg.SystemFetcherPageSize, string(resp.PageInfo.EndCursor))
 	var resp2 directorSchema.ApplicationPageExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req2, &resp2)
 	require.NoError(t, err)
 	resp.Data = append(resp.Data, resp2.Data...)
 
-	description := "description"
 	expectedCount := cfg.SystemFetcherPageSize
 	if expectedCount > 1 {
 		expectedCount++
 	}
-	expectedApps := getFixExpectedMockSystems(expectedCount, template2.ID, template2.Name, intSys.ID, description)
+	expectedApps := getFixExpectedMockSystems(expectedCount, template2.ID, template2.Name, intSys.ID)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
@@ -776,18 +775,17 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &resp)
 		require.NoError(t, err)
 
-		req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
+		req2 := fixtures.FixApplicationsPageableRequest(cfg.SystemFetcherPageSize, string(resp.PageInfo.EndCursor))
 		var resp2 directorSchema.ApplicationPageExt
 		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req2, &resp2)
 		require.NoError(t, err)
 
 		resp.Data = append(resp.Data, resp2.Data...)
-		description := "description"
 		expectedCount := cfg.SystemFetcherPageSize
 		if expectedCount > 1 {
 			expectedCount++
 		}
-		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID, description)
+		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID)
 		actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 		for _, app := range resp.Data {
 			actualApps = append(actualApps, directorSchema.ApplicationExt{
@@ -1799,7 +1797,7 @@ func getFixMockSystemsJSON(count, startingNumber int) string {
 	return result + "]"
 }
 
-func getFixExpectedMockSystems(count int, templateID, templateName, intSysID, description string) []directorSchema.ApplicationExt {
+func getFixExpectedMockSystems(count int, templateID, templateName, intSysID string) []directorSchema.ApplicationExt {
 	result := make([]directorSchema.ApplicationExt, count)
 	for i := 0; i < count; i++ {
 		systemName := fmt.Sprintf("name%d", i)
