@@ -466,7 +466,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	if consumerInfo.Flow.IsCertFlow() && consumerInfo.Subject != "" {
 		log.C(ctx).Infof("Flow is cert. Preparing to create a certificate subject mapping.")
 		if err = r.prepareCertSubjectMapping(ctx, id, consumerInfo.Subject); err != nil {
-			return nil, errors.Wrapf(err, "while preparing a cert subject mapping for app template consumer %q", id)
+			return nil, err
 		}
 	}
 
