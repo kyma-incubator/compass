@@ -815,7 +815,7 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 	FAStatusAPIEndpoint = strings.Replace(FAStatusAPIEndpoint, fmt.Sprintf("{%s}", "ucl-assignment-id"), formationAssignmentID, 1)
 	FAStatusAPIEndpoint = strings.Replace(FAStatusAPIEndpoint, fmt.Sprintf("{%s}", "operation-id"), assignmentOperationID, 1)
 
-	request, err := http.NewRequest(http.MethodPatch, FAStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
+	request, err := http.NewRequest(http.MethodPut, FAStatusAPIEndpoint, bytes.NewBuffer(marshalBody))
 	if err != nil {
 		return err
 	}
@@ -823,9 +823,9 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 	request.Header.Add(correlation.RequestIDHeaderKey, correlationID)
 	request.Header.Add(httphelpers.ContentTypeHeaderKey, httphelpers.ContentTypeApplicationJSON)
 	if testConfig != nil && *testConfig != "" {
-		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and config: %s", formationID, formationAssignmentID, state, *testConfig)
+		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, operation with ID: %s, state: %s and config: %s", formationID, formationAssignmentID, assignmentOperationID, state, *testConfig)
 	} else {
-		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, state: %s and without config", formationID, formationAssignmentID, state)
+		log.C(ctx).Infof("Calling status API for formation assignment status update with the following data - formation ID: %s, assignment with ID: %s, operation with ID: %s, state: %s and without config", formationID, formationAssignmentID, assignmentOperationID, state)
 	}
 	_, err = certSecuredHTTPClient.Do(request)
 	return err
