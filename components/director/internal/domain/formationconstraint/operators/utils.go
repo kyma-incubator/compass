@@ -18,6 +18,8 @@ import (
 // reqBodyNameRegex is a regex defined by the destination creator API specifying what destination names are allowed
 var reqBodyNameRegex = "[a-zA-Z0-9_-]{1,64}"
 
+const GlobalSubaccountLabelKey = "global_subaccount_id"
+
 func isConfigEmpty(config string) bool {
 	return config == "" || config == "{}" || config == "\"\"" || config == "null"
 }
