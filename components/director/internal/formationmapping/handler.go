@@ -410,10 +410,10 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 	routeVars := mux.Vars(r)
 	formationID := routeVars[FormationIDParam]
 	formationAssignmentID := routeVars[FormationAssignmentIDParam]
-	formationOperationID := routeVars[FormationOperationIDParam]
+	assignmentOperationID := routeVars[AssignmentOperationIDParam]
 
-	if formationID == "" || formationAssignmentID == "" || (!reset && formationOperationID == "") {
-		log.C(ctx).Errorf("Missing required parameters: %q or/and %q or/and %q triggered by reset set to %t", FormationIDParam, FormationAssignmentIDParam, FormationOperationIDParam, reset)
+	if formationID == "" || formationAssignmentID == "" || (!reset && assignmentOperationID == "") {
+		log.C(ctx).Errorf("Missing required parameters: %q or/and %q or/and %q triggered by reset set to %t", FormationIDParam, FormationAssignmentIDParam, AssignmentOperationIDParam, reset)
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
 		return
 	}
@@ -421,7 +421,7 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
 	logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID)
 	if !reset {
-		logger.WithField(log.FieldFormationOperationID, formationOperationID)
+		logger.WithField(log.FieldAssignmentOperationID, assignmentOperationID)
 	}
 	ctx = log.ContextWithLogger(ctx, logger)
 
@@ -476,13 +476,12 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
-
-		logger.WithField(log.FieldFormationOperationID, formationOperationID)
+		logger.WithField(log.FieldAssignmentOperationID, assignmentOperationID)
 		ctx = log.ContextWithLogger(ctx, logger)
 	} else {
-		assignmentOperation, err = h.assignmentOperationService.GetByID(ctx, formationOperationID)
+		assignmentOperation, err = h.assignmentOperationService.GetByID(ctx, assignmentOperationID)
 		if err != nil {
-			log.C(ctx).WithError(err).Errorf("Error when getting assignment operation with ID: %s. X-Request-ID: %s", formationOperationID, correlationID)
+			log.C(ctx).WithError(err).Errorf("Error when getting assignment operation with ID: %s. X-Request-ID: %s", assignmentOperationID, correlationID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
@@ -611,9 +610,9 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 	}
 
 	if fa.State == string(model.ReadyAssignmentState) {
-		log.C(ctx).Infof("Finish %s Operation with ID: %s during status report", model.Assign, formationOperationID)
-		if finishOpErr := h.assignmentOperationService.FinishByID(ctx, formationOperationID); finishOpErr != nil {
-			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation with ID: %q", model.Assign, formationOperationID)
+		log.C(ctx).Infof("Finish %s Operation with ID: %s during status report", model.Assign, assignmentOperationID)
+		if finishOpErr := h.assignmentOperationService.FinishByID(ctx, assignmentOperationID); finishOpErr != nil {
+			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation with ID: %q", model.Assign, assignmentOperationID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
