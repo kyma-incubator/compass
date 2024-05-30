@@ -42,8 +42,8 @@ type webhookRepository interface {
 type notificationBuilder interface {
 	BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)
 	BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationNotificationOperationDetails, formation *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error)
-	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationTemplateID string, formation *model.Formation, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
-	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationTemplateID string, formation *model.Formation, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationTemplateID string, formation *model.Formation, applicationTemplate *webhookdir.ApplicationTemplateWithLabels, application *webhookdir.ApplicationWithLabels, runtime *webhookdir.RuntimeWithLabels, runtimeContext *webhookdir.RuntimeContextWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, targetType model.ResourceType, tenantContext *webhookdir.CustomerTenantContext, tenantID string, assignmentOperation *model.AssignmentOperation) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
+	PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationTemplateID string, formation *model.Formation, sourceApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, sourceApplication *webhookdir.ApplicationWithLabels, targetApplicationTemplate *webhookdir.ApplicationTemplateWithLabels, targetApplication *webhookdir.ApplicationWithLabels, assignment *webhookdir.FormationAssignment, reverseAssignment *webhookdir.FormationAssignment, tenantContext *webhookdir.CustomerTenantContext, tenantID string, assignmentOperation *model.AssignmentOperation) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)
 }
 
 // NotificationsGenerator is responsible for generation of notification requests
@@ -129,7 +129,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutRuntimeAndRuntimeCon
 			emptyFormationAssignment,
 			model.ApplicationResourceType,
 			customerTenantContext,
-			tenant)
+			tenant,
+			emptyAssignmentOperation)
 		if err != nil {
 			return nil, err
 		}
@@ -211,7 +212,8 @@ func (ns *NotificationsGenerator) GenerateNotificationsForRuntimeAboutTheApplica
 			emptyFormationAssignment,
 			model.RuntimeResourceType,
 			customerTenantContext,
-			tenant)
+			tenant,
+			emptyAssignmentOperation)
 		if err != nil {
 			return nil, err
 		}
@@ -318,6 +320,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 				emptyFormationAssignment,
 				customerTenantContext,
 				tenant,
+				emptyAssignmentOperation,
 			)
 			if err != nil {
 				return nil, err
@@ -363,6 +366,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheAp
 			emptyFormationAssignment,
 			customerTenantContext,
 			tenant,
+			emptyAssignmentOperation,
 		)
 		if err != nil {
 			return nil, err
@@ -480,6 +484,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsForApplicationsAboutTheRu
 			model.ApplicationResourceType,
 			customerTenantContext,
 			tenant,
+			emptyAssignmentOperation,
 		)
 		if err != nil {
 			return nil, err
@@ -546,6 +551,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 			model.RuntimeContextResourceType,
 			customerTenantContext,
 			tenant,
+			emptyAssignmentOperation,
 		)
 		if err != nil {
 			return nil, err
@@ -606,6 +612,7 @@ func (ns *NotificationsGenerator) GenerateNotificationsAboutApplicationsForTheRu
 			model.RuntimeResourceType,
 			customerTenantContext,
 			tenant,
+			emptyAssignmentOperation,
 		)
 		if err != nil {
 			return nil, err

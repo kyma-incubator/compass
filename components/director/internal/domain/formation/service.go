@@ -106,7 +106,7 @@ type statusService interface {
 //
 //go:generate mockery --name=FormationAssignmentNotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationsService interface {
-	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)
+	GenerateFormationAssignmentNotification(ctx context.Context, formationAssignment *model.FormationAssignment, operation model.FormationOperation, assignmentOperation *model.AssignmentOperation) (*webhookclient.FormationAssignmentNotificationRequest, error)
 }
 
 //go:generate mockery --exported --name=labelDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -615,16 +615,30 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 
 		// create operations in a transaction similar to how we persist the FAs above (using terr as well)
 		// we want them in a separate transaction similar to the FAs case - if someone reports on the status API, and we try to get the operations we have to be sure that the operation will be persisted so that we don't get not found error
+		var assignmentsWithOperations []*model.FormationAssignmentWithOperation
 		if terr = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 			for _, a := range assignments {
-				if _, terr = s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+				var operationID string
+				operationInput := &model.AssignmentOperationInput{
 					Type:                  model.Assign,
 					FormationAssignmentID: a.ID,
 					FormationID:           a.FormationID,
 					TriggeredBy:           model.AssignObject,
-				}); terr != nil {
+				}
+				if operationID, terr = s.assignmentOperationService.Create(ctxWithTransact, operationInput); terr != nil {
 					return errors.Wrapf(terr, "while creating %s Operation for assignment with ID: %s", model.Assign, a.ID)
 				}
+
+				assignmentsWithOperations = append(assignmentsWithOperations, &model.FormationAssignmentWithOperation{
+					FormationAssignment: a,
+					Operation: &model.AssignmentOperation{
+						ID:                    operationID,
+						Type:                  operationInput.Type,
+						FormationAssignmentID: operationInput.FormationAssignmentID,
+						FormationID:           operationInput.FormationID,
+						TriggeredBy:           operationInput.TriggeredBy,
+					},
+				})
 			}
 
 			return nil
@@ -667,7 +681,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		}
 
 		if err = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-			if err = s.formationAssignmentService.ProcessFormationAssignments(ctxWithTransact, assignments, requests, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
+			if err = s.formationAssignmentService.ProcessFormationAssignments(ctxWithTransact, assignmentsWithOperations, requests, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
 				log.C(ctxWithTransact).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 				return err
 			}
@@ -1016,18 +1030,30 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 
 	// create `Unassign` Operation here in separate transaction similar to the `Assign` case
 	var operationAssignmentIDs []string
+	var initialAssignmentsWithOperations []*model.FormationAssignmentWithOperation
 	if opErr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, ia := range initialAssignmentsData {
-			opID, err := s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+			operationInput := &model.AssignmentOperationInput{
 				Type:                  model.Unassign,
 				FormationAssignmentID: ia.ID,
 				FormationID:           ia.FormationID,
 				TriggeredBy:           model.UnassignObject,
-			})
+			}
+			opID, err := s.assignmentOperationService.Create(ctxWithTransact, operationInput)
 			if err != nil {
 				return errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.Unassign, ia.ID)
 			}
 			operationAssignmentIDs = append(operationAssignmentIDs, opID)
+			initialAssignmentsWithOperations = append(initialAssignmentsWithOperations, &model.FormationAssignmentWithOperation{
+				FormationAssignment: ia,
+				Operation: &model.AssignmentOperation{
+					ID:                    opID,
+					Type:                  operationInput.Type,
+					FormationAssignmentID: operationInput.FormationAssignmentID,
+					FormationID:           operationInput.FormationID,
+					TriggeredBy:           operationInput.TriggeredBy,
+				},
+			})
 		}
 
 		return nil
@@ -1095,7 +1121,7 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 	}
 
-	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, initialAssignmentsData, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
+	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, initialAssignmentsWithOperations, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
 		err = nerr
 		if commitErr := tx.Commit(); commitErr != nil {
 			err = errors.Wrapf(
@@ -1329,7 +1355,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type)
 
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
-			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, formationOperation)
+			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, formationOperation, latestAssignmentOperation)
 			if err != nil {
 				return err
 			}
@@ -1339,7 +1365,12 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				return err
 			}
 			if reverseFA != nil {
-				notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, reverseFA, formationOperation)
+				latestReverseAssignmentOperation, err := s.assignmentOperationService.GetLatestOperation(ctxWithTransact, reverseFA.ID, fa.FormationID)
+				if err != nil {
+					return err
+				}
+
+				notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, reverseFA, formationOperation, latestReverseAssignmentOperation)
 				if err != nil && !apperrors.IsNotFoundError(err) {
 					return err
 				}

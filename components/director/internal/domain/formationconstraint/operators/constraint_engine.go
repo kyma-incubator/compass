@@ -106,7 +106,7 @@ type formationAssignmentService interface {
 
 //go:generate mockery --exported --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentNotificationService interface {
-	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation, faOperation, reverseFAOperation *model.AssignmentOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
 //go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string

@@ -34,7 +34,7 @@ func NewFormationAssignmentStatusService(repo FormationAssignmentRepository, con
 }
 
 // UpdateWithConstraints updates a Formation Assignment and enforces NotificationStatusReturned constraints before and after the update
-func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error {
+func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation, assignmentOperation *model.AssignmentOperation) error {
 	id := fa.ID
 	log.C(ctx).Infof("Updating formation assignment with ID: %q", id)
 
@@ -43,7 +43,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while loading tenant from context")
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, notificationStatusReport)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, operation, notificationStatusReport, assignmentOperation)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}
@@ -94,7 +94,7 @@ func (fau *formationAssignmentStatusService) UpdateWithConstraints(ctx context.C
 }
 
 // DeleteWithConstraints deletes a Formation Assignment matching ID `id` and enforces NotificationStatusReturned constraints before and after delete.
-func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error {
+func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport, assignmentOperation *model.AssignmentOperation) error {
 	log.C(ctx).Infof("Deleting formation assignment with ID: %q", id)
 
 	tenantID, err := tenant.LoadFromContext(ctx)
@@ -107,7 +107,7 @@ func (fau *formationAssignmentStatusService) DeleteWithConstraints(ctx context.C
 		return errors.Wrapf(err, "while getting formation assignment with id %q for tenant with id %q", id, tenantID)
 	}
 
-	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, notificationStatusReport)
+	joinPointDetails, err := fau.faNotificationService.PrepareDetailsForNotificationStatusReturned(ctx, tenantID, fa, model.UnassignFormation, notificationStatusReport, assignmentOperation)
 	if err != nil {
 		return errors.Wrap(err, "while preparing details for NotificationStatusReturned")
 	}

@@ -124,6 +124,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	targetType model.ResourceType,
 	tenantContext *webhookdir.CustomerTenantContext,
 	tenantID string,
+	assignmentOperation *model.AssignmentOperation,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:             operation,
@@ -138,6 +139,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 		ReverseAssignment:     reverseAssignment,
 		ResourceType:          targetType,
 		TenantID:              tenantID,
+		AssignmentOperation:   assignmentOperation,
 	}
 	switch targetType {
 	case model.ApplicationResourceType:
@@ -187,6 +189,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	reverseAssignment *webhookdir.FormationAssignment,
 	tenantContext *webhookdir.CustomerTenantContext,
 	tenantID string,
+	assignmentOperation *model.AssignmentOperation,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 operation,
@@ -202,6 +205,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 		ResourceType:              model.ApplicationResourceType,
 		ResourceID:                targetApplication.ID,
 		TenantID:                  tenantID,
+		AssignmentOperation:       assignmentOperation,
 	}
 
 	subtype, err := determineResourceSubtype(targetApplication.Labels, nb.applicationTypeLabelKey)
@@ -252,6 +256,7 @@ func buildConfigurationChangeInputFromJoinpointDetails(details *formationconstra
 		CustomerTenantContext: details.CustomerTenantContext,
 		Assignment:            details.Assignment,
 		ReverseAssignment:     details.ReverseAssignment,
+		AssignmentOperation:   details.AssignmentOperation,
 	}
 }
 
@@ -267,6 +272,7 @@ func buildApplicationTenantMappingInputFromJoinpointDetails(details *formationco
 		CustomerTenantContext:     details.CustomerTenantContext,
 		Assignment:                details.Assignment,
 		ReverseAssignment:         details.ReverseAssignment,
+		AssignmentOperation:       details.AssignmentOperation,
 	}
 }
 

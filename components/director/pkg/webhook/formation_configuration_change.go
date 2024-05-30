@@ -86,6 +86,7 @@ type FormationConfigurationChangeInput struct {
 	CustomerTenantContext *CustomerTenantContext
 	Assignment            *FormationAssignment
 	ReverseAssignment     *FormationAssignment
+	AssignmentOperation   *model.AssignmentOperation
 }
 
 // ParseURLTemplate missing godoc
@@ -157,6 +158,27 @@ func (rd *FormationConfigurationChangeInput) SetReverseAssignment(reverseAssignm
 	}
 }
 
+// SetAssignmentOperation sets the assignmentOperation for the FormationConfigurationChangeInput to the provided one
+func (rd *FormationConfigurationChangeInput) SetAssignmentOperation(assignmentOperation *model.AssignmentOperation) {
+	rd.AssignmentOperation = assignmentOperation
+}
+
+// GetAssignmentOperation returns the assignmentOperation for the FormationConfigurationChangeInput
+func (rd *FormationConfigurationChangeInput) GetAssignmentOperation() *model.AssignmentOperation {
+	if rd.AssignmentOperation == nil {
+		return &model.AssignmentOperation{}
+	}
+	return &model.AssignmentOperation{
+		ID:                    rd.AssignmentOperation.ID,
+		Type:                  rd.AssignmentOperation.Type,
+		FormationAssignmentID: rd.AssignmentOperation.FormationAssignmentID,
+		FormationID:           rd.AssignmentOperation.FormationID,
+		TriggeredBy:           rd.AssignmentOperation.TriggeredBy,
+		StartedAtTimestamp:    rd.AssignmentOperation.StartedAtTimestamp,
+		FinishedAtTimestamp:   rd.AssignmentOperation.FinishedAtTimestamp,
+	}
+}
+
 // Clone returns a copy of the FormationConfigurationChangeInput
 func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplateInput {
 	return &FormationConfigurationChangeInput{
@@ -170,5 +192,6 @@ func (rd *FormationConfigurationChangeInput) Clone() FormationAssignmentTemplate
 		CustomerTenantContext: rd.CustomerTenantContext,
 		Assignment:            rd.Assignment,
 		ReverseAssignment:     rd.ReverseAssignment,
+		AssignmentOperation:   rd.AssignmentOperation,
 	}
 }

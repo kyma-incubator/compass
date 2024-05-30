@@ -24,6 +24,7 @@ type ApplicationTenantMappingInput struct {
 	CustomerTenantContext *CustomerTenantContext
 	Assignment            *FormationAssignment
 	ReverseAssignment     *FormationAssignment
+	AssignmentOperation   *model.AssignmentOperation
 }
 
 // ParseURLTemplate missing godoc
@@ -84,6 +85,27 @@ func (rd *ApplicationTenantMappingInput) SetReverseAssignment(reverseAssignment 
 	}
 }
 
+// SetAssignmentOperation sets the assignmentOperation for the ApplicationTenantMappingInput to the provided one
+func (rd *ApplicationTenantMappingInput) SetAssignmentOperation(assignmentOperation *model.AssignmentOperation) {
+	rd.AssignmentOperation = assignmentOperation
+}
+
+// GetAssignmentOperation returns the assignmentOperation for the ApplicationTenantMappingInput
+func (rd *ApplicationTenantMappingInput) GetAssignmentOperation() *model.AssignmentOperation {
+	if rd.AssignmentOperation == nil {
+		return &model.AssignmentOperation{}
+	}
+	return &model.AssignmentOperation{
+		ID:                    rd.AssignmentOperation.ID,
+		Type:                  rd.AssignmentOperation.Type,
+		FormationAssignmentID: rd.AssignmentOperation.FormationAssignmentID,
+		FormationID:           rd.AssignmentOperation.FormationID,
+		TriggeredBy:           rd.AssignmentOperation.TriggeredBy,
+		StartedAtTimestamp:    rd.AssignmentOperation.StartedAtTimestamp,
+		FinishedAtTimestamp:   rd.AssignmentOperation.FinishedAtTimestamp,
+	}
+}
+
 // Clone returns a copy of the ApplicationTenantMappingInput
 func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInput {
 	return &ApplicationTenantMappingInput{
@@ -97,5 +119,6 @@ func (rd *ApplicationTenantMappingInput) Clone() FormationAssignmentTemplateInpu
 		CustomerTenantContext:     rd.CustomerTenantContext,
 		Assignment:                rd.Assignment,
 		ReverseAssignment:         rd.ReverseAssignment,
+		AssignmentOperation:       rd.AssignmentOperation,
 	}
 }

@@ -110,18 +110,32 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, will create new %q Assignment Operation", formationAssignment.ID, model.InstanceCreatorUnassign)
 				statusReport.State = string(model.DeletingAssignmentState) // set to DELETING state so that in CleanupFormationAssignment -> DeleteWithConstraints we don't delete the FA
 
-				_, err = e.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
+				opInput := &model.AssignmentOperationInput{
 					Type:                  model.InstanceCreatorUnassign,
 					FormationAssignmentID: formationAssignment.ID,
 					FormationID:           formationAssignment.FormationID,
 					TriggeredBy:           model.UnassignObject,
-				})
+				}
+				opID, err := e.assignmentOperationService.Create(ctx, opInput)
 				if err != nil {
 					return false, errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.InstanceCreatorUnassign, formationAssignment.ID)
 				}
 
+				faOperation := &model.AssignmentOperation{
+					ID:                    opID,
+					Type:                  opInput.Type,
+					FormationAssignmentID: opInput.FormationAssignmentID,
+					FormationID:           opInput.FormationID,
+					TriggeredBy:           opInput.TriggeredBy,
+				}
+
+				reverseFAOperation, err := e.assignmentOperationService.GetLatestOperation(ctx, reverseAssignment.ID, reverseAssignment.FormationID)
+				if err != nil {
+					return false, errors.Wrapf(err, "while getting latest operation for reverse assignment with ID: %s", reverseAssignment.ID)
+				}
+
 				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
-				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation)
+				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation, faOperation, reverseFAOperation)
 				if err != nil {
 					return false, errors.Wrapf(err, "while generating formation assignment notification")
 				}

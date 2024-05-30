@@ -52,7 +52,7 @@ type FormationAssignmentService interface {
 //
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
-	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation, faOperation, reverseFAOperation *model.AssignmentOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
 // formationService is responsible for the service-layer Formation operations

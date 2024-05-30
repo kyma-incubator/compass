@@ -37,6 +37,12 @@ type FormationAssignment struct {
 	LastNotificationSentTimestamp *time.Time              `json:"last_notification_sent_timestamp"`
 }
 
+// FormationAssignmentWithOperation represents the FormationAssignment with the current operation
+type FormationAssignmentWithOperation struct {
+	*FormationAssignment
+	Operation *AssignmentOperation `json:"operation"`
+}
+
 // FormationAssignmentInput is an input for creating a new FormationAssignment
 type FormationAssignmentInput struct {
 	FormationID string                  `json:"formation_id"`
