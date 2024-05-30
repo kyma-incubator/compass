@@ -466,7 +466,7 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	if consumerInfo.Flow.IsCertFlow() && consumerInfo.Subject != "" {
 		log.C(ctx).Infof("Flow is cert. Preparing to create a certificate subject mapping.")
 		if err = r.prepareCertSubjectMapping(ctx, id, consumerInfo.Subject); err != nil {
-			return nil, err
+			return nil, errors.Wrapf(err, "while preparing a cert subject mapping for app template consumer %q", id)
 		}
 	}
 
@@ -1104,8 +1104,7 @@ func (r *Resolver) prepareCertSubjectMapping(ctx context.Context, appTemplateID,
 
 	for _, csm := range certSubjMappings {
 		if cert.SubjectsMatch(subject, csm.Subject) {
-			log.C(ctx).Info("Subject is already allow-listed. Skipping certificate subject mapping creation.")
-			return nil
+			return fmt.Errorf("subject is already allow-listed. Not possible to associate app template consumer %q with already allow-listed subject", appTemplateID)
 		}
 	}
 
