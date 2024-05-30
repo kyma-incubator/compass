@@ -48,6 +48,14 @@ type assignmentOperationService interface {
 	GetByID(ctx context.Context, operationID string) (*model.AssignmentOperation, error)
 }
 
+type RequestBody interface {
+	GetState() model.FormationAssignmentState
+	GetConfiguration() json.RawMessage
+	GetError() string
+
+	SetState(state model.FormationAssignmentState)
+}
+
 type malformedRequest struct {
 	status int
 	msg    string
@@ -55,6 +63,13 @@ type malformedRequest struct {
 
 // FormationAssignmentRequestBody contains the request input of the formation assignment async status request
 type FormationAssignmentRequestBody struct {
+	State         model.FormationAssignmentState `json:"state,omitempty"`
+	Configuration json.RawMessage                `json:"configuration,omitempty"`
+	Error         string                         `json:"error,omitempty"`
+}
+
+// AssignmentOperationRequestBody contains the request input of the formation assignment with operation async status request
+type AssignmentOperationRequestBody struct {
 	State         model.FormationAssignmentState `json:"state,omitempty"`
 	Configuration json.RawMessage                `json:"configuration,omitempty"`
 	Error         string                         `json:"error,omitempty"`
@@ -367,8 +382,8 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 
 	errResp := errors.Errorf("An unexpected error occurred while processing the request. X-Request-Id: %s", correlationID)
 
-	var assignmentReqBody FormationAssignmentRequestBody
-	err := decodeJSONBody(w, r, &assignmentReqBody)
+	var assignmentOpReqBody AssignmentOperationRequestBody
+	err := decodeJSONBody(w, r, &assignmentOpReqBody)
 	if err != nil {
 		var mr *malformedRequest
 		if errors.As(err, &mr) {
@@ -381,12 +396,12 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 		return
 	}
 
-	if formationassignmentpkg.IsConfigEmpty(string(assignmentReqBody.Configuration)) {
-		assignmentReqBody.Configuration = nil
+	if formationassignmentpkg.IsConfigEmpty(string(assignmentOpReqBody.Configuration)) {
+		assignmentOpReqBody.Configuration = nil
 	}
 
-	log.C(ctx).Info("Validating formation assignment request body...")
-	if err = assignmentReqBody.Validate(ctx); err != nil {
+	log.C(ctx).Info("Validating assignment operation request body...")
+	if err = assignmentOpReqBody.Validate(ctx); err != nil {
 		log.C(ctx).WithError(err).Error("An error occurred while validating the request body")
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Request Body contains invalid input: %q. X-Request-Id: %s", err.Error(), correlationID))
 		return
@@ -397,15 +412,17 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 	formationAssignmentID := routeVars[FormationAssignmentIDParam]
 	formationOperationID := routeVars[FormationOperationIDParam]
 
-	if formationID == "" || formationAssignmentID == "" || formationOperationID == "" {
-		log.C(ctx).Errorf("Missing required parameters: %q or/and %q or/and %q", FormationIDParam, FormationAssignmentIDParam, FormationOperationIDParam)
+	if formationID == "" || formationAssignmentID == "" || (!reset && formationOperationID == "") {
+		log.C(ctx).Errorf("Missing required parameters: %q or/and %q or/and %q triggered by reset set to %t", FormationIDParam, FormationAssignmentIDParam, FormationOperationIDParam, reset)
 		respondWithError(ctx, w, http.StatusBadRequest, errors.Errorf("Not all of the required parameters are provided. X-Request-Id: %s", correlationID))
 		return
 	}
 
 	logger := log.C(ctx).WithField(log.FieldFormationID, formationID)
-	logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID).
-		WithField(log.FieldFormationOperationID, formationOperationID)
+	logger = logger.WithField(log.FieldFormationAssignmentID, formationAssignmentID)
+	if !reset {
+		logger.WithField(log.FieldFormationOperationID, formationOperationID)
+	}
 	ctx = log.ContextWithLogger(ctx, logger)
 
 	tx, err := h.transact.Begin()
@@ -445,21 +462,37 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 
 	// Only customers of type BI can push configurations with empty state even if the formation is not yet ready.
 	// This mechanism is used to set up initial configuration before sending the first wave of notifications
-	if len(assignmentReqBody.State) > 0 && formation.State != model.ReadyFormationState {
+	if len(assignmentOpReqBody.State) > 0 && formation.State != model.ReadyFormationState {
 		log.C(ctx).WithError(err).Errorf("Cannot update formation assignment for formation with ID %q as formation is not in %q state. X-Request-Id: %s", fa.FormationID, model.ReadyFormationState, correlationID)
 		respondWithError(ctx, w, http.StatusBadRequest, errResp)
 		return
 	}
 
-	assignmentOperation, err := h.assignmentOperationService.GetByID(ctx, formationOperationID)
-	if err != nil {
-		log.C(ctx).WithError(err).Errorf("Error when getting assignment operation with ID: %s. X-Request-ID: %s", formationOperationID, correlationID)
-		respondWithError(ctx, w, http.StatusInternalServerError, errResp)
-		return
+	var assignmentOperation *model.AssignmentOperation
+	if reset {
+		assignmentOperation, err = h.assignmentOperationService.GetLatestOperation(ctx, fa.ID, fa.FormationID)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error when getting latest operation for assignment with ID: %s. X-Request-ID: %s", fa.ID, correlationID)
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
+
+		logger.WithField(log.FieldFormationOperationID, formationOperationID)
+		ctx = log.ContextWithLogger(ctx, logger)
+	} else {
+		assignmentOperation, err = h.assignmentOperationService.GetByID(ctx, formationOperationID)
+		if err != nil {
+			log.C(ctx).WithError(err).Errorf("Error when getting assignment operation with ID: %s. X-Request-ID: %s", formationOperationID, correlationID)
+			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
+			return
+		}
 	}
 
+	// TODO:: Remove after "Simplified states" Task
+	translateSimplifiedToOldState(ctx, assignmentOpReqBody, assignmentOperation.Type)
+
 	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperation.Type)
-	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa, assignmentOperation.Type)
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentOpReqBody, fa, assignmentOperation.Type)
 	originalStateFromStatusReport := notificationStatusReport.State
 	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
@@ -473,13 +506,13 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 
 	if reset {
 		if stateFromStatusReport != string(model.ReadyAssignmentState) && stateFromStatusReport != string(model.ConfigPendingAssignmentState) {
-			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s. X-Request-Id: %s", fa.Source, fa.Target, assignmentOpReqBody.State, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
 
 		if formationassignmentpkg.IsConfigEmpty(string(notificationStatusReport.Configuration)) {
-			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s because provided configuration is empty. X-Request-Id: %s", fa.Source, fa.Target, assignmentReqBody.State, correlationID)
+			errResp := errors.Errorf("Cannot reset formation assignment with source %q and target %q to state %s because provided configuration is empty. X-Request-Id: %s", fa.Source, fa.Target, assignmentOpReqBody.State, correlationID)
 			respondWithError(ctx, w, http.StatusBadRequest, errResp)
 			return
 		}
@@ -512,7 +545,7 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
-		log.C(ctx).Infof("Creating %s Operation for formation assignment with ID: %s triggered by reset on the status API", model.Assign, fa.ID)
+		log.C(ctx).Infof("Creating %s Operation for formation assignment with ID: %s  v", model.Assign, fa.ID)
 		if _, err = h.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
 			Type:                  model.Assign,
 			FormationAssignmentID: fa.ID,
@@ -781,6 +814,63 @@ func (b FormationAssignmentRequestBody) Validate(ctx context.Context) error {
 	)
 
 	return validation.ValidateStruct(&b, fieldRules...)
+}
+
+func (b FormationAssignmentRequestBody) GetState() model.FormationAssignmentState {
+	return b.State
+}
+
+func (b FormationAssignmentRequestBody) GetConfiguration() json.RawMessage {
+	return b.Configuration
+}
+
+func (b FormationAssignmentRequestBody) GetError() string {
+	return b.Error
+}
+
+func (b FormationAssignmentRequestBody) SetState(state model.FormationAssignmentState) {
+	b.State = state
+}
+
+// Validate validates the assignment operation's request body input
+func (b AssignmentOperationRequestBody) Validate(ctx context.Context) error {
+	consumerInfo, err := consumer.LoadFromContext(ctx)
+	if err != nil {
+		return errors.Wrap(err, "while fetching consumer info from context")
+	}
+	consumerType := consumerInfo.Type
+
+	var fieldRules []*validation.FieldRules
+	fieldRules = append(
+		fieldRules,
+		validation.Field(&b.State,
+			validation.Required.When(consumerType != consumer.BusinessIntegration && consumerType != consumer.User),
+			validation.When(b.Error != "", validation.In(model.ErrorAssignmentState)),
+			validation.When(len(b.Configuration) > 0, validation.In(model.ReadyAssignmentState, model.ConfigPendingAssignmentState)),
+			// in case of empty error and configuration
+			validation.In(model.ReadyAssignmentState, model.ErrorAssignmentState, model.ConfigPendingAssignmentState),
+		),
+		validation.Field(&b.Configuration, validation.When(b.Error != "", validation.Empty)),
+		validation.Field(&b.Error, validation.When(len(b.Configuration) > 0, validation.Empty)),
+	)
+
+	return validation.ValidateStruct(&b, fieldRules...)
+}
+
+func (b AssignmentOperationRequestBody) GetState() model.FormationAssignmentState {
+	return b.State
+}
+
+func (b AssignmentOperationRequestBody) GetConfiguration() json.RawMessage {
+	return b.Configuration
+}
+
+func (b AssignmentOperationRequestBody) GetError() string {
+	return b.Error
+}
+
+func (b AssignmentOperationRequestBody) SetState(state model.FormationAssignmentState) {
+	b.State = state
 }
 
 // Validate validates the formation's request body input
@@ -1052,16 +1142,16 @@ type responseError struct {
 	errorMessage string
 }
 
-func newNotificationStatusReportFromRequestBody(requestBody FormationAssignmentRequestBody, fa *model.FormationAssignment, assignmentOperationType model.AssignmentOperationType) *statusreport.NotificationStatusReport {
-	return statusreport.NewNotificationStatusReport(requestBody.Configuration, calculateState(requestBody, fa, assignmentOperationType), requestBody.Error)
+func newNotificationStatusReportFromRequestBody(requestBody RequestBody, fa *model.FormationAssignment, assignmentOperationType model.AssignmentOperationType) *statusreport.NotificationStatusReport {
+	return statusreport.NewNotificationStatusReport(requestBody.GetConfiguration(), calculateState(requestBody, fa, assignmentOperationType), requestBody.GetError())
 }
 
-func calculateState(requestBody FormationAssignmentRequestBody, fa *model.FormationAssignment, assignmentOperationType model.AssignmentOperationType) string {
-	if requestBody.State != "" {
-		return string(requestBody.State)
+func calculateState(requestBody RequestBody, fa *model.FormationAssignment, assignmentOperationType model.AssignmentOperationType) string {
+	if requestBody.GetState() != "" {
+		return string(requestBody.GetState())
 	}
 
-	if requestBody.Error == "" {
+	if requestBody.GetError() == "" {
 		return fa.State
 	}
 
@@ -1126,4 +1216,17 @@ func isStateSupportedForOperation(ctx context.Context, state model.FormationAssi
 	}
 
 	return isSupportedForOperation
+}
+
+// TODO:: Remove with "Simplified states" task
+func translateSimplifiedToOldState(ctx context.Context, reqBody RequestBody, assignmentOperationType model.AssignmentOperationType) {
+	if reqBody.GetState() == model.ErrorAssignmentState {
+		if assignmentOperationType == model.Assign {
+			log.C(ctx).Debugf("Translate simplified state %q to old state %q", reqBody.GetState(), "CreateErrorAssignmentState")
+			reqBody.SetState(model.CreateErrorAssignmentState)
+		} else {
+			log.C(ctx).Debugf("Translate simplified state %q to old state %q", reqBody.GetState(), "DeleteErrorAssignmentState")
+			reqBody.SetState(model.DeleteErrorAssignmentState)
+		}
+	}
 }

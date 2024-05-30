@@ -64,6 +64,8 @@ const (
 	InitialAssignmentState FormationAssignmentState = "INITIAL"
 	// ReadyAssignmentState indicates that the formation assignment is in a ready state
 	ReadyAssignmentState FormationAssignmentState = "READY"
+	// ErrorAssignmentState indicates that the formation assignment is in an error state
+	ErrorAssignmentState FormationAssignmentState = "ERROR"
 	// ConfigPendingAssignmentState indicates that the config is either missing or not finalized in the formation assignment
 	ConfigPendingAssignmentState FormationAssignmentState = "CONFIG_PENDING"
 	// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
