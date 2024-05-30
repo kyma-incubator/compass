@@ -54,12 +54,8 @@ func TestConverter_ToEntity(t *testing.T) {
 				Key:     "foo",
 				Version: version,
 			},
-			Expected: &label.Entity{
-				ID:      "2",
-				Key:     "foo",
-				Version: version,
-			},
-			ExpectedErrMessage: "",
+			Expected:           nil,
+			ExpectedErrMessage: "Value cannot be empty",
 		},
 		{
 			Name: "Error",
@@ -131,12 +127,8 @@ func TestConverter_FromEntity(t *testing.T) {
 				Key:     "foo",
 				Version: version,
 			},
-			Expected: &model.Label{
-				ID:      "2",
-				Key:     "foo",
-				Version: version,
-			},
-			ExpectedErrMessage: "",
+			Expected:           nil,
+			ExpectedErrMessage: "Value cannot be empty",
 		},
 		{
 			Name:               "Error",
