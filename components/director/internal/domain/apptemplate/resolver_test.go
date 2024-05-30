@@ -785,11 +785,13 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithSelfRegLabels).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
 			WebhookConvFn:           UnusedWebhookConv,
