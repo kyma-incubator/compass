@@ -779,41 +779,29 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
 		},
 		{
-			Name: "Do not create cert subject mapping when the subject already exists",
-			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
-
-				return persistTx, transact
-			},
+			Name: "Fail when the subject already exists",
+			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithSelfRegLabels).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
-				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplateWithSelfRegLabels, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
-			SelfRegManagerFn: func() *automock.SelfRegisterManager {
-				srm := apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labelsContainingSelfRegistration, modelAppTemplateInputWithSelRegLabels.Labels)()
-				return srm
-			},
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration, modelAppTemplateInputWithSelRegLabels.Labels),
 			CertSubjectMappingSvcFn: SuccessfulSkipCertSubjectMappingCreation(csmWithDisorderedSubject),
 			LabelSvcFn:              UnusedLabelService,
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
-			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
+			ExpectedError:           fmt.Errorf("subject is already allow-listed. Not possible to associate app template consumer %q with already allow-listed subject", modelAppTemplate.ID),
 		},
 		{
 			Name: "Success when providing product label without slis filter - should set default slis filter",
