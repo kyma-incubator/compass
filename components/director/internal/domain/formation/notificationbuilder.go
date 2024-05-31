@@ -39,11 +39,7 @@ func NewNotificationsBuilder(webhookConverter webhookConverter, constraintEngine
 }
 
 // BuildFormationAssignmentNotificationRequest builds new formation assignment notification request
-func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
-	ctx context.Context,
-	joinPointDetails *formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails,
-	webhook *model.Webhook,
-) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	log.C(ctx).Infof("Building formation assignment notification request...")
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateFormationAssignmentNotifications, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
 		log.C(ctx).Errorf("Did not generate notifications due to error: %v", errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationAssignmentNotificationOperation, model.PreOperation))
