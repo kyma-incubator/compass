@@ -463,7 +463,7 @@ func main() {
 	asyncFormationStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
 	asyncFormationStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationHandler()) // order is important
 
-	asyncAssignmentOperationStatusRouter := mainRouter.Path(cfg.FormationMappingCfg.AsyncFormationAPIPathPrefix).Subrouter()
+	asyncAssignmentOperationStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncFormationAPIPathPrefix).Subrouter()
 	asyncAssignmentOperationStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationHandler()) // order is important
 
 	logger.Infof("Registering formation tenant mapping endpoints...")

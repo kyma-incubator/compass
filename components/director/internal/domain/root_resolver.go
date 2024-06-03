@@ -101,6 +101,7 @@ type RootResolver struct {
 	doc                   *document.Resolver
 	formation             *formation.Resolver
 	formationAssignment   *formationassignment.Resolver
+	assignmentOperation   *assignmentOp.Resolver
 	runtime               *runtime.Resolver
 	runtimeContext        *runtimectx.Resolver
 	healthCheck           *healthcheck.Resolver
@@ -316,6 +317,7 @@ func NewRootResolver(
 		doc:                   document.NewResolver(transact, docSvc, appSvc, bundleSvc, frConverter),
 		formation:             formation.NewResolver(transact, formationSvc, formationConv, formationAssignmentSvc, formationAssignmentConv, tenantOnDemandSvc, tenantSvc),
 		formationAssignment:   formationassignment.NewResolver(transact, applicationRepo, appConverter, runtimeRepo, runtimeConverter, runtimeContextRepo, runtimeContextConverter, assignmentOperationSvc, assignmentOperationConv),
+		assignmentOperation:   assignmentOp.NewResolver(transact, assignmentOperationSvc, assignmentOperationConv),
 		runtime:               runtime.NewResolver(transact, runtimeSvc, scenarioAssignmentSvc, systemAuthSvc, oAuth20Svc, runtimeConverter, systemAuthConverter, eventingSvc, bundleInstanceAuthSvc, selfRegisterManager, uidSvc, subscriptionSvc, runtimeContextSvc, runtimeContextConverter, webhookSvc, webhookConverter, tenantOnDemandSvc, formationSvc, tenantSvc, formation.NewASAEngine(scenarioAssignmentRepo, runtimeRepo, runtimeContextRepo, formationRepo, formationTemplateRepo, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)),
 		runtimeContext:        runtimectx.NewResolver(transact, runtimeContextSvc, runtimeContextConverter),
 		healthCheck:           healthcheck.NewResolver(healthCheckSvc),
@@ -542,6 +544,10 @@ func (r *queryResolver) FormationTemplates(ctx context.Context, filters []*graph
 
 func (r *queryResolver) FormationTemplatesByName(ctx context.Context, name string, first *int, after *graphql.PageCursor) (*graphql.FormationTemplatePage, error) {
 	return r.formationTemplate.FormationTemplatesByName(ctx, &name, first, after)
+}
+
+func (r *queryResolver) GetLatestOperation(ctx context.Context, formationID string, assignmentID string) (*graphql.AssignmentOperation, error) {
+	return r.assignmentOperation.GetLatestOperation(ctx, formationID, assignmentID)
 }
 
 // Viewer missing godoc

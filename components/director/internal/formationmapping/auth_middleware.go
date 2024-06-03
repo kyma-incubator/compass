@@ -247,7 +247,8 @@ func (a *Authenticator) FormationHandler() func(next http.Handler) http.Handler 
 			ctx := r.Context()
 			correlationID := correlation.CorrelationIDFromContext(ctx)
 
-			if r.Method != http.MethodPatch {
+			// TODO:: Adapt this - separate handler for the new status API or something else.
+			if r.Method != http.MethodPatch && r.Method != http.MethodPut {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}
