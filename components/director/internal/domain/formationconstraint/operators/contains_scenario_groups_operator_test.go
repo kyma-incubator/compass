@@ -244,7 +244,7 @@ func TestConstraintOperators_ContainsScenarioGroups(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			systemAuthSvc := testCase.SystemAuthService()
 			appRepo := testCase.ApplicationRepo()
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, systemAuthSvc, nil, nil, nil, appRepo, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, systemAuthSvc, nil, nil, nil, appRepo, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			result, err := engine.ContainsScenarioGroups(ctx, testCase.Input)
 

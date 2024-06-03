@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+	formationassignmentpkg "github.com/kyma-incubator/compass/components/director/pkg/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -168,6 +169,7 @@ type asaEngine interface {
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
 	Finish(ctx context.Context, assignmentID, formationID string) error
+	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
 	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
 	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 	DeleteByIDs(ctx context.Context, ids []string) error
@@ -358,21 +360,6 @@ func (s *service) Update(ctx context.Context, model *model.Formation) error {
 		return errors.Wrapf(err, "An error occurred while updating formation with ID: %q", model.ID)
 	}
 	return nil
-}
-
-// GetFormationsForObject returns slice of formations for entity with ID objID and type objType
-func (s *service) GetFormationsForObject(ctx context.Context, tnt string, objType model.LabelableObject, objID string) ([]string, error) {
-	labelInput := &model.LabelInput{
-		Key:        model.ScenariosKey,
-		ObjectID:   objID,
-		ObjectType: objType,
-	}
-	existingLabel, err := s.labelService.GetLabel(ctx, tnt, labelInput)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while fetching scenario label for %q with id %q", objType, objID)
-	}
-
-	return label.ValueToStringsSlice(existingLabel.Value)
 }
 
 // CreateFormation is responsible for a couple of things:
@@ -1353,9 +1340,14 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, fa.ID)
 			ctx = log.ContextWithLogger(ctx, logger)
 
-			operation := fa.GetOperation()
+			latestAssignmentOperation, err := s.assignmentOperationService.GetLatestOperation(ctxWithTransact, fa.ID, fa.FormationID)
+			if err != nil {
+				return err
+			}
+			formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type)
+
 			var notificationForReverseFA *webhookclient.FormationAssignmentNotificationRequest
-			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, operation)
+			notificationForFA, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, fa, formationOperation)
 			if err != nil {
 				return err
 			}
@@ -1365,7 +1357,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				return err
 			}
 			if reverseFA != nil {
-				notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, reverseFA, operation)
+				notificationForReverseFA, err = s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctxWithTransact, reverseFA, formationOperation)
 				if err != nil && !apperrors.IsNotFoundError(err) {
 					return err
 				}
@@ -1380,7 +1372,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 			}
 
 			faClone := fa.Clone()
-			if notificationForFA != nil && operation == model.UnassignFormation {
+			if notificationForFA != nil && formationOperation == model.UnassignFormation {
 				faClone.SetStateToDeleting()
 				formationassignment.ResetAssignmentConfigAndError(faClone)
 				if err := s.formationAssignmentService.Update(ctxWithTransact, faClone.ID, faClone); err != nil {
@@ -1390,7 +1382,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					return errors.Wrapf(err, "while updating %s Operation for assignment with ID: %s triggered by %s", model.Unassign, faClone.ID, assignmentOperationTriggeredBy)
 				}
 			}
-			if operation == model.AssignFormation {
+			if formationOperation == model.AssignFormation {
 				faClone.State = string(model.InitialAssignmentState)
 				// Cleanup the error if present as new notification will be sent. The previous configuration should be left intact.
 				faClone.Error = nil
@@ -1410,7 +1402,7 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 					},
 					ReverseAssignmentReqMapping: reverseReqMapping,
 				},
-				Operation: operation,
+				Operation: formationOperation,
 			}
 
 			// We separate the assignment pairs in 3 groups
@@ -1644,42 +1636,9 @@ func (s *service) DeleteManyASAForSameTargetTenant(ctx context.Context, in []*mo
 	return nil
 }
 
+// GetScenariosFromMatchingASAs returns the scenarios from the ASAs that match the objectID and objectType
 func (s *service) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
 	return s.asaEngine.GetScenariosFromMatchingASAs(ctx, objectID, objType)
-}
-
-// MergeScenariosFromInputLabelsAndAssignments merges all the scenarios that are part of the resource labels (already added + to be added with the current operation)
-// with all the scenarios that should be assigned based on ASAs.
-func (s *service) MergeScenariosFromInputLabelsAndAssignments(ctx context.Context, inputLabels map[string]interface{}, runtimeID string) ([]interface{}, error) {
-	scenariosFromAssignments, err := s.asaEngine.GetScenariosFromMatchingASAs(ctx, runtimeID, graphql.FormationObjectTypeRuntime)
-	scenariosSet := make(map[string]struct{}, len(scenariosFromAssignments))
-
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting scenarios for selector labels")
-	}
-
-	for _, scenario := range scenariosFromAssignments {
-		scenariosSet[scenario] = struct{}{}
-	}
-
-	scenariosFromInput, isScenarioLabelInInput := inputLabels[model.ScenariosKey]
-
-	if isScenarioLabelInInput {
-		scenarioLabels, err := label.ValueToStringsSlice(scenariosFromInput)
-		if err != nil {
-			return nil, errors.Wrap(err, "while converting scenarios label to a string slice")
-		}
-
-		for _, scenario := range scenarioLabels {
-			scenariosSet[scenario] = struct{}{}
-		}
-	}
-
-	scenarios := make([]interface{}, 0, len(scenariosSet))
-	for k := range scenariosSet {
-		scenarios = append(scenarios, k)
-	}
-	return scenarios, nil
 }
 
 func (s *service) SetFormationToErrorState(ctx context.Context, formation *model.Formation, errorMessage string, errorCode formationassignment.AssignmentErrorCode, state model.FormationState) error {

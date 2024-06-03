@@ -158,7 +158,7 @@ func TestResolver_ApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplate(ctx, testID)
@@ -295,7 +295,7 @@ func TestResolver_ApplicationTemplates(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.ApplicationTemplates(ctx, testCase.LabelFilter, &first, &gqlAfter)
@@ -405,7 +405,7 @@ func TestResolver_Webhooks(t *testing.T) {
 			mockPersistence := testCase.PersistenceFn()
 			mockTransactioner := testCase.TransactionerFn(mockPersistence)
 
-			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(mockTransactioner, nil, nil, nil, nil, webhookSvc, converter, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.Webhooks(context.TODO(), appTemplate)
@@ -779,41 +779,29 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
 		},
 		{
-			Name: "Do not create cert subject mapping when the subject already exists",
-			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
-
-				return persistTx, transact
-			},
+			Name: "Fail when the subject already exists",
+			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
+				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithSelfRegLabels).Return(*modelAppTemplateInputWithSelRegLabels, nil).Once()
-				appTemplateConv.On("ToGraphQL", modelAppTemplate).Return(gqlAppTemplateWithSelfRegLabels, nil).Once()
+				appTemplateConv.AssertNotCalled(t, "ToGraphQL")
 				return appTemplateConv
 			},
-			WebhookConvFn: UnusedWebhookConv,
-			WebhookSvcFn:  SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
-			SelfRegManagerFn: func() *automock.SelfRegisterManager {
-				srm := apptmpltest.SelfRegManagerThatDoesNotCleanupFunc(labelsContainingSelfRegistration, modelAppTemplateInputWithSelRegLabels.Labels)()
-				return srm
-			},
+			WebhookConvFn:           UnusedWebhookConv,
+			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithSelfRegLabels.Webhooks, gqlAppTemplateInputWithSelfRegLabels.Webhooks),
+			SelfRegManagerFn:        apptmpltest.SelfRegManagerThatDoesCleanup(labelsContainingSelfRegistration, modelAppTemplateInputWithSelRegLabels.Labels),
 			CertSubjectMappingSvcFn: SuccessfulSkipCertSubjectMappingCreation(csmWithDisorderedSubject),
 			LabelSvcFn:              UnusedLabelService,
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
-			ExpectedOutput:          gqlAppTemplateWithSelfRegLabels,
+			ExpectedError:           fmt.Errorf("subject is already allow-listed. Not possible to associate app template consumer %q with already allow-listed subject", modelAppTemplate.ID),
 		},
 		{
 			Name: "Success when providing product label without slis filter - should set default slis filter",
@@ -1647,7 +1635,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				ctx = testCase.Ctx
 			}
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, labelService, selfRegManager, uuidSvc, nil, certSubjectMappingService, AppTemplateProductLabel, apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, labelService, selfRegManager, uuidSvc, certSubjectMappingService, AppTemplateProductLabel, apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.CreateApplicationTemplate(ctx, *testCase.Input)
@@ -1673,7 +1661,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
-		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 		// WHEN
 		_, err := resolver.CreateApplicationTemplate(ctxWithCertConsumer, *gqlAppTemplateInputInvalid)
@@ -1784,7 +1772,7 @@ func TestResolver_Labels(t *testing.T) {
 			//persist, transact := testCase.TxFn()
 			appTemplateSvc := testCase.AppTemplateSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.Labels(context.TODO(), gqlAppTemplate, testCase.InputKey)
@@ -1802,9 +1790,6 @@ func TestResolver_Labels(t *testing.T) {
 
 func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	// GIVEN
-	region := "cf-eu-1"
-	subaccountID := "consumer-id"
-
 	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
 	ctx = consumer.SaveToContext(ctx, consumer.Consumer{ConsumerID: testConsumerID})
 
@@ -1826,17 +1811,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, jsonAppCreateInput, fixModelApplicationTemplateWebhooks(testWebhookID, testID))
 	modelAppTemplateCustomID := fixModelAppTemplateWithAppInputJSON(customID, testName, jsonAppCreateInput, fixModelApplicationTemplateWebhooks(testWebhookID, customID))
 
-	appTemplateLabels := map[string]*model.Label{
-		"global_subaccount_id": {
-			Value: subaccountID,
-		},
-		"systemFieldDiscovery": {
-			Value: true,
-		},
-		"region": {
-			Value: region,
-		},
-	}
 	modelApplication := fixModelApplication(testID, testName)
 	gqlApplication := fixGQLApplication(testID, testName)
 
@@ -1849,20 +1823,18 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 	modelAppFromTemplateWithIDInput := fixModelApplicationFromTemplateInput(testName)
 	modelAppFromTemplateWithIDInput.ID = &customID
 
-	systemFieldDiscoveryLabelIsTrue := true
 	testCases := []struct {
-		Name                       string
-		AppFromTemplateInput       graphql.ApplicationFromTemplateInput
-		TxFn                       func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
-		AppTemplateSvcFn           func() *automock.ApplicationTemplateService
-		AppTemplateConvFn          func() *automock.ApplicationTemplateConverter
-		WebhookSvcFn               func() *automock.WebhookService
-		WebhookConvFn              func() *automock.WebhookConverter
-		AppSvcFn                   func() *automock.ApplicationService
-		AppConvFn                  func() *automock.ApplicationConverter
-		SystemFieldDiscoveryEngine func() *automock.SystemFieldDiscoveryEngine
-		ExpectedOutput             *graphql.Application
-		ExpectedError              error
+		Name                 string
+		AppFromTemplateInput graphql.ApplicationFromTemplateInput
+		TxFn                 func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner)
+		AppTemplateSvcFn     func() *automock.ApplicationTemplateService
+		AppTemplateConvFn    func() *automock.ApplicationTemplateConverter
+		WebhookSvcFn         func() *automock.WebhookService
+		WebhookConvFn        func() *automock.WebhookConverter
+		AppSvcFn             func() *automock.ApplicationService
+		AppConvFn            func() *automock.ApplicationConverter
+		ExpectedOutput       *graphql.Application
+		ExpectedError        error
 	}{
 		{
 			Name:                 "Success",
@@ -1874,7 +1846,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(appTemplateLabels, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -1884,10 +1855,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
-				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery})
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), false).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -1897,16 +1865,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
-				return systemFieldDiscoveryEngine
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
@@ -1924,7 +1882,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), customID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplateCustomID, modelAppFromTemplateWithIDInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplateCustomID.ID).Return(map[string]*model.Label{}, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -1934,7 +1891,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(customID), !systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(customID), false).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -1944,12 +1901,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppWithLabelCreateInput, nil).Once()
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				systemFieldDiscoveryEngine.AssertNotCalled(t, "EnrichApplicationWebhookIfNeeded")
-				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
-				return systemFieldDiscoveryEngine
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
@@ -1966,7 +1917,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc.On("ListByName", txtest.CtxWithDBMatcher(), testName).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(appTemplateLabels, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -1976,9 +1926,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				newModelInput := modelAppWithManagedTrueLabelCreateInput
-				newModelInput.Webhooks = append(newModelInput.Webhooks, &model.WebhookInput{Type: model.WebhookTypeSystemFieldDiscovery})
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), newModelInput, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithManagedTrueLabelCreateInput, str.Ptr(testID), false).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -1989,34 +1937,23 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("ToGraphQL", &modelApplication).Return(&gqlApplication).Once()
 				return appConv
 			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppWithManagedTrueLabelCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithManagedTrueLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
-				return systemFieldDiscoveryEngine
-			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: &gqlApplication,
 			ExpectedError:  nil,
 		},
 		{
-			Name:                       "Returns error when transaction begin fails",
-			AppFromTemplateInput:       gqlAppFromTemplateInput,
-			TxFn:                       txGen.ThatFailsOnBegin,
-			AppTemplateSvcFn:           UnusedAppTemplateSvc,
-			AppTemplateConvFn:          UnusedAppTemplateConv,
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              testError,
+			Name:                 "Returns error when transaction begin fails",
+			AppFromTemplateInput: gqlAppFromTemplateInput,
+			TxFn:                 txGen.ThatFailsOnBegin,
+			AppTemplateSvcFn:     UnusedAppTemplateSvc,
+			AppTemplateConvFn:    UnusedAppTemplateConv,
+			AppSvcFn:             UnusedAppSvc,
+			AppConvFn:            UnusedAppConv,
+			WebhookConvFn:        UnusedWebhookConv,
+			WebhookSvcFn:         UnusedWebhookSvc,
+			ExpectedOutput:       nil,
+			ExpectedError:        testError,
 		},
 		{
 			Name:                 "Returns error when list application templates by filters fails",
@@ -2031,13 +1968,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              testError,
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
 		},
 		{
 			Name:                 "Returns error when list application templates by name fails",
@@ -2053,13 +1989,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              testError,
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
 		},
 		{
 			Name:                 "Returns error when get application template label fails",
@@ -2076,13 +2011,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              testError,
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
 		},
 		{
 			Name:                 "Returns error when list application templates by name cannot find application template",
@@ -2098,13 +2032,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              fmt.Errorf("application template with name \"bar\" and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id"))),
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  fmt.Errorf("application template with name \"bar\" and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id"))),
 		},
 		{
 			Name:                 "Returns error when list application templates by name return more than one application template",
@@ -2121,13 +2054,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv := &automock.ApplicationTemplateConverter{}
 				return appTemplateConv
 			},
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              errors.New("unexpected number of application templates. found 2"),
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  errors.New("unexpected number of application templates. found 2"),
 		},
 		{
 			Name:                 "Returns error when preparing ApplicationCreateInputJSON fails",
@@ -2144,13 +2076,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
 				return appTemplateConv
 			},
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              testError,
+			AppSvcFn:       UnusedAppSvc,
+			AppConvFn:      UnusedAppConv,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
 		},
 		{
 			Name:                 "Returns error when CreateRegisterInputJSONToGQL fails",
@@ -2173,11 +2104,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, testError).Once()
 				return appConv
 			},
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              testError,
+			WebhookConvFn:  UnusedWebhookConv,
+			WebhookSvcFn:   UnusedWebhookSvc,
+			ExpectedOutput: nil,
+			ExpectedError:  testError,
 		},
 		{
 			Name:                 "Returns error when ApplicationCreateInput validation fails",
@@ -2200,49 +2130,10 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(graphql.ApplicationRegisterInput{}, nil).Once()
 				return appConv
 			},
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedOutput:             nil,
-			ExpectedError:              errors.New("name=cannot be blank"),
-		},
-		{
-			Name:                 "Returns error when listing labels for Application Template fails",
-			AppFromTemplateInput: gqlAppFromTemplateInput,
-			TxFn:                 txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
-				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(nil, testError).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
-				return appTemplateConv
-			},
-			AppSvcFn: UnusedAppSvc,
-			AppConvFn: func() *automock.ApplicationConverter {
-				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
-				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
-				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
-				return systemFieldDiscoveryEngine
-			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
 			ExpectedOutput: nil,
-			ExpectedError:  errors.New("error while listing labels for Application Template"),
+			ExpectedError:  errors.New("name=cannot be blank"),
 		},
 		{
 			Name:                 "Returns error when creating Application fails",
@@ -2252,7 +2143,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(appTemplateLabels, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -2262,10 +2152,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
-				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery})
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return("", testError).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), false).Return("", testError).Once()
 				return appSvc
 			},
 			AppConvFn: func() *automock.ApplicationConverter {
@@ -2273,16 +2160,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.AssertNotCalled(t, "CreateLabelForApplicationWebhook")
-				return systemFieldDiscoveryEngine
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
@@ -2297,7 +2174,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(appTemplateLabels, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -2307,10 +2183,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
-				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery})
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), false).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appSvc
 			},
@@ -2319,61 +2192,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
-				return systemFieldDiscoveryEngine
-			},
-			WebhookConvFn:  UnusedWebhookConv,
-			WebhookSvcFn:   UnusedWebhookSvc,
-			ExpectedOutput: nil,
-			ExpectedError:  testError,
-		},
-		{
-			Name:                 "Returns error when creating label for application webhook fails",
-			AppFromTemplateInput: gqlAppFromTemplateInput,
-			TxFn:                 txGen.ThatDoesntExpectCommit,
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
-				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(appTemplateLabels, nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("ApplicationFromTemplateInputFromGraphQL", modelAppTemplate, gqlAppFromTemplateInput).Return(modelAppFromTemplateInput, nil).Once()
-				return appTemplateConv
-			},
-			AppSvcFn: func() *automock.ApplicationService {
-				appSvc := &automock.ApplicationService{}
-				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
-				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery})
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
-				return appSvc
-			},
-			AppConvFn: func() *automock.ApplicationConverter {
-				appConv := &automock.ApplicationConverter{}
-				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
-				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
-				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(testError).Once()
-				return systemFieldDiscoveryEngine
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
@@ -2388,7 +2206,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), filters).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				appTemplateSvc.On("PrepareApplicationCreateInputJSON", modelAppTemplate, modelAppFromTemplateInput.Values).Return(jsonAppCreateInput, nil).Once()
-				appTemplateSvc.On("ListLabels", txtest.CtxWithDBMatcher(), modelAppTemplate.ID).Return(appTemplateLabels, nil).Once()
 				return appTemplateSvc
 			},
 			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
@@ -2398,10 +2215,7 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			},
 			AppSvcFn: func() *automock.ApplicationService {
 				appSvc := &automock.ApplicationService{}
-				modelAppWithLabelCreateInputWithWebhook := modelAppWithLabelCreateInput
-				modelAppWithLabelCreateInputWithWebhook.Webhooks = append(modelAppWithLabelCreateInput.Webhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery})
-				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInputWithWebhook, str.Ptr(testID), systemFieldDiscoveryLabelIsTrue).Return(testID, nil).Once()
+				appSvc.On("CreateFromTemplate", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, str.Ptr(testID), false).Return(testID, nil).Once()
 				appSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(&modelApplication, nil).Once()
 				return appSvc
 			},
@@ -2410,16 +2224,6 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appConv.On("CreateInputFromGraphQL", mock.Anything, gqlAppCreateInput).Return(modelAppCreateInput, nil).Once()
 				appConv.On("CreateRegisterInputJSONToGQL", jsonAppCreateInput).Return(gqlAppCreateInput, nil).Once()
 				return appConv
-			},
-			SystemFieldDiscoveryEngine: func() *automock.SystemFieldDiscoveryEngine {
-				systemFieldDiscoveryEngine := &automock.SystemFieldDiscoveryEngine{}
-				newWebhooks := modelAppCreateInput.Webhooks
-				newWebhooks = append(newWebhooks, &model.WebhookInput{
-					Type: model.WebhookTypeSystemFieldDiscovery,
-				})
-				systemFieldDiscoveryEngine.On("EnrichApplicationWebhookIfNeeded", txtest.CtxWithDBMatcher(), modelAppWithLabelCreateInput, systemFieldDiscoveryLabelIsTrue, region, subaccountID, modelAppTemplate.Name, testName).Return(newWebhooks, systemFieldDiscoveryLabelIsTrue).Once()
-				systemFieldDiscoveryEngine.On("CreateLabelForApplicationWebhook", txtest.CtxWithDBMatcher(), testID).Return(nil).Once()
-				return systemFieldDiscoveryEngine
 			},
 			WebhookConvFn:  UnusedWebhookConv,
 			WebhookSvcFn:   UnusedWebhookSvc,
@@ -2437,13 +2241,12 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 				appTemplateSvc.On("GetLabel", txtest.CtxWithDBMatcher(), testID, globalSubaccountIDLabelKey).Return(nil, apperrors.NewNotFoundError(resource.Label, "id")).Once()
 				return appTemplateSvc
 			},
-			AppTemplateConvFn:          UnusedAppTemplateConv,
-			AppSvcFn:                   UnusedAppSvc,
-			AppConvFn:                  UnusedAppConv,
-			WebhookConvFn:              UnusedWebhookConv,
-			WebhookSvcFn:               UnusedWebhookSvc,
-			SystemFieldDiscoveryEngine: UnusedSystemFieldDiscoveryEngine,
-			ExpectedError:              fmt.Errorf("application template with id customTemplateID and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id"))),
+			AppTemplateConvFn: UnusedAppTemplateConv,
+			AppSvcFn:          UnusedAppSvc,
+			AppConvFn:         UnusedAppConv,
+			WebhookConvFn:     UnusedWebhookConv,
+			WebhookSvcFn:      UnusedWebhookSvc,
+			ExpectedError:     fmt.Errorf("application template with id customTemplateID and consumer id REDACTED_%x not found", sha256.Sum256([]byte("consumer-id"))),
 		},
 	}
 
@@ -2456,9 +2259,8 @@ func TestResolver_RegisterApplicationFromTemplate(t *testing.T) {
 			webhookConverter := testCase.WebhookConvFn()
 			appSvc := testCase.AppSvcFn()
 			appConv := testCase.AppConvFn()
-			systemFieldDiscoveryEngine := testCase.SystemFieldDiscoveryEngine()
 
-			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, systemFieldDiscoveryEngine, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, appSvc, appConv, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.RegisterApplicationFromTemplate(ctx, testCase.AppFromTemplateInput)
@@ -2890,7 +2692,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 			webhookSvc := testCase.WebhookSvcFn()
 			webhookConverter := testCase.WebhookConvFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, selfRegManager, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, selfRegManager, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.UpdateApplicationTemplate(ctx, testID, testCase.InputOverride, *testCase.Input)
@@ -2913,7 +2715,7 @@ func TestResolver_UpdateApplicationTemplate(t *testing.T) {
 		expectedError := errors.New("failed to parse webhook url template")
 		_, transact := txGen.ThatSucceeds()
 
-		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+		resolver := apptemplate.NewResolver(transact, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 		// WHEN
 		override := false
@@ -3351,7 +3153,7 @@ func TestResolver_DeleteApplicationTemplate(t *testing.T) {
 			uuidSvc := uidSvcFn()
 			certSubjMappingSvc := testCase.CertSubjMappingSvcFn()
 
-			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, selfRegManager, uuidSvc, nil, certSubjMappingSvc, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
+			resolver := apptemplate.NewResolver(transact, nil, nil, appTemplateSvc, appTemplateConv, webhookSvc, webhookConverter, nil, selfRegManager, uuidSvc, certSubjMappingSvc, "", apiclient.OrdAggregatorClientConfig{}, envConsumerSubjects)
 
 			// WHEN
 			result, err := resolver.DeleteApplicationTemplate(ctx, testID)
@@ -3404,10 +3206,6 @@ func UnusedWebhookSvc() *automock.WebhookService {
 
 func UnusedLabelService() *automock.LabelService {
 	return &automock.LabelService{}
-}
-
-func UnusedSystemFieldDiscoveryEngine() *automock.SystemFieldDiscoveryEngine {
-	return &automock.SystemFieldDiscoveryEngine{}
 }
 
 func SuccessfulWebhookSvc(webhooksInput, enriched []*graphql.WebhookInput) func() *automock.WebhookService {

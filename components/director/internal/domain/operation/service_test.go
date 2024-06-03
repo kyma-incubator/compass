@@ -23,8 +23,8 @@ func TestService_Create(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled)
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -93,8 +93,8 @@ func TestService_CreateMultiple(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled)
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opInput := fixOperationInput(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 
 	ctx := context.TODO()
 
@@ -188,7 +188,7 @@ func TestService_Update(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -245,8 +245,8 @@ func TestService_RescheduleOperation(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModelWithLowPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusCompleted, lowOperationPriority)
-	opModelWithHighPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusScheduled, highOperationPriority)
+	opModelWithLowPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusCompleted, lowOperationPriority, model.OperationErrorSeverityNone)
+	opModelWithHighPriority := fixOperationModelWithPriority(testOpType, model.OperationStatusScheduled, highOperationPriority, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -261,7 +261,13 @@ func TestService_RescheduleOperation(t *testing.T) {
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
 				repo.On("Get", ctx, operationID).Return(opModelWithLowPriority, nil).Once()
-				repo.On("Update", ctx, opModelWithHighPriority).Return(nil).Once()
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(nil).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusScheduled, arg.Status)
+					assert.Equal(t, highOperationPriority, arg.Priority)
+					assert.Equal(t, testOpType, arg.OpType)
+					assert.Equal(t, json.RawMessage(errorMsg), arg.Error)
+				})
 				return repo
 			},
 			Input:    operationID,
@@ -283,8 +289,13 @@ func TestService_RescheduleOperation(t *testing.T) {
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
 				repo.On("Get", ctx, operationID).Return(opModelWithLowPriority, nil).Once()
-				repo.On("Update", ctx, opModelWithHighPriority).Return(testErr).Once()
-
+				repo.On("Update", ctx, mock.AnythingOfType("*model.Operation")).Return(testErr).Run(func(args mock.Arguments) {
+					arg := args.Get(1).(*model.Operation)
+					assert.Equal(t, model.OperationStatusScheduled, arg.Status)
+					assert.Equal(t, highOperationPriority, arg.Priority)
+					assert.Equal(t, testOpType, arg.OpType)
+					assert.Equal(t, json.RawMessage(errorMsg), arg.Error)
+				})
 				return repo
 			},
 			Input:       operationID,
@@ -295,7 +306,7 @@ func TestService_RescheduleOperation(t *testing.T) {
 			Name: "Error while trying to reschedule operation that is in IN_PROGRESS state",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				opModelInProgress := fixOperationModelWithPriority(testOpType, model.OperationStatusInProgress, lowOperationPriority)
+				opModelInProgress := fixOperationModelWithPriority(testOpType, model.OperationStatusInProgress, lowOperationPriority, model.OperationErrorSeverityNone)
 				repo.On("Get", ctx, operationID).Return(opModelInProgress, nil).Once()
 				return repo
 			},
@@ -332,7 +343,7 @@ func TestService_Get(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -392,7 +403,7 @@ func TestService_GetByDataAndType(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -452,7 +463,7 @@ func TestService_ListPriorityQueue(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	operationModels := []*model.Operation{opModel}
 	ctx := context.TODO()
 
@@ -588,7 +599,7 @@ func TestService_RescheduleOperations(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("RescheduleOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(nil).Once()
+				repo.On("RescheduleOperations", ctx, model.OperationTypeOrdAggregation, time.Minute, []string{model.OperationStatusCompleted.ToString(), model.OperationStatusFailed.ToString()}).Return(nil).Once()
 				return repo
 			},
 			Type:  model.OperationTypeOrdAggregation,
@@ -598,7 +609,7 @@ func TestService_RescheduleOperations(t *testing.T) {
 			Name: "Error while rescheduling operations",
 			RepositoryFn: func() *automock.OperationRepository {
 				repo := &automock.OperationRepository{}
-				repo.On("RescheduleOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(testErr).Once()
+				repo.On("RescheduleOperations", ctx, model.OperationTypeOrdAggregation, time.Minute, []string{model.OperationStatusCompleted.ToString(), model.OperationStatusFailed.ToString()}).Return(testErr).Once()
 				return repo
 			},
 			Type:        model.OperationTypeOrdAggregation,
@@ -615,7 +626,66 @@ func TestService_RescheduleOperations(t *testing.T) {
 			svc := operation.NewService(repo, nil)
 
 			// WHEN
-			err := svc.RescheduleOperations(ctx, testCase.Type, testCase.Input)
+			err := svc.RescheduleOperations(ctx, testCase.Type, testCase.Input, []string{model.OperationStatusCompleted.ToString(), model.OperationStatusFailed.ToString()})
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
+func TestService_DeleteOperations(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name         string
+		RepositoryFn func() *automock.OperationRepository
+		Input        time.Duration
+		Type         model.OperationType
+		ExpectedErr  error
+	}{
+		{
+			Name: "Success",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("DeleteOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(nil).Once()
+				return repo
+			},
+			Type:  model.OperationTypeOrdAggregation,
+			Input: time.Minute,
+		},
+		{
+			Name: "Error while rescheduling operations",
+			RepositoryFn: func() *automock.OperationRepository {
+				repo := &automock.OperationRepository{}
+				repo.On("DeleteOperations", ctx, model.OperationTypeOrdAggregation, time.Minute).Return(testErr).Once()
+				return repo
+			},
+			Type:        model.OperationTypeOrdAggregation,
+			Input:       time.Minute,
+			ExpectedErr: testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.DeleteOperations(ctx, testCase.Type, testCase.Input)
 
 			// THEN
 			if testCase.ExpectedErr != nil {
@@ -693,7 +763,7 @@ func TestService_MarkAsCompleted(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -785,7 +855,7 @@ func TestService_MarkAsFailed(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	ctx := context.TODO()
 
 	testCases := []struct {
@@ -861,11 +931,127 @@ func TestService_MarkAsFailed(t *testing.T) {
 	}
 }
 
+func TestService_SetErrorSeverity(t *testing.T) {
+	// GIVEN
+	testErr := errors.New("Test error")
+
+	ctx := context.TODO()
+
+	testCases := []struct {
+		Name          string
+		RepositoryFn  func() *automock.OperationRepository
+		ErrorSeverity model.OperationErrorSeverity
+		ExpectedErr   error
+	}{
+		{
+			Name: "Success when set Error severity to Info",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityInfo := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityInfo)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityInfo).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityInfo,
+		},
+		{
+			Name: "Success when set Error severity to Warning",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityWarning := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityWarning)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityWarning).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityWarning,
+		},
+		{
+			Name: "Success when set Error severity to Error",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityError := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityError)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityError).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityError,
+		},
+		{
+			Name: "Success when set Error severity to None",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityError := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityError)
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityError, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityNone).Return(nil).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityNone,
+		},
+		{
+			Name: "Error while getting operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, testErr).Once()
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityInfo,
+			ExpectedErr:   testErr,
+		},
+		{
+			Name: "Error while updating operation",
+			RepositoryFn: func() *automock.OperationRepository {
+				opModelWithErrorSeverityNone := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityNone)
+				opModelWithErrorSeverityInfo := fixOperationModelWithErrorSeverity(model.OperationErrorSeverityInfo)
+
+				repo := &automock.OperationRepository{}
+				repo.On("Get", ctx, operationID).Return(opModelWithErrorSeverityNone, nil).Once()
+				repo.On("Update", ctx, opModelWithErrorSeverityInfo).Return(testErr).Once()
+
+				return repo
+			},
+			ErrorSeverity: model.OperationErrorSeverityInfo,
+			ExpectedErr:   testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			// GIVEN
+			repo := testCase.RepositoryFn()
+
+			svc := operation.NewService(repo, nil)
+
+			// WHEN
+			err := svc.SetErrorSeverity(ctx, operationID, testCase.ErrorSeverity)
+
+			// THEN
+			if testCase.ExpectedErr != nil {
+				require.Error(t, err)
+				assert.Contains(t, err.Error(), testCase.ExpectedErr.Error())
+			} else {
+				assert.Nil(t, err)
+			}
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_ListAllByType(t *testing.T) {
 	// GIVEN
 	testErr := errors.New("Test error")
 
-	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled)
+	opModel := fixOperationModel(testOpType, model.OperationStatusScheduled, model.OperationErrorSeverityNone)
 	operationModels := []*model.Operation{opModel}
 	ctx := context.TODO()
 

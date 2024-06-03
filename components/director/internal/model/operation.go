@@ -19,6 +19,25 @@ const (
 	OperationStatusFailed OperationStatus = "FAILED"
 )
 
+// ToString stringifies OperationStatus
+func (os OperationStatus) ToString() string {
+	return string(os)
+}
+
+// OperationErrorSeverity defines operation's error severity
+type OperationErrorSeverity string
+
+const (
+	// OperationErrorSeverityError represents Error severity
+	OperationErrorSeverityError OperationErrorSeverity = "ERROR"
+	// OperationErrorSeverityWarning represents Warning severity
+	OperationErrorSeverityWarning OperationErrorSeverity = "WARNING"
+	// OperationErrorSeverityInfo represents Info severity
+	OperationErrorSeverityInfo OperationErrorSeverity = "INFO"
+	// OperationErrorSeverityNone represents missing severity
+	OperationErrorSeverityNone OperationErrorSeverity = "NONE"
+)
+
 // OperationType defines supported operation types
 type OperationType string
 
@@ -27,29 +46,33 @@ const (
 	OperationTypeOrdAggregation OperationType = "ORD_AGGREGATION"
 	// OperationTypeSystemFetching specifies system fetching operation type
 	OperationTypeSystemFetching OperationType = "SYSTEM_FETCHING"
+	// OperationTypeSaasRegistryDiscovery specifies saas registry discovery operation type
+	OperationTypeSaasRegistryDiscovery OperationType = "SAAS_REGISTRY_DISCOVERY"
 )
 
 // Operation represents an Operation
 type Operation struct {
-	ID        string
-	OpType    OperationType
-	Status    OperationStatus
-	Data      json.RawMessage
-	Error     json.RawMessage
-	Priority  int
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
+	ID            string
+	OpType        OperationType
+	Status        OperationStatus
+	Data          json.RawMessage
+	Error         json.RawMessage
+	ErrorSeverity OperationErrorSeverity
+	Priority      int
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
 }
 
 // OperationInput represents an OperationInput
 type OperationInput struct {
-	OpType    OperationType
-	Status    OperationStatus
-	Data      json.RawMessage
-	Error     json.RawMessage
-	Priority  int
-	CreatedAt *time.Time
-	UpdatedAt *time.Time
+	OpType        OperationType
+	Status        OperationStatus
+	Data          json.RawMessage
+	Error         json.RawMessage
+	ErrorSeverity OperationErrorSeverity
+	Priority      int
+	CreatedAt     *time.Time
+	UpdatedAt     *time.Time
 }
 
 // ToOperation converts OperationInput to Operation
@@ -59,13 +82,14 @@ func (i *OperationInput) ToOperation(id string) *Operation {
 	}
 
 	return &Operation{
-		ID:        id,
-		OpType:    i.OpType,
-		Status:    i.Status,
-		Data:      i.Data,
-		Error:     i.Error,
-		Priority:  i.Priority,
-		CreatedAt: i.CreatedAt,
-		UpdatedAt: i.UpdatedAt,
+		ID:            id,
+		OpType:        i.OpType,
+		Status:        i.Status,
+		Data:          i.Data,
+		Error:         i.Error,
+		ErrorSeverity: i.ErrorSeverity,
+		Priority:      i.Priority,
+		CreatedAt:     i.CreatedAt,
+		UpdatedAt:     i.UpdatedAt,
 	}
 }

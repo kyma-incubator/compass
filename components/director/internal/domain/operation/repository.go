@@ -18,8 +18,8 @@ const scheduledOperationsView = `public.scheduled_operations`
 
 var (
 	idTableColumns        = []string{"id"}
-	operationColumns      = []string{"id", "op_type", "status", "data", "error", "priority", "created_at", "updated_at"}
-	updatableTableColumns = []string{"status", "error", "priority", "updated_at"}
+	operationColumns      = []string{"id", "op_type", "status", "data", "error", "error_severity", "priority", "created_at", "updated_at"}
+	updatableTableColumns = []string{"status", "error", "error_severity", "priority", "updated_at"}
 )
 
 // EntityConverter missing godoc
@@ -150,10 +150,19 @@ func (r *pgRepository) LockOperation(ctx context.Context, operationID string) (b
 	return r.globalFunctioner.AdvisoryLock(ctx, identifier)
 }
 
+// DeleteOperations deletes the operations.
+func (r *pgRepository) DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	log.C(ctx).Debug("Deleting Operations")
+	equalCondition := repo.NewEqualCondition("status", model.OperationStatusCompleted.ToString())
+	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
+	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
+	return r.globalDeleter.DeleteManyGlobal(ctx, repo.Conditions{equalCondition, equalTypeCondition, dateCondition})
+}
+
 // RescheduleOperations reschedules the operations.
-func (r *pgRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+func (r *pgRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error {
 	log.C(ctx).Debug("Rescheduling Operations")
-	inCondition := repo.NewInConditionForStringValues("status", []string{"COMPLETED", "FAILED"})
+	inCondition := repo.NewInConditionForStringValues("status", operationStatuses)
 	equalTypeCondition := repo.NewEqualCondition("op_type", string(operationType))
 	dateCondition := repo.NewLessThanCondition("updated_at", time.Now().Add(-1*reschedulePeriod))
 	return r.globalUpdater.UpdateFieldsGlobal(ctx, repo.Conditions{inCondition, equalTypeCondition, dateCondition}, map[string]interface{}{"status": "SCHEDULED", "updated_at": time.Now()})

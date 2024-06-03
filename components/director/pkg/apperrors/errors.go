@@ -440,6 +440,11 @@ func IsNotFoundError(err error) bool {
 	return ErrorCode(err) == NotFound
 }
 
+// IsInternalServerError checks if the provided error is an internal server error
+func IsInternalServerError(err error) bool {
+	return ErrorCode(err) == InternalError
+}
+
 // IsTenantRequired missing godoc
 func IsTenantRequired(err error) bool {
 	return ErrorCode(err) == TenantRequired

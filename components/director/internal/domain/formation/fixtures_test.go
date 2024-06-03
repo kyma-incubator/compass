@@ -104,10 +104,7 @@ const (
 	FormationAssignmentState       = "FormationAssignmentState"
 
 	// Assignment Operation constants
-	AssignmentOperationID  = "AssignmentOperationID"
-	AssignmentOperation2ID = "AssignmentOperation2ID"
-	AssignmentOperation3ID = "AssignmentOperation3ID"
-	AssignmentOperation4ID = "AssignmentOperation4ID"
+	AssignmentOperationID = "AssignmentOperationID"
 
 	// Other constants
 	ErrMsg          = "some error"
@@ -1592,6 +1589,18 @@ func fixDetailsForNotificationStatusReturned(formationType string, operation mod
 		Location:        location,
 		Operation:       operation,
 		Formation:       formation,
+	}
+}
+
+func fixAssignmentOperationModelWithTypeAndTrigger(opType model.AssignmentOperationType, opTrigger model.OperationTrigger) *model.AssignmentOperation {
+	return &model.AssignmentOperation{
+		ID:                    AssignmentOperationID,
+		Type:                  opType,
+		FormationAssignmentID: AssignmentOperationID,
+		FormationID:           FormationID,
+		TriggeredBy:           opTrigger,
+		StartedAtTimestamp:    &defaultTime,
+		FinishedAtTimestamp:   &defaultTime,
 	}
 }
 

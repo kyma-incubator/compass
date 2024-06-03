@@ -6,10 +6,11 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
+
 	tnt "github.com/kyma-incubator/compass/components/director/pkg/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/data"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -964,14 +965,9 @@ func (r *Resolver) Operations(ctx context.Context, obj *graphql.Application) ([]
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	appTemplateID := ""
-	if obj.ApplicationTemplateID != nil {
-		appTemplateID = *obj.ApplicationTemplateID
-	}
-
-	op, err := r.opSvc.GetByDataAndType(ctx, data.NewOrdOperationData(obj.ID, appTemplateID), model.OperationTypeOrdAggregation)
-	if err != nil && !apperrors.IsNotFoundError(err) {
-		return nil, errors.Wrap(err, "while getting operation")
+	op, err := r.getOperation(ctx, obj)
+	if err != nil {
+		return nil, err
 	}
 
 	if err = tx.Commit(); err != nil {
@@ -1342,6 +1338,26 @@ func (r *Resolver) getApplication(ctx context.Context, get func(context.Context)
 	}
 
 	return r.appConverter.ToGraphQL(app), nil
+}
+
+func (r *Resolver) getOperation(ctx context.Context, obj *graphql.Application) (*model.Operation, error) {
+	op, err := r.opSvc.GetByDataAndType(ctx, data.NewOrdOperationData(obj.ID, ""), model.OperationTypeOrdAggregation)
+	if err == nil {
+		return op, nil
+	}
+
+	if apperrors.IsNotFoundError(err) {
+		if obj.ApplicationTemplateID != nil {
+			op, err = r.opSvc.GetByDataAndType(ctx, data.NewOrdOperationData(obj.ID, *obj.ApplicationTemplateID), model.OperationTypeOrdAggregation)
+			if err == nil || apperrors.IsNotFoundError(err) {
+				return op, nil
+			}
+		} else {
+			return op, nil
+		}
+	}
+
+	return nil, errors.Wrap(err, "while getting operation")
 }
 
 func getAspectsForIntegrationDependency(integrationDependencyID string, aspects []*model.Aspect) []*model.Aspect {

@@ -4,5 +4,6 @@ approvers:
   - team-raptor
 labels:
   - ":t-rex: team-raptor"
+  - "do-not-merge/hold"
 options:
   no_parent_owners: true

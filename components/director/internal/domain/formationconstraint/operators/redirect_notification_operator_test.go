@@ -43,7 +43,7 @@ func TestConstraintOperators_RedirectNotification(t *testing.T) {
 	for _, ts := range testCases {
 		t.Run(ts.Name, func(t *testing.T) {
 			// GIVEN
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 			// WHEN
 			result, err := engine.RedirectNotification(ctx, ts.Input)

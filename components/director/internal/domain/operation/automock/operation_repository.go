@@ -44,6 +44,20 @@ func (_m *OperationRepository) DeleteMultiple(ctx context.Context, ids []string)
 	return r0
 }
 
+// DeleteOperations provides a mock function with given fields: ctx, operationType, reschedulePeriod
+func (_m *OperationRepository) DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	ret := _m.Called(ctx, operationType, reschedulePeriod)
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType, time.Duration) error); ok {
+		r0 = rf(ctx, operationType, reschedulePeriod)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // Get provides a mock function with given fields: ctx, id
 func (_m *OperationRepository) Get(ctx context.Context, id string) (*model.Operation, error) {
 	ret := _m.Called(ctx, id)
@@ -186,13 +200,13 @@ func (_m *OperationRepository) RescheduleHangedOperations(ctx context.Context, o
 	return r0
 }
 
-// RescheduleOperations provides a mock function with given fields: ctx, operationType, reschedulePeriod
-func (_m *OperationRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
-	ret := _m.Called(ctx, operationType, reschedulePeriod)
+// RescheduleOperations provides a mock function with given fields: ctx, operationType, reschedulePeriod, operationStatuses
+func (_m *OperationRepository) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error {
+	ret := _m.Called(ctx, operationType, reschedulePeriod, operationStatuses)
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType, time.Duration) error); ok {
-		r0 = rf(ctx, operationType, reschedulePeriod)
+	if rf, ok := ret.Get(0).(func(context.Context, model.OperationType, time.Duration, []string) error); ok {
+		r0 = rf(ctx, operationType, reschedulePeriod, operationStatuses)
 	} else {
 		r0 = ret.Error(0)
 	}

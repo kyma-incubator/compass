@@ -6,7 +6,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationconstraint/operators/automock"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
@@ -14,14 +13,15 @@ import (
 
 func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 	testCases := []struct {
-		Name                  string
-		Input                 operators.OperatorInput
-		TenantServiceFn       func() *automock.TenantService
-		AsaServiceFn          func() *automock.AutomaticScenarioAssignmentService
-		LabelRepositoryFn     func() *automock.LabelRepository
-		FormationRepositoryFn func() *automock.FormationRepository
-		ExpectedResult        bool
-		ExpectedErrorMsg      string
+		Name                         string
+		Input                        operators.OperatorInput
+		TenantServiceFn              func() *automock.TenantService
+		AsaServiceFn                 func() *automock.AutomaticScenarioAssignmentService
+		LabelRepositoryFn            func() *automock.LabelRepository
+		FormationRepositoryFn        func() *automock.FormationRepository
+		FormationAssignmentServiceFn func() *automock.FormationAssignmentService
+		ExpectedResult               bool
+		ExpectedErrorMsg             string
 	}{
 		{
 			Name:  "Success for tenant when participating in formation",
@@ -129,71 +129,98 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 		{
 			Name:  "Success for Application when participating in formation",
 			Input: inputApplicationResourceType,
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(scenariosLabel, nil).Once()
-				return repo
-			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("ListByFormationNames", ctx, []string{scenario}, testTenantID).Return(formations, nil).Once()
+				repo.On("ListByIDsGlobal", ctx, []string{formationID}).Return(formations, nil).Once()
 				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return(formationAssignments, nil).Once()
+				return svc
 			},
 			ExpectedResult: true,
 		},
 		{
 			Name:  "Success for Application when not participating in formation",
 			Input: inputApplicationResourceType,
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(nil, apperrors.NewNotFoundError("", testID)).Once()
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, []string{formationID}).Return([]*model.Formation{}, nil).Once()
 				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return(formationAssignments, nil).Once()
+				return svc
+			},
+			ExpectedResult: true,
+		},
+		{
+			Name:  "Success for Application when there are no formation assignments",
+			Input: inputApplicationResourceType,
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return([]*model.FormationAssignment{}, nil).Once()
+				return svc
 			},
 			ExpectedResult: true,
 		},
 		{
 			Name:  "Success for Application when already participating in formation of the given type",
 			Input: inputApplicationResourceType,
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(scenariosLabel, nil).Once()
-				return repo
-			},
 			FormationRepositoryFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
 				repo.On("ListByFormationNames", ctx, []string{scenario}, testTenantID).Return(formations2, nil).Once()
+				repo.On("ListByIDsGlobal", ctx, []string{formationID}).Return(formations, nil).Once()
 				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return(formationAssignments, nil).Once()
+				return svc
 			},
 			ExpectedResult: false,
 		},
 		{
 			Name:  "Success for Application when already participating in formation of the given type but the subtype is part of the exception",
 			Input: inputApplicationResourceTypeWithSubtypeThatIsException,
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(scenariosLabel, nil).Once()
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, []string{formationID}).Return(formations, nil).Once()
 				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return(formationAssignments, nil).Once()
+				return svc
 			},
 			ExpectedResult: true,
 		},
 		{
-			Name:  "Error when converting label value",
+			Name:  "Error when listing formation assignments",
 			Input: inputApplicationResourceType,
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(scenariosLabelInvalidValue, nil).Once()
-				return repo
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return(nil, testErr).Once()
+				return svc
 			},
 			ExpectedResult:   false,
-			ExpectedErrorMsg: "cannot convert label value to slice of strings",
+			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:  "Error when getting label",
+			Name:  "Error when listing formations for assignments",
 			Input: inputApplicationResourceType,
-			LabelRepositoryFn: func() *automock.LabelRepository {
-				repo := &automock.LabelRepository{}
-				repo.On("GetByKey", ctx, testTenantID, model.ApplicationLabelableObject, testID, model.ScenariosKey).Return(nil, testErr).Once()
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				repo := &automock.FormationRepository{}
+				repo.On("ListByIDsGlobal", ctx, []string{formationID}).Return(nil, testErr).Once()
 				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				svc := &automock.FormationAssignmentService{}
+				svc.On("ListAllForObjectGlobal", ctx, testID).Return(formationAssignments, nil).Once()
+				return svc
 			},
 			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
@@ -230,8 +257,12 @@ func TestConstraintOperators_IsNotAssignedToAnyFormationOfType(t *testing.T) {
 			if testCase.FormationRepositoryFn != nil {
 				formationRepo = testCase.FormationRepositoryFn()
 			}
+			faSvc := &automock.FormationAssignmentService{}
+			if testCase.FormationAssignmentServiceFn != nil {
+				faSvc = testCase.FormationAssignmentServiceFn()
+			}
 
-			engine := operators.NewConstraintEngine(nil, nil, tenantSvc, asaSvc, nil, nil, nil, formationRepo, labelRepo, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, tenantSvc, asaSvc, nil, nil, nil, formationRepo, labelRepo, nil, nil, nil, nil, nil, faSvc, nil, nil, runtimeType, applicationType)
 			// WHEN
 			result, err := engine.IsNotAssignedToAnyFormationOfType(ctx, testCase.Input)
 

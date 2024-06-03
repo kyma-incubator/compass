@@ -26,7 +26,8 @@ type OperationRepository interface {
 	DeleteMultiple(ctx context.Context, ids []string) error
 	PriorityQueueListByType(ctx context.Context, queueLimit int, opType model.OperationType) ([]*model.Operation, error)
 	LockOperation(ctx context.Context, operationID string) (bool, error)
-	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error
+	RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error
 	RescheduleHangedOperations(ctx context.Context, operationType model.OperationType, hangPeriod time.Duration) error
 }
 
@@ -91,7 +92,7 @@ func (s *service) DeleteMultiple(ctx context.Context, ids []string) error {
 func (s *service) MarkAsCompleted(ctx context.Context, id string, customErr error) error {
 	op, err := s.opRepo.Get(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "while getting opreration with id %q", id)
+		return errors.Wrapf(err, "while getting operation with id %q", id)
 	}
 
 	op.Error = json.RawMessage("{}")
@@ -124,7 +125,7 @@ func (s *service) Update(ctx context.Context, input *model.Operation) error {
 func (s *service) MarkAsFailed(ctx context.Context, id string, customErr error) error {
 	op, err := s.opRepo.Get(ctx, id)
 	if err != nil {
-		return errors.Wrapf(err, "while getting opreration with id %q", id)
+		return errors.Wrapf(err, "while getting operation with id %q", id)
 	}
 
 	currentTime := time.Now()
@@ -149,13 +150,15 @@ func (s *service) MarkAsFailed(ctx context.Context, id string, customErr error) 
 func (s *service) RescheduleOperation(ctx context.Context, operationID string, priority int) error {
 	op, err := s.opRepo.Get(ctx, operationID)
 	if err != nil {
-		return errors.Wrapf(err, "while getting opreration with id %q", operationID)
+		return errors.Wrapf(err, "while getting operation with id %q", operationID)
 	}
 
 	if op.Status == model.OperationStatusInProgress {
 		return apperrors.NewOperationInProgressError(operationID)
 	}
 
+	currentTime := time.Now()
+	op.UpdatedAt = &currentTime
 	op.Status = model.OperationStatusScheduled
 	op.Priority = priority
 
@@ -175,9 +178,14 @@ func (s *service) LockOperation(ctx context.Context, operationID string) (bool, 
 	return s.opRepo.LockOperation(ctx, operationID)
 }
 
+// DeleteOperations deletes all old operations
+func (s *service) DeleteOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
+	return s.opRepo.DeleteOperations(ctx, operationType, reschedulePeriod)
+}
+
 // RescheduleOperations reschedules all old operations
-func (s *service) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration) error {
-	return s.opRepo.RescheduleOperations(ctx, operationType, reschedulePeriod)
+func (s *service) RescheduleOperations(ctx context.Context, operationType model.OperationType, reschedulePeriod time.Duration, operationStatuses []string) error {
+	return s.opRepo.RescheduleOperations(ctx, operationType, reschedulePeriod, operationStatuses)
 }
 
 // RescheduleHangedOperations reschedules all hanged operations
@@ -198,6 +206,17 @@ func (s *service) GetByDataAndType(ctx context.Context, data interface{}, opType
 // ListAllByType returns all operations for specified operation type
 func (s *service) ListAllByType(ctx context.Context, opType model.OperationType) ([]*model.Operation, error) {
 	return s.opRepo.ListAllByType(ctx, opType)
+}
+
+func (s *service) SetErrorSeverity(ctx context.Context, id string, errorSeverity model.OperationErrorSeverity) error {
+	op, err := s.Get(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	op.ErrorSeverity = errorSeverity
+
+	return s.Update(ctx, op)
 }
 
 type customError struct {

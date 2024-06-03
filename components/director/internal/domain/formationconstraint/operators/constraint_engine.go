@@ -61,6 +61,7 @@ type systemAuthService interface {
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationRepository interface {
 	ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error)
+	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 }
 
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -100,11 +101,18 @@ type formationAssignmentRepository interface {
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 }
 
 //go:generate mockery --exported --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentNotificationService interface {
 	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
+}
+
+//go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type assignmentOperationService interface {
+	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
+	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
 }
 
 // OperatorInput represents the input needed by the constraint operator
@@ -137,6 +145,7 @@ type ConstraintEngine struct {
 	formationAssignmentRepo            formationAssignmentRepository
 	formationAssignmentService         formationAssignmentService
 	formationAssignmentNotificationSvc formationAssignmentNotificationService
+	assignmentOperationService         assignmentOperationService
 	operators                          map[OperatorName]OperatorFunc
 	operatorInputConstructors          map[OperatorName]OperatorInputConstructor
 	runtimeTypeLabelKey                string
@@ -144,7 +153,7 @@ type ConstraintEngine struct {
 }
 
 // NewConstraintEngine returns new ConstraintEngine
-func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, systemAuthSvc systemAuthService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, formationAssignmentService formationAssignmentService, formationAssignmentNotificationSvc formationAssignmentNotificationService, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
+func NewConstraintEngine(transact persistence.Transactioner, constraintSvc formationConstraintSvc, tenantSvc tenantService, asaSvc automaticScenarioAssignmentService, destinationSvc destinationService, destinationCreatorSvc destinationCreatorService, systemAuthSvc systemAuthService, formationRepo formationRepository, labelRepo labelRepository, labelService labelService, applicationRepository applicationRepository, runtimeContextRepo runtimeContextRepo, formationTemplateRepo formationTemplateRepo, formationAssignmentRepo formationAssignmentRepository, formationAssignmentService formationAssignmentService, formationAssignmentNotificationSvc formationAssignmentNotificationService, assignmentOperationService assignmentOperationService, runtimeTypeLabelKey string, applicationTypeLabelKey string) *ConstraintEngine {
 	ce := &ConstraintEngine{
 		transact:                           transact,
 		constraintSvc:                      constraintSvc,
@@ -162,6 +171,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		formationAssignmentRepo:            formationAssignmentRepo,
 		formationAssignmentService:         formationAssignmentService,
 		formationAssignmentNotificationSvc: formationAssignmentNotificationSvc,
+		assignmentOperationService:         assignmentOperationService,
 		operatorInputConstructors: map[OperatorName]OperatorInputConstructor{
 			IsNotAssignedToAnyFormationOfTypeOperator:                    NewIsNotAssignedToAnyFormationOfTypeInput,
 			DoesNotContainResourceOfSubtypeOperator:                      NewDoesNotContainResourceOfSubtypeInput,

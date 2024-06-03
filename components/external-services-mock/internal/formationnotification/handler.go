@@ -545,7 +545,8 @@ func (h *Handler) syncFAResponse(ctx context.Context, writer http.ResponseWriter
 type AsyncFAResponseFn func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, config string)
 
 // AsyncNoopFAResponseFn is an empty implementation of the AsyncFAResponseFn function
-var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, config string) {}
+var AsyncNoopFAResponseFn = func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, config string) {
+}
 
 // Async handles asynchronous formation assignment notification requests for Assign operation using the new receiverTenant/assignedTenant request body format
 func (h *Handler) Async(writer http.ResponseWriter, r *http.Request) {
@@ -1047,7 +1048,8 @@ func (h *Handler) synchronousFormationResponse(writer http.ResponseWriter, r *ht
 type FormationResponseFn func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationError, formationID string)
 
 // NoopFormationResponseFn is an empty implementation of the FormationResponseFn function
-var NoopFormationResponseFn = func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationError, formationID string) {}
+var NoopFormationResponseFn = func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationError, formationID string) {
+}
 
 // AsyncPostFormation handles asynchronous formation notification requests for CreateFormation operation.
 func (h *Handler) AsyncPostFormation(writer http.ResponseWriter, r *http.Request) {

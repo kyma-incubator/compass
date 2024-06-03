@@ -4,10 +4,7 @@ mutation {
     in: {
       name: "wordpress"
       providerName: "compass"
-      labels: {
-        applicationType: "SAP Cloud for Customer"
-        scenarios: ["test-scenario"]
-      }
+      labels: { applicationType: "SAP Cloud for Customer" }
       webhooks: [
         {
           type: CONFIGURATION_CHANGED

@@ -70,12 +70,6 @@ func FixSampleApplicationRegisterInputWithAppType(name, placeholder, appTypeKey,
 	return applicationInput
 }
 
-func FixSampleApplicationRegisterInputWithAppTypeAndScenarios(name, placeholder, appTypeKey, appTypeValue, scenariosLabelKey string, scenariosLabelVal []string) graphql.ApplicationRegisterInput {
-	applicationInput := FixSampleApplicationRegisterInputWithAppType(name, placeholder, appTypeKey, appTypeValue)
-	applicationInput.Labels[scenariosLabelKey] = scenariosLabelVal
-	return applicationInput
-}
-
 func FixSampleApplicationRegisterInputWithWebhooks(placeholder string) graphql.ApplicationRegisterInput {
 	return graphql.ApplicationRegisterInput{
 		Name:         placeholder,
@@ -486,7 +480,7 @@ func FixRegisterApplicationWithPackagesRequest(name, applicationTypeLabelKey, ap
 				in: {
 				  name: "%s"
 				  providerName: "compass"
-				  labels: { scenarios: ["test-scenario"], %s: %q }
+				  labels: { %s: %q }
 				  packages: [
 					{
 					  name: "foo"

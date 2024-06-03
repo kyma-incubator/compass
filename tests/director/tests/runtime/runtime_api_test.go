@@ -25,7 +25,6 @@ import (
 )
 
 const (
-	ScenariosLabel    = "scenarios"
 	IsNormalizedLabel = "isNormalized"
 	testScenario      = "test-scenario"
 )
@@ -404,7 +403,6 @@ func TestRegisterUpdateRuntimeWithoutLabels(t *testing.T) {
 	//GIVEN
 	secondRuntime := graphql.RuntimeExt{}
 	secondInput := fixRuntimeUpdateInput(name)
-	secondInput.Labels[ScenariosLabel] = []interface{}{testScenario}
 	secondInput.Description = ptr.String("runtime-1-description")
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)
 	require.NoError(t, err)
@@ -446,7 +444,6 @@ func TestRegisterUpdateRuntimeWithIsNormalizedLabel(t *testing.T) {
 	secondRuntime := graphql.RuntimeExt{}
 	secondInput := fixRuntimeUpdateInput(name)
 	secondInput.Description = ptr.String("runtime-1-description")
-	secondInput.Labels[ScenariosLabel] = []interface{}{testScenario}
 	secondInput.Labels[IsNormalizedLabel] = "true"
 
 	runtimeInGQL, err := testctx.Tc.Graphqlizer.RuntimeUpdateInputToGQL(secondInput)

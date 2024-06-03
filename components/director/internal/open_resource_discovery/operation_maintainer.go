@@ -237,12 +237,13 @@ func (oc *ORDOperationMaintainer) listWebhooksByType(ctx context.Context, webhoo
 func buildORDOperationInput(data string) *model.OperationInput {
 	now := time.Now()
 	return &model.OperationInput{
-		OpType:    model.OperationTypeOrdAggregation,
-		Status:    model.OperationStatusScheduled,
-		Data:      json.RawMessage(data),
-		Error:     nil,
-		Priority:  int(operationsmanager.LowOperationPriority),
-		CreatedAt: &now,
-		UpdatedAt: nil,
+		OpType:        model.OperationTypeOrdAggregation,
+		Status:        model.OperationStatusScheduled,
+		Data:          json.RawMessage(data),
+		Error:         nil,
+		ErrorSeverity: model.OperationErrorSeverityNone,
+		Priority:      int(operationsmanager.LowOperationPriority),
+		CreatedAt:     &now,
+		UpdatedAt:     nil,
 	}
 }

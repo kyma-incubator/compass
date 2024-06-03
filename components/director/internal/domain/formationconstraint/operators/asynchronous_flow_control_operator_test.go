@@ -32,6 +32,9 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 	inputForSendNotificationUnassign := fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(model.UnassignFormation, fixWebhook(), preSendNotificationLocation)
 	inputForPreAssign := fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(model.UnassignFormation, fixWebhook(), preAssignFormationLocation)
 
+	assignmentOperationWithUnassignType := fixAssignmentOperationModelWithTypeAndTrigger(model.Unassign, model.UnassignObject)
+	assignmentOperationWithInstanceCreatorUnassignType := fixAssignmentOperationModelWithTypeAndTrigger(model.InstanceCreatorUnassign, model.UnassignObject)
+
 	testAssignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
 		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
 			AssignmentReqMapping:        nil,
@@ -50,6 +53,7 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		FormationAssignmentRepository          func() *automock.FormationAssignmentRepository
 		FormationAssignmentService             func() *automock.FormationAssignmentService
 		FormationAssignmentNotificationService func() *automock.FormationAssignmentNotificationService
+		AssignmentOperationService             func() *automock.AssignmentOperationService
 		ExpectedResult                         bool
 		ExpectedFormationAssignmentState       string
 		ExpectedStatusReportState              string
@@ -68,29 +72,30 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 		},
 		// Unassign during SendNotification
 		{
-			Name:                 "Success when sending notification and state is INSTANCE_CREATOR_DELETING state",
-			Input:                inputForSendNotificationUnassign,
-			Context:              ctxWithCertConsumer,
-			Assignment:           fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
-			ReverseAssignment:    fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			Name:              "Success when sending notification and latest assignment operation is INSTANCE_CREATOR_UNASSIGN",
+			Input:             inputForSendNotificationUnassign,
+			Context:           ctxWithCertConsumer,
+			Assignment:        fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ReverseAssignment: fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", ctxWithCertConsumer, formationAssignmentID, formationID).Return(assignmentOperationWithInstanceCreatorUnassignType, nil).Once()
+				return svc
+			},
 			ExpectShouldRedirect: true,
 			ExpectedResult:       true,
 		},
 		{
-			Name:                 "Success when sending notification and state is INSTANCE_CREATOR_DELETE_ERROR state",
-			Input:                inputForSendNotificationUnassign,
-			Context:              ctxWithCertConsumer,
-			Assignment:           fixFormationAssignmentWithState(model.InstanceCreatorDeleteErrorAssignmentState),
-			ReverseAssignment:    fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectShouldRedirect: true,
-			ExpectedResult:       true,
-		},
-		{
-			Name:                 "Success when sending notification and state is READY state",
-			Input:                inputForSendNotificationUnassign,
-			Context:              ctxWithCertConsumer,
-			Assignment:           fixFormationAssignmentWithState(model.ReadyAssignmentState),
-			ReverseAssignment:    fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			Name:              "Success when sending notification and state is READY state",
+			Input:             inputForSendNotificationUnassign,
+			Context:           ctxWithCertConsumer,
+			Assignment:        fixFormationAssignmentWithState(model.ReadyAssignmentState),
+			ReverseAssignment: fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", ctxWithCertConsumer, formationAssignmentID, formationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				return svc
+			},
 			ExpectShouldRedirect: false,
 			ExpectedResult:       true,
 		},
@@ -101,6 +106,19 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ExpectedFormationAssignmentState: string(model.InitialAssignmentState),
 			StatusReport:                     fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), configWithDifferentStructure),
 			ExpectedErrorMsg:                 "The join point details' assignment memory address cannot be 0",
+		},
+		{
+			Name:              "Error when sending notification and getting latest assignment operation fails",
+			Input:             inputForSendNotificationUnassign,
+			Context:           ctxWithCertConsumer,
+			Assignment:        fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ReverseAssignment: fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", ctxWithCertConsumer, formationAssignmentID, formationID).Return(nil, testErr).Once()
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
 		},
 		// Assign during PreStatusReturned
 		{
@@ -154,14 +172,9 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
 			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
-			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
-			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
-				return repo
-			},
+			ExpectedStatusReportState:        string(model.DeletingAssignmentState),
 			FormationAssignmentService: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("CleanupFormationAssignment", ctxWithCertConsumer, testAssignmentPair).Return(false, nil)
@@ -169,8 +182,13 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			},
 			FormationAssignmentNotificationService: func() *automock.FormationAssignmentNotificationService {
 				notificationSvc := &automock.FormationAssignmentNotificationService{}
-				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
+				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.DeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
 				return notificationSvc
+			},
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", ctxWithCertConsumer, fixAssignmentOperationInputWithTypeAndTrigger(model.InstanceCreatorUnassign, model.UnassignObject)).Return(assignmentOperationID, nil).Once()
+				return svc
 			},
 			ExpectedResult: true,
 		},
@@ -198,19 +216,30 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ExpectedErrorMsg:                 "while fetching consumer info from context",
 		},
 		{
+			Name:                             "Error when creating assignment operation fails",
+			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
+			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
+			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
+			ExpectedStatusReportState:        string(model.DeletingAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", ctxWithCertConsumer, fixAssignmentOperationInputWithTypeAndTrigger(model.InstanceCreatorUnassign, model.UnassignObject)).Return("", testErr).Once()
+				return svc
+			},
+			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
 			Name:                             "Error when cleanup formation assignment fails",
 			Input:                            inputForNotificationStatusReturnedUnassign,
 			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
 			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
-			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
-			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
-				return repo
-			},
+			ExpectedStatusReportState:        string(model.DeletingAssignmentState),
 			FormationAssignmentService: func() *automock.FormationAssignmentService {
 				svc := &automock.FormationAssignmentService{}
 				svc.On("CleanupFormationAssignment", ctxWithCertConsumer, testAssignmentPair).Return(false, testErr)
@@ -218,8 +247,13 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			},
 			FormationAssignmentNotificationService: func() *automock.FormationAssignmentNotificationService {
 				notificationSvc := &automock.FormationAssignmentNotificationService{}
-				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
+				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.DeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(testAssignmentPair, nil).Once()
 				return notificationSvc
+			},
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", ctxWithCertConsumer, fixAssignmentOperationInputWithTypeAndTrigger(model.InstanceCreatorUnassign, model.UnassignObject)).Return(assignmentOperationID, nil).Once()
+				return svc
 			},
 			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
@@ -230,38 +264,52 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
 			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
-			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
-			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(nil).Once()
-				return repo
-			},
+			ExpectedStatusReportState:        string(model.DeletingAssignmentState),
 			FormationAssignmentNotificationService: func() *automock.FormationAssignmentNotificationService {
 				notificationSvc := &automock.FormationAssignmentNotificationService{}
-				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(nil, testErr).Once()
+				notificationSvc.On("GenerateFormationAssignmentPair", ctxWithCertConsumer, fixFormationAssignmentWithState(model.DeletingAssignmentState), fixFormationAssignmentWithState(model.DeletingAssignmentState), model.UnassignFormation).Return(nil, testErr).Once()
 				return notificationSvc
+			},
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("Create", ctxWithCertConsumer, fixAssignmentOperationInputWithTypeAndTrigger(model.InstanceCreatorUnassign, model.UnassignObject)).Return(assignmentOperationID, nil).Once()
+				return svc
 			},
 			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
 		},
 		{
-			Name:                             "Error during formation assignment update to INSTANCE_CREATOR_DELETING state",
+			Name:                             "Error when getting latest assignment operation fails",
 			Input:                            inputForNotificationStatusReturnedUnassign,
 			Context:                          ctxWithCertConsumer,
 			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
-			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
-			ExpectedStatusReportState:        string(model.InstanceCreatorDeletingAssignmentState),
-			FormationAssignmentRepository: func() *automock.FormationAssignmentRepository {
-				repo := &automock.FormationAssignmentRepository{}
-				repo.On("Update", ctxWithCertConsumer, fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState)).Return(testErr).Once()
-				return repo
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
+			StatusReport:                     fixNotificationStatusReportWithState(model.DeleteErrorAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", ctxWithCertConsumer, formationAssignmentID, formationID).Return(nil, testErr).Once()
+				return svc
 			},
-			ExpectedResult:   false,
 			ExpectedErrorMsg: testErr.Error(),
+		},
+		{
+			Name:                             "Success when transitioning from INSTANCE_CREATOR_UNASSIGN latest operation to DELETE_ERROR",
+			Input:                            inputForNotificationStatusReturnedUnassign,
+			Context:                          ctxWithCertConsumer,
+			Assignment:                       fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
+			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
+			StatusReport:                     fixNotificationStatusReportWithState(model.DeleteErrorAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", ctxWithCertConsumer, formationAssignmentID, formationID).Return(assignmentOperationWithInstanceCreatorUnassignType, nil).Once()
+				return svc
+			},
+			ExpectedStatusReportState: string(model.DeleteErrorAssignmentState),
+			ExpectedResult:            true,
 		},
 		{
 			Name:                             "Success when transitioning from DELETING to DELETE_ERROR",
@@ -271,45 +319,19 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedFormationAssignmentState: string(model.DeletingAssignmentState),
 			StatusReport:                     fixNotificationStatusReportWithState(model.DeleteErrorAssignmentState),
-			ExpectedStatusReportState:        string(model.DeleteErrorAssignmentState),
-			ExpectedResult:                   true,
-		},
-		{
-			Name:                             "Success when transitioning from INSTANCE_CREATOR_DELETING to DELETE_ERROR",
-			Input:                            inputForNotificationStatusReturnedUnassign,
-			Context:                          ctxWithCertConsumer,
-			Assignment:                       fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
-			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
-			StatusReport:                     fixNotificationStatusReportWithState(model.DeleteErrorAssignmentState),
-			ExpectedStatusReportState:        string(model.InstanceCreatorDeleteErrorAssignmentState),
-			ExpectedResult:                   true,
-		},
-		{
-			Name:                             "Success when transitioning from INSTANCE_CREATOR_DELETING to READY",
-			Input:                            inputForNotificationStatusReturnedUnassign,
-			Context:                          ctxWithCertConsumer,
-			Assignment:                       fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
-			ReverseAssignment:                fixFormationAssignmentWithState(model.DeletingAssignmentState),
-			ExpectedFormationAssignmentState: string(model.InstanceCreatorDeletingAssignmentState),
-			StatusReport:                     fixNotificationStatusReportWithState(model.ReadyAssignmentState),
-			ExpectedStatusReportState:        string(model.ReadyAssignmentState),
-			ExpectedResult:                   true,
-		},
-		{
-			Name:                      "Success when transitioning from INSTANCE_CREATOR_DELETING to READY without reverse assignment",
-			Input:                     inputForNotificationStatusReturnedUnassign,
-			Context:                   ctxWithCertConsumer,
-			Assignment:                fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
-			StatusReport:              fixNotificationStatusReportWithState(model.ReadyAssignmentState),
-			ExpectedStatusReportState: string(model.ReadyAssignmentState),
+			AssignmentOperationService: func() *automock.AssignmentOperationService {
+				svc := &automock.AssignmentOperationService{}
+				svc.On("GetLatestOperation", ctxWithCertConsumer, formationAssignmentID, formationID).Return(assignmentOperationWithUnassignType, nil).Once()
+				return svc
+			},
+			ExpectedStatusReportState: string(model.DeleteErrorAssignmentState),
 			ExpectedResult:            true,
 		},
 		{
 			Name:              "Error when retrieving status report pointer fails",
 			Input:             inputForNotificationStatusReturnedUnassign,
 			Context:           ctxWithCertConsumer,
-			Assignment:        fixFormationAssignmentWithState(model.InstanceCreatorDeletingAssignmentState),
+			Assignment:        fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ReverseAssignment: fixFormationAssignmentWithState(model.DeletingAssignmentState),
 			ExpectedErrorMsg:  "The join point details' notification status report memory address cannot be 0",
 		},
@@ -340,8 +362,12 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 			if testCase.FormationAssignmentNotificationService != nil {
 				formationAssignmentNotificationService = testCase.FormationAssignmentNotificationService()
 			}
+			assignmentOperationService := &automock.AssignmentOperationService{}
+			if testCase.AssignmentOperationService != nil {
+				assignmentOperationService = testCase.AssignmentOperationService()
+			}
 
-			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, formationAssignmentRepo, formationAssignmentService, formationAssignmentNotificationService, runtimeType, applicationType)
+			engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, formationAssignmentRepo, formationAssignmentService, formationAssignmentNotificationService, assignmentOperationService, runtimeType, applicationType)
 
 			inputClone := cloneAsynchronousFlowControlOperatorInput(testCase.Input)
 			if testCase.Assignment != nil {
@@ -371,14 +397,14 @@ func TestConstraintOperators_AsynchronousFlowControlOperator(t *testing.T) {
 				assert.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, formationAssignmentRepo, formationAssignmentService, formationAssignmentNotificationService)
+			mock.AssertExpectationsForObjects(t, formationAssignmentRepo, formationAssignmentService, formationAssignmentNotificationService, assignmentOperationService)
 		})
 	}
 
 	t.Run("Error when incorrect input is provided", func(t *testing.T) {
 		// GIVEN
 
-		engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
+		engine := operators.NewConstraintEngine(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, runtimeType, applicationType)
 
 		// WHEN
 		input := "wrong input"

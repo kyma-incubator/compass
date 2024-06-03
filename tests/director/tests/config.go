@@ -81,4 +81,5 @@ type DirectorConfig struct {
 	ApplicationTemplateProductLabel                    string        `envconfig:"APP_APPLICATION_TEMPLATE_PRODUCT_LABEL"`
 	DefaultTenantRegion                                string        `envconfig:"APP_DEFAULT_TENANT_REGION,default=eu-1"`
 	ORDServiceDefaultResponseType                      string        `envconfig:"APP_ORD_SERVICE_DEFAULT_RESPONSE_TYPE"`
+	ExternalServicesMockAbsoluteURL                    string        `envconfig:"APP_EXTERNAL_SERVICES_MOCK_ABSOLUTE_URL"`
 }

@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"dario.cat/mergo"
@@ -30,7 +32,6 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/timestamp"
-	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 	"github.com/pkg/errors"
 )
 
@@ -318,23 +319,12 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, apperrors.NewInvalidDataError("runtime does not exist")
 	}
 
-	scenariosLabel, err := s.labelRepo.GetByKey(ctx, tenantID, model.RuntimeLabelableObject, runtimeID.String(), model.ScenariosKey)
+	formations, err := s.formationService.ListFormationsForObject(ctx, runtimeID.String())
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			return &model.ApplicationPage{
-				Data:       []*model.Application{},
-				PageInfo:   &pagination.Page{},
-				TotalCount: 0,
-			}, nil
-		}
-		return nil, errors.Wrap(err, "while getting scenarios for runtime")
+		return nil, errors.Wrapf(err, "while listing formations for runtime with ID %s", runtimeID.String())
 	}
 
-	scenarios, err := label.ValueToStringsSlice(scenariosLabel.Value)
-	if err != nil {
-		return nil, errors.Wrap(err, "while converting scenarios labels")
-	}
-	if len(scenarios) == 0 {
+	if len(formations) == 0 {
 		return &model.ApplicationPage{
 			Data:       []*model.Application{},
 			TotalCount: 0,
@@ -346,12 +336,17 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		}, nil
 	}
 
+	formationNames := make([]string, 0, len(formations))
+	for _, formation := range formations {
+		formationNames = append(formationNames, formation.Name)
+	}
+
 	hidingSelectors, err := s.appHideCfgProvider.GetApplicationHideSelectors()
 	if err != nil {
 		return nil, errors.Wrap(err, "while getting application hide selectors from config")
 	}
 
-	return s.appRepo.ListByScenarios(ctx, tenantUUID, scenarios, pageSize, cursor, hidingSelectors)
+	return s.appRepo.ListByScenarios(ctx, tenantUUID, formationNames, pageSize, cursor, hidingSelectors)
 }
 
 // Get missing godoc
@@ -577,10 +572,10 @@ func (s *service) ListSCCs(ctx context.Context) ([]*model.SccMetadata, error) {
 }
 
 // CreateFromTemplate missing godoc
-func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryLabelIsTrue bool) (string, error) {
+func (s *service) CreateFromTemplate(ctx context.Context, in model.ApplicationRegisterInput, appTemplateID *string, systemFieldDiscoveryValue bool) (string, error) {
 	creator := func(ctx context.Context, tenant string, application *model.Application) (err error) {
-		// this is needed, if the applicationInputJSON contains webhook of type SYSTEM_FIELD_DISCOVERY, which must be executed first before setting the app ready state to true
-		if systemFieldDiscoveryLabelIsTrue {
+		// this is needed, if the app template contains systemFieldDiscovery label and the operation must be executed first before setting the app ready state to true
+		if systemFieldDiscoveryValue {
 			application.Ready = false
 		}
 		application.ApplicationTemplateID = appTemplateID
@@ -843,7 +838,7 @@ func (s *service) SetLabel(ctx context.Context, labelInput *model.LabelInput) er
 	}
 
 	if labelInput.Key == model.ScenariosKey {
-		return s.setScenarioLabel(ctx, appTenant, labelInput)
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
 	}
 
 	err = s.labelService.UpsertLabel(ctx, appTenant, labelInput)
@@ -875,34 +870,6 @@ func (s *service) GetLabel(ctx context.Context, applicationID string, key string
 	}
 
 	return label, nil
-}
-
-// GetScenariosGlobal list the scenario labels for the application globally and merges their values
-func (s *service) GetScenariosGlobal(ctx context.Context, applicationID string) ([]string, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while loading tenant from context")
-	}
-
-	appExists, err := s.appRepo.Exists(ctx, appTenant, applicationID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while checking the existence of Application with ID: %s", applicationID)
-	}
-	if !appExists {
-		return nil, fmt.Errorf("application with ID %s doesn't exist", applicationID)
-	}
-
-	formations, err := s.formationService.ListFormationsForObjectGlobal(ctx, applicationID)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting formations for Application with ID: %s", applicationID)
-	}
-
-	scenarios := make([]string, 0, len(formations))
-	for _, formation := range formations {
-		scenarios = append(scenarios, formation.Name)
-	}
-
-	return scenarios, nil
 }
 
 // ListLabels missing godoc
@@ -964,18 +931,7 @@ func (s *service) DeleteLabel(ctx context.Context, applicationID string, key str
 	}
 
 	if key == model.ScenariosKey {
-		storedLabel, err := s.labelRepo.GetByKey(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
-		if err != nil {
-			return errors.Wrapf(err, "while getting scenario label for %s", applicationID)
-		}
-		scenarios, err := label.ValueToStringsSlice(storedLabel.Value)
-		if err != nil {
-			return errors.Wrapf(err, "while converting label to string slice")
-		}
-		if err = s.unassignFormations(ctx, appTenant, applicationID, scenarios, allowAllCriteria); err != nil {
-			return errors.Wrapf(err, "while unassigning formations")
-		}
-		return nil
+		return errors.Errorf("label with key %s cannot be deleted explicitly", model.ScenariosKey)
 	}
 
 	err = s.labelRepo.Delete(ctx, appTenant, model.ApplicationLabelableObject, applicationID, key)
@@ -1139,13 +1095,18 @@ func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLa
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
 func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Context, tenant, appID string) error {
-	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
+	formations, err := s.formationService.ListFormationsForObject(ctx, appID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting formations for Application with ID %s", appID)
 	}
 
-	if len(scenarios) > 0 {
-		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, scenarios)
+	if len(formations) > 0 {
+		formationNames := make([]string, 0, len(formations))
+		for _, formation := range formations {
+			formationNames = append(formationNames, formation.Name)
+		}
+
+		runtimes, err := s.getRuntimeNamesForScenarios(ctx, tenant, formationNames)
 		if err != nil {
 			return err
 		}
@@ -1155,7 +1116,7 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 			if err != nil {
 				return errors.Wrapf(err, "while getting application with id %s", appID)
 			}
-			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(scenarios, ", "), strings.Join(runtimes, ", "))
+			msg := fmt.Sprintf("System %s is still used and cannot be deleted. Unassign the system from the following formations first: %s. Then, unassign the system from the following runtimes, too: %s", application.Name, strings.Join(formationNames, ", "), strings.Join(runtimes, ", "))
 			return apperrors.NewInvalidOperationError(msg)
 		}
 
@@ -1168,17 +1129,23 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 // ensureApplicationNotPartOfAnyScenario Checks if an application has scenarios associated with it. If the application is
 // associated with any scenario it can not be deleted before unassigning from that scenario
 func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, tenant, appID string) error {
-	scenarios, err := s.getScenarioNamesForApplication(ctx, appID)
+	formations, err := s.formationService.ListFormationsForObject(ctx, appID)
 	if err != nil {
-		return err
+		return errors.Wrapf(err, "while getting formations for Application with ID %s", appID)
 	}
 
-	if len(scenarios) > 0 {
+	if len(formations) > 0 {
 		application, err := s.appRepo.GetByID(ctx, tenant, appID)
 		if err != nil {
 			return errors.Wrapf(err, "while getting application with id %s", appID)
 		}
-		msg := fmt.Sprintf("System %s is part of the following formations : %s", application.Name, strings.Join(scenarios, ", "))
+
+		formationNames := make([]string, 0, len(formations))
+		for _, formation := range formations {
+			formationNames = append(formationNames, formation.Name)
+		}
+
+		msg := fmt.Sprintf("System %s is part of the following formations : %s", application.Name, strings.Join(formationNames, ", "))
 		return apperrors.NewInvalidOperationError(msg)
 	}
 
@@ -1244,24 +1211,13 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	}
 	in.Labels[nameKey] = normalizedName
 
-	var scenariosToAssign []string
-	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
-		scenariosToAssign, err = label.ValueToStringsSlice(scenarioLabel)
-		if err != nil {
-			return "", errors.Wrapf(err, "while parsing formations from scenario label")
-		}
-
-		// In order for the scenario label not to be attempted to be created during upsert later
-		delete(in.Labels, model.ScenariosKey)
+	if _, ok := in.Labels[model.ScenariosKey]; ok {
+		return "", errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
 	}
 
 	err = s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
 	if err != nil {
 		return id, errors.Wrapf(err, "while creating multiple labels for Application with id %s", id)
-	}
-
-	if err = s.assignFormations(ctx, appTenant, id, scenariosToAssign, allowAllCriteria); err != nil {
-		return "", errors.Wrapf(err, "while assigning formations")
 	}
 
 	err = s.createRelatedResources(ctx, in, appTenant, app.ID)
@@ -1304,21 +1260,6 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 	}
 	log.C(ctx).Infof("Integration System with id %s exists", *id)
 	return true, nil
-}
-
-func (s *service) getScenarioNamesForApplication(ctx context.Context, applicationID string) ([]string, error) {
-	log.C(ctx).Infof("Getting scenarios for application with id %s", applicationID)
-
-	scenarios, err := s.GetScenariosGlobal(ctx, applicationID)
-	if err != nil {
-		if apperrors.ErrorCode(err) == apperrors.NotFound {
-			log.C(ctx).Infof("No scenarios found for application")
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	return scenarios, nil
 }
 
 func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
@@ -1384,13 +1325,8 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	}
 	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
 
-	if scenarioLabel, ok := in.Labels[model.ScenariosKey]; ok {
-		if err := s.setScenarioLabel(ctx, appTenant, &model.LabelInput{Value: scenarioLabel, ObjectID: id}); err != nil {
-			return err
-		}
-
-		// In order for the scenario label not to be attempted to be created during upsert later
-		delete(in.Labels, model.ScenariosKey)
+	if _, ok := in.Labels[model.ScenariosKey]; ok {
+		return errors.Errorf("label with key %s cannot be set explicitly", model.ScenariosKey)
 	}
 
 	err = s.labelService.UpsertMultipleLabels(ctx, appTenant, model.ApplicationLabelableObject, id, in.Labels)
@@ -1466,62 +1402,6 @@ func (s *service) createWebhooksIfNotExist(ctx context.Context, appID, appTenant
 	if len(webhooksToCreate) > 0 {
 		if err = s.webhookRepo.CreateMany(ctx, appTenant, webhooksToCreate); err != nil {
 			return errors.Wrapf(err, "while creating webhooks for application with id %q", appID)
-		}
-	}
-	return nil
-}
-
-func (s *service) setScenarioLabel(ctx context.Context, appTenant string, labelInput *model.LabelInput) error {
-	inputFormations, err := label.ValueToStringsSlice(labelInput.Value)
-	if err != nil {
-		return errors.Wrapf(err, "while parsing formations from input label value")
-	}
-
-	inputFormationsMap := createMapFromFormationsSlice(inputFormations)
-
-	storedLabels, err := s.getStoredLabels(ctx, appTenant, labelInput.ObjectID)
-	if err != nil {
-		return errors.Wrapf(err, "while getting stored labels for label with id %s", labelInput.ObjectID)
-	}
-
-	storedFormationsMap := createMapFromFormationsSlice(storedLabels)
-	assignFormationCriteria := func(formation string) bool {
-		_, ok := storedFormationsMap[formation]
-		return !ok
-	}
-	if err = s.assignFormations(ctx, appTenant, labelInput.ObjectID, inputFormations, assignFormationCriteria); err != nil {
-		return errors.Wrapf(err, "while assigning formations")
-	}
-
-	unassignFormationCriteria := func(formation string) bool {
-		_, ok := inputFormationsMap[formation]
-		return !ok
-	}
-
-	if err = s.unassignFormations(ctx, appTenant, labelInput.ObjectID, storedLabels, unassignFormationCriteria); err != nil {
-		return errors.Wrapf(err, "while unnasigning formations")
-	}
-
-	return nil
-}
-
-func (s *service) assignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldAssignCriteria func(string) bool) error {
-	for _, f := range formations {
-		if shouldAssignCriteria(f) {
-			if _, err := s.formationService.AssignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}); err != nil {
-				return errors.Wrapf(err, "while assigning formation with name %q from application with id %q", f, objectID)
-			}
-		}
-	}
-	return nil
-}
-
-func (s *service) unassignFormations(ctx context.Context, appTenant, objectID string, formations []string, shouldUnassignCriteria func(string) bool) error {
-	for _, f := range formations {
-		if shouldUnassignCriteria(f) {
-			if _, err := s.formationService.UnassignFormation(ctx, appTenant, objectID, graphql.FormationObjectTypeApplication, model.Formation{Name: f}, false); err != nil {
-				return errors.Wrapf(err, "while unassigning formation with name %q from application with id %q", f, objectID)
-			}
 		}
 	}
 	return nil
@@ -1608,18 +1488,6 @@ func createORDWebhookInput(baseURL string, ordWebhookMapping ORDWebhookMapping) 
 			AccessStrategy: str.Ptr(string(accessstrategy.CMPmTLSAccessStrategy)),
 		},
 	}, nil
-}
-
-func createMapFromFormationsSlice(formations []string) map[string]struct{} {
-	resultMap := make(map[string]struct{}, len(formations))
-	for _, f := range formations {
-		resultMap[f] = struct{}{}
-	}
-	return resultMap
-}
-
-func allowAllCriteria(_ string) bool {
-	return true
 }
 
 func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
