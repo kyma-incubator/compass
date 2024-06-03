@@ -26,7 +26,7 @@ type RepoListTestSuite struct {
 	DisableConverterErrorTest bool
 	MethodName                string
 	DisableEmptySliceTest     bool
-	Context context.Context
+	Context                   context.Context
 }
 
 // Run runs the generic repo list without paging test suite
