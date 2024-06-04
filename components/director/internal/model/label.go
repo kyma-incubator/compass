@@ -29,14 +29,11 @@ func (l *Label) GetValue() (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "while marshalling Value")
 		}
-		if len(valueMarshalled) == 0 {
-			return "", errors.Errorf("Value cannot be empty")
+		if len(valueMarshalled) > 0 {
+			return string(valueMarshalled), nil
 		}
-	} else {
-		return "", errors.Errorf("Value cannot be empty")
 	}
-
-	return string(valueMarshalled), nil
+	return "", errors.Errorf("Value cannot be empty")
 }
 
 // LabelInput is an input for creating a new label.
