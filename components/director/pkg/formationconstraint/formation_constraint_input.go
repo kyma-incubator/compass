@@ -88,6 +88,8 @@ type RedirectNotificationInput struct {
 // AsynchronousFlowControlOperatorInput is an input for AsynchronousFlowControlOperator operator
 type AsynchronousFlowControlOperatorInput struct {
 	RedirectNotificationInput
+	FailOnSyncParticipants                bool    `json:"fail_on_sync_participants"`
+	FailOnNonBTPParticipants              bool    `json:"fail_on_non_btp_participants"`
 	NotificationStatusReportMemoryAddress uintptr `json:"notification_status_report_memory_address"`
 	FAMemoryAddress                       uintptr `json:"formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	ReverseFAMemoryAddress                uintptr `json:"reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
