@@ -29,6 +29,9 @@ func (l *Label) GetValue() (string, error) {
 		if err != nil {
 			return "", errors.Wrap(err, "while marshalling Value")
 		}
+		if len(valueMarshalled) == 0 {
+			return "", errors.Errorf("Value cannot be empty")
+		}
 	} else {
 		return "", errors.Errorf("Value cannot be empty")
 	}
