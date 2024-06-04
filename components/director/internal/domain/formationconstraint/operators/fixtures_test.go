@@ -6,7 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
+	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 
@@ -34,6 +36,7 @@ const (
 	otherFormationTemplateID = "b05731c4-ca3a-11ed-afa1-0242ac120002"
 	formationID              = "a16724q3-ba3a-13ef-a1c7-1247ac120123"
 	webhookID                = "f4aac335-8afa-421f-a5ad-da9ce7a676bc"
+	externalSubaccountID     = "04e408ff-7915-4642-b491-8a80960936b2"
 
 	// Certificate constants
 	testFileName   = "test-file-name"
@@ -120,6 +123,9 @@ var (
 		InputTemplate:   inputTemplate,
 		ConstraintScope: model.FormationTypeFormationConstraintScope,
 	}
+
+	webhookModelSync          = graphql.WebhookModeSync
+	webhookModelAsyncCallback = graphql.WebhookModeAsyncCallback
 )
 
 // Destination Creator variables
@@ -334,11 +340,17 @@ var (
 		Tenant:             testTenantID,
 		ExceptSubtypes:     []string{exceptType},
 	}
+
+	subaccountnLbl = map[string]*model.Label{
+		operators.GlobalSubaccountLabelKey: {
+			Value: externalSubaccountID,
+		},
+	}
 )
 
 // RedirectNotificationOperator variables
 var (
-	graphqlWebhook                   = fixWebhook()
+	graphqlWebhook                   = fixWebhookWithAsyncCallbackMode()
 	inputWithoutWebhookMemoryAddress = &formationconstraintpkg.RedirectNotificationInput{}
 	webhookURL                       = "testWebhookURL"
 	webhookURLTemplate               = "testWebhookURLTemplate"
@@ -346,11 +358,15 @@ var (
 
 // AsynchronousFlowControlOperator fixtures
 
-func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
-	return fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(false, operation, webhook, location)
+func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressAndShouldFail(operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation, shouldFailOnGlobaSubaccountLabel, shouldFailOnSync bool) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
+	return fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(false, operation, webhook, location, shouldFailOnGlobaSubaccountLabel, shouldFailOnSync)
 }
 
-func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(shouldRedirect bool, operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
+func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddress(operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
+	return fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(false, operation, webhook, location, false, false)
+}
+
+func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddressShouldRedirect(shouldRedirect bool, operation model.FormationOperation, webhook *graphql.Webhook, location formationconstraintpkg.JoinPointLocation, shouldFailOnGlobaSubaccountLabel, shouldFailOnSync bool) *formationconstraintpkg.AsynchronousFlowControlOperatorInput {
 	return &formationconstraintpkg.AsynchronousFlowControlOperatorInput{
 		RedirectNotificationInput: formationconstraintpkg.RedirectNotificationInput{
 			ShouldRedirect:       shouldRedirect,
@@ -358,6 +374,8 @@ func fixAsynchronousFlowControlOperatorInputWithAssignmentAndReverseFAMemoryAddr
 			Operation:            operation,
 			Location:             location,
 		},
+		FailOnNonBTPParticipants: shouldFailOnGlobaSubaccountLabel,
+		FailOnSyncParticipants:   shouldFailOnSync,
 	}
 }
 
@@ -369,6 +387,8 @@ func cloneAsynchronousFlowControlOperatorInput(input *formationconstraintpkg.Asy
 			Operation:            input.Operation,
 			Location:             input.Location,
 		},
+		FailOnNonBTPParticipants: input.FailOnNonBTPParticipants,
+		FailOnSyncParticipants:   input.FailOnSyncParticipants,
 	}
 }
 
@@ -592,11 +612,49 @@ func fixNotificationStatusReportWithState(state model.FormationAssignmentState) 
 	}
 }
 
-func fixWebhook() *graphql.Webhook {
+func fixWebhookWithSyncMode() *graphql.Webhook {
 	return &graphql.Webhook{
 		ID:          webhookID,
 		URL:         &webhookURL,
 		URLTemplate: &webhookURLTemplate,
+		Mode:        &webhookModelSync,
+	}
+}
+
+func fixWebhookWithAsyncCallbackMode() *graphql.Webhook {
+	return &graphql.Webhook{
+		ID:          webhookID,
+		URL:         &webhookURL,
+		URLTemplate: &webhookURLTemplate,
+		Mode:        &webhookModelAsyncCallback,
+	}
+}
+
+func fixAssignmentPairWithAsyncWebhook() *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+				Request: &webhookclient.FormationAssignmentNotificationRequest{
+					Webhook: fixWebhookWithAsyncCallbackMode(),
+				},
+			},
+			ReverseAssignmentReqMapping: nil,
+		},
+		Operation: model.UnassignFormation,
+	}
+}
+
+func fixAssignmentPairWithSyncWebhook() *formationassignment.AssignmentMappingPairWithOperation {
+	return &formationassignment.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+				Request: &webhookclient.FormationAssignmentNotificationRequest{
+					Webhook: fixWebhookWithSyncMode(),
+				},
+			},
+			ReverseAssignmentReqMapping: nil,
+		},
+		Operation: model.UnassignFormation,
 	}
 }
 
@@ -614,6 +672,17 @@ func fixFormationAssignmentWithState(state model.FormationAssignmentState) *mode
 	return &model.FormationAssignment{
 		ID:          formationAssignmentID,
 		FormationID: formationID,
+		State:       string(state),
+	}
+}
+
+func fixFormationAssignmentWithStateAndTarget(state model.FormationAssignmentState) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:          formationAssignmentID,
+		FormationID: formationID,
+		TenantID:    testTenantID,
+		TargetType:  model.FormationAssignmentTypeApplication,
+		Target:      appID,
 		State:       string(state),
 	}
 }
