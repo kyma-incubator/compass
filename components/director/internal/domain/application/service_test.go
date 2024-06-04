@@ -68,8 +68,7 @@ func TestService_Create(t *testing.T) {
 		"name":                "mp-foo-bar-not",
 	}
 	labelsWithoutIntSys := map[string]interface{}{
-		"integrationSystemID": "",
-		"name":                "mp-test",
+		"name": "mp-test",
 	}
 	var nilLabels map[string]interface{}
 
