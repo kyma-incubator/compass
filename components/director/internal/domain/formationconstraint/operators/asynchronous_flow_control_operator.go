@@ -8,6 +8,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
@@ -44,32 +45,52 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 
 	log.C(ctx).Infof("Enforcing constraint on resource of type: %q and subtype: %q for location with constraint type: %q and operation name: %q during %q operation", ri.ResourceType, ri.ResourceSubtype, ri.Location.ConstraintType, ri.Location.OperationName, ri.Operation)
 
-	if ri.Operation == model.AssignFormation && ri.Location.OperationName == model.SendNotificationOperation && ri.Location.ConstraintType == model.PreOperation {
-		return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
+	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
+	if err != nil {
+		return false, err
 	}
-	if ri.Operation == model.UnassignFormation && ri.Location.OperationName == model.SendNotificationOperation && ri.Location.ConstraintType == model.PreOperation {
-		formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
-		if err != nil {
-			return false, err
-		}
-		latestAssignmentOperation, err := e.assignmentOperationService.GetLatestOperation(ctx, formationAssignment.ID, formationAssignment.FormationID)
-		if err != nil {
-			return false, err
-		}
 
-		if latestAssignmentOperation.Type == model.InstanceCreatorUnassign {
-			log.C(ctx).Infof("Tenant mapping participant processing unassign notification has alredy finished, redirecting notification for assignment %q with state %q to instance creator", formationAssignment.ID, formationAssignment.State)
-			ri.ShouldRedirect = true
-			return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
+	consumerTenant, err := e.getConsumerTenant(ctx, formationAssignment)
+	if err != nil || consumerTenant == "" {
+		if ri.FailOnNonBTPParticipants {
+			return false, errors.Errorf("Instance creator is not supported on non-BTP participants")
 		}
+		log.C(ctx).Infof("Instance creator is not supported on non-BTP participants")
 		return true, nil
 	}
 
-	if ri.Location.OperationName == model.NotificationStatusReturned && ri.Location.ConstraintType == model.PreOperation {
-		formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, ri.FAMemoryAddress)
+	if ri.Location.OperationName == model.SendNotificationOperation && ri.Location.ConstraintType == model.PreOperation {
+		w, err := RetrieveWebhookPointerFromMemoryAddress(ctx, ri.WebhookMemoryAddress)
 		if err != nil {
 			return false, err
 		}
+
+		if w.Mode != nil && *w.Mode == graphql.WebhookModeSync {
+			if ri.FailOnSyncParticipants {
+				return false, errors.Errorf("Instance creator is not supported on synchronous participants")
+			}
+			return true, nil
+		}
+
+		if ri.Operation == model.AssignFormation {
+			return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
+		}
+		if ri.Operation == model.UnassignFormation {
+			latestAssignmentOperation, err := e.assignmentOperationService.GetLatestOperation(ctx, formationAssignment.ID, formationAssignment.FormationID)
+			if err != nil {
+				return false, err
+			}
+
+			if latestAssignmentOperation.Type == model.InstanceCreatorUnassign {
+				log.C(ctx).Infof("Tenant mapping participant processing unassign notification has alredy finished, redirecting notification for assignment %q with state %q to instance creator", formationAssignment.ID, formationAssignment.State)
+				ri.ShouldRedirect = true
+				return e.RedirectNotification(ctx, &ri.RedirectNotificationInput)
+			}
+			return true, nil
+		}
+	}
+
+	if ri.Location.OperationName == model.NotificationStatusReturned && ri.Location.ConstraintType == model.PreOperation {
 		statusReport, err := RetrieveNotificationStatusReportPointer(ctx, ri.NotificationStatusReportMemoryAddress)
 		if err != nil {
 			return false, err
@@ -110,6 +131,19 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, will create new %q Assignment Operation", formationAssignment.ID, model.InstanceCreatorUnassign)
 				statusReport.State = string(model.DeletingAssignmentState) // set to DELETING state so that in CleanupFormationAssignment -> DeleteWithConstraints we don't delete the FA
 
+				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
+				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation)
+				if err != nil {
+					return false, errors.Wrapf(err, "while generating formation assignment notification")
+				}
+				w := assignmentPair.AssignmentReqMapping.Request.Webhook
+				if w.Mode != nil && *w.Mode == graphql.WebhookModeSync {
+					if ri.FailOnSyncParticipants {
+						return false, errors.Errorf("Instance creator is not supported on synchronous participants")
+					}
+					return true, nil
+				}
+
 				_, err = e.assignmentOperationService.Create(ctx, &model.AssignmentOperationInput{
 					Type:                  model.InstanceCreatorUnassign,
 					FormationAssignmentID: formationAssignment.ID,
@@ -120,11 +154,6 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 					return false, errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.InstanceCreatorUnassign, formationAssignment.ID)
 				}
 
-				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
-				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation)
-				if err != nil {
-					return false, errors.Wrapf(err, "while generating formation assignment notification")
-				}
 				log.C(ctx).Infof("Sending notification to instance creator")
 				_, err = e.formationAssignmentService.CleanupFormationAssignment(ctx, assignmentPair)
 				if err != nil {
@@ -150,4 +179,41 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 	}
 
 	return true, nil
+}
+
+func (e *ConstraintEngine) getConsumerTenant(ctx context.Context, formationAssignment *model.FormationAssignment) (string, error) {
+	labelableObjType, err := determineLabelableObjectType(formationAssignment.TargetType)
+	if err != nil {
+		return "", err
+	}
+
+	labels, err := e.labelRepo.ListForObject(ctx, formationAssignment.TenantID, labelableObjType, formationAssignment.Target)
+	if err != nil {
+		return "", errors.Wrapf(err, "while getting labels for %s with ID: %q", formationAssignment.TargetType, formationAssignment.Target)
+	}
+
+	globalSubaccIDLbl, globalSubaccIDExists := labels[GlobalSubaccountLabelKey]
+	if !globalSubaccIDExists {
+		return "", errors.Errorf("%q label does not exists for: %q with ID: %q", GlobalSubaccountLabelKey, formationAssignment.TargetType, formationAssignment.Target)
+	}
+
+	globalSubaccIDLblValue, ok := globalSubaccIDLbl.Value.(string)
+	if !ok {
+		return "", errors.Errorf("unexpected type of %q label, expect: string, got: %T", GlobalSubaccountLabelKey, globalSubaccIDLbl.Value)
+	}
+
+	return globalSubaccIDLblValue, nil
+}
+
+func determineLabelableObjectType(assignmentType model.FormationAssignmentType) (model.LabelableObject, error) {
+	switch assignmentType {
+	case model.FormationAssignmentTypeApplication:
+		return model.ApplicationLabelableObject, nil
+	case model.FormationAssignmentTypeRuntime:
+		return model.RuntimeLabelableObject, nil
+	case model.FormationAssignmentTypeRuntimeContext:
+		return model.RuntimeContextLabelableObject, nil
+	default:
+		return "", errors.Errorf("Couldn't determine the label-able object type from assignment type: %q", assignmentType)
+	}
 }
