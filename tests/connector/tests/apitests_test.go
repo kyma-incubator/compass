@@ -14,9 +14,10 @@ import (
 
 func TestTokens(t *testing.T) {
 	input := fixtures.FixRuntimeRegisterInput("test-tokens-runtime")
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
 
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	runtimeID := runtime.ID

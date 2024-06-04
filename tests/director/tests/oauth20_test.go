@@ -63,8 +63,9 @@ func TestGenerateClientCredentialsToRuntime(t *testing.T) {
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NotEmpty(t, rtm)
 	require.NotEmpty(t, rtm.ID)
 	require.NoError(t, err)
@@ -225,8 +226,9 @@ func TestDeleteSystemAuthFromRuntime(t *testing.T) {
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NotEmpty(t, rtm)
 	require.NotEmpty(t, rtm.ID)
 	require.NoError(t, err)
@@ -259,8 +261,9 @@ func TestDeleteSystemAuthFromRuntimeUsingApplicationMutationShouldReportError(t 
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NotEmpty(t, rtm)
 	require.NotEmpty(t, rtm.ID)
 	require.NoError(t, err)
@@ -290,8 +293,9 @@ func TestDeleteSystemAuthFromRuntimeUsingIntegrationSystemMutationShouldReportEr
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels(name)
 
 	t.Log("Create runtime")
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NotEmpty(t, rtm)
 	require.NotEmpty(t, rtm.ID)
 	require.NoError(t, err)

@@ -68,8 +68,9 @@ func TestUpdateRuntime_ValidationSuccess(t *testing.T) {
 
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
@@ -94,8 +95,9 @@ func TestUpdateRuntime_ValidationFailure(t *testing.T) {
 
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 
@@ -193,8 +195,9 @@ func TestSetRuntimeLabel_Validation(t *testing.T) {
 
 	input := fixtures.FixRuntimeRegisterInputWithoutLabels("validation-test-rtm")
 
-	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+	var rtm graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &rtm)
+	rtm, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 	require.NoError(t, err)
 	require.NotEmpty(t, rtm.ID)
 

@@ -634,8 +634,9 @@ func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSyst
 	updatedApp := graphql.ApplicationExt{}
 
 	t.Run("should fail for non-integration system", func(t *testing.T) {
-		runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "test-runtime", tenant.TestTenants.GetDefaultTenantID())
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &runtime)
+		runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "test-runtime", tenant.TestTenants.GetDefaultTenantID())
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

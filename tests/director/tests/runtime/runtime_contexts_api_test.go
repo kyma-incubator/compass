@@ -37,8 +37,9 @@ func TestAddRuntimeContext(t *testing.T) {
 
 	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -78,8 +79,9 @@ func TestQueryRuntimeContexts(t *testing.T) {
 
 	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -107,8 +109,9 @@ func TestUpdateRuntimeContext(t *testing.T) {
 
 	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -141,8 +144,9 @@ func TestDeleteRuntimeContext(t *testing.T) {
 
 	in := fixtures.FixRuntimeRegisterInputWithoutLabels("addRuntimeContext")
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &in)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
@@ -316,8 +320,9 @@ func TestRuntimeContextSubscriptionFlows(stdT *testing.T) {
 				Labels:      graphql.Labels{conf.SubscriptionConfig.SelfRegDistinguishLabelKey: testCase.SubscriptionProviderID},
 			}
 
-			providerRuntime := fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
+			var providerRuntime graphql.RuntimeExt
 			defer fixtures.CleanupRuntimeWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntime)
+			providerRuntime = fixtures.RegisterRuntimeFromInputWithoutTenant(t, ctx, directorCertSecuredClient, &providerRuntimeInput)
 			require.NotEmpty(t, providerRuntime.ID)
 
 			selfRegLabelValue, ok := providerRuntime.Labels[conf.SubscriptionConfig.SelfRegisterLabelKey].(string)

@@ -678,8 +678,9 @@ func TestRuntimeTypeAndRegionLabels(t *testing.T) {
 
 		t.Logf("Registering runtime with name %q with integration system credentials...", runtimeName)
 		runtimeInput.Labels[conf.GlobalSubaccountIDLabelKey] = []interface{}{subaccountID} // so that the region can be set for the runtime based on the region of the subaccount
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
+		var runtime graphql.RuntimeExt                                                     // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, oauthGraphQLClient, tenantID, &runtime)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, tenantID, &runtimeInput)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 

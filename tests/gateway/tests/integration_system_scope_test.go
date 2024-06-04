@@ -88,8 +88,9 @@ func TestIntegrationSystemScenario(t *testing.T) {
 		runtimeInput := graphql.RuntimeRegisterInput{
 			Name: "test",
 		}
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &runtime)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, oauthGraphQLClient, testConfig.DefaultTestTenant, &runtimeInput)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
