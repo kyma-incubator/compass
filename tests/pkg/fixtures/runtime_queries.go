@@ -156,14 +156,15 @@ func RegisterKymaRuntime(t *testing.T, ctx context.Context, gqlClient *gcli.Clie
 	intSysName := "runtime-integration-system"
 
 	t.Logf("Creating integration system with name: %q", intSysName)
-	intSys, err := RegisterIntegrationSystem(t, ctx, gqlClient, tenantID, intSysName)
-	defer CleanupIntegrationSystem(t, ctx, gqlClient, tenantID, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var err error
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system creation
+	defer CleanupIntegrationSystem(t, ctx, gqlClient, tenantID, &intSys)
+	intSys = RegisterIntegrationSystem(t, ctx, gqlClient, tenantID, intSysName)
 
-	intSysAuth := RequestClientCredentialsForIntegrationSystem(t, ctx, gqlClient, tenantID, intSys.ID)
+	var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the int sys auth creation
+	defer DeleteSystemAuthForIntegrationSystem(t, ctx, gqlClient, &intSysAuth)
+	intSysAuth = RequestClientCredentialsForIntegrationSystem(t, ctx, gqlClient, tenantID, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer DeleteSystemAuthForIntegrationSystem(t, ctx, gqlClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -184,14 +185,17 @@ func RegisterKymaRuntimeBench(b *testing.B, ctx context.Context, gqlClient *gcli
 	intSysName := "runtime-integration-system"
 
 	b.Logf("Creating integration system with name: %q", intSysName)
-	intSys, err := RegisterIntegrationSystem(b, ctx, gqlClient, tenantID, intSysName)
-	defer CleanupIntegrationSystem(b, ctx, gqlClient, tenantID, intSys)
+	var err error
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system creation
+	defer CleanupIntegrationSystem(b, ctx, gqlClient, tenantID, &intSys)
+	intSys = RegisterIntegrationSystem(b, ctx, gqlClient, tenantID, intSysName)
 	require.NoError(b, err)
 	require.NotEmpty(b, intSys.ID)
 
-	intSysAuth := RequestClientCredentialsForIntegrationSystem(b, ctx, gqlClient, tenantID, intSys.ID)
+	var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the int sys auth creation
+	defer DeleteSystemAuthForIntegrationSystem(b, ctx, gqlClient, &intSysAuth)
+	intSysAuth = RequestClientCredentialsForIntegrationSystem(b, ctx, gqlClient, tenantID, intSys.ID)
 	require.NotEmpty(b, intSysAuth)
-	defer DeleteSystemAuthForIntegrationSystem(b, ctx, gqlClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(b, ok)

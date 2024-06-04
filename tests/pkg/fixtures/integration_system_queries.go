@@ -19,18 +19,19 @@ func GetIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gc
 	return &intSys
 }
 
-func RegisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, name string) (*graphql.IntegrationSystemExt, error) {
+func RegisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, name string) graphql.IntegrationSystemExt {
 	input := graphql.IntegrationSystemInput{Name: name}
 	in, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(input)
-	if err != nil {
-		return nil, err
-	}
+	require.NoError(t, err)
 
 	req := FixRegisterIntegrationSystemRequest(in)
-	intSys := &graphql.IntegrationSystemExt{}
+	intSys := graphql.IntegrationSystemExt{}
 
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenant, req, &intSys)
-	return intSys, err
+	require.NoError(t, err)
+	require.NotEmpty(t, intSys.ID)
+
+	return intSys
 }
 
 func UnregisterIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) {
@@ -66,7 +67,7 @@ func GetSystemAuthsForIntegrationSystem(t require.TestingT, ctx context.Context,
 	return intSys.Auths
 }
 
-func RequestClientCredentialsForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) *graphql.IntSysSystemAuth {
+func RequestClientCredentialsForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, tenant, id string) graphql.IntSysSystemAuth {
 	req := FixRequestClientCredentialsForIntegrationSystem(id)
 	systemAuth := graphql.IntSysSystemAuth{}
 
@@ -81,11 +82,11 @@ func RequestClientCredentialsForIntegrationSystem(t require.TestingT, ctx contex
 	require.NotEmpty(t, intSysOauthCredentialData.ClientSecret)
 	require.NotEmpty(t, intSysOauthCredentialData.ClientID)
 	assert.Equal(t, systemAuth.ID, intSysOauthCredentialData.ClientID)
-	return &systemAuth
+	return systemAuth
 }
 
-func DeleteSystemAuthForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, id string) {
-	req := FixDeleteSystemAuthForIntegrationSystemRequest(id)
+func DeleteSystemAuthForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, intSysAuth *graphql.IntSysSystemAuth) {
+	req := FixDeleteSystemAuthForIntegrationSystemRequest(intSysAuth.ID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, nil)
 	require.NoError(t, err)
 }

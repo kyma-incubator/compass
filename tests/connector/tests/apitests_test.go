@@ -102,10 +102,9 @@ func TestTokens(t *testing.T) {
 }
 
 func TestTokenSuggestion(t *testing.T) {
-	intSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, intSystem)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSystem.ID)
+	var intSystem graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &intSystem)
+	intSystem = fixtures.RegisterIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
 
 	tokenFromRaw := func(token graphql.OneTimeTokenForApplicationExt) string {
 		actualTokenFromRaw := gjson.Get(token.Raw, "token").String()
