@@ -693,27 +693,18 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	require.NotEmpty(t, template2.ID)
 
 	triggerSync(t, tenant.TestTenants.GetDefaultTenantID())
-	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), cfg.SystemFetcherPageSize)
+	waitForApplicationsToBeProcessed(ctx, t, tenant.TestTenants.GetDefaultTenantID(), cfg.SystemFetcherPageSize+1) // +1 because the first page contains cfg.SystemFetcherPageSize systems and the second one contains 1 system
 
 	req := fixtures.FixGetApplicationsRequestWithPagination()
 	var resp directorSchema.ApplicationPageExt
 	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req, &resp)
 	require.NoError(t, err)
 
-	req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
-	var resp2 directorSchema.ApplicationPageExt
-	err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), req2, &resp2)
-	require.NoError(t, err)
-	resp.Data = append(resp.Data, resp2.Data...)
-
-	description := "description"
-	expectedCount := cfg.SystemFetcherPageSize
-	if expectedCount > 1 {
-		expectedCount++
-	}
-	expectedApps := getFixExpectedMockSystems(expectedCount, template2.ID, template2.Name, intSys.ID, description)
+	expectedCount := cfg.SystemFetcherPageSize + 1 // +1 because the first page contains cfg.SystemFetcherPageSize systems and the second one contains 1 system
+	expectedApps := getFixExpectedMockSystems(expectedCount, template2.ID, template2.Name, intSys.ID)
 
 	actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
+	appsToCleanup := make([]*directorSchema.ApplicationExt, 0, len(expectedApps))
 	for _, app := range resp.Data {
 		actualApps = append(actualApps, directorSchema.ApplicationExt{
 			Application: directorSchema.Application{
@@ -725,8 +716,14 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 			},
 			Labels: app.Labels,
 		})
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		appsToCleanup = append(appsToCleanup, app)
 	}
+
+	defer func() {
+		for _, app := range appsToCleanup {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
 
 	require.ElementsMatch(t, expectedApps, actualApps)
 }
@@ -764,11 +761,18 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, template1.ID)
 
+	appsToCleanup := make([]*directorSchema.ApplicationExt, 0)
+	defer func() {
+		for _, app := range appsToCleanup {
+			fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), app)
+		}
+	}()
+
 	for _, tenantID := range tenants {
 		triggerSync(t, tenantID)
 	}
 	for _, tenantID := range tenants {
-		waitForApplicationsToBeProcessed(ctx, t, tenantID, cfg.SystemFetcherPageSize)
+		waitForApplicationsToBeProcessed(ctx, t, tenantID, cfg.SystemFetcherPageSize+1) // +1 because the first page contains cfg.SystemFetcherPageSize systems and the second one contains 1 system
 	}
 	for _, tenantID := range tenants {
 		req := fixtures.FixGetApplicationsRequestWithPagination()
@@ -776,18 +780,9 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 		err := testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req, &resp)
 		require.NoError(t, err)
 
-		req2 := fixtures.FixApplicationsPageableRequest(200, string(resp.PageInfo.EndCursor))
-		var resp2 directorSchema.ApplicationPageExt
-		err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tenantID, req2, &resp2)
-		require.NoError(t, err)
+		expectedCount := cfg.SystemFetcherPageSize + 1 // +1 because the first page contains cfg.SystemFetcherPageSize systems and the second one contains 1 system
+		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID)
 
-		resp.Data = append(resp.Data, resp2.Data...)
-		description := "description"
-		expectedCount := cfg.SystemFetcherPageSize
-		if expectedCount > 1 {
-			expectedCount++
-		}
-		expectedApps := getFixExpectedMockSystems(expectedCount, template1.ID, template1.Name, intSys.ID, description)
 		actualApps := make([]directorSchema.ApplicationExt, 0, len(expectedApps))
 		for _, app := range resp.Data {
 			actualApps = append(actualApps, directorSchema.ApplicationExt{
@@ -800,7 +795,7 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 				},
 				Labels: app.Labels,
 			})
-			defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantID, app)
+			appsToCleanup = append(appsToCleanup, app)
 		}
 		require.ElementsMatch(t, expectedApps, actualApps)
 	}
@@ -1711,7 +1706,7 @@ func waitForApplicationsToBeProcessed(ctx context.Context, t *testing.T, tenantI
 		_, actualApps := retrieveAppsForTenant(t, ctx, tenantID)
 		t.Logf("Found %d from %d", len(actualApps), expectedNumber)
 		return len(actualApps) >= expectedNumber
-	}, time.Second*90, time.Second*1, "Waiting for Systems to be fetched.")
+	}, time.Second*60, time.Second*1, "Waiting for Systems to be fetched.")
 }
 
 func waitForDeleteOperation(ctx context.Context, t *testing.T, appID string) {
@@ -1799,7 +1794,7 @@ func getFixMockSystemsJSON(count, startingNumber int) string {
 	return result + "]"
 }
 
-func getFixExpectedMockSystems(count int, templateID, templateName, intSysID, description string) []directorSchema.ApplicationExt {
+func getFixExpectedMockSystems(count int, templateID, templateName, intSysID string) []directorSchema.ApplicationExt {
 	result := make([]directorSchema.ApplicationExt, count)
 	for i := 0; i < count; i++ {
 		systemName := fmt.Sprintf("name%d", i)
