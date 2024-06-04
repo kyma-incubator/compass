@@ -39,9 +39,21 @@ func NewResolver(transact persistence.Transactioner, assignmentOperationService 
 
 // GetLatestOperation returns the latest operation for the given assignment and formation
 func (r *Resolver) GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*graphql.AssignmentOperation, error) {
+	tx, err := r.transact.Begin()
+	if err != nil {
+		return nil, err
+	}
+	defer r.transact.RollbackUnlessCommitted(ctx, tx)
+
+	ctx = persistence.SaveToContext(ctx, tx)
+
 	latestOperation, err := r.assignmentOperationService.GetLatestOperation(ctx, assignmentID, formationID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting latest operation for assignment %s and formation %s", assignmentID, formationID)
+	}
+
+	if err = tx.Commit(); err != nil {
+		return nil, err
 	}
 
 	return r.assignmentOperationConverter.ToGraphQL(latestOperation), nil

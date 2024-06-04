@@ -111,7 +111,7 @@ func (o *ExecuteStatusReportOperation) Execute(t *testing.T, ctx context.Context
 	marshalBody, err := json.Marshal(reqBody)
 	require.NoError(t, err)
 
-	request, err := http.NewRequest(http.MethodPatch, faAsyncStatusAPIURL, bytes.NewBuffer(marshalBody))
+	request, err := http.NewRequest(http.MethodPut, faAsyncStatusAPIURL, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
 	response, err := o.client.Do(request)

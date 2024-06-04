@@ -106,6 +106,13 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				if err != nil {
 					log.C(ctx).Warnf(errors.Wrapf(err, "Reverse assignment not found").Error())
 				}
+				reverseFAOperation := &model.AssignmentOperation{}
+				if reverseAssignment != nil {
+					reverseFAOperation, err = e.assignmentOperationService.GetLatestOperation(ctx, reverseAssignment.ID, reverseAssignment.FormationID)
+					if err != nil {
+						return false, errors.Wrapf(err, "while getting latest operation for reverse assignment with ID: %s", reverseAssignment.ID)
+					}
+				}
 
 				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, will create new %q Assignment Operation", formationAssignment.ID, model.InstanceCreatorUnassign)
 				statusReport.State = string(model.DeletingAssignmentState) // set to DELETING state so that in CleanupFormationAssignment -> DeleteWithConstraints we don't delete the FA
@@ -127,11 +134,6 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 					FormationAssignmentID: opInput.FormationAssignmentID,
 					FormationID:           opInput.FormationID,
 					TriggeredBy:           opInput.TriggeredBy,
-				}
-
-				reverseFAOperation, err := e.assignmentOperationService.GetLatestOperation(ctx, reverseAssignment.ID, reverseAssignment.FormationID)
-				if err != nil {
-					return false, errors.Wrapf(err, "while getting latest operation for reverse assignment with ID: %s", reverseAssignment.ID)
 				}
 
 				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)

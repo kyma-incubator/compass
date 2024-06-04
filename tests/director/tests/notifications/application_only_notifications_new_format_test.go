@@ -591,7 +591,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		op = operations.NewExecuteStatusReportOperation().WithTenant(tnt).
 			WithFormationAssignment(app2ID, app1ID).
-			WithState(createReadyAssignmentState).
+			WithState(readyAssignmentState).
 			WithHTTPClient(appCertClient).
 			WithExternalServicesMockMtlsSecuredURL(conf.DirectorExternalCertFAAsyncStatusURL).
 			WithAsserters(faAsyncAsserter, statusAsserter).
@@ -640,7 +640,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		statusAsserter = asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		op = operations.NewExecuteStatusReportOperation().WithTenant(tnt).
 			WithFormationAssignment(app2ID, app1ID).
-			WithState(deleteReadyAssignmentState).
+			WithState(readyAssignmentState).
 			WithHTTPClient(appCertClient).
 			WithExternalServicesMockMtlsSecuredURL(conf.DirectorExternalCertFAAsyncStatusURL).
 			WithAsserters(faAsyncAsserter, statusAsserter).

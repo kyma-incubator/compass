@@ -214,7 +214,7 @@ func (h *Handler) updateFormationAssignmentStatus(w http.ResponseWriter, r *http
 	}
 
 	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(latestAssignmentOperation.Type)
-	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentReqBody, fa, latestAssignmentOperation.Type)
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(&assignmentReqBody, fa, latestAssignmentOperation.Type)
 	originalStateFromStatusReport := notificationStatusReport.State
 	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
@@ -488,10 +488,10 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 	}
 
 	// TODO:: Remove after "Simplified states" Task
-	translateSimplifiedToOldState(ctx, assignmentOpReqBody, assignmentOperation.Type)
+	translateSimplifiedToOldState(ctx, &assignmentOpReqBody, assignmentOperation.Type)
 
 	formationOperation := formationassignmentpkg.DetermineFormationOperationFromLatestAssignmentOperation(assignmentOperation.Type)
-	notificationStatusReport := newNotificationStatusReportFromRequestBody(assignmentOpReqBody, fa, assignmentOperation.Type)
+	notificationStatusReport := newNotificationStatusReportFromRequestBody(&assignmentOpReqBody, fa, assignmentOperation.Type)
 	originalStateFromStatusReport := notificationStatusReport.State
 	if !isStateSupportedForOperation(ctx, model.FormationAssignmentState(originalStateFromStatusReport), formationOperation, formation.State, reset) {
 		log.C(ctx).Errorf("An invalid state: %q is provided for %q operation with reset option %t", originalStateFromStatusReport, formationOperation, reset)
@@ -827,7 +827,7 @@ func (b FormationAssignmentRequestBody) GetError() string {
 	return b.Error
 }
 
-func (b FormationAssignmentRequestBody) SetState(state model.FormationAssignmentState) {
+func (b *FormationAssignmentRequestBody) SetState(state model.FormationAssignmentState) {
 	b.State = state
 }
 
@@ -868,7 +868,7 @@ func (b AssignmentOperationRequestBody) GetError() string {
 	return b.Error
 }
 
-func (b AssignmentOperationRequestBody) SetState(state model.FormationAssignmentState) {
+func (b *AssignmentOperationRequestBody) SetState(state model.FormationAssignmentState) {
 	b.State = state
 }
 

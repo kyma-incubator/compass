@@ -547,7 +547,7 @@ func (r *queryResolver) FormationTemplatesByName(ctx context.Context, name strin
 }
 
 func (r *queryResolver) GetLatestOperation(ctx context.Context, formationID string, assignmentID string) (*graphql.AssignmentOperation, error) {
-	return r.assignmentOperation.GetLatestOperation(ctx, formationID, assignmentID)
+	return r.assignmentOperation.GetLatestOperation(ctx, assignmentID, formationID)
 }
 
 // Viewer missing godoc

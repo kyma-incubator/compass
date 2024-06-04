@@ -150,11 +150,8 @@ type FormationState string
 // ReadyAssignmentState indicates that the formation assignment is in a ready state
 const ReadyAssignmentState FormationAssignmentState = "READY"
 
-// CreateErrorAssignmentState indicates that an error occurred during the creation of the formation assignment
-const CreateErrorAssignmentState FormationAssignmentState = "CREATE_ERROR"
-
-// DeleteErrorAssignmentState indicates that an error occurred during the deletion of the formation assignment
-const DeleteErrorAssignmentState FormationAssignmentState = "DELETE_ERROR"
+// ErrorAssignmentState indicates that an error occurred during the formation assignment
+const ErrorAssignmentState FormationAssignmentState = "ERROR"
 
 // CreateReadyAssignmentState indicates that the formation assignment is in a ready state
 const CreateReadyAssignmentState FormationAssignmentState = "CREATE_READY"
@@ -614,7 +611,7 @@ func (h *Handler) AsyncNoConfigWithCreateReady(writer http.ResponseWriter, r *ht
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, assignmentOperationID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, CreateReadyAssignmentState, &config, formationID, formationAssignmentID, assignmentOperationID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, ReadyAssignmentState, &config, formationID, formationAssignmentID, assignmentOperationID); err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
@@ -627,7 +624,7 @@ func (h *Handler) AsyncNoConfigWithDeleteReady(writer http.ResponseWriter, r *ht
 	ctx := r.Context()
 	responseFunc := func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, assignmentOperationID, config string) {
 		time.Sleep(time.Second * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, DeleteReadyAssignmentState, &config, formationID, formationAssignmentID, assignmentOperationID); err != nil {
+		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, ReadyAssignmentState, &config, formationID, formationAssignmentID, assignmentOperationID); err != nil {
 			log.C(ctx).Errorf("while executing formation assignment status update request: %s", err.Error())
 		}
 	}
@@ -722,11 +719,8 @@ func (h *Handler) AsyncFailOnce(writer http.ResponseWriter, r *http.Request) {
 	responseFunc := func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, assignmentOperationID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
 		state := ReadyAssignmentState
-		if operation == Assign && h.ShouldReturnError {
-			state = CreateErrorAssignmentState
-			h.ShouldReturnError = false
-		} else if operation == Unassign && h.ShouldReturnError {
-			state = DeleteErrorAssignmentState
+		if h.ShouldReturnError {
+			state = ErrorAssignmentState
 			h.ShouldReturnError = false
 		}
 		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, state, &config, formationID, formationAssignmentID, assignmentOperationID); err != nil {
@@ -751,10 +745,7 @@ func (h *Handler) AsyncFail(writer http.ResponseWriter, r *http.Request) {
 	}
 	responseFunc := func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, assignmentOperationID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		state := CreateErrorAssignmentState
-		if operation == Unassign {
-			state = DeleteErrorAssignmentState
-		}
+		state := ErrorAssignmentState
 
 		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, state, &config, formationID, formationAssignmentID, assignmentOperationID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
@@ -773,10 +764,7 @@ func (h *Handler) AsyncFailNoError(writer http.ResponseWriter, r *http.Request) 
 	}
 	responseFunc := func(client *http.Client, correlationID, traceID, spanID, parentSpanID, formationID, formationAssignmentID, assignmentOperationID, config string) {
 		time.Sleep(time.Millisecond * time.Duration(h.config.TenantMappingAsyncResponseDelay))
-		state := CreateErrorAssignmentState
-		if operation == Unassign {
-			state = DeleteErrorAssignmentState
-		}
+		state := ErrorAssignmentState
 
 		if err := h.executeFormationAssignmentStatusUpdateRequest(client, correlationID, traceID, spanID, parentSpanID, state, nil, formationID, formationAssignmentID, assignmentOperationID); err != nil {
 			log.C(ctx).Errorf("while executing status update request: %s", err.Error())
@@ -799,7 +787,7 @@ func (h *Handler) executeFormationAssignmentStatusUpdateRequest(certSecuredHTTPC
 		State: state,
 	}
 	if testConfig != nil {
-		if state == CreateErrorAssignmentState || state == DeleteErrorAssignmentState {
+		if state == ErrorAssignmentState {
 			FAReqBody.Error = *testConfig
 		}
 		if state == ReadyAssignmentState {
