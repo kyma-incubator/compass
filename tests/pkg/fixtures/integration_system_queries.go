@@ -86,6 +86,9 @@ func RequestClientCredentialsForIntegrationSystem(t require.TestingT, ctx contex
 }
 
 func DeleteSystemAuthForIntegrationSystem(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, intSysAuth *graphql.IntSysSystemAuth) {
+	if intSysAuth == nil || intSysAuth.ID == "" {
+		return
+	}
 	req := FixDeleteSystemAuthForIntegrationSystemRequest(intSysAuth.ID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, nil)
 	require.NoError(t, err)
