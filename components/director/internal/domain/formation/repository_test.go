@@ -3,10 +3,11 @@ package formation_test
 import (
 	"context"
 	"database/sql/driver"
-	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"regexp"
 	"testing"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 	"github.com/stretchr/testify/require"

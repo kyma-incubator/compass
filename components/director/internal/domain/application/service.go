@@ -74,6 +74,7 @@ type ApplicationRepository interface {
 	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
 	ListByIDsAndFilters(ctx context.Context, tenant string, appIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListByIDs(ctx context.Context, tenant uuid.UUID, applicationIDs []string, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -319,12 +320,12 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		return nil, apperrors.NewInvalidDataError("runtime does not exist")
 	}
 
-	formations, err := s.formationService.ListFormationsForObject(ctx, runtimeID.String())
+	formationsForRuntime, err := s.formationService.ListFormationsForObject(ctx, runtimeID.String())
 	if err != nil {
-		return nil, errors.Wrapf(err, "while listing formations for runtime with ID %s", runtimeID.String())
+		return nil, errors.Wrapf(err, "while listing formation for runtime with ID: %q", runtimeID.String())
 	}
 
-	if len(formations) == 0 {
+	if len(formationsForRuntime) == 0 {
 		return &model.ApplicationPage{
 			Data:       []*model.Application{},
 			TotalCount: 0,
@@ -336,17 +337,17 @@ func (s *service) ListByRuntimeID(ctx context.Context, runtimeID uuid.UUID, page
 		}, nil
 	}
 
-	formationNames := make([]string, 0, len(formations))
-	for _, formation := range formations {
+	formationNames := make([]string, 0, len(formationsForRuntime))
+	for _, formation := range formationsForRuntime {
 		formationNames = append(formationNames, formation.Name)
 	}
 
-	hidingSelectors, err := s.appHideCfgProvider.GetApplicationHideSelectors()
+	applicationIDs, err := s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, model.FormationAssignmentTypeApplication)
 	if err != nil {
-		return nil, errors.Wrap(err, "while getting application hide selectors from config")
+		return nil, err
 	}
 
-	return s.appRepo.ListByScenarios(ctx, tenantUUID, formationNames, pageSize, cursor, hidingSelectors)
+	return s.appRepo.ListByIDs(ctx, tenantUUID, applicationIDs, pageSize, cursor)
 }
 
 // Get missing godoc
