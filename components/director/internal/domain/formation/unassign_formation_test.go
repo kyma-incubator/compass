@@ -742,7 +742,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
 				InputFormation:     in,
-				ExpectedErrMessage: "while getting latest operation for formation assignment with ID: FormationAssignmentID",
+				ExpectedErrMessage: "while getting latest Operation for formation assignment with ID: FormationAssignmentID",
 			},
 			{
 				Name: "error when fails to create operation due to foreign key violation - FA has been deleted by another transaction",
