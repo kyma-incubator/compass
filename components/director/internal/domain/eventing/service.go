@@ -3,7 +3,6 @@ package eventing
 import (
 	"context"
 	"fmt"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
@@ -48,18 +47,28 @@ type LabelRepository interface {
 	Upsert(ctx context.Context, tenant string, label *model.Label) error
 }
 
+// FormationService missing godoc
+//
+//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationService interface {
+	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+}
+
 type service struct {
 	appNameNormalizer normalizer.Normalizator
 	runtimeRepo       RuntimeRepository
 	labelRepo         LabelRepository
+	formationService  FormationService
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository, formationService FormationService) *service {
 	return &service{
 		appNameNormalizer: appNameNormalizer,
 		runtimeRepo:       runtimeRepo,
 		labelRepo:         labelRepo,
+		formationService:  formationService,
 	}
 }
 

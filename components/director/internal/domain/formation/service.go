@@ -175,6 +175,8 @@ type assignmentOperationService interface {
 	DeleteByIDs(ctx context.Context, ids []string) error
 }
 
+type listFormationsFn func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
+
 type service struct {
 	applicationRepository                  applicationRepository
 	labelDefRepository                     labelDefRepository
@@ -286,7 +288,7 @@ func (s *service) ListFormationsForObjectGlobal(ctx context.Context, objectID st
 func (s *service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
 	return s.listFormationsForObject(ctx, objectID, s.formationRepository.ListByIDs)
 }
-func (s *service) listFormationsForObject(ctx context.Context, objectID string, listFormations func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)) ([]*model.Formation, error) {
+func (s *service) listFormationsForObject(ctx context.Context, objectID string, listFormations listFormationsFn) ([]*model.Formation, error) {
 	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", objectID)

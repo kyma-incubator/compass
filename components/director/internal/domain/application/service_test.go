@@ -2506,7 +2506,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, id).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			InputID:            id,
@@ -2521,7 +2521,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return(formations, nil).Once()
 				return svc
 			},
 			InputID:            id,
@@ -2531,7 +2531,7 @@ func TestService_Delete(t *testing.T) {
 			Name: "Return error when application is part of a scenario",
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
-				formationSvc.On("ListFormationsForObject", ctx, applicationModel.ID).Return(nil, testErr).Once()
+				formationSvc.On("ListFormationsForObjectGlobal", ctx, applicationModel.ID).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			InputID:            id,
@@ -2547,7 +2547,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return(formations, nil).Once()
 				return svc
 			},
 			InputID:            id,
@@ -2562,7 +2562,7 @@ func TestService_Delete(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, id).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			InputID:            id,
@@ -2671,7 +2671,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
-				svc.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return(formations, nil).Once()
 				return svc
 			},
 			ContextFn: func() context.Context {
@@ -2697,7 +2697,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
-				svc.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return(formations, nil).Once()
 				return svc
 			},
 			ContextFn: func() context.Context {
@@ -2723,7 +2723,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
-				svc.On("ListFormationsForObject", ctx, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, id).Return(formations, nil).Once()
 				return svc
 			},
 			InputID: id,
@@ -2748,7 +2748,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
-				svc.On("ListFormationsForObject", mock.Anything, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", mock.Anything, id).Return(formations, nil).Once()
 				return svc
 			},
 			InputID: id,
@@ -2763,7 +2763,6 @@ func TestService_Unpair(t *testing.T) {
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
 				repo.On("GetByID", ctx, tnt, applicationModel.ID).Return(nil, testErr).Once()
-				//repo.On("Exists", ctx, tnt, applicationModel.ID).Return(true, nil).Once()
 				repo.AssertNotCalled(t, "Update")
 				return repo
 			},
@@ -2775,7 +2774,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
-				svc.On("ListFormationsForObject", mock.Anything, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", mock.Anything, id).Return(formations, nil).Once()
 				return svc
 			},
 			ContextFn: func() context.Context {
@@ -2803,7 +2802,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{rtmID}, nil).Once()
-				svc.On("ListFormationsForObject", mock.Anything, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", mock.Anything, id).Return(formations, nil).Once()
 				return svc
 			},
 			ContextFn: func() context.Context {
@@ -2831,7 +2830,7 @@ func TestService_Unpair(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
 				svc.On("ListObjectIDsOfTypeForFormations", mock.Anything, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
-				svc.On("ListFormationsForObject", mock.Anything, id).Return(formations, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", mock.Anything, id).Return(formations, nil).Once()
 				return svc
 			},
 			ContextFn: func() context.Context {
@@ -2980,7 +2979,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
 				return svc
 			},
 			Ctx:                            ctx,
@@ -3014,7 +3013,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
 				return svc
 			},
 			Ctx:                            ctx,
@@ -3070,7 +3069,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3127,7 +3126,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3159,7 +3158,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3191,7 +3190,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3223,7 +3222,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3255,7 +3254,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3287,7 +3286,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Twice()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3315,7 +3314,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			LabelUpsertSvcFn: func() *automock.LabelService {
@@ -3353,7 +3352,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3378,7 +3377,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return(nil, testErr).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return(nil, testErr).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3409,7 +3408,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,
@@ -3439,7 +3438,7 @@ func TestService_Merge(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("ListFormationsForObject", ctx, srcID).Return([]*model.Formation{}, nil).Once()
+				svc.On("ListFormationsForObjectGlobal", ctx, srcID).Return([]*model.Formation{}, nil).Once()
 				return svc
 			},
 			Ctx:                ctx,

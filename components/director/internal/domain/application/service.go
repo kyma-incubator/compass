@@ -220,18 +220,16 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 	if err != nil {
 		return nil, err
 	}
-	if hasScenariosFilter {
-		if len(appIDsInScenarios) == 0 {
-			return &model.ApplicationPage{
-				Data:       []*model.Application{},
-				TotalCount: 0,
-				PageInfo: &pagination.Page{
-					StartCursor: cursor,
-					EndCursor:   "",
-					HasNextPage: false,
-				},
-			}, nil
-		}
+	if hasScenariosFilter && len(appIDsInScenarios) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
 	}
 	return s.appRepo.ListByIDsAndFilters(ctx, appTenant, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
 }
@@ -1095,7 +1093,7 @@ func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLa
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
 func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Context, tenant, appID string) error {
-	formations, err := s.formationService.ListFormationsForObject(ctx, appID)
+	formations, err := s.formationService.ListFormationsForObjectGlobal(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting formations for Application with ID %s", appID)
 	}
@@ -1129,7 +1127,7 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 // ensureApplicationNotPartOfAnyScenario Checks if an application has scenarios associated with it. If the application is
 // associated with any scenario it can not be deleted before unassigning from that scenario
 func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, tenant, appID string) error {
-	formations, err := s.formationService.ListFormationsForObject(ctx, appID)
+	formations, err := s.formationService.ListFormationsForObjectGlobal(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting formations for Application with ID %s", appID)
 	}

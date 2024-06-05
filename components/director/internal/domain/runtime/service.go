@@ -151,18 +151,16 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 	if err != nil {
 		return nil, err
 	}
-	if hasScenariosFilter {
-		if len(runtimeIDs) == 0 {
-			return &model.RuntimePage{
-				Data:       []*model.Runtime{},
-				TotalCount: 0,
-				PageInfo: &pagination.Page{
-					StartCursor: cursor,
-					EndCursor:   "",
-					HasNextPage: false,
-				},
-			}, nil
-		}
+	if hasScenariosFilter && len(runtimeIDs) == 0 {
+		return &model.RuntimePage{
+			Data:       []*model.Runtime{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
 	}
 	return s.repo.List(ctx, rtmTenant, runtimeIDs, labelFiltersWithoutScenarioFilter, pageSize, cursor)
 }
