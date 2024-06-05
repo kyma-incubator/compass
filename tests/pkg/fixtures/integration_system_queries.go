@@ -91,5 +91,5 @@ func DeleteSystemAuthForIntegrationSystem(t require.TestingT, ctx context.Contex
 	}
 	req := FixDeleteSystemAuthForIntegrationSystemRequest(intSysAuth.ID)
 	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, "", req, nil)
-	require.NoError(t, err)
+	assertions.AssertNoErrorForOtherThanNotFound(t, err)
 }
