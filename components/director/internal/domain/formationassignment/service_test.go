@@ -1691,7 +1691,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 			svc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil, nil, "", "")
 
 			// WHEN
-			r, err := svc.GenerateAssignments(testCase.Context, TestTenantID, objectID, testCase.ObjectType, formation)
+			r, err := svc.GenerateAssignments(testCase.Context, TestTenantID, objectID, testCase.ObjectType, formation, nil)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)

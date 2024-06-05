@@ -29,7 +29,7 @@ type Service interface {
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
-	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, initialConfigurations model.InitialConfigurations) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 	FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error)
@@ -55,7 +55,7 @@ type formationAssignmentService interface {
 	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
-	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, initialConfigurations model.InitialConfigurations) ([]*model.FormationAssignmentInput, error)
 	PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
@@ -276,10 +276,23 @@ func (r *Resolver) DeleteFormation(ctx context.Context, formation graphql.Format
 }
 
 // AssignFormation assigns object to the provided formation
-func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
+func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput, initialConfigurations []*graphql.InitialConfiguration) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
+	}
+
+	initCfgsSourceToTarget := make(model.InitialConfigurations)
+	for _, cfg := range initialConfigurations {
+		if _, ok := initCfgsSourceToTarget[cfg.SourceID]; !ok {
+			initCfgsSourceToTarget[cfg.SourceID] = make(map[string]json.RawMessage)
+		}
+
+		initialConfig, err := json.Marshal(cfg)
+		if err != nil {
+			return nil, errors.Errorf("while processing initial configuration for SourceID: %s and TargetID: %s", cfg.SourceID, cfg.TargetID)
+		}
+		initCfgsSourceToTarget[cfg.SourceID][cfg.TargetID] = initialConfig
 	}
 
 	tx, err := r.transact.Begin()
@@ -302,7 +315,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		}
 	}
 
-	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
+	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation), initCfgsSourceToTarget)
 	if err != nil {
 		return nil, err
 	}

@@ -20,6 +20,10 @@ type RuntimeRepository struct {
 func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
@@ -43,6 +47,10 @@ func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id strin
 // ListAll provides a mock function with given fields: ctx, tenantID, filter
 func (_m *RuntimeRepository) ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenantID, filter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAll")
+	}
 
 	var r0 []*model.Runtime
 	var r1 error

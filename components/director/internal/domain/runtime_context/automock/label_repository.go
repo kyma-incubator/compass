@@ -18,6 +18,10 @@ type LabelRepository struct {
 func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObject")
+	}
+
 	var r0 map[string]*model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) (map[string]*model.Label, error)); ok {

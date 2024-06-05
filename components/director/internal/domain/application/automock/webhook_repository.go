@@ -18,6 +18,10 @@ type WebhookRepository struct {
 func (_m *WebhookRepository) CreateMany(ctx context.Context, tenant string, items []*model.Webhook) error {
 	ret := _m.Called(ctx, tenant, items)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateMany")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*model.Webhook) error); ok {
 		r0 = rf(ctx, tenant, items)
@@ -31,6 +35,10 @@ func (_m *WebhookRepository) CreateMany(ctx context.Context, tenant string, item
 // ListByReferenceObjectID provides a mock function with given fields: ctx, tenant, objID, objType
 func (_m *WebhookRepository) ListByReferenceObjectID(ctx context.Context, tenant string, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, tenant, objID, objType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByReferenceObjectID")
+	}
 
 	var r0 []*model.Webhook
 	var r1 error

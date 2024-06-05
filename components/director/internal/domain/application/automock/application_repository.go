@@ -22,6 +22,10 @@ type ApplicationRepository struct {
 func (_m *ApplicationRepository) Create(ctx context.Context, tenant string, item *model.Application) error {
 	ret := _m.Called(ctx, tenant, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) error); ok {
 		r0 = rf(ctx, tenant, item)
@@ -35,6 +39,10 @@ func (_m *ApplicationRepository) Create(ctx context.Context, tenant string, item
 // Delete provides a mock function with given fields: ctx, tenant, id
 func (_m *ApplicationRepository) Delete(ctx context.Context, tenant string, id string) error {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
@@ -50,6 +58,10 @@ func (_m *ApplicationRepository) Delete(ctx context.Context, tenant string, id s
 func (_m *ApplicationRepository) DeleteGlobal(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteGlobal")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
@@ -63,6 +75,10 @@ func (_m *ApplicationRepository) DeleteGlobal(ctx context.Context, id string) er
 // Exists provides a mock function with given fields: ctx, tenant, id
 func (_m *ApplicationRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
 
 	var r0 bool
 	var r1 error
@@ -88,6 +104,10 @@ func (_m *ApplicationRepository) Exists(ctx context.Context, tenant string, id s
 func (_m *ApplicationRepository) ExistsGlobal(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ExistsGlobal")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {
@@ -111,6 +131,10 @@ func (_m *ApplicationRepository) ExistsGlobal(ctx context.Context, id string) (b
 // GetByFilter provides a mock function with given fields: ctx, tenant, filter
 func (_m *ApplicationRepository) GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, filter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByFilter")
+	}
 
 	var r0 *model.Application
 	var r1 error
@@ -138,6 +162,10 @@ func (_m *ApplicationRepository) GetByFilter(ctx context.Context, tenant string,
 func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
 	var r0 *model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
@@ -163,6 +191,10 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 // GetByIDForUpdate provides a mock function with given fields: ctx, tenant, id
 func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant string, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByIDForUpdate")
+	}
 
 	var r0 *model.Application
 	var r1 error
@@ -190,6 +222,10 @@ func (_m *ApplicationRepository) GetByIDForUpdate(ctx context.Context, tenant st
 func (_m *ApplicationRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant string, localTenantID string, appTemplateID string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, localTenantID, appTemplateID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByLocalTenantIDAndAppTemplateID")
+	}
+
 	var r0 *model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.Application, error)); ok {
@@ -215,6 +251,10 @@ func (_m *ApplicationRepository) GetByLocalTenantIDAndAppTemplateID(ctx context.
 // GetBySystemNumber provides a mock function with given fields: ctx, tenant, systemNumber
 func (_m *ApplicationRepository) GetBySystemNumber(ctx context.Context, tenant string, systemNumber string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, systemNumber)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBySystemNumber")
+	}
 
 	var r0 *model.Application
 	var r1 error
@@ -242,6 +282,10 @@ func (_m *ApplicationRepository) GetBySystemNumber(ctx context.Context, tenant s
 func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetGlobalByID")
+	}
+
 	var r0 *model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Application, error)); ok {
@@ -267,6 +311,10 @@ func (_m *ApplicationRepository) GetGlobalByID(ctx context.Context, id string) (
 // List provides a mock function with given fields: ctx, tenant, filter, pageSize, cursor
 func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.ApplicationPage
 	var r1 error
@@ -294,6 +342,10 @@ func (_m *ApplicationRepository) List(ctx context.Context, tenant string, filter
 func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAll")
+	}
+
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Application, error)); ok {
@@ -319,6 +371,10 @@ func (_m *ApplicationRepository) ListAll(ctx context.Context, tenant string) ([]
 // ListAllByApplicationTemplateID provides a mock function with given fields: ctx, applicationTemplateID
 func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Context, applicationTemplateID string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, applicationTemplateID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllByApplicationTemplateID")
+	}
 
 	var r0 []*model.Application
 	var r1 error
@@ -346,6 +402,10 @@ func (_m *ApplicationRepository) ListAllByApplicationTemplateID(ctx context.Cont
 func (_m *ApplicationRepository) ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant, filter)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllByFilter")
+	}
+
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Application, error)); ok {
@@ -371,6 +431,10 @@ func (_m *ApplicationRepository) ListAllByFilter(ctx context.Context, tenant str
 // ListAllByIDs provides a mock function with given fields: ctx, tenantID, ids
 func (_m *ApplicationRepository) ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenantID, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllByIDs")
+	}
 
 	var r0 []*model.Application
 	var r1 error
@@ -398,6 +462,10 @@ func (_m *ApplicationRepository) ListAllByIDs(ctx context.Context, tenantID stri
 func (_m *ApplicationRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllGlobalByFilter")
+	}
+
 	var r0 *model.ApplicationWithTenantsPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter, int, string) (*model.ApplicationWithTenantsPage, error)); ok {
@@ -423,6 +491,10 @@ func (_m *ApplicationRepository) ListAllGlobalByFilter(ctx context.Context, filt
 // ListByLocalTenantID provides a mock function with given fields: ctx, tenant, localTenantID, filter, pageSize, cursor
 func (_m *ApplicationRepository) ListByLocalTenantID(ctx context.Context, tenant string, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenant, localTenantID, filter, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByLocalTenantID")
+	}
 
 	var r0 *model.ApplicationPage
 	var r1 error
@@ -450,6 +522,10 @@ func (_m *ApplicationRepository) ListByLocalTenantID(ctx context.Context, tenant
 func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID uuid.UUID, scenarios []string, pageSize int, cursor string, hidingSelectors map[string][]string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, tenantID, scenarios, pageSize, cursor, hidingSelectors)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenarios")
+	}
+
 	var r0 *model.ApplicationPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID, []string, int, string, map[string][]string) (*model.ApplicationPage, error)); ok {
@@ -475,6 +551,10 @@ func (_m *ApplicationRepository) ListByScenarios(ctx context.Context, tenantID u
 // ListByScenariosAndIDs provides a mock function with given fields: ctx, tenant, scenarios, ids
 func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant, scenarios, ids)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenariosAndIDs")
+	}
 
 	var r0 []*model.Application
 	var r1 error
@@ -502,6 +582,10 @@ func (_m *ApplicationRepository) ListByScenariosAndIDs(ctx context.Context, tena
 func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant, scenarios)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByScenariosNoPaging")
+	}
+
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {
@@ -527,6 +611,10 @@ func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, te
 // ListGlobal provides a mock function with given fields: ctx, pageSize, cursor
 func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListGlobal")
+	}
 
 	var r0 *model.ApplicationPage
 	var r1 error
@@ -554,6 +642,10 @@ func (_m *ApplicationRepository) ListGlobal(ctx context.Context, pageSize int, c
 func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error) {
 	ret := _m.Called(ctx, tenant, whType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListListeningApplications")
+	}
+
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) ([]*model.Application, error)); ok {
@@ -580,6 +672,10 @@ func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, 
 func (_m *ApplicationRepository) OwnerExists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for OwnerExists")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (bool, error)); ok {
@@ -604,6 +700,10 @@ func (_m *ApplicationRepository) OwnerExists(ctx context.Context, tenant string,
 func (_m *ApplicationRepository) TechnicalUpdate(ctx context.Context, item *model.Application) error {
 	ret := _m.Called(ctx, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for TechnicalUpdate")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.Application) error); ok {
 		r0 = rf(ctx, item)
@@ -617,6 +717,10 @@ func (_m *ApplicationRepository) TechnicalUpdate(ctx context.Context, item *mode
 // TrustedUpsert provides a mock function with given fields: ctx, tenant, _a2
 func (_m *ApplicationRepository) TrustedUpsert(ctx context.Context, tenant string, _a2 *model.Application) (string, error) {
 	ret := _m.Called(ctx, tenant, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for TrustedUpsert")
+	}
 
 	var r0 string
 	var r1 error
@@ -642,6 +746,10 @@ func (_m *ApplicationRepository) TrustedUpsert(ctx context.Context, tenant strin
 func (_m *ApplicationRepository) Update(ctx context.Context, tenant string, item *model.Application) error {
 	ret := _m.Called(ctx, tenant, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Application) error); ok {
 		r0 = rf(ctx, tenant, item)
@@ -655,6 +763,10 @@ func (_m *ApplicationRepository) Update(ctx context.Context, tenant string, item
 // Upsert provides a mock function with given fields: ctx, tenant, _a2
 func (_m *ApplicationRepository) Upsert(ctx context.Context, tenant string, _a2 *model.Application) (string, error) {
 	ret := _m.Called(ctx, tenant, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Upsert")
+	}
 
 	var r0 string
 	var r1 error

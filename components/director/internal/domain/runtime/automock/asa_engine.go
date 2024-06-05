@@ -18,7 +18,15 @@ type AsaEngine struct {
 func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
 	ret := _m.Called(ctx, objectID, objType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetScenariosFromMatchingASAs")
+	}
+
 	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) ([]string, error)); ok {
+		return rf(ctx, objectID, objType)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
 		r0 = rf(ctx, objectID, objType)
 	} else {
@@ -27,7 +35,6 @@ func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID 
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, graphql.FormationObjectType) error); ok {
 		r1 = rf(ctx, objectID, objType)
 	} else {
@@ -37,13 +44,12 @@ func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID 
 	return r0, r1
 }
 
-type mockConstructorTestingTNewAsaEngine interface {
+// NewAsaEngine creates a new instance of AsaEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewAsaEngine(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewAsaEngine creates a new instance of AsaEngine. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewAsaEngine(t mockConstructorTestingTNewAsaEngine) *AsaEngine {
+}) *AsaEngine {
 	mock := &AsaEngine{}
 	mock.Mock.Test(t)
 

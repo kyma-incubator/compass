@@ -21,6 +21,8 @@ const (
 	FormationAssignmentTypeRuntimeContext FormationAssignmentType = "RUNTIME_CONTEXT"
 )
 
+type InitialConfigurations map[string]map[string]json.RawMessage
+
 // FormationAssignment represent structure for FormationAssignment
 type FormationAssignment struct {
 	ID                            string                  `json:"id"`

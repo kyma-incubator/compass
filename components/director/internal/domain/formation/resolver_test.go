@@ -285,7 +285,7 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		fetcherSvc := &automock.TenantFetcher{}
 		tenantSvc := &automock.TenantSvc{}
-		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation).Return(&modelFormation, nil)
+		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation, model.InitialConfigurations{}).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
@@ -298,7 +298,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
-		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.NoError(t, err)
@@ -320,7 +320,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, nil, tenantSvc)
 
 		// WHEN
-		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -344,7 +344,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
-		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -358,7 +358,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(nil, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
-		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -372,7 +372,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, nil, nil, nil, nil, nil, nil)
 
 		// WHEN
-		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -384,7 +384,7 @@ func TestAssignFormation(t *testing.T) {
 		persist, transact := txGen.ThatFailsOnCommit()
 
 		mockService := &automock.Service{}
-		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation).Return(&modelFormation, nil)
+		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation, model.InitialConfigurations{}).Return(&modelFormation, nil)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
@@ -400,7 +400,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
-		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		_, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.Error(t, err)
@@ -412,7 +412,7 @@ func TestAssignFormation(t *testing.T) {
 		persist, transact := txGen.ThatDoesntExpectCommit()
 
 		mockService := &automock.Service{}
-		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation).Return(nil, testErr)
+		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation, model.InitialConfigurations{}).Return(nil, testErr)
 
 		mockConverter := &automock.Converter{}
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
@@ -428,7 +428,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
-		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput)
+		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
 
 		// THEN
 		require.Error(t, err)
