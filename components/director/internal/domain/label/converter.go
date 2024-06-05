@@ -2,12 +2,10 @@ package label
 
 import (
 	"database/sql"
-	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
-	"github.com/pkg/errors"
 )
 
 // NewConverter missing godoc
@@ -19,14 +17,9 @@ type converter struct{}
 
 // ToEntity missing godoc
 func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
-	var valueMarshalled []byte
-	var err error
-
-	if in.Value != nil {
-		valueMarshalled, err = json.Marshal(in.Value)
-		if err != nil {
-			return nil, errors.Wrap(err, "while marshalling Value")
-		}
+	value, err := in.GetValue()
+	if err != nil {
+		return nil, err
 	}
 
 	var appID sql.NullString
@@ -78,19 +71,16 @@ func (c *converter) ToEntity(in *model.Label) (*Entity, error) {
 		WebhookID:           webhookID,
 		FormationTemplateID: formationTmplID,
 		Key:                 in.Key,
-		Value:               string(valueMarshalled),
+		Value:               value,
 		Version:             in.Version,
 	}, nil
 }
 
 // FromEntity missing godoc
 func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
-	var valueUnmarshalled interface{}
-	if in.Value != "" {
-		err := json.Unmarshal([]byte(in.Value), &valueUnmarshalled)
-		if err != nil {
-			return nil, errors.Wrap(err, "while unmarshalling Value")
-		}
+	value, err := in.GetValue()
+	if err != nil {
+		return nil, err
 	}
 
 	var objectType model.LabelableObject
@@ -122,7 +112,7 @@ func (c *converter) FromEntity(in *Entity) (*model.Label, error) {
 		ObjectID:   objectID,
 		ObjectType: objectType,
 		Key:        in.Key,
-		Value:      valueUnmarshalled,
+		Value:      value,
 		Version:    in.Version,
 	}, nil
 }

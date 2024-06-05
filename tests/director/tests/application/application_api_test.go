@@ -1680,7 +1680,6 @@ func TestDeleteApplicationWithNoScenarios(t *testing.T) {
 	defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, tenantId, &actualApp)
 	require.NoError(t, err)
 
-	fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, actualApp.ID, "integrationSystemID")
 	fixtures.DeleteApplicationLabel(t, ctx, certSecuredGraphQLClient, actualApp.ID, "name")
 }
 

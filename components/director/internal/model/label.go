@@ -1,8 +1,11 @@
 package model
 
 import (
+	"encoding/json"
+
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 )
 
 // Label represents a label with additional metadata for a given entity.
@@ -14,6 +17,23 @@ type Label struct {
 	ObjectID   string
 	ObjectType LabelableObject
 	Version    int
+}
+
+// GetValue returns a Label value as string.
+func (l *Label) GetValue() (string, error) {
+	var valueMarshalled []byte
+	var err error
+
+	if l.Value != nil {
+		valueMarshalled, err = json.Marshal(l.Value)
+		if err != nil {
+			return "", errors.Wrap(err, "while marshalling Value")
+		}
+		if len(valueMarshalled) > 0 {
+			return string(valueMarshalled), nil
+		}
+	}
+	return "", errors.Errorf("Value cannot be empty")
 }
 
 // LabelInput is an input for creating a new label.
