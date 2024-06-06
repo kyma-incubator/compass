@@ -18,10 +18,6 @@ type AssignmentOperationRepository struct {
 func (_m *AssignmentOperationRepository) Create(ctx context.Context, item *model.AssignmentOperation) error {
 	ret := _m.Called(ctx, item)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Create")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.AssignmentOperation) error); ok {
 		r0 = rf(ctx, item)
@@ -36,10 +32,6 @@ func (_m *AssignmentOperationRepository) Create(ctx context.Context, item *model
 func (_m *AssignmentOperationRepository) DeleteByIDs(ctx context.Context, ids []string) error {
 	ret := _m.Called(ctx, ids)
 
-	if len(ret) == 0 {
-		panic("no return value specified for DeleteByIDs")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string) error); ok {
 		r0 = rf(ctx, ids)
@@ -50,19 +42,34 @@ func (_m *AssignmentOperationRepository) DeleteByIDs(ctx context.Context, ids []
 	return r0
 }
 
+// GetByID provides a mock function with given fields: ctx, id
+func (_m *AssignmentOperationRepository) GetByID(ctx context.Context, id string) (*model.AssignmentOperation, error) {
+	ret := _m.Called(ctx, id)
+
+	var r0 *model.AssignmentOperation
+	if rf, ok := ret.Get(0).(func(context.Context, string) *model.AssignmentOperation); ok {
+		r0 = rf(ctx, id)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*model.AssignmentOperation)
+		}
+	}
+
+	var r1 error
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, id)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetLatestOperation provides a mock function with given fields: ctx, formationAssignmentID, formationID
 func (_m *AssignmentOperationRepository) GetLatestOperation(ctx context.Context, formationAssignmentID string, formationID string) (*model.AssignmentOperation, error) {
 	ret := _m.Called(ctx, formationAssignmentID, formationID)
 
-	if len(ret) == 0 {
-		panic("no return value specified for GetLatestOperation")
-	}
-
 	var r0 *model.AssignmentOperation
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.AssignmentOperation, error)); ok {
-		return rf(ctx, formationAssignmentID, formationID)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.AssignmentOperation); ok {
 		r0 = rf(ctx, formationAssignmentID, formationID)
 	} else {
@@ -71,6 +78,7 @@ func (_m *AssignmentOperationRepository) GetLatestOperation(ctx context.Context,
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, formationAssignmentID, formationID)
 	} else {
@@ -84,15 +92,7 @@ func (_m *AssignmentOperationRepository) GetLatestOperation(ctx context.Context,
 func (_m *AssignmentOperationRepository) ListForFormationAssignmentIDs(ctx context.Context, assignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error) {
 	ret := _m.Called(ctx, assignmentIDs, pageSize, cursor)
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListForFormationAssignmentIDs")
-	}
-
 	var r0 []*model.AssignmentOperationPage
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.AssignmentOperationPage, error)); ok {
-		return rf(ctx, assignmentIDs, pageSize, cursor)
-	}
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) []*model.AssignmentOperationPage); ok {
 		r0 = rf(ctx, assignmentIDs, pageSize, cursor)
 	} else {
@@ -101,6 +101,7 @@ func (_m *AssignmentOperationRepository) ListForFormationAssignmentIDs(ctx conte
 		}
 	}
 
+	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, []string, int, string) error); ok {
 		r1 = rf(ctx, assignmentIDs, pageSize, cursor)
 	} else {
@@ -114,10 +115,6 @@ func (_m *AssignmentOperationRepository) ListForFormationAssignmentIDs(ctx conte
 func (_m *AssignmentOperationRepository) Update(ctx context.Context, m *model.AssignmentOperation) error {
 	ret := _m.Called(ctx, m)
 
-	if len(ret) == 0 {
-		panic("no return value specified for Update")
-	}
-
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.AssignmentOperation) error); ok {
 		r0 = rf(ctx, m)
@@ -128,12 +125,13 @@ func (_m *AssignmentOperationRepository) Update(ctx context.Context, m *model.As
 	return r0
 }
 
-// NewAssignmentOperationRepository creates a new instance of AssignmentOperationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewAssignmentOperationRepository(t interface {
+type mockConstructorTestingTNewAssignmentOperationRepository interface {
 	mock.TestingT
 	Cleanup(func())
-}) *AssignmentOperationRepository {
+}
+
+// NewAssignmentOperationRepository creates a new instance of AssignmentOperationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewAssignmentOperationRepository(t mockConstructorTestingTNewAssignmentOperationRepository) *AssignmentOperationRepository {
 	mock := &AssignmentOperationRepository{}
 	mock.Mock.Test(t)
 

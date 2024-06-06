@@ -29,6 +29,8 @@ const (
 	FormationIDParam = "ucl-formation-id"
 	// FormationAssignmentIDParam is formation assignment URL path parameter placeholder
 	FormationAssignmentIDParam = "ucl-assignment-id"
+	// AssignmentOperationIDParam is assignment operation ID URL path parameter placeholder
+	AssignmentOperationIDParam = "operation-id"
 	// ClientIDFromCertificateHeader contains the name of the header containing the client id from the certificate
 	ClientIDFromCertificateHeader = "Client-Id-From-Certificate"
 )
@@ -50,7 +52,7 @@ type FormationAssignmentService interface {
 //
 //go:generate mockery --name=FormationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationAssignmentNotificationService interface {
-	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation, faOperation, reverseFAOperation *model.AssignmentOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
 }
 
 // formationService is responsible for the service-layer Formation operations
@@ -186,7 +188,8 @@ func (a *Authenticator) FormationAssignmentHandler() func(next http.Handler) htt
 			ctx := r.Context()
 			correlationID := correlation.CorrelationIDFromContext(ctx)
 
-			if r.Method != http.MethodPatch {
+			// TODO:: Adapt this - separate handler for the new status API or something else.
+			if r.Method != http.MethodPatch && r.Method != http.MethodPut {
 				w.WriteHeader(http.StatusMethodNotAllowed)
 				return
 			}

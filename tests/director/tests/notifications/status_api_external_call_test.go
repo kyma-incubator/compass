@@ -85,6 +85,7 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 	require.Len(t, assignmentsPage.Data, 4)
 	require.Equal(t, 4, assignmentsPage.TotalCount)
 	formationAssignmentID := getFormationAssignmentIDByTargetTypeAndSourceID(t, assignmentsPage, graphql.FormationAssignmentTypeApplication, app1ID)
+	operationID := fixtures.GetLatestAssignmentOperation(t, ctx, certSecuredGraphQLClient, tnt, formationID, formationAssignmentID).ID
 	t.Logf("Successfully listed FAs for formation ID: %q", formationID)
 
 	accountTokenURL, err := token.ChangeSubdomain(conf.UsernameAuthCfg.Account.TokenURL, conf.UsernameAuthCfg.Account.Subdomain, conf.UsernameAuthCfg.Account.OAuthTokenPath)
@@ -102,7 +103,7 @@ func TestFormationNotificationsForDraftFormationWithInitialConfig(t *testing.T) 
 			},
 		},
 	}
-	executeFAStatusUpdateReqWithExternalToken(t, client, accountToken, testConfig, formationID, formationAssignmentID, http.StatusOK)
+	executeFAStatusUpdateReqWithExternalToken(t, client, accountToken, testConfig, formationID, formationAssignmentID, operationID, http.StatusOK)
 
 	expectationsBuilder := mock_data.NewFAExpectationsBuilder().
 		WithParticipant(app1ID).

@@ -18,6 +18,7 @@ type AssignmentOperationRepository interface {
 	Update(ctx context.Context, m *model.AssignmentOperation) error
 	DeleteByIDs(ctx context.Context, ids []string) error
 	GetLatestOperation(ctx context.Context, formationAssignmentID, formationID string) (*model.AssignmentOperation, error)
+	GetByID(ctx context.Context, id string) (*model.AssignmentOperation, error)
 	ListForFormationAssignmentIDs(ctx context.Context, assignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 }
 
@@ -57,23 +58,22 @@ func (s *service) Create(ctx context.Context, in *model.AssignmentOperationInput
 	return assignmentOperationID, nil
 }
 
-// Finish finishes the Assignment Operation
+// Finish finishes the Assignment Operation by the provided assignment and formation ID
 func (s *service) Finish(ctx context.Context, assignmentID, formationID string) error {
 	operation, err := s.repo.GetLatestOperation(ctx, assignmentID, formationID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID)
 	}
+	return s.finishOperation(ctx, operation)
+}
 
-	log.C(ctx).Debugf("Updating the finished at timestamp for assignment operation with ID: %s", operation.ID)
-	now := time.Now()
-	operation.FinishedAtTimestamp = &now
-
-	err = s.repo.Update(ctx, operation)
+// FinishByID finishes the Assignment Operation by its provided ID
+func (s *service) FinishByID(ctx context.Context, operationID string) error {
+	operation, err := s.repo.GetByID(ctx, operationID)
 	if err != nil {
-		return errors.Wrapf(err, "while updating the finished at timestamp for assignment operation with ID: %s", operation.ID)
+		return errors.Wrapf(err, "while getting the operation with ID: %s", operationID)
 	}
-
-	return nil
+	return s.finishOperation(ctx, operation)
 }
 
 // GetLatestOperation gets the latest Operation for the provided Assignment and Formation ID
@@ -85,6 +85,17 @@ func (s *service) GetLatestOperation(ctx context.Context, assignmentID, formatio
 		return nil, errors.Wrapf(err, "while getting the latest operation for assignment with ID: %s, formation with ID: %s", assignmentID, formationID)
 	}
 	return latestOperation, nil
+}
+
+func (s *service) GetByID(ctx context.Context, operationID string) (*model.AssignmentOperation, error) {
+	log.C(ctx).Infof("Getting the operation with ID: %s", operationID)
+
+	operation, err := s.repo.GetByID(ctx, operationID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting operation with ID: %s", operationID)
+	}
+
+	return operation, nil
 }
 
 // Update updates the Assignment Operation's triggered_by field with the new trigger and sets the started_at timestamp to the current time
@@ -122,4 +133,17 @@ func (s *service) DeleteByIDs(ctx context.Context, ids []string) error {
 	log.C(ctx).Infof("Deleting assignment operations with IDs: %q", ids)
 
 	return s.repo.DeleteByIDs(ctx, ids)
+}
+
+func (s *service) finishOperation(ctx context.Context, operation *model.AssignmentOperation) error {
+	log.C(ctx).Debugf("Updating the finished at timestamp for assignment operation with ID: %s", operation.ID)
+	now := time.Now()
+	operation.FinishedAtTimestamp = &now
+
+	err := s.repo.Update(ctx, operation)
+	if err != nil {
+		return errors.Wrapf(err, "while updating the finished at timestamp for assignment operation with ID: %s", operation.ID)
+	}
+
+	return nil
 }

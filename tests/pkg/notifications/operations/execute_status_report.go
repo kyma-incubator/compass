@@ -21,6 +21,7 @@ import (
 const (
 	formationIDPathParam           = "ucl-formation-id"
 	formationAssignmentIDPathParam = "ucl-assignment-id"
+	assignmentOperationIDPathParam = "operation-id"
 )
 
 type FormationAssignmentRequestBody struct {
@@ -95,9 +96,12 @@ func (o *ExecuteStatusReportOperation) Execute(t *testing.T, ctx context.Context
 
 	formationAssignmentID := getFormationAssignmentIDBySourceAndTarget(t, assignmentsPage, o.assignmentSource, o.assignmentTarget)
 
-	t.Logf("Calling FA status API for formation assignment ID %q", formationAssignmentID)
+	latestOperationID := fixtures.GetLatestAssignmentOperation(t, ctx, gqlClient, o.tenant, formationID, formationAssignmentID).ID
+
+	t.Logf("Calling FA status API for formation with ID: %s, assignment with ID: %s, operation with ID: %s", formationID, formationAssignmentID, latestOperationID)
 	faAsyncStatusAPIURL := strings.Replace(o.externalServicesMockMtlsSecuredURL, fmt.Sprintf("{%s}", formationIDPathParam), formationID, 1)
 	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", formationAssignmentIDPathParam), formationAssignmentID, 1)
+	faAsyncStatusAPIURL = strings.Replace(faAsyncStatusAPIURL, fmt.Sprintf("{%s}", assignmentOperationIDPathParam), latestOperationID, 1)
 	reqBody := FormationAssignmentRequestBody{
 		State: o.state,
 	}
@@ -107,7 +111,7 @@ func (o *ExecuteStatusReportOperation) Execute(t *testing.T, ctx context.Context
 	marshalBody, err := json.Marshal(reqBody)
 	require.NoError(t, err)
 
-	request, err := http.NewRequest(http.MethodPatch, faAsyncStatusAPIURL, bytes.NewBuffer(marshalBody))
+	request, err := http.NewRequest(http.MethodPut, faAsyncStatusAPIURL, bytes.NewBuffer(marshalBody))
 	require.NoError(t, err)
 	request.Header.Add("Content-Type", "application/json")
 	response, err := o.client.Do(request)

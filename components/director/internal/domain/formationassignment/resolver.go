@@ -61,6 +61,7 @@ type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
 	Finish(ctx context.Context, assignmentID, formationID string) error
 	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
+	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
 	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 	DeleteByIDs(ctx context.Context, ids []string) error
 }

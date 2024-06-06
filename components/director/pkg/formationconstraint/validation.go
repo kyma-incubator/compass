@@ -210,8 +210,9 @@ func emptySendNotificationOperationDetails() *SendNotificationOperationDetails {
 			CustomerTenantContext: &webhook.CustomerTenantContext{},
 			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
 			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
-			Assignment:        nil,
-			ReverseAssignment: nil,
+			Assignment:          nil,
+			ReverseAssignment:   nil,
+			AssignmentOperation: nil,
 		},
 		FormationAssignment:        &model.FormationAssignment{},
 		ReverseFormationAssignment: &model.FormationAssignment{},
@@ -246,8 +247,9 @@ func emptyNotificationStatusReturnedOperationDetails() *NotificationStatusReturn
 			CustomerTenantContext: &webhook.CustomerTenantContext{},
 			// The assignment and reverse assignment are present on top level in the joinPointDetails and should be used from there.
 			// Here they are intentionally set to nil so that if a template that uses them will fail to register.
-			Assignment:        nil,
-			ReverseAssignment: nil,
+			Assignment:          nil,
+			ReverseAssignment:   nil,
+			AssignmentOperation: nil,
 		},
 		ReverseFormationAssignment: &model.FormationAssignment{},
 		Formation:                  &model.Formation{},

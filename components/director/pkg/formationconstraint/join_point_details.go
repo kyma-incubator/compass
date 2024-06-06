@@ -90,6 +90,7 @@ type GenerateFormationAssignmentNotificationOperationDetails struct {
 	RuntimeContext      *webhook.RuntimeContextWithLabels
 	Assignment          *webhook.FormationAssignment
 	ReverseAssignment   *webhook.FormationAssignment
+	AssignmentOperation *model.AssignmentOperation
 
 	// fields used when generating notification from application tenant mapping webhooks
 	SourceApplicationTemplate *webhook.ApplicationTemplateWithLabels

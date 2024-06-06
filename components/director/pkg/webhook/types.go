@@ -42,6 +42,8 @@ type FormationAssignmentTemplateInput interface {
 	GetParticipantsIDs() []string
 	SetAssignment(*model.FormationAssignment)
 	SetReverseAssignment(*model.FormationAssignment)
+	SetAssignmentOperation(assignmentOperation *model.AssignmentOperation)
+	GetAssignmentOperation() *model.AssignmentOperation
 	Clone() FormationAssignmentTemplateInput
 }
 

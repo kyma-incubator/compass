@@ -1853,6 +1853,7 @@ type Query {
 	"""
 	formations(first: Int = 200, after: PageCursor): FormationPage! @hasScopes(path: "graphql.query.formations")
 	formationsForObject(objectID: String!): [Formation!]! @hasScopes(path: "graphql.query.formationsForObject")
+	getLatestOperation(formationID: ID!, assignmentID: ID!): AssignmentOperation! @hasScopes(path: "graphql.query.formations")
 	formationConstraints: [FormationConstraint!]! @hasScopes(path: "graphql.query.formationConstraints")
 	"""
 	**Examples**

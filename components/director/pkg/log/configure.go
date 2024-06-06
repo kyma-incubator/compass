@@ -52,6 +52,9 @@ const (
 	// FieldFormationAssignmentID represent the formation assignment field name in the logger
 	FieldFormationAssignmentID = "formation-assignment-id"
 
+	// FieldAssignmentOperationID represent the assignment operation field name in the logger
+	FieldAssignmentOperationID = "assignment-operation-id"
+
 	fieldComponentName = "component"
 	jsonFormatterKey   = "json"
 	textFormatterKey   = "text"

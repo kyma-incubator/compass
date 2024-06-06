@@ -65,6 +65,7 @@ var emptyFormationConfigurationChangeInput = &webhook.FormationConfigurationChan
 		},
 	},
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
+	AssignmentOperation:   &model.AssignmentOperation{},
 }
 
 var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
@@ -116,6 +117,7 @@ var emptyApplicationTenantMappingInput = &webhook.ApplicationTenantMappingInput{
 		},
 	},
 	CustomerTenantContext: &webhook.CustomerTenantContext{},
+	AssignmentOperation:   &model.AssignmentOperation{},
 }
 
 var emptyFormationLifecycleInput = &webhook.FormationLifecycleInput{

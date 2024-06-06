@@ -61,3 +61,13 @@ func GetFormationAssignmentsBySourceAndTarget(t *testing.T, ctx context.Context,
 
 	return nil
 }
+
+func GetLatestAssignmentOperation(t *testing.T, ctx context.Context, gqlClient *gcli.Client, tenantID, assignmentID, formationID string) *graphql.AssignmentOperation {
+	var operation graphql.AssignmentOperation
+
+	latestOperationReq := FixGetLatestAssignmentOperation(assignmentID, formationID)
+	err := testctx.Tc.RunOperationWithCustomTenant(ctx, gqlClient, tenantID, latestOperationReq, &operation)
+	require.NoError(t, err)
+
+	return &operation
+}

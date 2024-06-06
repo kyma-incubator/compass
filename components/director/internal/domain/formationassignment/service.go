@@ -111,14 +111,14 @@ type constraintEngine interface {
 
 //go:generate mockery --exported --name=statusService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type statusService interface {
-	UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation) error
-	DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport) error
+	UpdateWithConstraints(ctx context.Context, notificationStatusReport *statusreport.NotificationStatusReport, fa *model.FormationAssignment, operation model.FormationOperation, assignmentOperation *model.AssignmentOperation) error
+	DeleteWithConstraints(ctx context.Context, id string, notificationStatusReport *statusreport.NotificationStatusReport, assignmentOperation *model.AssignmentOperation) error
 }
 
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
 	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
-	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
+	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport, assignmentOperation *model.AssignmentOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
 }
 
 type service struct {
@@ -584,7 +584,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 //
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
-func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignmentWithOperation, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	var errs *multierror.Error
 	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, requests)
 	alreadyProcessedFAs := make(map[string]bool, 0)
@@ -704,7 +704,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 		return nil
 	}
 
-	if err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation); err != nil {
+	if err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation, mappingPair.AssignmentReqMapping.Request.Object.GetAssignmentOperation()); err != nil {
 		return errors.Wrapf(err, "while updating formation assignment with constraints for formation %q with source %q and target %q", assignment.FormationID, assignment.Source, assignment.Target)
 	}
 
@@ -836,7 +836,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	stateFromReport := notificationStatusReport.State
 
 	if isErrorState(model.FormationAssignmentState(stateFromReport)) {
-		err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation)
+		err = s.statusService.UpdateWithConstraints(ctx, notificationStatusReport, assignment, mappingPair.Operation, mappingPair.AssignmentReqMapping.Request.Object.GetAssignmentOperation())
 		if err != nil && apperrors.IsNotFoundError(err) {
 			log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 			return false, nil
@@ -855,7 +855,7 @@ func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *A
 	}
 
 	if stateFromReport == string(model.ReadyAssignmentState) {
-		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID, notificationStatusReport); err != nil {
+		if err = s.statusService.DeleteWithConstraints(ctx, assignment.ID, notificationStatusReport, mappingPair.AssignmentReqMapping.Request.Object.GetAssignmentOperation()); err != nil {
 			if apperrors.IsNotFoundError(err) {
 				log.C(ctx).Infof("Assignment with ID %q has already been deleted", assignment.ID)
 				return false, nil
@@ -924,14 +924,14 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	return nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*AssignmentMappingPair {
-	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
-	for i, assignment := range assignments {
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignmentsWithOperations []*model.FormationAssignmentWithOperation, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*AssignmentMappingPair {
+	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignmentsWithOperations))
+	for i, assignmentWithOperation := range assignmentsWithOperations {
 		mappingObject := &FormationAssignmentRequestMapping{
 			Request:             nil,
-			FormationAssignment: assignments[i],
+			FormationAssignment: assignmentsWithOperations[i].FormationAssignment,
 		}
-		target := assignment.Target
+		target := assignmentWithOperation.Target
 	assignment:
 		for j, request := range requests {
 			var objectID = request.Target
@@ -944,13 +944,14 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 
 			// Remove assignment.Target from participants, as target and objectID are change via the mappings
 			// This is in order to not match loops in cases where they are not applicable
-			objectIndex := slices.Index(participants, assignment.Target)
+			objectIndex := slices.Index(participants, assignmentWithOperation.Target)
 			if objectIndex != -1 {
 				participants = append(participants[:objectIndex], participants[objectIndex+1:]...)
 			}
 			for _, id := range participants {
-				if assignment.Source == id {
+				if assignmentWithOperation.Source == id {
 					mappingObject.Request = requests[j].FormationAssignmentNotificationRequest
+					mappingObject.Request.Object.SetAssignmentOperation(assignmentWithOperation.Operation)
 					break assignment
 				}
 			}
@@ -958,18 +959,18 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
 	}
 
-	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments), len(requests), len(assignments)-len(requests))
+	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignmentsWithOperations), len(requests), len(assignmentsWithOperations)-len(requests))
 	sourceToTargetToMapping := make(map[string]map[string]*FormationAssignmentRequestMapping)
 	for _, mapping := range formationAssignmentMapping {
 		if _, ok := sourceToTargetToMapping[mapping.FormationAssignment.Source]; !ok {
-			sourceToTargetToMapping[mapping.FormationAssignment.Source] = make(map[string]*FormationAssignmentRequestMapping, len(assignments)/2)
+			sourceToTargetToMapping[mapping.FormationAssignment.Source] = make(map[string]*FormationAssignmentRequestMapping, len(assignmentsWithOperations)/2)
 		}
 		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
 	}
 	// Make mapping
-	assignmentMappingNoNotificationPairs := make([]*AssignmentMappingPair, 0, len(assignments))
-	assignmentMappingSyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
-	assignmentMappingAsyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
+	assignmentMappingNoNotificationPairs := make([]*AssignmentMappingPair, 0, len(assignmentsWithOperations))
+	assignmentMappingSyncPairs := make([]*AssignmentMappingPair, 0, len(assignmentsWithOperations))
+	assignmentMappingAsyncPairs := make([]*AssignmentMappingPair, 0, len(assignmentsWithOperations))
 
 	for _, mapping := range formationAssignmentMapping {
 		var reverseMapping *FormationAssignmentRequestMapping

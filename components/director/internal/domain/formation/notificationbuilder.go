@@ -39,11 +39,7 @@ func NewNotificationsBuilder(webhookConverter webhookConverter, constraintEngine
 }
 
 // BuildFormationAssignmentNotificationRequest builds new formation assignment notification request
-func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
-	ctx context.Context,
-	joinPointDetails *formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails,
-	webhook *model.Webhook,
-) (*webhookclient.FormationAssignmentNotificationRequest, error) {
+func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, webhook *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	log.C(ctx).Infof("Building formation assignment notification request...")
 	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PreGenerateFormationAssignmentNotifications, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
 		log.C(ctx).Errorf("Did not generate notifications due to error: %v", errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationAssignmentNotificationOperation, model.PreOperation))
@@ -124,6 +120,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 	targetType model.ResourceType,
 	tenantContext *webhookdir.CustomerTenantContext,
 	tenantID string,
+	assignmentOperation *model.AssignmentOperation,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:             operation,
@@ -138,6 +135,7 @@ func (nb *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationG
 		ReverseAssignment:     reverseAssignment,
 		ResourceType:          targetType,
 		TenantID:              tenantID,
+		AssignmentOperation:   assignmentOperation,
 	}
 	switch targetType {
 	case model.ApplicationResourceType:
@@ -187,6 +185,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 	reverseAssignment *webhookdir.FormationAssignment,
 	tenantContext *webhookdir.CustomerTenantContext,
 	tenantID string,
+	assignmentOperation *model.AssignmentOperation,
 ) (*formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	details := &formationconstraintpkg.GenerateFormationAssignmentNotificationOperationDetails{
 		Operation:                 operation,
@@ -202,6 +201,7 @@ func (nb *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 		ResourceType:              model.ApplicationResourceType,
 		ResourceID:                targetApplication.ID,
 		TenantID:                  tenantID,
+		AssignmentOperation:       assignmentOperation,
 	}
 
 	subtype, err := determineResourceSubtype(targetApplication.Labels, nb.applicationTypeLabelKey)
@@ -252,6 +252,7 @@ func buildConfigurationChangeInputFromJoinpointDetails(details *formationconstra
 		CustomerTenantContext: details.CustomerTenantContext,
 		Assignment:            details.Assignment,
 		ReverseAssignment:     details.ReverseAssignment,
+		AssignmentOperation:   details.AssignmentOperation,
 	}
 }
 
@@ -267,6 +268,7 @@ func buildApplicationTenantMappingInputFromJoinpointDetails(details *formationco
 		CustomerTenantContext:     details.CustomerTenantContext,
 		Assignment:                details.Assignment,
 		ReverseAssignment:         details.ReverseAssignment,
+		AssignmentOperation:       details.AssignmentOperation,
 	}
 }
 

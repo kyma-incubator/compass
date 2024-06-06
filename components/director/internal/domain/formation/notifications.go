@@ -49,6 +49,8 @@ type FormationAssignmentRepository interface {
 
 var emptyFormationAssignment = &webhookdir.FormationAssignment{}
 
+var emptyAssignmentOperation = &model.AssignmentOperation{}
+
 type notificationsService struct {
 	tenantRepository            tenantRepository
 	webhookClient               webhookClient
