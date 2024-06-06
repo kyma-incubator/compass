@@ -14,7 +14,7 @@ import (
 func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 	// GIVEN
 	g := graphqlizer.Graphqlizer{}
-	gql, err := g.InitialConfigurationsToGQL([]*graphql.InitialConfiguration{{SourceID: "asd", TargetID: "fhgj", Configuration: "asfasgsaghash"}, {SourceID: "test", TargetID: "test", Configuration: "looool"}})
+	gql, err := g.InitialConfigurationsToGQL([]*graphql.InitialConfiguration{{SourceID: "asd", TargetID: "fhgj", Configuration: "{\"key\":\"value\"}"}, {SourceID: "test", TargetID: "test", Configuration: "looool"}})
 	spew.Dump(gql, err)
 	testCases := []struct {
 		Name          string
