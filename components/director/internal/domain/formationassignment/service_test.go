@@ -1336,9 +1336,14 @@ func TestService_GenerateAssignments(t *testing.T) {
 
 	allAssignments := append(append(formationAssignmentsForApplication, append(formationAssignmentsForRuntime, append(formationAssignmentsForRuntimeContext, formationAssignmentsForRuntimeContextWithParentInTheFormation...)...)...), formationAssignmentsForSelf...)
 
-	formationAssignmentInputsForApplication := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
-	formationAssignmentInputsForRuntime := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
-	formationAssignmentInputsForRuntimeContext := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	initialConfigurations := make(model.InitialConfigurations, 2)
+	initialConfigurations[objectID] = make(map[string]json.RawMessage, 1)
+	initialConfigurations[applications[0].ID] = make(map[string]json.RawMessage, 1)
+	initialConfigurations[applications[0].ID][objectID] = []byte("{\"key\": \"value\"}")
+	initialConfigurations[objectID][runtimes[0].ID] = []byte("{\"key2\": \"value2\"}")
+	formationAssignmentInputsForApplication := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID, initialConfigurations)
+	formationAssignmentInputsForRuntime := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntime, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID, initialConfigurations)
+	formationAssignmentInputsForRuntimeContext := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID, initialConfigurations)
 	formationAssignmentInputsForRuntimeContextWithParentInTheFormation := fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(model.FormationAssignmentTypeRuntimeContext, objectID, applications[0].ID, runtimeContexts[0].ID)
 
 	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
@@ -1357,6 +1362,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 		RuntimeRepo             func() *automock.RuntimeRepository
 		RuntimeContextRepo      func() *automock.RuntimeContextRepository
 		UIDService              func() *automock.UIDService
+		InitialConfigurations   model.InitialConfigurations
 		ExpectedOutput          []*model.FormationAssignmentInput
 		ExpectedErrorMsg        string
 	}{
@@ -1391,7 +1397,8 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentInputsForApplication,
+			InitialConfigurations: initialConfigurations,
+			ExpectedOutput:        formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for entity that is being unassigned asynchronously",
@@ -1425,7 +1432,8 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentInputsForApplication,
+			InitialConfigurations: initialConfigurations,
+			ExpectedOutput:        formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for application and itself",
@@ -1458,7 +1466,8 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentInputsForApplication,
+			InitialConfigurations: initialConfigurations,
+			ExpectedOutput:        formationAssignmentInputsForApplication,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime and itself",
@@ -1491,7 +1500,8 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("ListByScenarios", ctxWithTenant, TestTenantID, []string{formation.Name}).Return(runtimeContexts, nil).Once()
 				return repo
 			},
-			ExpectedOutput: formationAssignmentInputsForRuntime,
+			InitialConfigurations: initialConfigurations,
+			ExpectedOutput:        formationAssignmentInputsForRuntime,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and itself",
@@ -1525,7 +1535,8 @@ func TestService_GenerateAssignments(t *testing.T) {
 				repo.On("GetByID", ctxWithTenant, TestTenantID, objectID).Return(&model.RuntimeContext{RuntimeID: "random"}, nil)
 				return repo
 			},
-			ExpectedOutput: formationAssignmentInputsForRuntimeContext,
+			InitialConfigurations: initialConfigurations,
+			ExpectedOutput:        formationAssignmentInputsForRuntimeContext,
 		},
 		{
 			Name:       "Success does not create formation assignment for runtime context and it's parent runtime",
@@ -1691,7 +1702,7 @@ func TestService_GenerateAssignments(t *testing.T) {
 			svc := formationassignment.NewService(formationAssignmentRepo, uidSvc, appRepo, runtimeRepo, runtimeContextRepo, nil, nil, nil, nil, nil, nil, "", "")
 
 			// WHEN
-			r, err := svc.GenerateAssignments(testCase.Context, TestTenantID, objectID, testCase.ObjectType, formation, nil)
+			r, err := svc.GenerateAssignments(testCase.Context, TestTenantID, objectID, testCase.ObjectType, formation, testCase.InitialConfigurations)
 
 			if testCase.ExpectedErrorMsg != "" {
 				require.Error(t, err)
@@ -1716,7 +1727,7 @@ func TestService_PersistAssignments(t *testing.T) {
 	runtimeContexts := []*model.RuntimeContext{{ID: "runtimeContext"}}
 
 	formationAssignments := fixFormationAssignmentsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
-	formationAssignmentInputs := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID)
+	formationAssignmentInputs := fixFormationAssignmentInputsWithObjectTypeAndID(model.FormationAssignmentTypeApplication, objectID, applications[0].ID, runtimes[0].ID, runtimeContexts[0].ID, nil)
 
 	formationAssignmentIDs := []string{"ID1", "ID2", "ID3", "ID4", "ID5", "ID6", "ID7"}
 	testCases := []struct {

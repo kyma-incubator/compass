@@ -288,10 +288,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 			initCfgsSourceToTarget[cfg.SourceID] = make(map[string]json.RawMessage)
 		}
 
-		initialConfig, err := json.Marshal(cfg)
-		if err != nil {
-			return nil, errors.Errorf("while processing initial configuration for SourceID: %s and TargetID: %s", cfg.SourceID, cfg.TargetID)
-		}
+		initialConfig := []byte(cfg.Configuration)
 		initCfgsSourceToTarget[cfg.SourceID][cfg.TargetID] = initialConfig
 	}
 

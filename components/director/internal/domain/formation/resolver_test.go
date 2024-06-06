@@ -274,6 +274,9 @@ func TestAssignFormation(t *testing.T) {
 	externalTnt := "external-tenant"
 	tenantMapping := &model.BusinessTenantMapping{ExternalTenant: externalTnt}
 	testObjectType := graphql.FormationObjectTypeTenant
+	testObjectID := "objID"
+	participant1ID := "participant1"
+	participant2ID := "participant2"
 	testErr := errors.New("test error")
 	txGen := txtest.NewTransactionContextGenerator(testErr)
 
@@ -285,12 +288,32 @@ func TestAssignFormation(t *testing.T) {
 		mockConverter := &automock.Converter{}
 		fetcherSvc := &automock.TenantFetcher{}
 		tenantSvc := &automock.TenantSvc{}
-		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, "", testObjectType, modelFormation, model.InitialConfigurations{}).Return(&modelFormation, nil)
+
+		initialConfigurationsInput := []*graphql.InitialConfiguration{
+			{
+				SourceID:      testObjectID,
+				TargetID:      participant1ID,
+				Configuration: "{\"key\": \"value\"}",
+			},
+			{
+				SourceID:      participant2ID,
+				TargetID:      testObjectID,
+				Configuration: "{\"key2\": \"value2\"}",
+			},
+		}
+
+		initialConfigurations := make(model.InitialConfigurations, 2)
+		initialConfigurations[testObjectID] = make(map[string]json.RawMessage, 1)
+		initialConfigurations[participant2ID] = make(map[string]json.RawMessage, 1)
+		initialConfigurations[testObjectID][participant1ID] = []byte("{\"key\": \"value\"}")
+		initialConfigurations[participant2ID][testObjectID] = []byte("{\"key2\": \"value2\"}")
+
+		mockService.On("AssignFormation", contextThatHasTenant(tnt), tnt, testObjectID, testObjectType, modelFormation, initialConfigurations).Return(&modelFormation, nil)
 
 		mockConverter.On("FromGraphQL", formationInput).Return(modelFormation)
 		mockConverter.On("ToGraphQL", &modelFormation).Return(&graphqlFormation, nil)
 
-		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), "", externalTnt).Return(nil)
+		fetcherSvc.On("FetchOnDemand", contextThatHasTenant(tnt), testObjectID, externalTnt).Return(nil)
 
 		tenantSvc.On("GetTenantByID", contextThatHasTenant(tnt), tnt).Return(tenantMapping, nil).Once()
 
@@ -298,7 +321,7 @@ func TestAssignFormation(t *testing.T) {
 		sut := formation.NewResolver(transact, mockService, mockConverter, nil, nil, fetcherSvc, tenantSvc)
 
 		// WHEN
-		actual, err := sut.AssignFormation(ctx, "", testObjectType, formationInput, nil)
+		actual, err := sut.AssignFormation(ctx, testObjectID, testObjectType, formationInput, initialConfigurationsInput)
 
 		// THEN
 		require.NoError(t, err)
