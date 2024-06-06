@@ -9,8 +9,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/apiclient"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
-
 	"github.com/kyma-incubator/compass/components/hydrator/pkg/oathkeeper"
 
 	"github.com/kyma-incubator/compass/components/director/internal/selfregmanager"
@@ -598,11 +596,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 
 	labelsContainingSelfRegistrationAndInvalidRegion := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: 1}
 	labelsContainingSelfRegistration := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal", RegionKey: region}
-	labelsContainingSelfRegAndSubaccount := map[string]interface{}{
-		apptmpltest.TestDistinguishLabel:   "selfRegVal",
-		RegionKey:                          region,
-		scenarioassignment.SubaccountIDKey: testTenant,
-	}
 	distinguishLabel := map[string]interface{}{apptmpltest.TestDistinguishLabel: "selfRegVal"}
 	regionLabel := map[string]interface{}{RegionKey: region}
 
@@ -657,7 +650,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -690,7 +683,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateWithOrdWebhookInput, modelAppTemplateWithOrdWebhookInput.Labels).Return(*modelAppTemplateWithOrdWebhookInput.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateWithOrdWebhookInput).Return(*modelAppTemplateWithOrdWebhookInput.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testUUID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -723,7 +716,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -758,7 +751,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				return appTemplateSvc
@@ -783,7 +776,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
@@ -817,7 +810,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter, modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter.Labels).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter, nil).Once()
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{}, nil).Once()
 				return appTemplateSvc
@@ -851,7 +844,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndCustomSlisFilter, modelAppTemplateInputWithProductLabelAndCustomSlisFilter.Labels).Return(modelAppTemplateWithProductLabelAndCustomSlisFilter.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndCustomSlisFilter).Return(modelAppTemplateWithProductLabelAndCustomSlisFilter.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplateWithProductLabelAndCustomSlisFilter, nil).Once()
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{}, nil).Once()
 				return appTemplateSvc
@@ -876,7 +869,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
@@ -901,7 +894,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				return appTemplateSvc
 			},
@@ -924,7 +917,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels, labelsContainingSelfRegistration).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				return appTemplateSvc
 			},
@@ -947,7 +940,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				return appTemplateSvc
@@ -976,7 +969,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return(nil, testError).Once()
 				return appTemplateSvc
@@ -1005,7 +998,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				return appTemplateSvc
@@ -1034,7 +1027,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{modelAppTemplateWithRegionPlaceholder}, nil).Once()
 				return appTemplateSvc
@@ -1063,7 +1056,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				return appTemplateSvc
@@ -1092,7 +1085,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.AssertNotCalled(t, "ListByFilters")
 				return appTemplateSvc
@@ -1117,7 +1110,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				return appTemplateSvc
@@ -1146,7 +1139,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{modelAppTemplate}, nil).Once()
 				return appTemplateSvc
@@ -1175,7 +1168,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, testError).Once()
 				return appTemplateSvc
@@ -1200,7 +1193,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntStartTransaction,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.AssertNotCalled(t, "GetByFilters")
 				return appTemplateSvc
@@ -1225,7 +1218,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntStartTransaction,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				appTemplateSvc.AssertNotCalled(t, "GetByFilters")
 				return appTemplateSvc
@@ -1306,7 +1299,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return("", testError).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return("", testError).Once()
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
@@ -1339,7 +1332,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(nil, testError).Once()
 				return appTemplateSvc
 			},
@@ -1363,7 +1356,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatFailsOnBegin,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
@@ -1396,7 +1389,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -1429,7 +1422,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -1463,7 +1456,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				modelAppTemplateInput.Labels = map[string]interface{}{}
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, modelAppTemplateInput.Labels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				return appTemplateSvc
 			},
@@ -1488,7 +1481,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntStartTransaction,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
@@ -1516,7 +1509,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntStartTransaction,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.AssertNotCalled(t, "CreateWithLabels")
+				appTemplateSvc.AssertNotCalled(t, "Create")
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
@@ -1553,7 +1546,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				modelAppTemplateInput.Labels = distinguishLabel
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
-				appTemplateSvc.On("CreateWithLabels", txtest.CtxWithDBMatcher(), *modelAppTemplateInput, labelsContainingSelfRegAndSubaccount).Return("", testError).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return("", testError).Once()
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},

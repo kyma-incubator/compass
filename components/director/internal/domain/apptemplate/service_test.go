@@ -381,7 +381,7 @@ func TestService_CreateWithLabels(t *testing.T) {
 			defer mock.AssertExpectationsForObjects(t, appTemplateRepo, labelUpsertSvc, idSvc)
 
 			// WHEN
-			result, err := svc.CreateWithLabels(ctx, *testCase.Input, map[string]interface{}{"createWithLabels": "OK"})
+			result, err := svc.Create(ctx, *testCase.Input)
 
 			// THEN
 			if testCase.ExpectedError != nil {

@@ -40,30 +40,6 @@ func (_m *ApplicationTemplateService) Create(ctx context.Context, in model.Appli
 	return r0, r1
 }
 
-// CreateWithLabels provides a mock function with given fields: ctx, in, labels
-func (_m *ApplicationTemplateService) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
-	ret := _m.Called(ctx, in, labels)
-
-	var r0 string
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) (string, error)); ok {
-		return rf(ctx, in, labels)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) string); ok {
-		r0 = rf(ctx, in, labels)
-	} else {
-		r0 = ret.Get(0).(string)
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, model.ApplicationTemplateInput, map[string]interface{}) error); ok {
-		r1 = rf(ctx, in, labels)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Delete provides a mock function with given fields: ctx, id
 func (_m *ApplicationTemplateService) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)

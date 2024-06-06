@@ -180,8 +180,8 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	return appTemplateID, nil
 }
 
-// CreateWithLabels Creates an AppTemplate with provided labels
-func (s *service) CreateWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
+// TODO delete - CreateWithLabels creates an AppTemplate with provided labels
+func (s *service) createWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
 	for key, val := range labels {
 		in.Labels[key] = val
 	}
