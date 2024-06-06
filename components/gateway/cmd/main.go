@@ -33,6 +33,7 @@ type config struct {
 	Address string `envconfig:"default=127.0.0.1:3000"`
 
 	MetricsServerTimeout      time.Duration `envconfig:"APP_METRICS_SERVER_TIMEOUT,default=114s"`
+	NsAdapterTimeout          time.Duration `envconfig:"APP_NS_ADAPTER_TIMEOUT,default=3600s"`
 	DefaultHandlerTimeout     time.Duration `envconfig:"APP_DEFAULT_HANDLERS_TIMEOUT,default=114s"`
 	ReadRequestHeadersTimeout time.Duration `envconfig:"APP_READ_REQUEST_HEADERS_TIMEOUT,default=114s"`
 
@@ -40,6 +41,7 @@ type config struct {
 
 	DirectorOrigin  string `envconfig:"default=http://127.0.0.1:3001"`
 	ConnectorOrigin string `envconfig:"default=http://127.0.0.1:3002"`
+	NsadapterOrigin string `envconfig:"default=http://127.0.0.1:3005"`
 	MetricsAddress  string `envconfig:"default=127.0.0.1:3003"`
 	AuditlogEnabled bool   `envconfig:"default=false"`
 
@@ -81,12 +83,19 @@ func main() {
 
 	correlationTr := httputil.NewCorrelationIDTransport(httputil.NewHTTPTransportWrapper(http.DefaultTransport.(*http.Transport)))
 	tr := proxy.NewTransport(auditlogSink, auditlogSvc, correlationTr)
+	adapterCfg := proxy.AdapterConfig{
+		MsgBodySizeLimit: cfg.AuditLogMessageBodySizeLimit,
+	}
+	adapterTr := proxy.NewAdapterTransport(auditlogSink, auditlogSvc, correlationTr, adapterCfg)
 
 	err = proxyRequestsForComponent(ctx, router, "/connector", cfg.ConnectorOrigin, tr, cfg.DefaultHandlerTimeout)
 	exitOnError(err, "Error while initializing proxy for Connector")
 
 	err = proxyRequestsForComponent(ctx, router, "/director", cfg.DirectorOrigin, tr, cfg.DefaultHandlerTimeout)
 	exitOnError(err, "Error while initializing proxy for Director")
+
+	err = proxyRequestsForComponent(ctx, router, "/nsadapter", cfg.NsadapterOrigin, adapterTr, cfg.NsAdapterTimeout)
+	exitOnError(err, "Error while initializing proxy for NSAdapter")
 
 	router.HandleFunc(healthzEndpoint, func(writer http.ResponseWriter, request *http.Request) {
 		writer.WriteHeader(200)

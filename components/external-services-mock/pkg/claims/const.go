@@ -9,6 +9,8 @@ const (
 	TenantFetcherTenantHierarchyClaimKey = "tenantFetcherClaimsTenantHierarchy"
 	// SubscriptionClaimKey missing godoc
 	SubscriptionClaimKey = "subscriptionClaims"
+	// NotificationServiceAdapterClaimKey missing godoc
+	NotificationServiceAdapterClaimKey = "nsAdapterClaims"
 	// DestinationProviderClaimKey missing godoc
 	DestinationProviderClaimKey = "destinationProviderClaims"
 	// DestinationProviderWithInstanceClaimKey missing godoc
