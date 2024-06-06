@@ -138,19 +138,6 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 				log.C(ctx).Infof("Tenant mapping participant finished processing unassign notification successfully for assignment with ID %q, will create new %q Assignment Operation", formationAssignment.ID, model.InstanceCreatorUnassign)
 				statusReport.State = string(model.DeletingAssignmentState) // set to DELETING state so that in CleanupFormationAssignment -> DeleteWithConstraints we don't delete the FA
 
-				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
-				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation)
-				if err != nil {
-					return false, errors.Wrapf(err, "while generating formation assignment notification")
-				}
-				w := assignmentPair.AssignmentReqMapping.Request.Webhook
-				if w.Mode != nil && *w.Mode == graphql.WebhookModeSync {
-					if ri.FailOnSyncParticipants {
-						return false, errors.Errorf("Instance creator is not supported on synchronous participants")
-					}
-					return true, nil
-				}
-
 				opInput := &model.AssignmentOperationInput{
 					Type:                  model.InstanceCreatorUnassign,
 					FormationAssignmentID: formationAssignment.ID,
@@ -168,6 +155,19 @@ func (e *ConstraintEngine) AsynchronousFlowControlOperator(ctx context.Context, 
 					FormationAssignmentID: opInput.FormationAssignmentID,
 					FormationID:           opInput.FormationID,
 					TriggeredBy:           opInput.TriggeredBy,
+				}
+
+				log.C(ctx).Infof("Generating formation assignment notification for assignent with ID %q", formationAssignment.ID)
+				assignmentPair, err := e.formationAssignmentNotificationSvc.GenerateFormationAssignmentPair(ctx, formationAssignment, reverseAssignment, model.UnassignFormation, faOperation, reverseFAOperation)
+				if err != nil {
+					return false, errors.Wrapf(err, "while generating formation assignment notification")
+				}
+				w := assignmentPair.AssignmentReqMapping.Request.Webhook
+				if w.Mode != nil && *w.Mode == graphql.WebhookModeSync {
+					if ri.FailOnSyncParticipants {
+						return false, errors.Errorf("Instance creator is not supported on synchronous participants")
+					}
+					return true, nil
 				}
 
 				log.C(ctx).Infof("Sending notification to instance creator")
