@@ -779,7 +779,7 @@ func (g *Graphqlizer) InitialConfigurationToGQL(in graphql.InitialConfiguration)
 	return g.genericToGQL(in, `{
 		sourceID: "{{ .SourceID}}"
 		targetID: "{{ .TargetID}}"
-		configuration: "{{ marshal .Configuration}}"
+		configuration: {{ marshal .Configuration }}
 	}`)
 }
 
