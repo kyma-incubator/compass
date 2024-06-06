@@ -610,9 +610,9 @@ func (h *Handler) updateAssignmentOperationStatus(w http.ResponseWriter, r *http
 	}
 
 	if fa.State == string(model.ReadyAssignmentState) {
-		log.C(ctx).Infof("Finish %s Operation with ID: %s during status report", model.Assign, assignmentOperationID)
-		if finishOpErr := h.assignmentOperationService.FinishByID(ctx, assignmentOperationID); finishOpErr != nil {
-			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation with ID: %q", model.Assign, assignmentOperationID)
+		log.C(ctx).Infof("Finish %s Operation with ID: %s during status report", model.Assign, assignmentOperation.ID)
+		if finishOpErr := h.assignmentOperationService.FinishByID(ctx, assignmentOperation.ID); finishOpErr != nil {
+			log.C(ctx).WithError(finishOpErr).Errorf("An error occurred while finishing %s Operation with ID: %q", model.Assign, assignmentOperation.ID)
 			respondWithError(ctx, w, http.StatusInternalServerError, errResp)
 			return
 		}
