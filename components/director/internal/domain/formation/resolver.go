@@ -282,16 +282,6 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		return nil, err
 	}
 
-	initCfgsSourceToTarget := make(model.InitialConfigurations)
-	for _, cfg := range initialConfigurations {
-		if _, ok := initCfgsSourceToTarget[cfg.SourceID]; !ok {
-			initCfgsSourceToTarget[cfg.SourceID] = make(map[string]json.RawMessage)
-		}
-
-		initialConfig := []byte(cfg.Configuration)
-		initCfgsSourceToTarget[cfg.SourceID][cfg.TargetID] = initialConfig
-	}
-
 	tx, err := r.transact.Begin()
 	if err != nil {
 		return nil, err
@@ -299,6 +289,43 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	defer r.transact.RollbackUnlessCommitted(ctx, tx)
 
 	ctx = persistence.SaveToContext(ctx, tx)
+
+	formationFromDB, err := r.service.GetFormationByName(ctx, formation.Name, tnt)
+	if err != nil {
+		return nil, err
+
+	}
+
+	assignmentsForFormation, err := r.formationAssignmentSvc.GetAssignmentsForFormation(ctx, tnt, formationFromDB.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	participants := make(map[string]struct{}, len(assignmentsForFormation))
+	for _, assignment := range assignmentsForFormation {
+		participants[assignment.Source] = struct{}{}
+		participants[assignment.Target] = struct{}{}
+	}
+
+	initCfgsSourceToTarget := make(model.InitialConfigurations)
+	for _, cfg := range initialConfigurations {
+		if cfg.SourceID != objectID && cfg.TargetID != objectID {
+			return nil, errors.Errorf("Initial Configuration does not contain assigned object %s as \"source\" or \"target\": %v", objectID, cfg)
+		}
+
+		_, isSourceParticipant := participants[cfg.SourceID]
+		_, isTargetParticipant := participants[cfg.TargetID]
+		if (!isSourceParticipant && cfg.SourceID != objectID) || (!isTargetParticipant && cfg.TargetID != objectID) {
+			return nil, errors.Errorf("Initial Configurations contains non-participant \"source\" or \"target\": %v", cfg)
+		}
+
+		if _, ok := initCfgsSourceToTarget[cfg.SourceID]; !ok {
+			initCfgsSourceToTarget[cfg.SourceID] = make(map[string]json.RawMessage)
+		}
+
+		initialConfig := []byte(cfg.Configuration)
+		initCfgsSourceToTarget[cfg.SourceID][cfg.TargetID] = initialConfig
+	}
 
 	tenantMapping, err := r.tenantSvc.GetTenantByID(ctx, tnt)
 	if err != nil {
