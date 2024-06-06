@@ -57,11 +57,6 @@ do
           COMPONENT='tenantfetcher-svc'
           shift
         ;;
-        --ns-adapter)
-          COMPONENT='ns-adapter'
-          export APP_SYSTEM_TO_TEMPLATE_MAPPINGS='[{  "Name": "SAP S/4HANA On-Premise",  "SourceKey": ["type"],  "SourceValue": ["on-premise"]}]'
-          shift
-        ;;
         --jwks-endpoint)
           export APP_JWKS_ENDPOINT=$2
           shift
