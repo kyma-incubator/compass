@@ -774,6 +774,17 @@ func (g *Graphqlizer) FormationTemplateRegisterInputToGQL(in graphql.FormationTe
 	}`)
 }
 
+// InitialConfigurationsToGQL missing godoc
+func (g *Graphqlizer) InitialConfigurationsToGQL(in []*graphql.InitialConfiguration) (string, error) {
+	return g.genericToGQL(in, `
+		[
+			{{- range $i, $e := .}}
+				{{- if $i}}, {{- end}} {{ marshal $e }}
+			{{- end }}
+		],
+	`)
+}
+
 // FormationTemplateUpdateInputToGQL missing godoc
 func (g *Graphqlizer) FormationTemplateUpdateInputToGQL(in graphql.FormationTemplateUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
