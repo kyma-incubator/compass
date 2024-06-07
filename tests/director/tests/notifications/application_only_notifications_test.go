@@ -3213,7 +3213,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 						Operations: []*fixtures.Operation{
 							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true),
 							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
-							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
 						},
 					},
 				},
@@ -3222,7 +3221,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
 						Operations: []*fixtures.Operation{
 							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true),
-							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
 							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
 						},
 					},

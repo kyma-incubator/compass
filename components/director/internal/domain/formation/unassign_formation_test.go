@@ -250,6 +250,22 @@ func TestServiceUnassignFormation(t *testing.T) {
 		},
 	}
 
+	initialAssignmentOperation := &model.AssignmentOperation{
+		ID:                    fixUUID(),
+		FormationAssignmentID: FormationAssignmentID,
+		FormationID:           FormationID,
+		Type:                  model.Assign,
+		TriggeredBy:           model.AssignObject,
+	}
+	initialAssignmentOperation2 := &model.AssignmentOperation{
+
+		ID:                    fixUUID(),
+		FormationAssignmentID: FormationAssignmentID2,
+		FormationID:           FormationID,
+		Type:                  model.Assign,
+		TriggeredBy:           model.AssignObject,
+	}
+
 	assignmentOperation := mock.MatchedBy(func(op *model.AssignmentOperationInput) bool {
 		return op.Type == model.Unassign && op.FormationAssignmentID == FormationAssignmentID && op.FormationID == FormationID && op.TriggeredBy == model.UnassignObject
 	})
@@ -282,7 +298,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -334,6 +350,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -486,7 +504,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success if async unassignments exist",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -530,6 +548,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -543,7 +563,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success if formation do not exist",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -601,6 +621,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -614,7 +636,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when formation is last",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -664,6 +686,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -675,9 +699,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 				ExpectedFormation: expected,
 			},
 			{
-				Name: "error when creating operation",
+				Name: "error when getting latest operation",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(1)
+					return txGen.ThatDoesntExpectCommit()
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -692,8 +716,6 @@ func TestServiceUnassignFormation(t *testing.T) {
 				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 					formationAssignmentSvc := &automock.FormationAssignmentService{}
 					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
-					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
-					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
 					return formationAssignmentSvc
 				},
 				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
@@ -713,6 +735,120 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(nil, testErr).Once()
+
+					return svc
+				},
+				ObjectType:         objectTypeData.ObjectType,
+				ObjectID:           objectTypeData.ObjectID,
+				InputFormation:     in,
+				ExpectedErrMessage: "while getting latest Operation for formation assignment with ID: FormationAssignmentID",
+			},
+			{
+				Name: "error when fails to create operation due to foreign key violation - FA has been deleted by another transaction",
+				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+					return txGen.ThatSucceedsMultipleTimes(3)
+				},
+				LabelServiceFn: func() *automock.LabelService {
+					labelService := &automock.LabelService{}
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					labelService.On("GetLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabelInput).Return(objectTypeData.ScenarioLabel, nil).Once()
+					labelService.On("UpdateLabel", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ScenarioLabel.ID, &model.LabelInput{
+						Key:        model.ScenariosKey,
+						Value:      []string{secondTestFormationName},
+						ObjectID:   objectTypeData.ObjectID,
+						ObjectType: objectTypeData.LabelType,
+						Version:    0,
+					}).Return(nil).Once()
+					return labelService
+				},
+				FormationRepositoryFn: func() *automock.FormationRepository {
+					formationRepo := &automock.FormationRepository{}
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
+					return formationRepo
+				},
+				NotificationServiceFN: func() *automock.NotificationsService {
+					svc := &automock.NotificationsService{}
+					svc.On("GenerateFormationAssignmentNotifications", txtest.CtxWithDBMatcher(), TntInternalID, objectTypeData.ObjectID, expected, model.UnassignFormation, objectTypeData.ObjectType).Return(requests, nil).Once()
+					return svc
+				},
+				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+					formationAssignmentSvc := &automock.FormationAssignmentService{}
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, []*model.FormationAssignment{formationAssignmentsInDeletingState[0], formationAssignmentsInDeletingState[1]}), requests, mock.Anything, model.UnassignFormation).Return(nil).Once()
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", txtest.CtxWithDBMatcher(), expected.ID, objectTypeData.ObjectID).Return(nil, nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[0].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[0])).Return(nil).Once()
+					formationAssignmentSvc.On("Update", txtest.CtxWithDBMatcher(), formationAssignments[1].ID, formationAssignmentWithSourceAndTarget(objectTypeData.ObjectID, formationAssignmentsInDeletingState[1])).Return(nil).Once()
+					return formationAssignmentSvc
+				},
+				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+					repo := &automock.FormationTemplateRepository{}
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					return repo
+				},
+				ConstraintEngineFn: func() *automock.ConstraintEngine {
+					engine := &automock.ConstraintEngine{}
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					return engine
+				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("123", apperrors.NewInvalidOperationError("foreign key violation")).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("456", nil).Once()
+
+					return svc
+				},
+				ObjectType:        objectTypeData.ObjectType,
+				ObjectID:          objectTypeData.ObjectID,
+				InputFormation:    in,
+				ExpectedFormation: expected,
+			},
+			{
+				Name: "error when creating operation",
+				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+					return txGen.ThatDoesntExpectCommit()
+				},
+				LabelServiceFn: func() *automock.LabelService {
+					labelService := &automock.LabelService{}
+					labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, objectTypeData.TypeLabelInput).Return(objectTypeData.TypeLabel, nil)
+					return labelService
+				},
+				FormationRepositoryFn: func() *automock.FormationRepository {
+					formationRepo := &automock.FormationRepository{}
+					formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), testFormationName, TntInternalID).Return(expected, nil).Once()
+					return formationRepo
+				},
+				FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+					formationAssignmentSvc := &automock.FormationAssignmentService{}
+					formationAssignmentSvc.On("ListFormationAssignmentsForObjectID", ctxWithTenantAndLoggerMatcher(), expected.ID, objectTypeData.ObjectID).Return(formationAssignmentsWithSourceAndTarget(objectTypeData.ObjectID, formationAssignments), nil).Once()
+					return formationAssignmentSvc
+				},
+				FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+					repo := &automock.FormationTemplateRepository{}
+					repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+					return repo
+				},
+				ConstraintEngineFn: func() *automock.ConstraintEngine {
+					engine := &automock.ConstraintEngine{}
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					return engine
+				},
+				ASAEngineFn: func() *automock.AsaEngine {
+					engine := &automock.AsaEngine{}
+					engine.On("IsFormationComingFromASA", ctxWithTenantAndLoggerMatcher(), objectTypeData.ObjectID, testFormationName, objectTypeData.ObjectType).Return(false, nil)
+					return engine
+				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", testErr).Once()
 
 					return svc
@@ -787,7 +923,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while getting label",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -832,6 +968,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -845,7 +983,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while converting label values to string slice",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -903,6 +1041,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -916,7 +1056,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while converting label value to string",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -969,6 +1109,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -982,7 +1124,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error when formation is last and delete fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1031,6 +1173,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -1044,7 +1188,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when formation is last and delete fails with Unauthorized",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1094,6 +1238,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -1107,7 +1253,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error when updating label fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1158,6 +1304,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -1171,7 +1319,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when label update returns Unauthorized error",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1223,6 +1371,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -1249,7 +1399,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success if generating notifications fails with not found",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1290,6 +1440,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 
@@ -1306,9 +1458,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(5)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
-					persistTx.On("Commit").Return(nil).Twice()
+					transact.On("Begin").Return(persistTx, nil).Times(4)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(4)
+					persistTx.On("Commit").Return(nil).Once()
 					persistTx.On("Commit").Return(transactionError).Once()
 					persistTx.On("Commit").Return(nil).Once()
 
@@ -1355,6 +1507,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
@@ -1372,9 +1526,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(5)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
-					persistTx.On("Commit").Return(nil).Twice()
+					transact.On("Begin").Return(persistTx, nil).Times(4)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(4)
+					persistTx.On("Commit").Return(nil).Once()
 					persistTx.On("Commit").Return(transactionError).Once()
 
 					return persistTx, transact
@@ -1420,6 +1574,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(testErr).Once()
@@ -1437,9 +1593,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(5)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
-					persistTx.On("Commit").Return(nil).Twice()
+					transact.On("Begin").Return(persistTx, nil).Times(4)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(4)
+					persistTx.On("Commit").Return(nil).Once()
 					persistTx.On("Commit").Return(transactionError).Once()
 					persistTx.On("Commit").Return(nil).Twice()
 
@@ -1486,6 +1642,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
@@ -1585,6 +1743,12 @@ func TestServiceUnassignFormation(t *testing.T) {
 					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					return svc
+				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
 				InputFormation:     in,
@@ -1625,6 +1789,15 @@ func TestServiceUnassignFormation(t *testing.T) {
 					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
+				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
+					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
+					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
+
+					return svc
+				},
 				ObjectType:         objectTypeData.ObjectType,
 				ObjectID:           objectTypeData.ObjectID,
 				InputFormation:     in,
@@ -1633,7 +1806,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if generating notifications fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(5, 4)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1676,6 +1849,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
@@ -1693,9 +1868,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(5)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
-					persistTx.On("Commit").Return(nil).Twice()
+					transact.On("Begin").Return(persistTx, nil).Times(4)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(4)
+					persistTx.On("Commit").Return(nil).Once()
 					persistTx.On("Commit").Return(transactionError).Once()
 					persistTx.On("Commit").Return(nil).Twice()
 
@@ -1743,6 +1918,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
@@ -1758,7 +1935,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if processing formation assignments fails",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(3)
+					return txGen.ThatSucceedsMultipleTimes(2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1800,6 +1977,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -1813,7 +1992,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while beginning scenario transaction",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(3)
+					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnBegin(2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1855,6 +2034,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -1868,7 +2049,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if list pending formation assignments fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1911,6 +2092,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -1924,7 +2107,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if assign due to async pending assignments fail - get application type label fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -1968,6 +2151,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -1981,7 +2166,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if assign due to async pending assignments fail - get scenario label fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -2025,6 +2210,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -2038,7 +2225,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error if assign due to async pending assignments fail - update scenario label fail",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 3)
+					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(3, 2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -2089,6 +2276,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -2105,9 +2294,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Times(5)
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(5)
-					persistTx.On("Commit").Return(nil).Twice()
+					transact.On("Begin").Return(persistTx, nil).Times(4)
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Times(4)
+					persistTx.On("Commit").Return(nil).Once()
 					persistTx.On("Commit").Return(transactionError).Once()
 					persistTx.On("Commit").Return(nil).Twice()
 
@@ -2155,6 +2344,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
@@ -2211,9 +2402,9 @@ func TestServiceUnassignFormation(t *testing.T) {
 					persistTx := &persistenceautomock.PersistenceTx{}
 					transact := &persistenceautomock.Transactioner{}
 
-					transact.On("Begin").Return(persistTx, nil).Twice()
-					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Twice()
-					persistTx.On("Commit").Return(nil).Twice()
+					transact.On("Begin").Return(persistTx, nil).Once()
+					transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false).Once()
+					persistTx.On("Commit").Return(nil).Once()
 
 					transact.On("Begin").Return(persistTx, transactionError).Once()
 
@@ -2259,6 +2450,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 					svc.On("DeleteByIDs", txtest.CtxWithDBMatcher(), []string{"op1", "op2"}).Return(nil).Once()
@@ -2274,7 +2467,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while committing scenario label transaction",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(3)
+					return txGen.ThatSucceedsMultipleTimesAndThenFailsOnCommit(2)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -2325,6 +2518,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -2339,7 +2534,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "error while enforcing post constraints",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimesAndCommitsMultipleTimes(4, 4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -2391,6 +2586,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("op1", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("op2", nil).Once()
 
@@ -2490,7 +2687,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 			{
 				Name: "success when formation is coming from ASA but ignoreASA is true",
 				TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-					return txGen.ThatSucceedsMultipleTimes(4)
+					return txGen.ThatSucceedsMultipleTimes(3)
 				},
 				LabelServiceFn: func() *automock.LabelService {
 					labelService := &automock.LabelService{}
@@ -2542,6 +2739,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
 					svc := &automock.AssignmentOperationService{}
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID, FormationID).Return(initialAssignmentOperation, nil).Once()
+					svc.On("GetLatestOperation", txtest.CtxWithDBMatcher(), FormationAssignmentID2, FormationID).Return(initialAssignmentOperation2, nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation).Return("", nil).Once()
 					svc.On("Create", txtest.CtxWithDBMatcher(), assignmentOperation2).Return("", nil).Once()
 					return svc
