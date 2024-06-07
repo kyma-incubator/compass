@@ -1206,6 +1206,8 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	in.Labels[intSysKey] = ""
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
+	} else {
+		delete(in.Labels, intSysKey)
 	}
 	in.Labels[nameKey] = normalizedName
 
@@ -1320,6 +1322,8 @@ func (s *service) genericUpsert(ctx context.Context, appTenant string, in model.
 	in.Labels[intSysKey] = ""
 	if in.IntegrationSystemID != nil {
 		in.Labels[intSysKey] = *in.IntegrationSystemID
+	} else {
+		delete(in.Labels, intSysKey)
 	}
 	in.Labels[nameKey] = s.appNameNormalizer.Normalize(app.Name)
 
