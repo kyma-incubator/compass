@@ -937,7 +937,7 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	labelsWithoutIntSys := map[string]interface{}{
-		"name":                "mp-test",
+		"name": "mp-test",
 	}
 
 	labelsWithInvalidPpmsProductVersion := map[string]interface{}{
