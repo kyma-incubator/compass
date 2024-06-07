@@ -172,14 +172,14 @@ func TestSystemFetcherSuccess(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -242,14 +242,14 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultCustomerTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultCustomerTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -307,14 +307,14 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 
 func TestSystemFetcherOnNewGASuccess(t *testing.T) {
 	ctx := context.TODO()
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -412,14 +412,14 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -479,14 +479,14 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -594,14 +594,14 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -668,14 +668,14 @@ func TestSystemFetcherSuccessForMoreThanOnePage(t *testing.T) {
 	setMultipleMockSystemsResponses(t, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -737,14 +737,14 @@ func TestSystemFetcherSuccessForMultipleTenants(t *testing.T) {
 	setMultipleMockSystemsResponses(t, tenant1)
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, fmt.Sprintf("int-sys-%s", tenantName1))
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, fmt.Sprintf("int-sys-%s", tenantName1))
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant1, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -839,14 +839,14 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetSystemFetcherTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -938,14 +938,14 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -1044,14 +1044,14 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -1082,14 +1082,14 @@ func TestSystemFetcherNotFetchMissingRegionForRegionalAppTemplates(t *testing.T)
 func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
 	ctx := context.TODO()
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -1306,14 +1306,14 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -1427,14 +1427,14 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
@@ -1607,14 +1607,14 @@ func TestSystemFetcherPreserveSystemStatusOnUpdate(t *testing.T) {
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "integration-system")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)

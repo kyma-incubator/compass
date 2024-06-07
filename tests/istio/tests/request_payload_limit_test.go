@@ -39,8 +39,9 @@ func TestCallingCompassGateways(t *testing.T) {
 
 	logrus.Infof("Registering runtime with name: %s, within tenant: %s", runtimeInput.Name, tenant)
 
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenant, runtimeInput)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant, &runtime)
+	runtime, err = fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenant, runtimeInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 

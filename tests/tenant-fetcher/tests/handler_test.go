@@ -828,8 +828,13 @@ func TestMoveSubaccounts(t *testing.T) {
 	subaccount2, err := fixtures.GetTenantByExternalID(certSecuredGraphQLClient, subaccountExternalTenants[1])
 	assert.NoError(t, err)
 
-	runtime1 := registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
-	runtime2 := registerRuntime(t, ctx, runtimeNames[1], subaccount2.InternalID)
+	var runtime1 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount1.InternalID, &runtime1)
+	runtime1 = registerRuntime(t, ctx, runtimeNames[0], subaccount1.InternalID)
+
+	var runtime2 graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, subaccount2.InternalID, &runtime2)
+	runtime2 = registerRuntime(t, ctx, runtimeNames[1], subaccount2.InternalID)
 
 	event1 := genMockSubaccountMoveEvent(subaccountExternalTenants[0], subaccountNames[0], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion, "")
 	event2 := genMockSubaccountMoveEvent(subaccountExternalTenants[1], subaccountNames[1], subaccountSubdomain, testLicenseType, directoryParentGUID, subaccountParent, gaExternalTenantIDs[0], gaExternalTenantIDs[1], subaccountRegion, "")

@@ -69,14 +69,14 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 	}()
 
 	t.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "int-system-app-to-app-notifications")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, "int-system-app-to-app-notifications")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys.ID)
+	var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tnt, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -3213,7 +3213,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 						Operations: []*fixtures.Operation{
 							fixtures.NewOperation(app1.ID, app2.ID, "ASSIGN", "RESYNC", true),
 							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
-							fixtures.NewOperation(app1.ID, app2.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
 						},
 					},
 				},
@@ -3222,7 +3221,6 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsOldFormat(t *testi
 						AssignmentStatus: fixtures.AssignmentState{State: "DELETE_ERROR", Config: nil, Value: fixtures.StatusAPIAsyncErrorMessageJSON, Error: fixtures.StatusAPIAsyncErrorMessageJSON},
 						Operations: []*fixtures.Operation{
 							fixtures.NewOperation(app2.ID, app1.ID, "ASSIGN", "RESYNC", true),
-							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
 							fixtures.NewOperation(app2.ID, app1.ID, "UNASSIGN", "UNASSIGN_OBJECT", false),
 						},
 					},

@@ -121,8 +121,9 @@ func TestSystemBrokerAuthentication(t *testing.T) {
 
 func TestCallingORDServiceWithCert(t *testing.T) {
 	logrus.Infof("registering runtime with name: %s, within tenant: %s", runtimeInput.Name, testCtx.Tenant)
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, &runtime)
+	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, testCtx.Context, testCtx.CertSecuredGraphQLClient, testCtx.Tenant, runtimeInput)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
