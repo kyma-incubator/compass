@@ -54,41 +54,6 @@ func TestPgRepository_GetByID(t *testing.T) {
 	suite.Run(t)
 }
 
-func TestPgRepository_GetByFiltersAndID(t *testing.T) {
-	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
-	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
-
-	suite := testdb.RepoGetTestSuite{
-		Name: "Get Runtime By Filters and ID",
-		SQLQueryDetails: []testdb.SQLQueryDetails{
-			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id = $1
-												AND id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $2)) AND "key" = $3 AND "value" ?| array[$4])
-												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $5))`),
-				Args:     []driver.Value{runtimeID, tenantID, model.ScenariosKey, "scenario", tenantID},
-				IsSelect: true,
-				ValidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
-				},
-				InvalidRowsProvider: func() []*sqlmock.Rows {
-					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns)}
-				},
-			},
-		},
-		ConverterMockProvider: func() testdb.Mock {
-			return &automock.EntityConverter{}
-		},
-		RepoConstructorFunc:       runtime.NewRepository,
-		ExpectedModelEntity:       rtModel,
-		ExpectedDBEntity:          rtEntity,
-		MethodName:                "GetByFiltersAndID",
-		MethodArgs:                []interface{}{tenantID, runtimeID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "scenario" )`)}},
-		DisableConverterErrorTest: true,
-	}
-
-	suite.Run(t)
-}
-
 func TestPgRepository_GetByFiltersAndIDUsingUnion(t *testing.T) {
 	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
@@ -195,18 +160,16 @@ func TestPgRepository_GetByFiltersGlobal_ShouldReturnRuntimeModelForRuntimeEntit
 	mockConverter.AssertExpectations(t)
 }
 
-func TestPgRepository_GetOldestForFilters(t *testing.T) {
+func TestPgRepository_GetOldestFromIDs(t *testing.T) {
 	rtModel := fixDetailedModelRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 	rtEntity := fixDetailedEntityRuntime(t, "foo", "Foo", "Lorem ipsum", "test.ns")
 
 	suite := testdb.RepoGetTestSuite{
-		Name: "Get Oldest Runtime By Filters",
+		Name: "Get Oldest Runtime From IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE
-												id IN (SELECT "runtime_id" FROM public.labels WHERE "runtime_id" IS NOT NULL AND (id IN (SELECT id FROM runtime_labels_tenants WHERE tenant_id = $1)) AND "key" = $2 AND "value" ?| array[$3])
-												AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $4)) ORDER BY creation_timestamp ASC`),
-				Args:     []driver.Value{tenantID, model.ScenariosKey, "scenario", tenantID},
+				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id IN ($1) AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2)) ORDER BY creation_timestamp ASC`),
+				Args:     []driver.Value{runtimeID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {
 					return []*sqlmock.Rows{sqlmock.NewRows(fixColumns).AddRow(rtModel.ID, rtModel.Name, rtModel.Description, rtModel.Status.Condition, rtModel.Status.Timestamp, rtModel.CreationTimestamp, rtModel.ApplicationNamespace)}
@@ -222,8 +185,8 @@ func TestPgRepository_GetOldestForFilters(t *testing.T) {
 		RepoConstructorFunc:       runtime.NewRepository,
 		ExpectedModelEntity:       rtModel,
 		ExpectedDBEntity:          rtEntity,
-		MethodName:                "GetOldestForFilters",
-		MethodArgs:                []interface{}{tenantID, []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "scenario" )`)}},
+		MethodName:                "GetOldestFromIDs",
+		MethodArgs:                []interface{}{tenantID, []string{runtimeID}},
 		DisableConverterErrorTest: true,
 	}
 

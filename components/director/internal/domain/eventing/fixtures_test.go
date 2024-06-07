@@ -27,6 +27,7 @@ var applicationID = uuid.New()
 const (
 	eventURLSchema  = "https://eventing.domain.local/%s/v1/events"
 	runtimeEventURL = "https://eventing.domain.local"
+	formationName = "CUSTOM"
 )
 
 func fixCtxWithTenant() context.Context {
@@ -117,23 +118,6 @@ func fixEmptyRuntimePage() *model.RuntimePage {
 func fixLabelFilterForRuntimeDefaultEventingForApp() []*labelfilter.LabelFilter {
 	return []*labelfilter.LabelFilter{
 		labelfilter.NewForKey(getDefaultEventingForAppLabelKey(applicationID)),
-	}
-}
-
-func fixLabelFilterForRuntimeScenarios() []*labelfilter.LabelFilter {
-	return []*labelfilter.LabelFilter{
-		labelfilter.NewForKeyWithQuery(model.ScenariosKey, `$[*] ? ( @ == "DEFAULT" || @ == "CUSTOM" )`),
-	}
-}
-
-func fixApplicationScenariosLabel() *model.Label {
-	return &model.Label{
-		ID:         uuid.New().String(),
-		Key:        model.ScenariosKey,
-		ObjectID:   applicationID.String(),
-		ObjectType: model.ApplicationLabelableObject,
-		Tenant:     str.Ptr(tenantID.String()),
-		Value:      []interface{}{"DEFAULT", "CUSTOM"},
 	}
 }
 
