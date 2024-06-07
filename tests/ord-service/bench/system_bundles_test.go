@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"testing"
 
+	directorSchema "github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/kyma-incubator/compass/tests/pkg/clients"
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
 	"github.com/kyma-incubator/compass/tests/pkg/request"
@@ -32,15 +34,16 @@ func BenchmarkSystemBundles(b *testing.B) {
 	}
 
 	b.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", "test-int-system")
-	defer fixtures.CleanupIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", intSys)
-	require.NoError(b, err)
-	require.NotEmpty(b, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", "test-int-system")
 
-	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", intSys.ID)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(b, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
+	var intSystemCredentials directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(b, ctx, certSecuredGraphQLClient, &intSystemCredentials)
+	intSystemCredentials = fixtures.RequestClientCredentialsForIntegrationSystem(b, ctx, certSecuredGraphQLClient, "", intSys.ID)
+	require.NotEmpty(b, intSystemCredentials)
 
-	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
+	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, &intSystemCredentials)
 	require.NoError(b, err)
 
 	b.ResetTimer() // Reset timer after the initialization

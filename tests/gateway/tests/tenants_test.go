@@ -34,10 +34,9 @@ func TestTenantErrors(t *testing.T) {
 	require.Error(t, err)
 	require.Contains(t, err.Error(), tenantNotFoundMessage)
 
-	is, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "test")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, is)
-	require.NoError(t, err)
-	require.NotEmpty(t, is.ID)
+	var is graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &is)
+	is = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "test")
 
 	req := fixtures.FixRequestClientCredentialsForIntegrationSystem(is.ID)
 

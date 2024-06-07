@@ -92,8 +92,9 @@ func TestIntegrationSystemAccess(t *testing.T) {
 
 			t.Logf("Trying to register runtime in account tenant %s", tenantID)
 			rtmInput := fixtures.FixRuntimeRegisterInputWithoutLabels(fmt.Sprintf("runtime-%s", test.resourceSuffix))
-			rt, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, tenantID, &rtmInput)
+			var rt graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 			defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantID, &rt)
+			rt, err = fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorCertSecuredClient, tenantID, &rtmInput)
 			if test.expectErr {
 				require.Error(t, err)
 			} else {

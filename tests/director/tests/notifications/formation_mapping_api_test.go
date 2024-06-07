@@ -201,14 +201,14 @@ func Test_UpdateFormationAssignmentStatus(baseT *testing.T) {
 		require.NotEmpty(t, formation.ID)
 
 		t.Log("Create integration system")
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSysName)
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+		var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", &intSys)
+		intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSysName)
 
-		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+		var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+		intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
 		require.NotEmpty(t, intSysAuth)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)

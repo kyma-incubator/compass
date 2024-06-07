@@ -133,13 +133,13 @@ func TestORDService(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
 
-	intSystemCredentials := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSystemCredentials.ID)
+	var intSystemCredentials directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSystemCredentials)
+	intSystemCredentials = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
 
 	unsecuredHttpClient := http.DefaultClient
 	unsecuredHttpClient.Transport = &http.Transport{
@@ -148,7 +148,7 @@ func TestORDService(t *testing.T) {
 		},
 	}
 
-	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, intSystemCredentials)
+	intSystemHttpClient, err := clients.NewIntegrationSystemClient(ctx, &intSystemCredentials)
 	require.NoError(t, err)
 
 	commonName := "anotherCommonName"
@@ -749,14 +749,14 @@ func TestORDService(t *testing.T) {
 		appTmplInput := fixtures.FixApplicationTemplate(expectedProductType)
 
 		t.Log("Creating integration system")
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, "ord-service-non-ord-details")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+		var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &intSys)
+		intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, "ord-service-non-ord-details")
 
-		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys.ID)
+		var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+		intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, intSys.ID)
 		require.NotEmpty(t, intSysAuth)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 		require.True(t, ok)
@@ -828,14 +828,14 @@ func TestORDServiceSystemDiscoveryByApplicationTenantID(t *testing.T) {
 	certHttpClient := CreateHttpClientWithCert(providerClientKey, providerRawCertChain, conf.SkipSSLValidation)
 
 	t.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "int-system-ord-service-consumption")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, "int-system-ord-service-consumption")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
+	var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantID, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 	require.True(t, ok)
