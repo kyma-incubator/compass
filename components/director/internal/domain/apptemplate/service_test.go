@@ -1813,7 +1813,35 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 			ExpectedError:  nil,
 		},
 		{
-			Name: "Success when optional placeholder value in labels is empty string",
+			Name: "Success when optional placeholder is empty in labels",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "{{Name}}", "labels": {"label1":"label1" ,"optionalLabel": "{{optional-label}}"}, "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "Name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: &placeholderIsOptional},
+					{Name: "optional-label", Description: str.Ptr("optional-label description"), JSONPath: str.Ptr("optionalLabel"), Optional: &placeholderIsOptional},
+				},
+			},
+			InputValues: []*model.ApplicationTemplateValueInput{
+				{Placeholder: "optional-label", Value: ""},
+			},
+			ExpectedOutput: `{"Name":"","Description":"Lorem ipsum", "labels":{"label1":"label1"}}`,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success when optional placeholder is not provided in labels - special case",
+			InputAppTemplate: &model.ApplicationTemplate{
+				ApplicationInputJSON: `{"Name": "{{Name}}", "labels": {"label1":"label1" ,"optionalLabel": "{{optional-label}}"}, "Description": "Lorem ipsum"}`,
+				Placeholders: []model.ApplicationTemplatePlaceholder{
+					{Name: "Name", Description: str.Ptr("Application name"), JSONPath: str.Ptr("displayName"), Optional: &placeholderIsOptional},
+					{Name: "optional-label", Description: str.Ptr("optional-label description"), JSONPath: str.Ptr("optionalLabel"), Optional: &placeholderIsOptional},
+				},
+			},
+			InputValues:    []*model.ApplicationTemplateValueInput{},
+			ExpectedOutput: `{"Name":"","Description":"Lorem ipsum", "labels":{"label1":"label1"}}`,
+			ExpectedError:  nil,
+		},
+		{
+			Name: "Success when non optional placeholder value in labels is empty string",
 			InputAppTemplate: &model.ApplicationTemplate{
 				ApplicationInputJSON: `{"labels": {"label1":"label1" ,"nonOptionalLabel": "{{nonOptionalLabel}}"}, "Description": "Lorem ipsum"}`,
 				Placeholders: []model.ApplicationTemplatePlaceholder{
@@ -1838,7 +1866,7 @@ func TestService_PrepareApplicationCreateInputJSON(t *testing.T) {
 				{Placeholder: "nonOptionalLabel", Value: ""},
 			},
 			ExpectedOutput: "",
-			ExpectedError:  errors.New("error while clear optional empty value"),
+			ExpectedError:  errors.New("error while looking for label key"),
 		},
 		{
 			Name: "Returns error when required placeholder value not provided in labels",

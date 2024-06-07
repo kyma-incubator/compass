@@ -2,8 +2,10 @@ package label
 
 import (
 	"database/sql"
+	"encoding/json"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
+	"github.com/pkg/errors"
 )
 
 // Entity is a label entity.
@@ -24,6 +26,20 @@ type Entity struct {
 // GetID returns the ID of the label.
 func (e *Entity) GetID() string {
 	return e.ID
+}
+
+// GetValue returns the Value of the label.
+func (e *Entity) GetValue() (interface{}, error) {
+	var valueUnmarshalled interface{}
+	if e.Value != "" {
+		err := json.Unmarshal([]byte(e.Value), &valueUnmarshalled)
+		if err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling Value")
+		}
+	} else {
+		return nil, errors.Errorf("Value cannot be empty")
+	}
+	return valueUnmarshalled, nil
 }
 
 // GetParent returns the parent type and the parent ID of the entity.

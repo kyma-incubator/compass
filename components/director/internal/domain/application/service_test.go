@@ -68,8 +68,7 @@ func TestService_Create(t *testing.T) {
 		"name":                "mp-foo-bar-not",
 	}
 	labelsWithoutIntSys := map[string]interface{}{
-		"integrationSystemID": "",
-		"name":                "mp-test",
+		"name": "mp-test",
 	}
 	var nilLabels map[string]interface{}
 
@@ -517,8 +516,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 		"name":                "mp-foo-bar-not",
 	}
 	labelsWithoutIntSys := map[string]interface{}{
-		"integrationSystemID": "",
-		"name":                "mp-test",
+		"name": "mp-test",
 	}
 	var nilLabels map[string]interface{}
 
@@ -939,7 +937,6 @@ func TestService_Upsert_TrustedUpsert(t *testing.T) {
 	}
 
 	labelsWithoutIntSys := map[string]interface{}{
-		"integrationSystemID": "",
 		"name":                "mp-test",
 	}
 
@@ -1468,8 +1465,7 @@ func TestService_TrustedUpsertFromTemplate(t *testing.T) {
 		"ppmsProductVersionId": "1",
 	}
 	labelsWithoutIntSys := map[string]interface{}{
-		"integrationSystemID": "",
-		"name":                "mp-test",
+		"name": "mp-test",
 	}
 	var nilLabels map[string]interface{}
 

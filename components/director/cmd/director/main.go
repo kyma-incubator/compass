@@ -458,10 +458,10 @@ func main() {
 	fmHandler := createFormationMappingHandler(transact, appRepo, cfg, cfg.DestinationCreatorConfig, securedHTTPClient, mtlsHTTPClient)
 
 	asyncFormationAssignmentStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
-	asyncFormationAssignmentStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationAssignmentHandler()) // order is important
+	asyncFormationAssignmentStatusRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext(), authMiddleware.Handler(), fmAuthMiddleware.FormationAssignmentHandler()) // order is important
 
 	asyncFormationStatusRouter := mainRouter.PathPrefix(cfg.FormationMappingCfg.AsyncAPIPathPrefix).Subrouter()
-	asyncFormationStatusRouter.Use(authMiddleware.Handler(), fmAuthMiddleware.FormationHandler()) // order is important
+	asyncFormationStatusRouter.Use(correlation.AttachCorrelationIDToContext(), log.RequestLogger(), header.AttachHeadersToContext(), authMiddleware.Handler(), fmAuthMiddleware.FormationHandler()) // order is important
 
 	logger.Infof("Registering formation tenant mapping endpoints...")
 	asyncFormationAssignmentStatusRouter.HandleFunc(cfg.FormationMappingCfg.AsyncFormationAssignmentStatusAPIEndpoint, fmHandler.UpdateFormationAssignmentStatus).Methods(http.MethodPatch)
