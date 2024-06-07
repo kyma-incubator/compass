@@ -480,10 +480,10 @@ func IsCannotUpdateObjectInManyBundlesError(err error) bool {
 	return ErrorCode(err) == CannotUpdateObjectInManyBundles
 }
 
-// IsCannotUnassignObjectComingFromASAError missing godoc
-func IsCannotUnassignObjectComingFromASAError(err error) bool {
+// IsInvalidOperation missing godoc
+func IsInvalidOperation(err error) bool {
 	if customErr, ok := err.(Error); ok {
-		return customErr.errorCode == InvalidOperation && customErr.Message == CannotUnassignObjectFromASA
+		return customErr.errorCode == InvalidOperation
 	}
 	return false
 }

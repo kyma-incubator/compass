@@ -651,8 +651,9 @@ func TestCreateUpdateBundleInstanceAuth(t *testing.T) {
 
 	t.Logf("Registering runtime with name %q in tenant %q...", rtmName, tenantId)
 	rtmIn := fixtures.FixRuntimeRegisterInputWithoutLabels(rtmName)
-	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &rtmIn)
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 	defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+	runtime, err = fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &rtmIn)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 
