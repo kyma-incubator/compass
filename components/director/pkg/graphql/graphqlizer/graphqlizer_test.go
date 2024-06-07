@@ -1,7 +1,6 @@
 package graphqlizer_test
 
 import (
-	"github.com/davecgh/go-spew/spew"
 	"testing"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -14,8 +13,6 @@ import (
 func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 	// GIVEN
 	g := graphqlizer.Graphqlizer{}
-	gql, err := g.InitialConfigurationsToGQL([]*graphql.InitialConfiguration{{SourceID: "asd", TargetID: "fhgj", Configuration: "{\"key\":\"value\"}"}, {SourceID: "test", TargetID: "test", Configuration: "looool"}})
-	spew.Dump(gql, err)
 	testCases := []struct {
 		Name          string
 		Input         graphql.Labels

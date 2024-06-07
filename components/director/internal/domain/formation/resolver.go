@@ -293,7 +293,6 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 	formationFromDB, err := r.service.GetFormationByName(ctx, formation.Name, tnt)
 	if err != nil {
 		return nil, err
-
 	}
 
 	assignmentsForFormation, err := r.formationAssignmentSvc.GetAssignmentsForFormation(ctx, tnt, formationFromDB.ID)

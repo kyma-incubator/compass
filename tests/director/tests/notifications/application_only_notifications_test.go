@@ -3,14 +3,15 @@ package notifications
 import (
 	"context"
 	"fmt"
-	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
-	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
-	"github.com/tidwall/gjson"
 	"net/http"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
+
+	formationconstraintpkg "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+	"github.com/kyma-incubator/compass/components/director/pkg/templatehelper"
+	"github.com/tidwall/gjson"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/tests/director/tests/example"

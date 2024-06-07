@@ -93,6 +93,15 @@ func FixAssignFormationRequest(objID, objType, formationName string) *gcli.Reque
 			}`, objID, objType, formationName, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
 }
 
+func FixAssignFormationRequestWithInitialConfigurations(objID, objType, formationName, initialConfigurations string) *gcli.Request {
+	return gcli.NewRequest(
+		fmt.Sprintf(`mutation{
+			  result: assignFormation(objectID:"%s",objectType: %s ,formation: {name: "%s"}, initialConfigurations: %s){
+				%s
+			  }
+			}`, objID, objType, formationName, initialConfigurations, testctx.Tc.GQLFieldsProvider.ForFormationWithStatus()))
+}
+
 func FixUnassignFormationRequest(objID, objType, formationName string) *gcli.Request {
 	return gcli.NewRequest(
 		fmt.Sprintf(`mutation{
