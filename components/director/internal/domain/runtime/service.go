@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/filtersanitizer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"k8s.io/utils/strings/slices"
@@ -77,6 +79,13 @@ type uidService interface {
 	Generate() string
 }
 
+// ScenariosFilterSanitizer missing godoc
+//
+//go:generate mockery --name=ScenariosFilterSanitizer --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ScenariosFilterSanitizer interface {
+	RemoveScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter, objectType model.FormationAssignmentType, isGlobal bool, listerFunc filtersanitizer.ObjectIDListerFunc, globalListerFunc filtersanitizer.ObjectIDListerFuncGlobal) (bool, []string, []*labelfilter.LabelFilter, error)
+}
+
 type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
@@ -93,6 +102,8 @@ type service struct {
 	runtimeTypeLabelKey           string
 	kymaRuntimeTypeLabelValue     string
 	kymaApplicationNamespaceValue string
+
+	filterSanitizer ScenariosFilterSanitizer
 
 	kymaAdapterWebhookMode           string
 	kymaAdapterWebhookType           string
@@ -117,6 +128,7 @@ func NewService(repo runtimeRepository,
 		repo:                             repo,
 		labelRepo:                        labelRepo,
 		labelService:                     labelService,
+		filterSanitizer:                  &filtersanitizer.FilterSanitizer{},
 		uidService:                       uidService,
 		formationService:                 formationService,
 		tenantSvc:                        tenantService,
@@ -147,7 +159,7 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	hasScenariosFilter, runtimeIDs, labelFiltersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, rtmTenant, filters)
+	hasScenariosFilter, runtimeIDs, labelFiltersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, rtmTenant, filters, model.FormationAssignmentTypeRuntime, false, s.formationService.ListObjectIDsOfTypeForFormations, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -692,32 +704,4 @@ func convertLabelValue(value interface{}) (string, error) {
 		return "", errors.New("expected single value for label")
 	}
 	return values[0], nil
-}
-
-func (s *service) removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter) (bool, []string, []*labelfilter.LabelFilter, error) {
-	var hasScenarioFilter bool
-	var runtimeIDsInScenarios = make([]string, 0)
-	filtersWithoutScenarioFilter := make([]*labelfilter.LabelFilter, 0, len(filters))
-
-	for i, labelFilter := range filters {
-		if labelFilter.Key == model.ScenariosKey {
-			hasScenarioFilter = true
-			formationNamesInterface, err := label.ExtractValueFromJSONPath(*labelFilter.Query)
-			if err != nil {
-				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
-			}
-
-			formationNames, err := label.ValueToStringsSlice(formationNamesInterface)
-			if err != nil {
-				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while converting formation names to strings")
-			}
-			runtimeIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, formationNames, model.FormationAssignmentTypeRuntime)
-			if err != nil {
-				return hasScenarioFilter, nil, nil, errors.Wrapf(err, "while getting runtime IDs for formations %v", formationNames)
-			}
-		} else {
-			filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
-		}
-	}
-	return hasScenarioFilter, runtimeIDsInScenarios, filtersWithoutScenarioFilter, nil
 }

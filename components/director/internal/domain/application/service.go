@@ -7,6 +7,8 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/filtersanitizer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
@@ -162,6 +164,13 @@ type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }
 
+// ScenariosFilterSanitizer missing godoc
+//
+//go:generate mockery --name=ScenariosFilterSanitizer --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ScenariosFilterSanitizer interface {
+	RemoveScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter, objectType model.FormationAssignmentType, isGlobal bool, listerFunc filtersanitizer.ObjectIDListerFunc, globalListerFunc filtersanitizer.ObjectIDListerFuncGlobal) (bool, []string, []*labelfilter.LabelFilter, error)
+}
+
 type service struct {
 	appNameNormalizer  normalizer.Normalizator
 	appHideCfgProvider ApplicationHideCfgProvider
@@ -177,6 +186,8 @@ type service struct {
 	bndlService      BundleService
 	timestampGen     timestamp.Generator
 	formationService FormationService
+
+	filterSanitizer ScenariosFilterSanitizer
 
 	selfRegisterDistinguishLabelKey string
 
@@ -198,6 +209,7 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		uidService:                      uidService,
 		timestampGen:                    timestamp.DefaultGenerator,
 		formationService:                formationService,
+		filterSanitizer:                 &filtersanitizer.FilterSanitizer{},
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		ordWebhookMapping:               ordWebhookMapping,
 	}
@@ -214,7 +226,7 @@ func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, 
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, appTenant, filters, false)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, appTenant, filters, model.FormationAssignmentTypeApplication, false, s.formationService.ListObjectIDsOfTypeForFormations, s.formationService.ListObjectIDsOfTypeForFormationsGlobal)
 	if err != nil {
 		return nil, err
 	}
@@ -258,7 +270,7 @@ func (s *service) ListAllGlobalByFilter(ctx context.Context, filters []*labelfil
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, "", filters, true)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, "", filters, model.FormationAssignmentTypeApplication, true, s.formationService.ListObjectIDsOfTypeForFormations, s.formationService.ListObjectIDsOfTypeForFormationsGlobal)
 	if err != nil {
 		return nil, err
 	}
@@ -381,7 +393,7 @@ func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string,
 		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
 
-	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.removeScenarioFilter(ctx, appTenant, filters, false)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, appTenant, filters, model.FormationAssignmentTypeApplication, false, s.formationService.ListObjectIDsOfTypeForFormations, s.formationService.ListObjectIDsOfTypeForFormationsGlobal)
 	if err != nil {
 		return nil, err
 	}
@@ -1496,39 +1508,4 @@ func buildWebhookProxyURL(mappingCfg ORDWebhookMapping) string {
 	}
 
 	return mappingCfg.ProxyURL + mappingCfg.OrdURLPath
-}
-
-func (s *service) removeScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter, isGlobal bool) (bool, []string, []*labelfilter.LabelFilter, error) {
-	var hasScenarioFilter bool
-	var appIDsInScenarios = make([]string, 0)
-	filtersWithoutScenarioFilter := make([]*labelfilter.LabelFilter, 0, len(filters))
-
-	for i, labelFilter := range filters {
-		if labelFilter.Key == model.ScenariosKey {
-			hasScenarioFilter = true
-			formationNamesInterface, err := label.ExtractValueFromJSONPath(*labelFilter.Query)
-			if err != nil {
-				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while extracting formation names from JSON path")
-			}
-
-			formationNames, err := label.ValueToStringsSlice(formationNamesInterface)
-			if err != nil {
-				return hasScenarioFilter, nil, nil, errors.Wrap(err, "while converting formation names to strings")
-			}
-			if isGlobal {
-				appIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormationsGlobal(ctx, formationNames, model.FormationAssignmentTypeApplication)
-				if err != nil {
-					return hasScenarioFilter, nil, nil, errors.Wrapf(err, "while getting application IDs for formations %v", formationNames)
-				}
-			} else {
-				appIDsInScenarios, err = s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, formationNames, model.FormationAssignmentTypeApplication)
-				if err != nil {
-					return hasScenarioFilter, nil, nil, errors.Wrapf(err, "while getting application IDs for formations %v", formationNames)
-				}
-			}
-		} else {
-			filtersWithoutScenarioFilter = append(filtersWithoutScenarioFilter, filters[i])
-		}
-	}
-	return hasScenarioFilter, appIDsInScenarios, filtersWithoutScenarioFilter, nil
 }
