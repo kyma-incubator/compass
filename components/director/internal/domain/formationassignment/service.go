@@ -19,7 +19,6 @@ import (
 	webhookdir "github.com/kyma-incubator/compass/components/director/pkg/webhook"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 	"github.com/pkg/errors"
-	"k8s.io/utils/strings/slices"
 )
 
 // FormationAssignmentRepository represents the Formation Assignment repository layer
@@ -434,15 +433,15 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 	appIDs := make(map[string]bool, len(appsInFormation))
 	rtIDs := make(map[string]bool, len(rtmsInFormation))
 	rtCtxIDs := make(map[string]bool, len(rtmCtxsInFormation))
-	for appID, _ := range appsInFormation {
+	for appID := range appsInFormation {
 		allIDs = append(allIDs, appID)
 		appIDs[appID] = false
 	}
-	for rtID, _ := range rtmsInFormation {
+	for rtID := range rtmsInFormation {
 		allIDs = append(allIDs, rtID)
 		rtIDs[rtID] = false
 	}
-	for rtCtxID, _ := range rtmCtxsInFormation {
+	for rtCtxID := range rtmCtxsInFormation {
 		allIDs = append(allIDs, rtCtxID)
 		rtCtxIDs[rtCtxID] = false
 	}
@@ -902,99 +901,6 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	}
 	log.C(ctx).Infof("Assignment with ID: %s set to state: %s", assignment.ID, assignment.State)
 	return nil
-}
-
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*notifications.AssignmentMappingPair {
-	formationAssignmentMapping := make([]*notifications.FormationAssignmentRequestMapping, 0, len(assignments))
-	for i, assignment := range assignments {
-		mappingObject := &notifications.FormationAssignmentRequestMapping{
-			Request:             nil,
-			FormationAssignment: assignments[i],
-		}
-		target := assignment.Target
-	assignment:
-		for j, request := range requests {
-			var objectID = request.Target
-
-			if objectID != target {
-				continue
-			}
-
-			participants := request.Object.GetParticipantsIDs()
-
-			// Remove assignment.Target from participants, as target and objectID are change via the mappings
-			// This is in order to not match loops in cases where they are not applicable
-			objectIndex := slices.Index(participants, assignment.Target)
-			if objectIndex != -1 {
-				participants = append(participants[:objectIndex], participants[objectIndex+1:]...)
-			}
-			for _, id := range participants {
-				if assignment.Source == id {
-					mappingObject.Request = requests[j].FormationAssignmentNotificationRequest
-					break assignment
-				}
-			}
-		}
-		formationAssignmentMapping = append(formationAssignmentMapping, mappingObject)
-	}
-
-	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments), len(requests), len(assignments)-len(requests))
-	sourceToTargetToMapping := make(map[string]map[string]*notifications.FormationAssignmentRequestMapping)
-	for _, mapping := range formationAssignmentMapping {
-		if _, ok := sourceToTargetToMapping[mapping.FormationAssignment.Source]; !ok {
-			sourceToTargetToMapping[mapping.FormationAssignment.Source] = make(map[string]*notifications.FormationAssignmentRequestMapping, len(assignments)/2)
-		}
-		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
-	}
-	// Make mapping
-	assignmentMappingNoNotificationPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
-	assignmentMappingSyncPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
-	assignmentMappingAsyncPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
-
-	for _, mapping := range formationAssignmentMapping {
-		var reverseMapping *notifications.FormationAssignmentRequestMapping
-		if mappingsForTarget, ok := sourceToTargetToMapping[mapping.FormationAssignment.Target]; ok {
-			if actualReverseMapping, ok := mappingsForTarget[mapping.FormationAssignment.Source]; ok {
-				reverseMapping = actualReverseMapping
-			}
-		}
-		if mapping.Request != nil {
-			mapping.Request.Object.SetAssignment(mapping.FormationAssignment)
-			if reverseMapping != nil {
-				mapping.Request.Object.SetReverseAssignment(reverseMapping.FormationAssignment)
-			}
-		}
-		if reverseMapping != nil && reverseMapping.Request != nil {
-			reverseMapping.Request.Object.SetAssignment(reverseMapping.FormationAssignment)
-			reverseMapping.Request.Object.SetReverseAssignment(mapping.FormationAssignment)
-		}
-		// We separate the assignment pairs in 3 groups
-		// 1. With no requests for the assignment
-		// 2. With synchronous webhook requests for the assignments
-		// 3. With asynchronous webhook requests for the assignments
-		// We do this, so that we can order the processing of the formation assignments
-		// This makes the notification count deterministic (we don't send asynchronous notifications before synchronous ones),
-		// and we assure that the notification receivers always receive the reverse as READY,
-		// if it has no request associated, rather than being sometimes INITIAL, sometimes READY.
-		if mapping.Request == nil {
-			assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &notifications.AssignmentMappingPair{
-				AssignmentReqMapping:        mapping,
-				ReverseAssignmentReqMapping: reverseMapping,
-			})
-		} else if mapping.Request != nil && mapping.Request.Webhook != nil && mapping.Request.Webhook.Mode != nil && *mapping.Request.Webhook.Mode == graphql.WebhookModeAsyncCallback {
-			assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &notifications.AssignmentMappingPair{
-				AssignmentReqMapping:        mapping,
-				ReverseAssignmentReqMapping: reverseMapping,
-			})
-		} else {
-			assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &notifications.AssignmentMappingPair{
-				AssignmentReqMapping:        mapping,
-				ReverseAssignmentReqMapping: reverseMapping,
-			})
-		}
-	}
-
-	return append(assignmentMappingNoNotificationPairs, append(assignmentMappingSyncPairs, assignmentMappingAsyncPairs...)...)
 }
 
 // ResetAssignmentConfigAndError sets the configuration and the error fields of the formation assignment to nil
