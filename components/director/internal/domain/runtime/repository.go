@@ -2,7 +2,6 @@ package runtime
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
@@ -110,7 +109,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 
 	return runtimeModel, nil
 }
-
 
 // GetByFiltersAndIDUsingUnion retrieves runtime by its ID if it matches the provided filters. The results from the filter subqueries are combined sing UNION
 func (r *pgRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
@@ -290,42 +288,6 @@ func (r *pgRepository) GetOldestFromIDs(ctx context.Context, tenant string, runt
 	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
-}
-
-// ListByScenarios lists all runtimes with given IDs that are in any of the given scenarios
-func (r *pgRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error) {
-	if len(scenarios) == 0 {
-		return nil, nil
-	}
-	tenantUUID, err := uuid.Parse(tenant)
-	if err != nil {
-		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
-	}
-
-	var entities RuntimeCollection
-
-	// Scenarios query part
-	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
-	for _, scenarioValue := range scenarios {
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
-	}
-
-	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.RuntimeLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating scenarios filter query")
-	}
-
-	var conditions repo.Conditions
-	if scenariosSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
-	}
-
-	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...); err != nil {
-		return nil, err
-	}
-
-	return r.multipleFromEntities(entities), nil
 }
 
 // ListByIDs lists all runtimes with given IDs

@@ -19,6 +19,10 @@ type ApplicationTemplateRepository struct {
 func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*model.ApplicationTemplate, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.ApplicationTemplate
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.ApplicationTemplate, error)); ok {
@@ -34,32 +38,6 @@ func (_m *ApplicationTemplateRepository) Get(ctx context.Context, id string) (*m
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListByIDs provides a mock function with given fields: ctx, ids
-func (_m *ApplicationTemplateRepository) ListByIDs(ctx context.Context, ids []string) ([]*model.ApplicationTemplate, error) {
-	ret := _m.Called(ctx, ids)
-
-	var r0 []*model.ApplicationTemplate
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string) ([]*model.ApplicationTemplate, error)); ok {
-		return rf(ctx, ids)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, []string) []*model.ApplicationTemplate); ok {
-		r0 = rf(ctx, ids)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.ApplicationTemplate)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = rf(ctx, ids)
 	} else {
 		r1 = ret.Error(1)
 	}

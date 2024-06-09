@@ -8,8 +8,6 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
-	"github.com/stretchr/testify/assert"
-
 	databuilder "github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/webhook/datainputbuilder/automock"
 
@@ -387,31 +385,31 @@ func TestWebhookDataInputBuilder_PrepareApplicationAndAppTemplateWithLabels(t *t
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			appRepo := unusedAppRepo()
+			appRepo := &automock.ApplicationRepository{}
 			if tCase.appRepo != nil {
 				appRepo = tCase.appRepo()
 			}
-			appTemplateRepo := unusedAppTemplateRepo()
+			appTemplateRepo := &automock.ApplicationTemplateRepository{}
 			if tCase.appTemplateRepo != nil {
 				appTemplateRepo = tCase.appTemplateRepo()
 			}
-			runtimeRepo := unusedRuntimeRepo()
+			runtimeRepo := &automock.RuntimeRepository{}
 			if tCase.runtimeRepo != nil {
 				runtimeRepo = tCase.runtimeRepo()
 			}
-			runtimeCtxRepo := unusedRuntimeCtxRepo()
+			runtimeCtxRepo := &automock.RuntimeContextRepository{}
 			if tCase.runtimeCtxRepo != nil {
 				runtimeCtxRepo = tCase.runtimeCtxRepo()
 			}
-			labelBuilder := unusedLabelBuilder()
+			labelBuilder := &automock.LabelInputBuilder{}
 			if tCase.labelBuilder != nil {
 				labelBuilder = tCase.labelBuilder()
 			}
-			tenantBuilder := unusedTenantBuilder()
+			tenantBuilder := &automock.TenantInputBuilder{}
 			if tCase.tenantBuilder != nil {
 				tenantBuilder = tCase.tenantBuilder()
 			}
-			certSubjectBuilder := unusedCertSubjectBuilder()
+			certSubjectBuilder := &automock.CertSubjectInputBuilder{}
 			if tCase.certSubjectBuilder != nil {
 				certSubjectBuilder = tCase.certSubjectBuilder()
 			}
@@ -548,31 +546,31 @@ func TestWebhookDataInputBuilder_PrepareRuntimeWithLabels(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			appRepo := unusedAppRepo()
+			appRepo := &automock.ApplicationRepository{}
 			if tCase.appRepo != nil {
 				appRepo = tCase.appRepo()
 			}
-			appTemplateRepo := unusedAppTemplateRepo()
+			appTemplateRepo := &automock.ApplicationTemplateRepository{}
 			if tCase.appTemplateRepo != nil {
 				appTemplateRepo = tCase.appTemplateRepo()
 			}
-			runtimeRepo := unusedRuntimeRepo()
+			runtimeRepo := &automock.RuntimeRepository{}
 			if tCase.runtimeRepo != nil {
 				runtimeRepo = tCase.runtimeRepo()
 			}
-			runtimeCtxRepo := unusedRuntimeCtxRepo()
+			runtimeCtxRepo := &automock.RuntimeContextRepository{}
 			if tCase.runtimeCtxRepo != nil {
 				runtimeCtxRepo = tCase.runtimeCtxRepo()
 			}
-			labelBuilder := unusedLabelBuilder()
+			labelBuilder := &automock.LabelInputBuilder{}
 			if tCase.labelBuilder != nil {
 				labelBuilder = tCase.labelBuilder()
 			}
-			tenantBuilder := unusedTenantBuilder()
+			tenantBuilder := &automock.TenantInputBuilder{}
 			if tCase.tenantBuilder != nil {
 				tenantBuilder = tCase.tenantBuilder()
 			}
-			certSubjectBuilder := unusedCertSubjectBuilder()
+			certSubjectBuilder := &automock.CertSubjectInputBuilder{}
 			if tCase.certSubjectBuilder != nil {
 				certSubjectBuilder = tCase.certSubjectBuilder()
 			}
@@ -651,7 +649,6 @@ func TestWebhookDataInputBuilder_PrepareRuntimeContextWithLabels(t *testing.T) {
 				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeCtxID, model.RuntimeContextLabelableObject).Return(nil, testErr).Once()
 				return builder
 			},
-			tenantBuilder:  unusedTenantBuilder,
 			expectedErrMsg: fmt.Sprintf("while building labels for runtime context with ID %q", testRuntimeCtxID),
 		},
 		{
@@ -678,27 +675,27 @@ func TestWebhookDataInputBuilder_PrepareRuntimeContextWithLabels(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			appRepo := unusedAppRepo()
+			appRepo := &automock.ApplicationRepository{}
 			if tCase.appRepo != nil {
 				appRepo = tCase.appRepo()
 			}
-			appTemplateRepo := unusedAppTemplateRepo()
+			appTemplateRepo := &automock.ApplicationTemplateRepository{}
 			if tCase.appTemplateRepo != nil {
 				appTemplateRepo = tCase.appTemplateRepo()
 			}
-			runtimeRepo := unusedRuntimeRepo()
+			runtimeRepo := &automock.RuntimeRepository{}
 			if tCase.runtimeRepo != nil {
 				runtimeRepo = tCase.runtimeRepo()
 			}
-			runtimeCtxRepo := unusedRuntimeCtxRepo()
+			runtimeCtxRepo := &automock.RuntimeContextRepository{}
 			if tCase.runtimeCtxRepo != nil {
 				runtimeCtxRepo = tCase.runtimeCtxRepo()
 			}
-			labelBuilder := unusedLabelBuilder()
+			labelBuilder := &automock.LabelInputBuilder{}
 			if tCase.labelBuilder != nil {
 				labelBuilder = tCase.labelBuilder()
 			}
-			tenantBuilder := unusedTenantBuilder()
+			tenantBuilder := &automock.TenantInputBuilder{}
 			if tCase.tenantBuilder != nil {
 				tenantBuilder = tCase.tenantBuilder()
 			}
@@ -718,940 +715,6 @@ func TestWebhookDataInputBuilder_PrepareRuntimeContextWithLabels(t *testing.T) {
 				require.NoError(t, err)
 				require.Equal(t, tCase.expectedRuntimeCtxWithLabels, runtimeCtxWithLabels)
 			}
-		})
-	}
-}
-
-func TestWebhookDataInputBuilder_PrepareRuntimeAndRuntimeContextWithLabels(t *testing.T) {
-	testCases := []struct {
-		name                          string
-		appRepo                       func() *automock.ApplicationRepository
-		appTemplateRepo               func() *automock.ApplicationTemplateRepository
-		runtimeRepo                   func() *automock.RuntimeRepository
-		runtimeCtxRepo                func() *automock.RuntimeContextRepository
-		labelBuilder                  func() *automock.LabelInputBuilder
-		tenantBuilder                 func() *automock.TenantInputBuilder
-		certSubjectBuilder            func() *automock.CertSubjectInputBuilder
-		expectedAppWithLabels         *webhook.ApplicationWithLabels
-		expectedAppTemplateWithLabels *webhook.ApplicationTemplateWithLabels
-		expectedRuntimeWithLabels     *webhook.RuntimeWithLabels
-		expectedRuntimeCtxWithLabels  *webhook.RuntimeContextWithLabels
-		expectedErrMsg                string
-	}{
-		{
-			name: "Success",
-			runtimeRepo: func() *automock.RuntimeRepository {
-				rtmRepo := &automock.RuntimeRepository{}
-				rtmRepo.On("GetByID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntime, nil).Once()
-				return rtmRepo
-			},
-			runtimeCtxRepo: func() *automock.RuntimeContextRepository {
-				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetByRuntimeID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntimeCtx, nil).Once()
-				return rtmCtxRepo
-			},
-			labelBuilder: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeID, model.RuntimeLabelableObject).Return(testExpectedRuntimeWithLabels.Labels, nil).Once()
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeCtxID, model.RuntimeContextLabelableObject).Return(testExpectedRuntimeCtxWithLabels.Labels, nil).Once()
-				return builder
-			},
-			tenantBuilder: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObject", emptyCtx, testRuntimeID, resource.Runtime).Return(testExpectedRuntimeWithLabels.Tenant, nil).Once()
-				builder.On("GetTenantForObject", emptyCtx, testRuntimeCtxID, resource.RuntimeContext).Return(testExpectedRuntimeCtxWithLabels.Tenant, nil).Once()
-				return builder
-			},
-			certSubjectBuilder: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObject", emptyCtx, testRuntimeID).Return(testTrustDetails, nil)
-				return builder
-			},
-			expectedRuntimeWithLabels:    testExpectedRuntimeWithLabelsAndTrustDetails,
-			expectedRuntimeCtxWithLabels: testExpectedRuntimeCtxWithLabels,
-		},
-		{
-			name: "Error when preparing runtime with labels fail",
-			runtimeRepo: func() *automock.RuntimeRepository {
-				rtmRepo := &automock.RuntimeRepository{}
-				rtmRepo.On("GetByID", emptyCtx, testTenantID, testRuntimeID).Return(nil, testErr).Once()
-				return rtmRepo
-			},
-			expectedErrMsg: fmt.Sprintf("while getting runtime by ID: %q", testRuntimeID),
-		},
-		{
-			name: "Error when getting runtime context by runtime ID fail",
-			runtimeRepo: func() *automock.RuntimeRepository {
-				rtmRepo := &automock.RuntimeRepository{}
-				rtmRepo.On("GetByID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntime, nil).Once()
-				return rtmRepo
-			},
-			runtimeCtxRepo: func() *automock.RuntimeContextRepository {
-				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetByRuntimeID", emptyCtx, testTenantID, testRuntimeID).Return(nil, testErr).Once()
-				return rtmCtxRepo
-			},
-			labelBuilder: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeID, model.RuntimeLabelableObject).Return(testExpectedRuntimeWithLabels.Labels, nil).Once()
-				return builder
-			},
-			tenantBuilder: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObject", emptyCtx, testRuntimeID, resource.Runtime).Return(testExpectedRuntimeWithLabels.Tenant, nil).Once()
-				return builder
-			},
-			certSubjectBuilder: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObject", emptyCtx, testRuntimeID).Return(testTrustDetails, nil)
-				return builder
-			},
-			expectedErrMsg: fmt.Sprintf("while getting runtime context for runtime with ID: %q", testRuntimeID),
-		},
-		{
-			name: "Error when getting runtime context labels fail",
-			runtimeRepo: func() *automock.RuntimeRepository {
-				rtmRepo := &automock.RuntimeRepository{}
-				rtmRepo.On("GetByID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntime, nil).Once()
-				return rtmRepo
-			},
-			runtimeCtxRepo: func() *automock.RuntimeContextRepository {
-				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetByRuntimeID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntimeCtx, nil).Once()
-				return rtmCtxRepo
-			},
-			labelBuilder: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeID, model.RuntimeLabelableObject).Return(testExpectedRuntimeWithLabels.Labels, nil).Once()
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeCtxID, model.RuntimeContextLabelableObject).Return(nil, testErr).Once()
-				return builder
-			},
-			tenantBuilder: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObject", emptyCtx, testRuntimeID, resource.Runtime).Return(testExpectedRuntimeWithLabels.Tenant, nil).Once()
-				return builder
-			},
-			certSubjectBuilder: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObject", emptyCtx, testRuntimeID).Return(testTrustDetails, nil)
-				return builder
-			},
-			expectedErrMsg: fmt.Sprintf("while building labels for runtime context with ID %q", testRuntimeCtxID),
-		},
-		{
-			name: "Error when building runtime context tenant with labels fail",
-			runtimeRepo: func() *automock.RuntimeRepository {
-				rtmRepo := &automock.RuntimeRepository{}
-				rtmRepo.On("GetByID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntime, nil).Once()
-				return rtmRepo
-			},
-			runtimeCtxRepo: func() *automock.RuntimeContextRepository {
-				rtmCtxRepo := &automock.RuntimeContextRepository{}
-				rtmCtxRepo.On("GetByRuntimeID", emptyCtx, testTenantID, testRuntimeID).Return(testRuntimeCtx, nil).Once()
-				return rtmCtxRepo
-			},
-			labelBuilder: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeID, model.RuntimeLabelableObject).Return(testExpectedRuntimeWithLabels.Labels, nil).Once()
-				builder.On("GetLabelsForObject", emptyCtx, testTenantID, testRuntimeCtxID, model.RuntimeContextLabelableObject).Return(testExpectedRuntimeCtxWithLabels.Labels, nil).Once()
-				return builder
-			},
-			tenantBuilder: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantForObject", emptyCtx, testRuntimeID, resource.Runtime).Return(testExpectedRuntimeWithLabels.Tenant, nil).Once()
-				builder.On("GetTenantForObject", emptyCtx, testRuntimeCtxID, resource.RuntimeContext).Return(nil, testErr).Once()
-				return builder
-			},
-			certSubjectBuilder: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObject", emptyCtx, testRuntimeID).Return(testTrustDetails, nil)
-				return builder
-			},
-			expectedErrMsg: fmt.Sprintf("while building tenant with labels for runtime context with ID %q", testRuntimeCtxID),
-		},
-	}
-
-	for _, tCase := range testCases {
-		t.Run(tCase.name, func(t *testing.T) {
-			// GIVEN
-			appRepo := unusedAppRepo()
-			if tCase.appRepo != nil {
-				appRepo = tCase.appRepo()
-			}
-			appTemplateRepo := unusedAppTemplateRepo()
-			if tCase.appTemplateRepo != nil {
-				appTemplateRepo = tCase.appTemplateRepo()
-			}
-			runtimeRepo := unusedRuntimeRepo()
-			if tCase.runtimeRepo != nil {
-				runtimeRepo = tCase.runtimeRepo()
-			}
-			runtimeCtxRepo := unusedRuntimeCtxRepo()
-			if tCase.runtimeCtxRepo != nil {
-				runtimeCtxRepo = tCase.runtimeCtxRepo()
-			}
-			labelBuilder := unusedLabelBuilder()
-			if tCase.labelBuilder != nil {
-				labelBuilder = tCase.labelBuilder()
-			}
-			tenantBuilder := unusedTenantBuilder()
-			if tCase.tenantBuilder != nil {
-				tenantBuilder = tCase.tenantBuilder()
-			}
-			certSubjectBuilder := unusedCertSubjectBuilder()
-			if tCase.certSubjectBuilder != nil {
-				certSubjectBuilder = tCase.certSubjectBuilder()
-			}
-			defer mock.AssertExpectationsForObjects(t, appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelBuilder, tenantBuilder, certSubjectBuilder)
-
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(appRepo, appTemplateRepo, runtimeRepo, runtimeCtxRepo, labelBuilder, tenantBuilder, certSubjectBuilder)
-
-			// WHEN
-			runtimeWithLabels, runtimeCtxWithLabels, err := webhookDataInputBuilder.PrepareRuntimeAndRuntimeContextWithLabels(emptyCtx, testTenantID, testRuntimeID)
-
-			// THEN
-			if tCase.expectedErrMsg != "" {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), tCase.expectedErrMsg)
-				require.Nil(t, runtimeWithLabels)
-				require.Nil(t, runtimeCtxWithLabels)
-			} else {
-				require.NoError(t, err)
-				require.Equal(t, tCase.expectedRuntimeWithLabels, runtimeWithLabels)
-				require.Equal(t, tCase.expectedRuntimeCtxWithLabels, runtimeCtxWithLabels)
-			}
-		})
-	}
-}
-
-func TestWebhookDataInputBuilder_PrepareRuntimesAndRuntimeContextsMappingsInFormation(t *testing.T) {
-	testRuntimeContextTenantWithLabels := &webhook.TenantWithLabels{
-		BusinessTenantMapping: testRuntimeCtxOwner,
-		Labels:                convertLabels(testTenantLabels),
-	}
-	testRuntimeTenantWithLabels := &webhook.TenantWithLabels{
-		BusinessTenantMapping: testRuntimeOwner,
-		Labels:                convertLabels(testTenantLabels),
-	}
-
-	testCases := []struct {
-		Name                            string
-		RuntimeRepoFN                   func() *automock.RuntimeRepository
-		RuntimeContextRepoFN            func() *automock.RuntimeContextRepository
-		LabelBuilderFN                  func() *automock.LabelInputBuilder
-		TenantBuilderFN                 func() *automock.TenantInputBuilder
-		certSubjectBuilderFN            func() *automock.CertSubjectInputBuilder
-		FormationName                   string
-		ExpectedRuntimesMappings        map[string]*webhook.RuntimeWithLabels
-		ExpectedRuntimeContextsMappings map[string]*webhook.RuntimeContextWithLabels
-		ExpectedErrMessage              string
-	}{
-		{
-			Name: "success",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), model.RuntimeLabelableObject).Return(map[string]map[string]string{
-					RuntimeID:               fixLabelsMapForRuntimeWithLabels(),
-					RuntimeContextRuntimeID: fixLabelsMapForRuntimeWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
-				}), model.RuntimeContextLabelableObject).Return(map[string]map[string]string{
-					RuntimeContextID:  fixLabelsMapForRuntimeContextWithLabels(),
-					RuntimeContext2ID: fixLabelsMapForRuntimeContextWithLabels(),
-				}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
-					RuntimeID:               testRuntimeTenantWithLabels,
-					RuntimeContextRuntimeID: testRuntimeTenantWithLabels,
-				}, nil)
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
-				}), resource.RuntimeContext).Return(map[string]*webhook.TenantWithLabels{
-					RuntimeContextID:  testRuntimeContextTenantWithLabels,
-					RuntimeContext2ID: testRuntimeContextTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			certSubjectBuilderFN: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObjects", emptyCtx, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				})).Return(map[string]*webhook.TrustDetails{
-					RuntimeID: testTrustDetails,
-				}, nil)
-				return builder
-			},
-			FormationName:                   ScenarioName,
-			ExpectedRuntimesMappings:        runtimeMappings,
-			ExpectedRuntimeContextsMappings: runtimeContextMappings,
-		},
-		{
-			Name: "error when building trust details for runtime",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), model.RuntimeLabelableObject).Return(map[string]map[string]string{
-					RuntimeID:               fixLabelsMapForRuntimeWithLabels(),
-					RuntimeContextRuntimeID: fixLabelsMapForRuntimeWithLabels(),
-				}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
-					RuntimeID:               testRuntimeTenantWithLabels,
-					RuntimeContextRuntimeID: testRuntimeTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			certSubjectBuilderFN: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObjects", emptyCtx, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				})).Return(nil, testErr)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while building trust details for runtimes",
-		},
-		{
-			Name: "error when building tenant with labels for runtime context",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), model.RuntimeLabelableObject).Return(map[string]map[string]string{
-					RuntimeID:               fixLabelsMapForRuntimeWithLabels(),
-					RuntimeContextRuntimeID: fixLabelsMapForRuntimeWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
-				}), model.RuntimeContextLabelableObject).Return(map[string]map[string]string{
-					RuntimeContextID:  fixLabelsMapForRuntimeContextWithLabels(),
-					RuntimeContext2ID: fixLabelsMapForRuntimeContextWithLabels(),
-				}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
-					RuntimeID:               testRuntimeTenantWithLabels,
-					RuntimeContextRuntimeID: testRuntimeTenantWithLabels,
-				}, nil)
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
-				}), resource.RuntimeContext).Return(nil, testErr)
-				return builder
-			},
-			certSubjectBuilderFN: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObjects", emptyCtx, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				})).Return(map[string]*webhook.TrustDetails{
-					RuntimeID: testTrustDetails,
-				}, nil)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while building tenants with labels for runtime contexts",
-		},
-		{
-			Name: "error when listing runtime contexts labels",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), model.RuntimeLabelableObject).Return(map[string]map[string]string{
-					RuntimeID:               fixLabelsMapForRuntimeWithLabels(),
-					RuntimeContextRuntimeID: fixLabelsMapForRuntimeWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextID, RuntimeContext2ID})
-				}), model.RuntimeContextLabelableObject).Return(nil, testErr).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), resource.Runtime).Return(map[string]*webhook.TenantWithLabels{
-					RuntimeID:               testRuntimeTenantWithLabels,
-					RuntimeContextRuntimeID: testRuntimeTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			certSubjectBuilderFN: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObjects", emptyCtx, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				})).Return(map[string]*webhook.TrustDetails{
-					RuntimeID: testTrustDetails,
-				}, nil)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing labels for runtime contexts",
-		},
-		{
-			Name: "error when listing runtimes labels",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), model.RuntimeLabelableObject).Return(nil, testErr).Once()
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing runtime labels",
-		},
-		{
-			Name: "error when building tenants with labels for runtimes",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return([]*model.Runtime{fixRuntimeModel(RuntimeContextRuntimeID), fixRuntimeModel(RuntimeID)}, nil).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), model.RuntimeLabelableObject).Return(map[string]map[string]string{
-					RuntimeID:               fixLabelsMapForRuntimeWithLabels(),
-					RuntimeContextRuntimeID: fixLabelsMapForRuntimeWithLabels(),
-				}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeID, RuntimeContextRuntimeID, RuntimeID})
-				}), resource.Runtime).Return(nil, testErr)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while building tenants with labels for runtimes",
-		},
-		{
-			Name: "error when listing parent runtimes",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByIDs", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{RuntimeContextRuntimeID, RuntimeID})
-				})).Return(nil, testErr).Once()
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.RuntimeContext{fixRuntimeContextModel(), fixRuntimeContextModelWithRuntimeID(RuntimeID)}, nil).Once()
-				return repo
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing parent runtimes of runtime contexts in scenario",
-		},
-		{
-			Name: "error when listing runtime contexts",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Runtime{fixRuntimeModel(RuntimeID)}, nil).Once()
-				return repo
-			},
-			RuntimeContextRepoFN: func() *automock.RuntimeContextRepository {
-				repo := &automock.RuntimeContextRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return(nil, testErr)
-				return repo
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing runtime contexts in scenario",
-		},
-		{
-			Name: "error when listing runtimes",
-			RuntimeRepoFN: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByScenarios", emptyCtx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
-				return repo
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing runtimes in scenario",
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// GIVEN
-			runtimeRepo := unusedRuntimeRepo()
-			if testCase.RuntimeRepoFN != nil {
-				runtimeRepo = testCase.RuntimeRepoFN()
-			}
-			runtimeContextRepo := unusedRuntimeCtxRepo()
-			if testCase.RuntimeContextRepoFN != nil {
-				runtimeContextRepo = testCase.RuntimeContextRepoFN()
-			}
-			labelBuilder := unusedLabelBuilder()
-			if testCase.LabelBuilderFN != nil {
-				labelBuilder = testCase.LabelBuilderFN()
-			}
-			tenantBuilder := unusedTenantBuilder()
-			if testCase.TenantBuilderFN != nil {
-				tenantBuilder = testCase.TenantBuilderFN()
-			}
-			certSubjectBuilder := unusedCertSubjectBuilder()
-			if testCase.certSubjectBuilderFN != nil {
-				certSubjectBuilder = testCase.certSubjectBuilderFN()
-			}
-
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(nil, nil, runtimeRepo, runtimeContextRepo, labelBuilder, tenantBuilder, certSubjectBuilder)
-
-			// WHEN
-			runtimeMappings, runtimeContextMappings, err := webhookDataInputBuilder.PrepareRuntimesAndRuntimeContextsMappingsInFormation(emptyCtx, Tnt, testCase.FormationName)
-
-			// THEN
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedRuntimesMappings, runtimeMappings)
-				assert.Equal(t, testCase.ExpectedRuntimeContextsMappings, runtimeContextMappings)
-			} else {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-				require.Nil(t, runtimeMappings, runtimeContextMappings)
-			}
-
-			mock.AssertExpectationsForObjects(t, runtimeRepo, runtimeContextRepo, labelBuilder, tenantBuilder, certSubjectBuilder)
-		})
-	}
-}
-
-func TestWebhookDataInputBuilder_PrepareApplicationMappingsInFormation(t *testing.T) {
-	testCases := []struct {
-		Name                         string
-		ApplicationRepoFN            func() *automock.ApplicationRepository
-		ApplicationTemplateRepoFN    func() *automock.ApplicationTemplateRepository
-		LabelBuilderFN               func() *automock.LabelInputBuilder
-		TenantBuilderFN              func() *automock.TenantInputBuilder
-		certSubjectBuilderFN         func() *automock.CertSubjectInputBuilder
-		FormationName                string
-		ExpectedApplicationsMappings map[string]*webhook.ApplicationWithLabels
-		ExpectedAppTemplateMappings  map[string]*webhook.ApplicationTemplateWithLabels
-		ExpectedErrMessage           string
-	}{
-		{
-			Name: "success",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(map[string]map[string]string{
-					ApplicationID:  fixLabelsMapForApplicationWithLabels(),
-					Application2ID: fixLabelsMapForApplicationWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, []string{ApplicationTemplateID}, model.AppTemplateLabelableObject).
-					Return(map[string]map[string]string{
-						ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
-					}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationID:  testAppTenantWithLabels,
-					Application2ID: testAppTenantWithLabels,
-				}, nil)
-				builder.On("GetTenantsForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
-					ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
-				}, []string{ApplicationTemplateID}).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationTemplateID: testAppTemplateTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			certSubjectBuilderFN: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObjects", emptyCtx, []string{ApplicationTemplateID}).Return(map[string]*webhook.TrustDetails{
-					ApplicationTemplateID: testTrustDetails,
-				}, nil)
-				return builder
-			},
-			FormationName:                ScenarioName,
-			ExpectedApplicationsMappings: applicationMappings,
-			ExpectedAppTemplateMappings:  applicationTemplateMappings,
-		},
-		{
-			Name: "error when building tenant with labels for application templates",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(map[string]map[string]string{
-					ApplicationID:  fixLabelsMapForApplicationWithLabels(),
-					Application2ID: fixLabelsMapForApplicationWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, []string{ApplicationTemplateID}, model.AppTemplateLabelableObject).
-					Return(map[string]map[string]string{
-						ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
-					}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationID:  testAppTenantWithLabels,
-					Application2ID: testAppTenantWithLabels,
-				}, nil)
-				builder.On("GetTenantsForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
-					ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
-				}, []string{ApplicationTemplateID}).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationTemplateID: testAppTemplateTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			certSubjectBuilderFN: func() *automock.CertSubjectInputBuilder {
-				builder := &automock.CertSubjectInputBuilder{}
-				builder.On("GetTrustDetailsForObjects", emptyCtx, []string{ApplicationTemplateID}).Return(nil, testErr)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while building trust details for application tempalates",
-		},
-		{
-			Name: "error when building tenant with labels for application templates",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(map[string]map[string]string{
-					ApplicationID:  fixLabelsMapForApplicationWithLabels(),
-					Application2ID: fixLabelsMapForApplicationWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, []string{ApplicationTemplateID}, model.AppTemplateLabelableObject).
-					Return(nil, testErr).Once()
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationID:  testAppTenantWithLabels,
-					Application2ID: testAppTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing labels for application templates",
-		},
-		{
-			Name: "error when building tenant with labels for application templates",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return([]*model.ApplicationTemplate{fixApplicationTemplateModel()}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(map[string]map[string]string{
-					ApplicationID:  fixLabelsMapForApplicationWithLabels(),
-					Application2ID: fixLabelsMapForApplicationWithLabels(),
-				}, nil).Once()
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, []string{ApplicationTemplateID}, model.AppTemplateLabelableObject).
-					Return(map[string]map[string]string{
-						ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
-					}, nil).Once()
-
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationID:  testAppTenantWithLabels,
-					Application2ID: testAppTenantWithLabels,
-				}, nil)
-				builder.On("GetTenantsForApplicationTemplates", emptyCtx, Tnt, map[string]map[string]string{
-					ApplicationTemplateID: fixLabelsMapForApplicationTemplateWithLabels(),
-				}, []string{ApplicationTemplateID}).Return(nil, testErr)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while building tenants with labels for application templates",
-		},
-		{
-			Name: "success when there are no applications in scenario",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{}, nil).Once()
-				return repo
-			},
-			FormationName:                ScenarioName,
-			ExpectedApplicationsMappings: make(map[string]*webhook.ApplicationWithLabels, 0),
-			ExpectedAppTemplateMappings:  make(map[string]*webhook.ApplicationTemplateWithLabels, 0),
-			ExpectedErrMessage:           "",
-		},
-		{
-			Name: "error when listing app labels",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(nil, testErr).Once()
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing labels for applications",
-		},
-		{
-			Name: "error when listing app labels",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(map[string]map[string]string{
-					ApplicationID:  fixLabelsMapForApplicationWithLabels(),
-					Application2ID: fixLabelsMapForApplicationWithLabels(),
-				}, nil).Once()
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), resource.Application).Return(nil, testErr)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while building tenants with labels for applications",
-		},
-		{
-			Name: "error when listing app templates",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return([]*model.Application{fixApplicationModel(ApplicationID), fixApplicationModelWithoutTemplate(Application2ID)}, nil).Once()
-				return repo
-			},
-			ApplicationTemplateRepoFN: func() *automock.ApplicationTemplateRepository {
-				repo := &automock.ApplicationTemplateRepository{}
-				repo.On("ListByIDs", emptyCtx, []string{ApplicationTemplateID}).Return(nil, testErr).Once()
-				return repo
-			},
-			LabelBuilderFN: func() *automock.LabelInputBuilder {
-				builder := &automock.LabelInputBuilder{}
-				builder.On("GetLabelsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), model.ApplicationLabelableObject).Return(map[string]map[string]string{
-					ApplicationID:  fixLabelsMapForApplicationWithLabels(),
-					Application2ID: fixLabelsMapForApplicationWithLabels(),
-				}, nil).Once()
-				return builder
-			},
-			TenantBuilderFN: func() *automock.TenantInputBuilder {
-				builder := &automock.TenantInputBuilder{}
-				builder.On("GetTenantsForObjects", emptyCtx, Tnt, mock.MatchedBy(func(ids []string) bool {
-					return checkIfEqual(ids, []string{ApplicationID, Application2ID})
-				}), resource.Application).Return(map[string]*webhook.TenantWithLabels{
-					ApplicationID:  testAppTenantWithLabels,
-					Application2ID: testAppTenantWithLabels,
-				}, nil)
-				return builder
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing application templates",
-		},
-		{
-			Name: "error when listing application in formation",
-			ApplicationRepoFN: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListByScenariosNoPaging", emptyCtx, Tnt, []string{ScenarioName}).Return(nil, testErr).Once()
-				return repo
-			},
-			FormationName:      ScenarioName,
-			ExpectedErrMessage: "while listing applications in formation",
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			// GIVEN
-			applicationRepo := unusedAppRepo()
-			if testCase.ApplicationRepoFN != nil {
-				applicationRepo = testCase.ApplicationRepoFN()
-			}
-			appTemplateRepo := unusedAppTemplateRepo()
-			if testCase.ApplicationTemplateRepoFN != nil {
-				appTemplateRepo = testCase.ApplicationTemplateRepoFN()
-			}
-			labelBuilder := unusedLabelBuilder()
-			if testCase.LabelBuilderFN != nil {
-				labelBuilder = testCase.LabelBuilderFN()
-			}
-			tenantBuilder := unusedTenantBuilder()
-			if testCase.TenantBuilderFN != nil {
-				tenantBuilder = testCase.TenantBuilderFN()
-			}
-			certSubjectBuilder := &automock.CertSubjectInputBuilder{}
-			if testCase.certSubjectBuilderFN != nil {
-				certSubjectBuilder = testCase.certSubjectBuilderFN()
-			}
-
-			webhookDataInputBuilder := databuilder.NewWebhookDataInputBuilder(applicationRepo, appTemplateRepo, nil, nil, labelBuilder, tenantBuilder, certSubjectBuilder)
-
-			// WHEN
-			appMappings, appTemplateMappings, err := webhookDataInputBuilder.PrepareApplicationMappingsInFormation(emptyCtx, Tnt, testCase.FormationName)
-
-			// THEN
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				assert.Equal(t, testCase.ExpectedApplicationsMappings, appMappings)
-				assert.Equal(t, testCase.ExpectedAppTemplateMappings, appTemplateMappings)
-			} else {
-				require.Error(t, err)
-				require.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-				require.Nil(t, appMappings, appTemplateMappings)
-			}
-
-			mock.AssertExpectationsForObjects(t, applicationRepo, appTemplateRepo, labelBuilder, tenantBuilder, certSubjectBuilder)
 		})
 	}
 }
@@ -1688,13 +751,4 @@ func checkIfEqual(first, second []string) bool {
 		}
 	}
 	return true
-}
-
-func checkIfIDInSet(wh *model.Webhook, ids []string) bool {
-	for _, id := range ids {
-		if wh.ID == id {
-			return true
-		}
-	}
-	return false
 }

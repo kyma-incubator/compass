@@ -6,13 +6,13 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/stretchr/testify/mock"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
-
-	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
@@ -122,17 +122,6 @@ func fixFormationAssignmentGQLModelWithConfigAndError(configValue, errorValue *s
 		Configuration:                 configValue,
 		LastStateChangeTimestamp:      graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
 		LastNotificationSentTimestamp: graphql.TimePtrToGraphqlTimestampPtr(&defaultTime),
-	}
-}
-
-func fixFormationAssignmentGQLModelWithState(state string) *graphql.FormationAssignment {
-	return &graphql.FormationAssignment{
-		ID:         TestID,
-		Source:     TestSource,
-		SourceType: TestSourceType,
-		Target:     TestTarget,
-		TargetType: TestTargetType,
-		State:      state,
 	}
 }
 
@@ -341,10 +330,10 @@ func fixModelBusinessTenantMappingWithType(t tnt.Type) *model.BusinessTenantMapp
 	}
 }
 
-func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+func fixAssignmentMappingPairWithID(id string) *notifications.AssignmentMappingPairWithOperation {
+	return &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
+			AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 				Request:             nil,
 				FormationAssignment: &model.FormationAssignment{ID: id, Source: "source"},
 			},
@@ -354,22 +343,22 @@ func fixAssignmentMappingPairWithID(id string) *formationassignment.AssignmentMa
 	}
 }
 
-func fixAssignmentMappingPairWithAssignment(assignment *model.FormationAssignment) *formationassignment.AssignmentMappingPairWithOperation {
+func fixAssignmentMappingPairWithAssignment(assignment *model.FormationAssignment) *notifications.AssignmentMappingPairWithOperation {
 	return fixAssignmentMappingPairWithAssignmentAndRequest(assignment, nil)
 }
 
-func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+func fixAssignmentMappingPairWithAssignmentAndRequest(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *notifications.AssignmentMappingPairWithOperation {
 	return fixAssignmentMappingPair(assignment, req, model.AssignFormation)
 }
 
-func fixAssignmentMappingPairWithUnassignOperation(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
+func fixAssignmentMappingPairWithUnassignOperation(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest) *notifications.AssignmentMappingPairWithOperation {
 	return fixAssignmentMappingPair(assignment, req, model.UnassignFormation)
 }
 
-func fixAssignmentMappingPair(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest, operation model.FormationOperation) *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+func fixAssignmentMappingPair(assignment *model.FormationAssignment, req *webhookclient.FormationAssignmentNotificationRequest, operation model.FormationOperation) *notifications.AssignmentMappingPairWithOperation {
+	return &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
+			AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 				Request:             req,
 				FormationAssignment: assignment,
 			},
@@ -379,14 +368,14 @@ func fixAssignmentMappingPair(assignment *model.FormationAssignment, req *webhoo
 	}
 }
 
-func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, reverseAssignment *model.FormationAssignment, req, reverseReq *webhookclient.FormationAssignmentNotificationRequest) *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+func fixAssignmentMappingPairWithAssignmentAndRequestWithReverse(assignment, reverseAssignment *model.FormationAssignment, req, reverseReq *webhookclient.FormationAssignmentNotificationRequest) *notifications.AssignmentMappingPairWithOperation {
+	return &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
+			AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 				Request:             req,
 				FormationAssignment: assignment,
 			},
-			ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+			ReverseAssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 				Request:             reverseReq,
 				FormationAssignment: reverseAssignment,
 			},
@@ -763,58 +752,6 @@ func fixFormationAssignmentInputsForRtmCtxWithAppAndRtmCtx(objectType model.Form
 	}
 }
 
-func fixNotificationRequestAndReverseRequest(objectID, object2ID string, participants []string, assignment, assignmentReverse *model.FormationAssignment, webhookType, reverseWebhookType string, hasReverseWebhook bool) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, *automock.TemplateInput, *automock.TemplateInput) {
-	var request *webhookclient.FormationAssignmentNotificationRequestTargetMapping
-	var requestReverse *webhookclient.FormationAssignmentNotificationRequestTargetMapping
-
-	templateInput := &automock.TemplateInput{}
-	templateInputReverse := &automock.TemplateInput{}
-
-	webhook := graphql.Webhook{}
-	webhookReverse := graphql.Webhook{}
-	switch webhookType {
-	case "application":
-		webhook.ApplicationID = &objectID
-	case "runtime":
-		webhook.RuntimeID = &objectID
-	}
-
-	templateInput.Mock.On("GetParticipantsIDs").Return(slices.Clone(participants)).Times(1)
-	templateInput.Mock.On("SetAssignment", assignment).Times(2)
-	templateInput.Mock.On("SetReverseAssignment", assignmentReverse).Times(2)
-
-	request = &webhookclient.FormationAssignmentNotificationRequestTargetMapping{
-		FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
-			Webhook: &webhook, Object: templateInput,
-		},
-		Target: objectID,
-	}
-
-	if hasReverseWebhook {
-		switch reverseWebhookType {
-		case "application":
-			webhookReverse.ApplicationID = &object2ID
-		case "runtime":
-			webhookReverse.RuntimeID = &object2ID
-		}
-
-		templateInputReverse.Mock.On("GetParticipantsIDs").Return(participants).Times(1)
-		templateInputReverse.Mock.On("SetAssignment", assignmentReverse).Times(2)
-		templateInputReverse.Mock.On("SetReverseAssignment", assignment).Times(2)
-
-		requestReverse = &webhookclient.FormationAssignmentNotificationRequestTargetMapping{
-			FormationAssignmentNotificationRequest: &webhookclient.FormationAssignmentNotificationRequest{
-				Webhook: &webhookReverse, Object: templateInputReverse,
-			},
-			Target: object2ID,
-		}
-	} else {
-		requestReverse = nil
-	}
-
-	return []*webhookclient.FormationAssignmentNotificationRequestTargetMapping{request, requestReverse}, templateInput, templateInputReverse
-}
-
 func fixNotificationStatusReturnedDetails(resourceType model.ResourceType, resourceSubtype string, fa, reverseFa *model.FormationAssignment, location formationconstraint.JoinPointLocation, tenantID string, notificationStatusReport *statusreport.NotificationStatusReport) *formationconstraint.NotificationStatusReturnedOperationDetails {
 	return &formationconstraint.NotificationStatusReturnedOperationDetails{
 		ResourceType:               resourceType,
@@ -841,14 +778,6 @@ func unusedFormationAssignmentRepository() *automock.FormationAssignmentReposito
 
 func unusedUIDService() *automock.UIDService {
 	return &automock.UIDService{}
-}
-
-func unusedRuntimeRepository() *automock.RuntimeRepository {
-	return &automock.RuntimeRepository{}
-}
-
-func unusedRuntimeContextRepository() *automock.RuntimeContextRepository {
-	return &automock.RuntimeContextRepository{}
 }
 
 func unusedWebhookDataInputBuilder() *databuilderautomock.DataInputBuilder {

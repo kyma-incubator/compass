@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
 
 	"github.com/gorilla/mux"
@@ -49,18 +51,18 @@ func TestHandler_UpdateFormationAssignmentStatus(t *testing.T) {
 	assignmentOperationWithUnassignType := fixAssignmentOperationModelWithTypeAndTrigger(model.Unassign, model.UnassignObject)
 	assignmentOperationWithInstanceCreatorUnassignType := fixAssignmentOperationModelWithTypeAndTrigger(model.InstanceCreatorUnassign, model.UnassignObject)
 
-	testFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+	testFAReqMapping := notifications.FormationAssignmentRequestMapping{
 		Request:             fixEmptyNotificationRequest(),
 		FormationAssignment: faWithSourceAppAndTargetRuntime,
 	}
 
-	testReverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+	testReverseFAReqMapping := notifications.FormationAssignmentRequestMapping{
 		Request:             fixEmptyNotificationRequest(),
 		FormationAssignment: reverseFAWithSourceRuntimeAndTargetApp,
 	}
 
-	testAssignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+	testAssignmentPair := &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
 			AssignmentReqMapping:        &testReverseFAReqMapping,
 			ReverseAssignmentReqMapping: &testFAReqMapping,
 		},
@@ -1773,18 +1775,18 @@ func TestHandler_ResetFormationAssignmentStatus(t *testing.T) {
 		return fixFormationAssignmentModelWithStateAndConfig(testReverseFormationAssignmentID, testFormationID, internalTntID, faTargetID, faSourceID, model.FormationAssignmentTypeRuntime, model.FormationAssignmentTypeApplication, state, testValidConfig)
 	}
 
-	testFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+	testFAReqMapping := notifications.FormationAssignmentRequestMapping{
 		Request:             fixEmptyNotificationRequest(),
 		FormationAssignment: faWithSourceAppAndTargetRuntime(model.ConfigPendingAssignmentState),
 	}
 
-	testReverseFAReqMapping := formationassignment.FormationAssignmentRequestMapping{
+	testReverseFAReqMapping := notifications.FormationAssignmentRequestMapping{
 		Request:             fixEmptyNotificationRequest(),
 		FormationAssignment: reverseFAWithSourceRuntimeAndTargetApp(model.InitialAssignmentState),
 	}
 
-	testAssignmentPair := &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
+	testAssignmentPair := &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
 			AssignmentReqMapping:        &testReverseFAReqMapping,
 			ReverseAssignmentReqMapping: &testFAReqMapping,
 		},

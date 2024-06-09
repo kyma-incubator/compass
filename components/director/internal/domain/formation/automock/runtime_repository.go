@@ -77,36 +77,6 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
-// ListAll provides a mock function with given fields: ctx, tenant, filter
-func (_m *RuntimeRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	ret := _m.Called(ctx, tenant, filter)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListAll")
-	}
-
-	var r0 []*model.Runtime
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
-		return rf(ctx, tenant, filter)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter) []*model.Runtime); ok {
-		r0 = rf(ctx, tenant, filter)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Runtime)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
-		r1 = rf(ctx, tenant, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListAllWithUnionSetCombination provides a mock function with given fields: ctx, tenant, filter
 func (_m *RuntimeRepository) ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
@@ -130,66 +100,6 @@ func (_m *RuntimeRepository) ListAllWithUnionSetCombination(ctx context.Context,
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter) error); ok {
 		r1 = rf(ctx, tenant, filter)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListByIDs provides a mock function with given fields: ctx, tenant, ids
-func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error) {
-	ret := _m.Called(ctx, tenant, ids)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByIDs")
-	}
-
-	var r0 []*model.Runtime
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {
-		return rf(ctx, tenant, ids)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Runtime); ok {
-		r0 = rf(ctx, tenant, ids)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Runtime)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = rf(ctx, tenant, ids)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// ListByScenarios provides a mock function with given fields: ctx, tenant, scenarios
-func (_m *RuntimeRepository) ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error) {
-	ret := _m.Called(ctx, tenant, scenarios)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListByScenarios")
-	}
-
-	var r0 []*model.Runtime
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {
-		return rf(ctx, tenant, scenarios)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Runtime); ok {
-		r0 = rf(ctx, tenant, scenarios)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Runtime)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = rf(ctx, tenant, scenarios)
 	} else {
 		r1 = ret.Error(1)
 	}

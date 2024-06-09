@@ -3,6 +3,7 @@ package eventing
 import (
 	"context"
 	"fmt"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
 	"k8s.io/utils/strings/slices"

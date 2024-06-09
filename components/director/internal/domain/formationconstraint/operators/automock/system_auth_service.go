@@ -18,6 +18,10 @@ type SystemAuthService struct {
 func (_m *SystemAuthService) ListForObject(ctx context.Context, objectType model.SystemAuthReferenceObjectType, objectID string) ([]model.SystemAuth, error) {
 	ret := _m.Called(ctx, objectType, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObject")
+	}
+
 	var r0 []model.SystemAuth
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, model.SystemAuthReferenceObjectType, string) ([]model.SystemAuth, error)); ok {

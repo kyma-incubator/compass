@@ -3,6 +3,8 @@ package formation_test
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -3071,17 +3073,17 @@ func TestServiceResynchronizeFormationNotifications(t *testing.T) {
 		},
 	}
 
-	var formationAssignmentPairs = make([]*formationassignment.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
+	var formationAssignmentPairs = make([]*notifications.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
 	for i := range formationAssignments {
 		formationAssignmentPairs = append(formationAssignmentPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignments[i]))
 	}
 
-	var formationAssignmentInitialPairs = make([]*formationassignment.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
+	var formationAssignmentInitialPairs = make([]*notifications.AssignmentMappingPairWithOperation, 0, len(formationAssignments))
 	for i := range formationAssignmentsInInitialState {
 		formationAssignmentInitialPairs = append(formationAssignmentInitialPairs, fixFormationAssignmentPairWithNoReverseAssignment(notificationsForAssignments[i], formationAssignmentsInInitialState[i]))
 	}
 
-	var formationAssignmentReadyAndCreateErrorPairs = make([]*formationassignment.AssignmentMappingPairWithOperation, 0, len(formationAssignmentsInReadyAndOneCreateErrorStates))
+	var formationAssignmentReadyAndCreateErrorPairs = make([]*notifications.AssignmentMappingPairWithOperation, 0, len(formationAssignmentsInReadyAndOneCreateErrorStates))
 	for i := range formationAssignmentsInReadyAndOneCreateErrorStates {
 		formationAssignmentReadyAndCreateErrorPairs = append(formationAssignmentReadyAndCreateErrorPairs, fixFormationAssignmentPairWithNoReverseAssignment(nil, formationAssignmentsInReadyAndOneCreateErrorStates[i]))
 		formationAssignmentReadyAndCreateErrorPairs[i].Operation = model.AssignFormation

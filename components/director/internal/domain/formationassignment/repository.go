@@ -280,6 +280,17 @@ func (r *repository) ListByFormationIDsNoPaging(ctx context.Context, tenantID st
 	return formationAssignmentsPerFormation, nil
 }
 
+// ListAllForFormation missing godoc
+func (r *repository) ListAllForFormation(ctx context.Context, tenant, formationID string) ([]*model.FormationAssignment, error) {
+	var entities EntityCollection
+
+	if err := r.lister.List(ctx, resource.FormationAssignment, tenant, &entities, repo.NewEqualCondition("formation_id", formationID)); err != nil {
+		return nil, err
+	}
+
+	return r.multipleFromEntities(entities), nil
+}
+
 // ListAllForObject retrieves all FormationAssignment objects for formation with ID `formationID` that have objectID as `target` or `source` from the database that are visible for `tenant`
 func (r *repository) ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error) {
 	var entities EntityCollection

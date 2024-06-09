@@ -6,6 +6,7 @@ import (
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/hashicorp/go-multierror"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -35,6 +36,7 @@ type FormationAssignmentRepository interface {
 	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
 	GetReverseBySourceAndTarget(ctx context.Context, tenantID, formationID, sourceID, targetID string) (*model.FormationAssignment, error)
 	List(ctx context.Context, pageSize int, cursor, tenantID string) (*model.FormationAssignmentPage, error)
+	ListAllForFormation(ctx context.Context, tenant, formationID string) ([]*model.FormationAssignment, error)
 	ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	ListByFormationIDsNoPaging(ctx context.Context, tenantID string, formationIDs []string) ([][]*model.FormationAssignment, error)
 	ListAllForObject(ctx context.Context, tenant, formationID, objectID string) ([]*model.FormationAssignment, error)
@@ -47,20 +49,9 @@ type FormationAssignmentRepository interface {
 	Exists(ctx context.Context, id, tenantID string) (bool, error)
 }
 
-//go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type applicationRepository interface {
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
-}
-
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
-}
-
-//go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
-type runtimeRepository interface {
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 }
 
 //go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -77,19 +68,6 @@ type webhookConverter interface {
 type tenantRepository interface {
 	Get(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 	GetParentsRecursivelyByExternalTenant(ctx context.Context, externalTenant string) ([]*model.BusinessTenantMapping, error)
-}
-
-// Used for testing
-//
-//go:generate mockery --exported --name=templateInput --output=automock --outpkg=automock --case=underscore --disable-version-string
-type templateInput interface { //nolint
-	webhookdir.TemplateInput
-	GetParticipantsIDs() []string
-	GetAssignment() *model.FormationAssignment
-	GetReverseAssignment() *model.FormationAssignment
-	SetAssignment(*model.FormationAssignment)
-	SetReverseAssignment(*model.FormationAssignment)
-	Clone() webhookdir.FormationAssignmentTemplateInput
 }
 
 // UIDService generates UUIDs for new entities
@@ -117,15 +95,13 @@ type statusService interface {
 
 //go:generate mockery --exported --name=faNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type faNotificationService interface {
-	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
+	GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *notifications.FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)
 	PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
 }
 
 type service struct {
 	repo                       FormationAssignmentRepository
 	uidSvc                     UIDService
-	applicationRepository      applicationRepository
-	runtimeRepo                runtimeRepository
 	runtimeContextRepo         runtimeContextRepository
 	notificationService        notificationService
 	faNotificationService      faNotificationService
@@ -138,12 +114,10 @@ type service struct {
 }
 
 // NewService creates a Formation Assignment service
-func NewService(repo FormationAssignmentRepository, uidSvc UIDService, applicationRepository applicationRepository, runtimeRepository runtimeRepository, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, assignmentOperationService assignmentOperationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
+func NewService(repo FormationAssignmentRepository, uidSvc UIDService, runtimeContextRepo runtimeContextRepository, notificationService notificationService, faNotificationService faNotificationService, assignmentOperationService assignmentOperationService, labelService labelService, formationRepository formationRepository, statusService statusService, runtimeTypeLabelKey, applicationTypeLabelKey string) *service {
 	return &service{
 		repo:                       repo,
 		uidSvc:                     uidSvc,
-		applicationRepository:      applicationRepository,
-		runtimeRepo:                runtimeRepository,
 		runtimeContextRepo:         runtimeContextRepo,
 		notificationService:        notificationService,
 		faNotificationService:      faNotificationService,
@@ -429,41 +403,48 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 //
 // In case of objectType==RUNTIME_CONTEXT formationAssignments for the object and it's parent runtime are not generated.
 func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error) {
-	applications, err := s.applicationRepository.ListByScenariosNoPaging(ctx, tnt, []string{formation.Name})
+	allAssignments, err := s.repo.ListAllForFormation(ctx, tnt, formation.ID)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "while listing formation assignments for formation %q", formation.ID)
 	}
 
-	runtimes, err := s.runtimeRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
-	if err != nil {
-		return nil, err
+	appsInFormation := make(map[string]struct{})
+	rtmsInFormation := make(map[string]struct{})
+	rtmCtxsInFormation := make(map[string]struct{})
+	for _, assignment := range allAssignments {
+		switch assignment.SourceType {
+		case model.FormationAssignmentTypeApplication:
+			appsInFormation[assignment.Source] = struct{}{}
+		case model.FormationAssignmentTypeRuntime:
+			rtmsInFormation[assignment.Source] = struct{}{}
+		case model.FormationAssignmentTypeRuntimeContext:
+			rtmCtxsInFormation[assignment.Source] = struct{}{}
+		}
+		switch assignment.TargetType {
+		case model.FormationAssignmentTypeApplication:
+			appsInFormation[assignment.Target] = struct{}{}
+		case model.FormationAssignmentTypeRuntime:
+			rtmsInFormation[assignment.Target] = struct{}{}
+		case model.FormationAssignmentTypeRuntimeContext:
+			rtmCtxsInFormation[assignment.Target] = struct{}{}
+		}
 	}
 
-	runtimeContexts, err := s.runtimeContextRepo.ListByScenarios(ctx, tnt, []string{formation.Name})
-	if err != nil {
-		return nil, err
+	allIDs := make([]string, 0, len(appsInFormation)+len(rtmsInFormation)+len(rtmCtxsInFormation))
+	appIDs := make(map[string]bool, len(appsInFormation))
+	rtIDs := make(map[string]bool, len(rtmsInFormation))
+	rtCtxIDs := make(map[string]bool, len(rtmCtxsInFormation))
+	for appID, _ := range appsInFormation {
+		allIDs = append(allIDs, appID)
+		appIDs[appID] = false
 	}
-
-	allIDs := make([]string, 0, len(applications)+len(runtimes)+len(runtimeContexts))
-	appIDs := make(map[string]bool, len(applications))
-	rtIDs := make(map[string]bool, len(runtimes))
-	rtCtxIDs := make(map[string]bool, len(runtimeContexts))
-	for _, app := range applications {
-		allIDs = append(allIDs, app.ID)
-		appIDs[app.ID] = false
+	for rtID, _ := range rtmsInFormation {
+		allIDs = append(allIDs, rtID)
+		rtIDs[rtID] = false
 	}
-	for _, rt := range runtimes {
-		allIDs = append(allIDs, rt.ID)
-		rtIDs[rt.ID] = false
-	}
-	for _, rtCtx := range runtimeContexts {
-		allIDs = append(allIDs, rtCtx.ID)
-		rtCtxIDs[rtCtx.ID] = false
-	}
-
-	allAssignments, err := s.ListFormationAssignmentsForObjectIDs(ctx, formation.ID, allIDs)
-	if err != nil {
-		return nil, err
+	for rtCtxID, _ := range rtmCtxsInFormation {
+		allIDs = append(allIDs, rtCtxID)
+		rtCtxIDs[rtCtxID] = false
 	}
 
 	// We should not generate notifications for formation participants that are being unassigned asynchronously
@@ -482,7 +463,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 
 	// When assigning an object to a formation we need to create two formation assignments per participant.
 	// In the first formation assignment the object we're assigning will be the source and in the second it will be the target
-	assignments := make([]*model.FormationAssignmentInput, 0, (len(applications)+len(runtimes)+len(runtimeContexts))*2+1)
+	assignments := make([]*model.FormationAssignmentInput, 0, (len(allIDs))*2+1)
 	for appID, isAssigned := range appIDs {
 		if !isAssigned || appID == objectID {
 			continue
@@ -584,15 +565,14 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 //
 // Mapping and reverseMapping example
 // mapping{notificationRequest=request, formationAssignment=assignment} - reverseMapping{notificationRequest=reverseRequest, formationAssignment=reverseAssignment}
-func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, formationAssignmentFunc func(context.Context, *AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
+func (s *service) ProcessFormationAssignments(ctx context.Context, assignmentRequestMappings []*notifications.AssignmentMappingPair, formationAssignmentFunc func(context.Context, *notifications.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error {
 	var errs *multierror.Error
-	assignmentRequestMappings := s.matchFormationAssignmentsWithRequests(ctx, formationAssignmentsForObject, requests)
 	alreadyProcessedFAs := make(map[string]bool, 0)
 	for _, mapping := range assignmentRequestMappings {
 		if alreadyProcessedFAs[mapping.AssignmentReqMapping.FormationAssignment.ID] {
 			continue
 		}
-		mappingWithOperation := &AssignmentMappingPairWithOperation{
+		mappingWithOperation := &notifications.AssignmentMappingPairWithOperation{
 			AssignmentMappingPair: mapping,
 			Operation:             formationOperation,
 		}
@@ -604,21 +584,21 @@ func (s *service) ProcessFormationAssignments(ctx context.Context, formationAssi
 			alreadyProcessedFAs[mapping.ReverseAssignmentReqMapping.FormationAssignment.ID] = true
 		}
 	}
-	log.C(ctx).Infof("Finished processing %d formation assignments", len(formationAssignmentsForObject))
+	log.C(ctx).Infof("Finished processing %d formation assignments", len(assignmentRequestMappings))
 
 	return errs.ErrorOrNil()
 }
 
 // ProcessFormationAssignmentPair prepares and update the `State` and `Config` of the formation assignment based on the response and process the notifications
-func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation) (bool, error) {
+func (s *service) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation) (bool, error) {
 	var isReverseProcessed bool
 	err := s.processFormationAssignmentsWithReverseNotification(ctx, mappingPair, 0, &isReverseProcessed)
 	return isReverseProcessed, err
 }
 
-func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation, depth int, isReverseProcessed *bool) error {
+func (s *service) processFormationAssignmentsWithReverseNotification(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation, depth int, isReverseProcessed *bool) error {
 	assignmentReqMappingClone := mappingPair.AssignmentReqMapping.Clone()
-	var reverseAssignmentReqMappingClone *FormationAssignmentRequestMapping
+	var reverseAssignmentReqMappingClone *notifications.FormationAssignmentRequestMapping
 	if mappingPair.ReverseAssignmentReqMapping != nil {
 		reverseAssignmentReqMappingClone = mappingPair.ReverseAssignmentReqMapping.Clone()
 	}
@@ -745,8 +725,8 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 			newReverseAssignmentReqMapping.Request.Object.SetReverseAssignment(newAssignmentReqMapping.FormationAssignment)
 		}
 
-		newAssignmentMappingPair := &AssignmentMappingPairWithOperation{
-			AssignmentMappingPair: &AssignmentMappingPair{
+		newAssignmentMappingPair := &notifications.AssignmentMappingPairWithOperation{
+			AssignmentMappingPair: &notifications.AssignmentMappingPair{
 				AssignmentReqMapping:        newAssignmentReqMapping,
 				ReverseAssignmentReqMapping: newReverseAssignmentReqMapping,
 			},
@@ -766,7 +746,7 @@ func (s *service) processFormationAssignmentsWithReverseNotification(ctx context
 // based on the response.
 // In the case the response is successful it deletes the formation assignment
 // In all other cases the `State` and `Config` are updated accordingly
-func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *AssignmentMappingPairWithOperation) (bool, error) {
+func (s *service) CleanupFormationAssignment(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation) (bool, error) {
 	assignment := mappingPair.AssignmentReqMapping.FormationAssignment
 	logger := log.C(ctx).WithField(log.FieldFormationAssignmentID, assignment.ID)
 	ctx = log.ContextWithLogger(ctx, logger)
@@ -924,10 +904,10 @@ func (s *service) SetAssignmentToErrorState(ctx context.Context, assignment *mod
 	return nil
 }
 
-func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*AssignmentMappingPair {
-	formationAssignmentMapping := make([]*FormationAssignmentRequestMapping, 0, len(assignments))
+func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, assignments []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping) []*notifications.AssignmentMappingPair {
+	formationAssignmentMapping := make([]*notifications.FormationAssignmentRequestMapping, 0, len(assignments))
 	for i, assignment := range assignments {
-		mappingObject := &FormationAssignmentRequestMapping{
+		mappingObject := &notifications.FormationAssignmentRequestMapping{
 			Request:             nil,
 			FormationAssignment: assignments[i],
 		}
@@ -959,20 +939,20 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 	}
 
 	log.C(ctx).Infof("Mapped %d formation assignments with %d notifications, %d assignments left with no notification", len(assignments), len(requests), len(assignments)-len(requests))
-	sourceToTargetToMapping := make(map[string]map[string]*FormationAssignmentRequestMapping)
+	sourceToTargetToMapping := make(map[string]map[string]*notifications.FormationAssignmentRequestMapping)
 	for _, mapping := range formationAssignmentMapping {
 		if _, ok := sourceToTargetToMapping[mapping.FormationAssignment.Source]; !ok {
-			sourceToTargetToMapping[mapping.FormationAssignment.Source] = make(map[string]*FormationAssignmentRequestMapping, len(assignments)/2)
+			sourceToTargetToMapping[mapping.FormationAssignment.Source] = make(map[string]*notifications.FormationAssignmentRequestMapping, len(assignments)/2)
 		}
 		sourceToTargetToMapping[mapping.FormationAssignment.Source][mapping.FormationAssignment.Target] = mapping
 	}
 	// Make mapping
-	assignmentMappingNoNotificationPairs := make([]*AssignmentMappingPair, 0, len(assignments))
-	assignmentMappingSyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
-	assignmentMappingAsyncPairs := make([]*AssignmentMappingPair, 0, len(assignments))
+	assignmentMappingNoNotificationPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
+	assignmentMappingSyncPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
+	assignmentMappingAsyncPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
 
 	for _, mapping := range formationAssignmentMapping {
-		var reverseMapping *FormationAssignmentRequestMapping
+		var reverseMapping *notifications.FormationAssignmentRequestMapping
 		if mappingsForTarget, ok := sourceToTargetToMapping[mapping.FormationAssignment.Target]; ok {
 			if actualReverseMapping, ok := mappingsForTarget[mapping.FormationAssignment.Source]; ok {
 				reverseMapping = actualReverseMapping
@@ -997,17 +977,17 @@ func (s *service) matchFormationAssignmentsWithRequests(ctx context.Context, ass
 		// and we assure that the notification receivers always receive the reverse as READY,
 		// if it has no request associated, rather than being sometimes INITIAL, sometimes READY.
 		if mapping.Request == nil {
-			assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &AssignmentMappingPair{
+			assignmentMappingNoNotificationPairs = append(assignmentMappingNoNotificationPairs, &notifications.AssignmentMappingPair{
 				AssignmentReqMapping:        mapping,
 				ReverseAssignmentReqMapping: reverseMapping,
 			})
 		} else if mapping.Request != nil && mapping.Request.Webhook != nil && mapping.Request.Webhook.Mode != nil && *mapping.Request.Webhook.Mode == graphql.WebhookModeAsyncCallback {
-			assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &AssignmentMappingPair{
+			assignmentMappingAsyncPairs = append(assignmentMappingAsyncPairs, &notifications.AssignmentMappingPair{
 				AssignmentReqMapping:        mapping,
 				ReverseAssignmentReqMapping: reverseMapping,
 			})
 		} else {
-			assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &AssignmentMappingPair{
+			assignmentMappingSyncPairs = append(assignmentMappingSyncPairs, &notifications.AssignmentMappingPair{
 				AssignmentReqMapping:        mapping,
 				ReverseAssignmentReqMapping: reverseMapping,
 			})
@@ -1023,42 +1003,6 @@ func ResetAssignmentConfigAndError(assignment *model.FormationAssignment) {
 	assignment.Error = nil
 }
 
-// FormationAssignmentRequestMapping represents the mapping between the notification request and formation assignment
-type FormationAssignmentRequestMapping struct {
-	Request             *webhookclient.FormationAssignmentNotificationRequest
-	FormationAssignment *model.FormationAssignment
-}
-
-// Clone returns a copy of the FormationAssignmentRequestMapping
-func (f *FormationAssignmentRequestMapping) Clone() *FormationAssignmentRequestMapping {
-	var request *webhookclient.FormationAssignmentNotificationRequest
-	if f.Request != nil {
-		request = f.Request.Clone()
-	}
-	var formationAssignment *model.FormationAssignment
-	if f.FormationAssignment != nil {
-		formationAssignment = &model.FormationAssignment{
-			ID:                            f.FormationAssignment.ID,
-			FormationID:                   f.FormationAssignment.FormationID,
-			TenantID:                      f.FormationAssignment.TenantID,
-			Source:                        f.FormationAssignment.Source,
-			SourceType:                    f.FormationAssignment.SourceType,
-			Target:                        f.FormationAssignment.Target,
-			TargetType:                    f.FormationAssignment.TargetType,
-			State:                         f.FormationAssignment.State,
-			Value:                         f.FormationAssignment.Value,
-			Error:                         f.FormationAssignment.Error,
-			LastStateChangeTimestamp:      f.FormationAssignment.LastStateChangeTimestamp,
-			LastNotificationSentTimestamp: f.FormationAssignment.LastNotificationSentTimestamp,
-		}
-	}
-
-	return &FormationAssignmentRequestMapping{
-		Request:             request,
-		FormationAssignment: formationAssignment,
-	}
-}
-
 // AssignmentErrorCode represents error code used to differentiate the source of the error
 type AssignmentErrorCode int
 
@@ -1068,18 +1012,6 @@ const (
 	// ClientError indicates that the error was returned from the client
 	ClientError = 2
 )
-
-// AssignmentMappingPair represents a pair of FormationAssignmentRequestMapping and its reverse
-type AssignmentMappingPair struct {
-	AssignmentReqMapping        *FormationAssignmentRequestMapping
-	ReverseAssignmentReqMapping *FormationAssignmentRequestMapping
-}
-
-// AssignmentMappingPairWithOperation represents an AssignmentMappingPair and the formation operation
-type AssignmentMappingPairWithOperation struct {
-	*AssignmentMappingPair
-	Operation model.FormationOperation
-}
 
 // AssignmentError error struct used for storing the errors that occur during the FormationAssignment processing
 type AssignmentError struct {

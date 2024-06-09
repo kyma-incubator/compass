@@ -21,6 +21,10 @@ type WebhookClient struct {
 func (_m *WebhookClient) Do(ctx context.Context, request webhookclient.WebhookRequest) (*webhook.Response, error) {
 	ret := _m.Called(ctx, request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Do")
+	}
+
 	var r0 *webhook.Response
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, webhookclient.WebhookRequest) (*webhook.Response, error)); ok {

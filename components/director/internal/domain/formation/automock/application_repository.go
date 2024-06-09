@@ -45,36 +45,6 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 	return r0, r1
 }
 
-// ListListeningApplications provides a mock function with given fields: ctx, tenant, whType
-func (_m *ApplicationRepository) ListListeningApplications(ctx context.Context, tenant string, whType model.WebhookType) ([]*model.Application, error) {
-	ret := _m.Called(ctx, tenant, whType)
-
-	if len(ret) == 0 {
-		panic("no return value specified for ListListeningApplications")
-	}
-
-	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant, whType)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, model.WebhookType) []*model.Application); ok {
-		r0 = rf(ctx, tenant, whType)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Application)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, model.WebhookType) error); ok {
-		r1 = rf(ctx, tenant, whType)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // NewApplicationRepository creates a new instance of ApplicationRepository. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
 // The first argument is typically a *testing.T value.
 func NewApplicationRepository(t interface {

@@ -4,9 +4,9 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
 
-	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
 	dataloader "github.com/kyma-incubator/compass/components/director/internal/dataloaders"
 
@@ -46,18 +46,17 @@ type Converter interface {
 
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
-	Delete(ctx context.Context, id string) error
 	DeleteAssignmentsForObjectID(ctx context.Context, formationID, objectID string) error
 	ListByFormationIDs(ctx context.Context, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error)
 	ListByFormationIDsNoPaging(ctx context.Context, formationIDs []string) ([][]*model.FormationAssignment, error)
 	GetForFormation(ctx context.Context, id, formationID string) (*model.FormationAssignment, error)
 	ListFormationAssignmentsForObjectID(ctx context.Context, formationID, objectID string) ([]*model.FormationAssignment, error)
 	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
-	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
-	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	ProcessFormationAssignments(ctx context.Context, assignmentRequestMappings []*notifications.AssignmentMappingPair, formationAssignmentFunc func(context.Context, *notifications.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
+	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation) (bool, error)
 	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
 	PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)
-	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	CleanupFormationAssignment(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation) (bool, error)
 	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
 	Update(ctx context.Context, id string, fa *model.FormationAssignment) error
 	GetAssignmentsForFormationWithStates(ctx context.Context, tenantID, formationID string, states []string) ([]*model.FormationAssignment, error)

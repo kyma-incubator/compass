@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	destinationcreatorpkg "github.com/kyma-incubator/compass/components/director/pkg/destinationcreator"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -61,6 +62,7 @@ type systemAuthService interface {
 //go:generate mockery --exported --name=formationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationRepository interface {
 	ListByFormationNames(ctx context.Context, formationNames []string, tenantID string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 }
 
@@ -73,7 +75,7 @@ type labelRepository interface {
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
+	ListAllByIDs(ctx context.Context, tenantID string, ids []string) ([]*model.Application, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }
@@ -100,13 +102,13 @@ type formationAssignmentRepository interface {
 
 //go:generate mockery --exported --name=formationAssignmentService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentService interface {
-	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
+	CleanupFormationAssignment(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation) (bool, error)
 	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 }
 
 //go:generate mockery --exported --name=formationAssignmentNotificationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type formationAssignmentNotificationService interface {
-	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)
+	GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*notifications.AssignmentMappingPairWithOperation, error)
 }
 
 //go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string

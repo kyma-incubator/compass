@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -2036,7 +2038,7 @@ func Test_GenerateFormationAssignmentPair(t *testing.T) {
 		formationRepo           func() *automock.FormationRepository
 		notificationBuilder     func() *automock.NotificationBuilder
 		tenantRepo              func() *automock.TenantRepository
-		expectedAssignmentPair  *formationassignment.AssignmentMappingPairWithOperation
+		expectedAssignmentPair  *notifications.AssignmentMappingPairWithOperation
 		expectedErrMsg          string
 	}{
 		{
@@ -2086,13 +2088,13 @@ func Test_GenerateFormationAssignmentPair(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			expectedAssignmentPair: &formationassignment.AssignmentMappingPairWithOperation{
-				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+			expectedAssignmentPair: &notifications.AssignmentMappingPairWithOperation{
+				AssignmentMappingPair: &notifications.AssignmentMappingPair{
+					AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 						Request:             testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp,
 						FormationAssignment: faWithSourceRuntimeAndTargetApp,
 					},
-					ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+					ReverseAssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 						Request:             testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceAppAndTargetRuntime,
 						FormationAssignment: faWithSourceAppAndTargetRuntime,
 					},
@@ -2139,13 +2141,13 @@ func Test_GenerateFormationAssignmentPair(t *testing.T) {
 
 				return notificationsBuilder
 			},
-			expectedAssignmentPair: &formationassignment.AssignmentMappingPairWithOperation{
-				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+			expectedAssignmentPair: &notifications.AssignmentMappingPairWithOperation{
+				AssignmentMappingPair: &notifications.AssignmentMappingPair{
+					AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 						Request:             testAppNotificationReqWithFormationConfigurationChangeTypeWithSourceRuntimeAndTargetApp,
 						FormationAssignment: faWithSourceRuntimeAndTargetApp,
 					},
-					ReverseAssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+					ReverseAssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 						Request:             nil,
 						FormationAssignment: nil,
 					},
@@ -2652,11 +2654,11 @@ func Test_PrepareDetailsForNotificationStatusReturned(t *testing.T) {
 }
 
 func Test_GenerateFormationAssignmentNotificationExt(t *testing.T) {
-	faRequestMapping := &formationassignment.FormationAssignmentRequestMapping{
+	faRequestMapping := &notifications.FormationAssignmentRequestMapping{
 		Request:             testAppNotificationReqWithTenantMappingType,
 		FormationAssignment: faWithSourceAppAndTargetApp,
 	}
-	reverseFaRequestMapping := &formationassignment.FormationAssignmentRequestMapping{
+	reverseFaRequestMapping := &notifications.FormationAssignmentRequestMapping{
 		Request:             testAppNotificationReqWithTenantMappingType,
 		FormationAssignment: faWithSourceAppAndTargetAppReverse,
 	}
@@ -2672,8 +2674,8 @@ func Test_GenerateFormationAssignmentNotificationExt(t *testing.T) {
 
 	var testCases = []struct {
 		name                       string
-		faRequestMapping           *formationassignment.FormationAssignmentRequestMapping
-		reverseFaRequestMapping    *formationassignment.FormationAssignmentRequestMapping
+		faRequestMapping           *notifications.FormationAssignmentRequestMapping
+		reverseFaRequestMapping    *notifications.FormationAssignmentRequestMapping
 		formationRepo              func() *automock.FormationRepository
 		labelSvc                   func() *automock.LabelService
 		expectedExtNotificationReq *webhookclient.FormationAssignmentNotificationRequestExt

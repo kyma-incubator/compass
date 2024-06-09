@@ -4,8 +4,7 @@ package automock
 
 import (
 	context "context"
-
-	formationassignment "github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
 
 	mock "github.com/stretchr/testify/mock"
 
@@ -18,19 +17,19 @@ type FormationAssignmentNotificationService struct {
 }
 
 // GenerateFormationAssignmentPair provides a mock function with given fields: ctx, fa, reverseFA, operation
-func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa *model.FormationAssignment, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error) {
+func (_m *FormationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa *model.FormationAssignment, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*notifications.AssignmentMappingPairWithOperation, error) {
 	ret := _m.Called(ctx, fa, reverseFA, operation)
 
-	var r0 *formationassignment.AssignmentMappingPairWithOperation
+	var r0 *notifications.AssignmentMappingPairWithOperation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *model.FormationAssignment, model.FormationOperation) (*formationassignment.AssignmentMappingPairWithOperation, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *model.FormationAssignment, model.FormationOperation) (*notifications.AssignmentMappingPairWithOperation, error)); ok {
 		return rf(ctx, fa, reverseFA, operation)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *model.FormationAssignment, model.FormationOperation) *formationassignment.AssignmentMappingPairWithOperation); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment, *model.FormationAssignment, model.FormationOperation) *notifications.AssignmentMappingPairWithOperation); ok {
 		r0 = rf(ctx, fa, reverseFA, operation)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*formationassignment.AssignmentMappingPairWithOperation)
+			r0 = ret.Get(0).(*notifications.AssignmentMappingPairWithOperation)
 		}
 	}
 
