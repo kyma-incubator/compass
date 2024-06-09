@@ -168,7 +168,7 @@ func TestPgRepository_GetOldestFromIDs(t *testing.T) {
 		Name: "Get Oldest Runtime From IDs",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
 			{
-				Query: regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id IN ($1) AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2)) ORDER BY creation_timestamp ASC`),
+				Query:    regexp.QuoteMeta(`SELECT id, name, description, status_condition, status_timestamp, creation_timestamp, application_namespace FROM public.runtimes WHERE id IN ($1) AND (id IN (SELECT id FROM tenant_runtimes WHERE tenant_id = $2)) ORDER BY creation_timestamp ASC`),
 				Args:     []driver.Value{runtimeID, tenantID},
 				IsSelect: true,
 				ValidRowsProvider: func() []*sqlmock.Rows {

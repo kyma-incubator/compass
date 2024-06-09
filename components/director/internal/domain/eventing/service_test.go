@@ -139,7 +139,7 @@ func Test_SetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when there is runtime labeled for application eventing and is labeled for normalization", func(t *testing.T) {
@@ -168,7 +168,7 @@ func Test_SetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
@@ -197,7 +197,7 @@ func Test_SetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
@@ -228,7 +228,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo)
+		mock.AssertExpectationsForObjects(t, runtimeRepo)
 	})
 
 	t.Run("Error when deleting existing default runtime, when getting current default runtime repository returns more than one runtime", func(t *testing.T) {
@@ -293,7 +293,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when listing formations for application", func(t *testing.T) {
@@ -316,7 +316,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when given runtime does not belong to the application scenarios", func(t *testing.T) {
@@ -340,7 +340,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting new runtime to assign as default", func(t *testing.T) {
@@ -365,7 +365,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when assigning new default runtime", func(t *testing.T) {
@@ -390,7 +390,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting eventing configuration for a given runtime", func(t *testing.T) {
@@ -418,7 +418,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting runtime normalization label", func(t *testing.T) {
@@ -447,7 +447,7 @@ func Test_SetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 }
 
@@ -706,7 +706,7 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when labeling oldest runtime for application eventing", func(t *testing.T) {
@@ -735,7 +735,7 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when there is runtime labeled for application eventing and is labeled for normalization", func(t *testing.T) {
@@ -762,7 +762,7 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appNormalizedEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when there is runtime labeled for application eventing and is labeled not for normalization", func(t *testing.T) {
@@ -789,7 +789,7 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, appEventURL, eventingCfg.DefaultURL)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when there is no oldest runtime for application eventing", func(t *testing.T) {
@@ -813,7 +813,7 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, "", eventingCfg.DefaultURL.String())
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when there is no oldest runtime for application eventing (scenarios label does not exist)", func(t *testing.T) {
@@ -861,7 +861,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.Equal(t, emptyConfiguration, conf)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when current default runtime no longer belongs to the application scenarios", func(t *testing.T) {
@@ -888,7 +888,7 @@ func Test_GetForApplication(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, eventingCfg)
 		require.Equal(t, "", eventingCfg.DefaultURL.String())
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Success when new default runtime is elected", func(t *testing.T) {
@@ -920,7 +920,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.NoError(t, err)
 		require.Equal(t, fmt.Sprintf("%s/%s/v1/events", defaultURL, app.Name), conf.DefaultURL.String())
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when tenant not in context", func(t *testing.T) {
@@ -959,7 +959,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting the oldest runtime for application eventing returns error", func(t *testing.T) {
@@ -983,7 +983,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting the oldest runtime for application eventing returns error on converting scenarios label to slice of strings", func(t *testing.T) {
@@ -1081,7 +1081,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, formationSvc)
 	})
 
 	t.Run("Error when verifing whether given runtime belongs to the application scenarios - repository returns error", func(t *testing.T) {
@@ -1104,7 +1104,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, formationSvc)
 	})
 
 	t.Run("Error when deleting label from the given runtime because it does not belong to application scenarios - repository returns error", func(t *testing.T) {
@@ -1128,7 +1128,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting eventing configuration for a given runtime", func(t *testing.T) {
@@ -1153,7 +1153,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 
 	t.Run("Error when getting runtime normalization label", func(t *testing.T) {
@@ -1179,7 +1179,7 @@ func Test_GetForApplication(t *testing.T) {
 		// THEN
 		require.Error(t, err)
 		require.EqualError(t, err, expectedError)
-	mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
+		mock.AssertExpectationsForObjects(t, runtimeRepo, labelRepo, formationSvc)
 	})
 }
 

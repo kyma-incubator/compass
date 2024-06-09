@@ -27,7 +27,7 @@ var applicationID = uuid.New()
 const (
 	eventURLSchema  = "https://eventing.domain.local/%s/v1/events"
 	runtimeEventURL = "https://eventing.domain.local"
-	formationName = "CUSTOM"
+	formationName   = "CUSTOM"
 )
 
 func fixCtxWithTenant() context.Context {
