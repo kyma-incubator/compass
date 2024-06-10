@@ -52,9 +52,20 @@ func newNoopKubernetesClient() KubeClient {
 	}
 }
 
-// GetSystemFetcherSecretData Gets secret data from secret with given name
+// GetSystemFetcherSecretData Gets secret data from secret with given name (used in unit tests)
 func (k *noopKubernetesClient) GetSystemFetcherSecretData(_ context.Context, _ string) ([]byte, error) {
-	return nil, nil
+	return []byte(`
+	{
+		"key": 
+			{"Credential": {
+      			"Oauth": {
+        			"ClientID": "123",
+        			"ClientSecret": "456",
+        			"URL": "http://localhost:8080"
+      			}
+    		}
+		}
+	}`), nil
 }
 
 type kubernetesClient struct {

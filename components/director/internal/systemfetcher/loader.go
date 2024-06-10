@@ -320,7 +320,7 @@ func (d *DataLoader) setWebhooksCredentialsFromSecrets(ctx context.Context, webh
 		return errors.Wrap(err, "while preparing webhooks credentials mappings")
 	}
 	for i, wh := range webhooks {
-		if wh.Auth.SecretRef != nil && wh.Auth.SecretRef.SecretName != "" && wh.Auth.SecretRef.SecretKey != "" {
+		if wh.Auth != nil && wh.Auth.SecretRef != nil && wh.Auth.SecretRef.SecretName != "" && wh.Auth.SecretRef.SecretKey != "" {
 			secretName := wh.Auth.SecretRef.SecretName
 			secretKey := wh.Auth.SecretRef.SecretKey
 
@@ -347,10 +347,10 @@ func (d *DataLoader) prepareWebhooksCredentialsMappings(ctx context.Context, web
 
 	secretNameToSecretKeyToSecretData := make(map[string]map[string]*model.AuthInput, 0)
 	for _, wh := range webhooks {
-		if wh.Auth.SecretRef != nil && wh.Auth.SecretRef.SecretName != "" {
+		if wh.Auth != nil && wh.Auth.SecretRef != nil && wh.Auth.SecretRef.SecretName != "" {
 			secretName := wh.Auth.SecretRef.SecretName
 
-			if _, exists := secretNameToSecretKeyToSecretData[secretName]; !exists { //if secret name is missing -> go get it
+			if _, exists := secretNameToSecretKeyToSecretData[secretName]; !exists {
 				secretDataBytes, err := d.kubeClient.GetSystemFetcherSecretData(ctx, secretName)
 				if err != nil {
 					log.C(ctx).Warnf(err.Error())

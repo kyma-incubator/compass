@@ -87,3 +87,15 @@ func fixWebhookInputModel(id string, whMode model.WebhookMode, whType model.Webh
 		Mode: &whMode,
 	}
 }
+
+func setWebhookAuth(webhook *model.WebhookInput) {
+	webhook.Auth = &model.AuthInput{
+		Credential: &model.CredentialDataInput{
+			Oauth: &model.OAuthCredentialDataInput{
+				ClientID:     "123",
+				ClientSecret: "456",
+				URL:          "http://localhost:8080",
+			},
+		},
+	}
+}

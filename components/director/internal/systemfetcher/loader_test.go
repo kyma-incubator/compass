@@ -52,7 +52,7 @@ func TestLoadData(t *testing.T) {
 
 	applicationTemplatesWithIntSysJSONAndWebhooks := "[{" +
 		"\"name\":\"" + applicationTemplateName + "\"," +
-		"\"webhooks\":[{\"id\":\"" + whID1 + "\", \"objectID\":\"" + whID1 + "\", \"objectType\": \"ApplicationWebhook\", \"type\": \"CONFIGURATION_CHANGED\", \"mode\": \"ASYNC_CALLBACK\" },{\"id\":\"" + whID2 + "\", \"objectID\":\"" + whID2 + "\", \"objectType\": \"ApplicationWebhook\", \"type\": \"UNREGISTER_APPLICATION\", \"mode\": \"ASYNC_CALLBACK\" }]," +
+		"\"webhooks\":[{\"id\":\"" + whID1 + "\", \"objectID\":\"" + whID1 + "\", \"objectType\": \"ApplicationWebhook\", \"type\": \"CONFIGURATION_CHANGED\", \"mode\": \"ASYNC_CALLBACK\" },{\"id\":\"" + whID2 + "\", \"objectID\":\"" + whID2 + "\", \"objectType\": \"ApplicationWebhook\", \"type\": \"UNREGISTER_APPLICATION\", \"mode\": \"ASYNC_CALLBACK\", \"auth\": {\"SecretRef\":{\"SecretName\": \"name\", \"SecretKey\": \"key\"}} }]," +
 		"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": {\\\"legacy\\\":\\\"true\\\"}}\"," +
 		"\"placeholders\":[{\"name\":\"name\",\"description\": \"description\",\"jsonPath\": \"jsonPath\"}]," +
 		"\"intSystem\":{" +
@@ -619,6 +619,7 @@ func TestLoadData(t *testing.T) {
 					&wh1, &wh2,
 				}
 				whInputCreate := fixWebhookInputModel(whID2, modeAsyncCallback, model.WebhookTypeDeleteApplication)
+				setWebhookAuth(&whInputCreate)
 				whInputUpdate := fixWebhookInputModel(whID1, modeAsyncCallback, model.WebhookTypeConfigurationChanged)
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(whs, nil)
 				svc.On("Create", txtest.CtxWithDBMatcher(), "id", whInputCreate, model.ApplicationTemplateWebhookReference).Return(whID2, nil)
@@ -684,6 +685,7 @@ func TestLoadData(t *testing.T) {
 				whs := []*model.Webhook{&wh1, &wh2}
 				whInput1Update := fixWebhookInputModel(whID1, modeAsyncCallback, model.WebhookTypeConfigurationChanged)
 				whInput2Update := fixWebhookInputModel(whID2, modeAsyncCallback, model.WebhookTypeDeleteApplication)
+				setWebhookAuth(&whInput2Update)
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(whs, nil)
 				svc.On("Update", txtest.CtxWithDBMatcher(), whID1, whInput1Update, model.ApplicationTemplateWebhookReference).Return(nil)
 				svc.On("Update", txtest.CtxWithDBMatcher(), whID2, whInput2Update, model.ApplicationTemplateWebhookReference).Return(nil)
@@ -748,11 +750,11 @@ func TestLoadData(t *testing.T) {
 					&wh1, &wh2,
 				}
 				whInputCreate := fixWebhookInputModel(whID2, modeAsyncCallback, model.WebhookTypeDeleteApplication)
+				setWebhookAuth(&whInputCreate)
 				whInputUpdate := fixWebhookInputModel(whID1, modeAsyncCallback, model.WebhookTypeConfigurationChanged)
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(whs, nil)
 				svc.On("Create", txtest.CtxWithDBMatcher(), "id", whInputCreate, model.ApplicationTemplateWebhookReference).Return("", testErr)
 				svc.On("Update", txtest.CtxWithDBMatcher(), whID1, whInputUpdate, model.ApplicationTemplateWebhookReference).Return(nil)
-				//svc.On("Delete", txtest.CtxWithDBMatcher(), whID3, model.ApplicationTemplateWebhookReference).Return(nil)
 				return svc
 			},
 			readDirFunc: mockReadDir,
@@ -879,6 +881,7 @@ func TestLoadData(t *testing.T) {
 					&wh1, &wh2,
 				}
 				whInputCreate := fixWebhookInputModel(whID2, modeAsyncCallback, model.WebhookTypeDeleteApplication)
+				setWebhookAuth(&whInputCreate)
 				whInputUpdate := fixWebhookInputModel(whID1, modeAsyncCallback, model.WebhookTypeConfigurationChanged)
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(whs, nil)
 				svc.On("Create", txtest.CtxWithDBMatcher(), "id", whInputCreate, model.ApplicationTemplateWebhookReference).Return(whID2, nil)
@@ -956,8 +959,11 @@ func TestLoadData(t *testing.T) {
 			mockedTx, transactioner := testCase.mockTransactioner()
 			defer mock.AssertExpectationsForObjects(t, appTmplSvc, intSysSvc, mockedTx, transactioner)
 
-			dataLoader := systemfetcher.NewDataLoader(transactioner, systemfetcher.Config{}, appTmplSvc, intSysSvc, webhookSvc)
-			err := dataLoader.LoadData(context.TODO(), testCase.readDirFunc, testCase.readFileFunc)
+			kubeClient, err := systemfetcher.NewKubernetesClient(context.TODO(), systemfetcher.KubeConfig{UseKubernetes: "false"})
+			require.NoError(t, err)
+
+			dataLoader := systemfetcher.NewDataLoader(transactioner, systemfetcher.Config{}, appTmplSvc, intSysSvc, webhookSvc, kubeClient)
+			err = dataLoader.LoadData(context.TODO(), testCase.readDirFunc, testCase.readFileFunc)
 
 			if testCase.expectedErr != nil {
 				require.Contains(t, err.Error(), testCase.expectedErr.Error())
