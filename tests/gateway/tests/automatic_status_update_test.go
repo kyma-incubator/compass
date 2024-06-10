@@ -56,15 +56,17 @@ func TestAutomaticStatusUpdate(t *testing.T) {
 
 	t.Run("Test status update as Integration System", func(t *testing.T) {
 		t.Log("Register Integration System via Certificate Secured Client")
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+		var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &intSys)
+		intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, "integration-system")
 
 		t.Logf("Registered Integration System with [id=%s]", intSys.ID)
 
 		t.Log("Request Client Credentials for Integration System")
-		intSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+		var intSystemAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSystemAuth)
+		intSystemAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, intSys.ID)
+		require.NotEmpty(t, intSystemAuth)
 
 		intSysOauthCredentialData, ok := intSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)

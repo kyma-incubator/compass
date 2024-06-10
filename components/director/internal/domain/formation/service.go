@@ -175,6 +175,8 @@ type assignmentOperationService interface {
 	DeleteByIDs(ctx context.Context, ids []string) error
 }
 
+type listFormationsFn func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
+
 type service struct {
 	applicationRepository                  applicationRepository
 	labelDefRepository                     labelDefRepository
@@ -286,7 +288,7 @@ func (s *service) ListFormationsForObjectGlobal(ctx context.Context, objectID st
 func (s *service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
 	return s.listFormationsForObject(ctx, objectID, s.formationRepository.ListByIDs)
 }
-func (s *service) listFormationsForObject(ctx context.Context, objectID string, listFormations func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)) ([]*model.Formation, error) {
+func (s *service) listFormationsForObject(ctx context.Context, objectID string, listFormations listFormationsFn) ([]*model.Formation, error) {
 	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", objectID)
@@ -1015,8 +1017,39 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	// similar to the Assign operation and to cover the case when we have both type of webhook - sync and async.
 	// So if the async notification was sent, and we're processing the sync notification, meanwhile the async participant sends
 	// FA status update request, he will have the latest state of the formation assignment even when we didn't finish the sync notification processing.
+	var operationAssignmentIDs []string
 	if err := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
 		for _, ia := range initialAssignmentsData {
+			lastOperation, err := s.assignmentOperationService.GetLatestOperation(ctxWithTransact, ia.ID, ia.FormationID)
+			if err != nil && !apperrors.IsNotFoundError(err) {
+				return errors.Wrapf(err, "while getting latest Operation for formation assignment with ID: %s", ia.ID)
+			}
+			if err != nil && apperrors.IsNotFoundError(err) {
+				log.C(ctx).Debugf("Failed to get latest Operation for formation assignment with ID: %s as no Operations for the assignment exist", ia.ID)
+			}
+
+			if lastOperation != nil && lastOperation.Type != model.Unassign {
+				log.C(ctx).Debugf("Creating %s Operation for formation assignment with ID: %s", model.Unassign, ia.ID)
+				opID, err := s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
+					Type:                  model.Unassign,
+					FormationAssignmentID: ia.ID,
+					FormationID:           ia.FormationID,
+					TriggeredBy:           model.UnassignObject,
+				})
+				if err != nil && apperrors.IsInvalidOperation(err) {
+					log.C(ctx).Debugf("Formation assinment with ID %s no longer exists: Failed to create %s Operation: %s", ia.ID, model.Unassign, err.Error())
+				} else if err != nil && !apperrors.IsInvalidOperation(err) {
+					return errors.Wrapf(err, "while creating %s Operation for formation assignment with ID: %s", model.Unassign, ia.ID)
+				}
+
+				if opID != "" { // in case the assignment has been deleted from concurrent transaction an empty operation id will be returned
+					log.C(ctx).Infof("Created %s Operation for formation assignment with ID: %s", model.Unassign, ia.ID)
+					operationAssignmentIDs = append(operationAssignmentIDs, opID)
+				}
+			} else {
+				log.C(ctx).Debugf("Skipping creation of %s Operation for formation assignment with ID: %s", model.Unassign, ia.ID)
+			}
+
 			if ia.SetStateToDeleting() {
 				log.C(ctx).Infof("Update and persist in the DB '%s' state of formation assignment with ID: '%s'", ia.State, ia.ID)
 				formationassignment.ResetAssignmentConfigAndError(ia)
@@ -1030,27 +1063,6 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 		return nil
 	}); err != nil {
 		return nil, err
-	}
-
-	// create `Unassign` Operation here in separate transaction similar to the `Assign` case
-	var operationAssignmentIDs []string
-	if opErr := s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-		for _, ia := range initialAssignmentsData {
-			opID, err := s.assignmentOperationService.Create(ctxWithTransact, &model.AssignmentOperationInput{
-				Type:                  model.Unassign,
-				FormationAssignmentID: ia.ID,
-				FormationID:           ia.FormationID,
-				TriggeredBy:           model.UnassignObject,
-			})
-			if err != nil {
-				return errors.Wrapf(err, "while creating %s Operation for assignment with ID: %s", model.Unassign, ia.ID)
-			}
-			operationAssignmentIDs = append(operationAssignmentIDs, opID)
-		}
-
-		return nil
-	}); opErr != nil {
-		return nil, opErr
 	}
 
 	defer func() {

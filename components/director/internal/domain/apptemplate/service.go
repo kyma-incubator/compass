@@ -419,13 +419,50 @@ func (s *service) PrepareApplicationCreateInputJSON(appTemplate *model.Applicati
 			return "", errors.Wrap(err, "value of placeholder is invalid")
 		}
 
+		labelKey, err := getLabelKeyForPlaceholder(appCreateInputJSON, placeholder.Name)
+		if err != nil {
+			return "", errors.Wrap(err, "error while looking for label key")
+		}
 		appCreateInputJSON = strings.ReplaceAll(appCreateInputJSON, fmt.Sprintf("{{%s}}", placeholder.Name), newValue)
-		appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, placeholder.Name)
+		appCreateInputJSON, err = removeEmptyKeyFromLabels(appCreateInputJSON, labelKey)
 		if err != nil {
 			return "", errors.Wrap(err, "error while clear optional empty value")
 		}
 	}
 	return appCreateInputJSON, nil
+}
+
+func getLabelKeyForPlaceholder(stringInput string, placeholderName string) (string, error) {
+	var inputMap map[string]interface{}
+	err := json.Unmarshal([]byte(stringInput), &inputMap)
+	if err != nil {
+		return "", errors.Wrap(err, "error while unmarshal input")
+	}
+
+	// Look for map with labels
+	var labelsMap map[string]interface{}
+	for key, value := range inputMap {
+		if mapValue, ok := value.(map[string]interface{}); ok {
+			if key == labelsKey {
+				labelsMap = mapValue
+			}
+		}
+	}
+
+	// Look for the label with provided placeholder name inside
+	for key, value := range labelsMap {
+		if stringValue, ok := value.(string); ok {
+			trimmedValue := strings.TrimSpace(stringValue)
+			trimmedValue = strings.TrimPrefix(trimmedValue, "{{")
+			trimmedValue = strings.TrimSuffix(trimmedValue, "}}")
+			trimmedValue = strings.TrimSpace(trimmedValue)
+			if trimmedValue == placeholderName {
+				return key, nil
+			}
+		}
+	}
+
+	return "", errors.Wrap(err, "cannot find a key for placeholder")
 }
 
 func removeEmptyKeyFromLabels(stringInput string, keyName string) (string, error) {

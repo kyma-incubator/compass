@@ -23,7 +23,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(fixModel(), nil).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo)
 
 		// WHEN
 		actual, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
@@ -37,7 +37,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		// GIVEN
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo)
 
 		// WHEN
 		_, err := sut.GetForScenarioName(context.TODO(), scenarioName)
@@ -51,7 +51,7 @@ func TestService_GetByScenarioName(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("GetForScenarioName", fixCtxWithTenant(), mock.Anything, scenarioName).Return(nil, fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo)
 
 		// WHEN
 		_, err := sut.GetForScenarioName(fixCtxWithTenant(), scenarioName)
@@ -69,7 +69,7 @@ func TestService_ListForTargetTenant(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("ListForTargetTenant", mock.Anything, tenantID, targetTenantID).Return(result, nil).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo)
 
 		// WHEN
 		actual, err := sut.ListForTargetTenant(fixCtxWithTenant(), targetTenantID)
@@ -84,7 +84,7 @@ func TestService_ListForTargetTenant(t *testing.T) {
 		mockRepo := &automock.Repository{}
 		defer mockRepo.AssertExpectations(t)
 		mockRepo.On("ListForTargetTenant", mock.Anything, tenantID, targetTenantID).Return(nil, fixError()).Once()
-		sut := scenarioassignment.NewService(mockRepo, nil)
+		sut := scenarioassignment.NewService(mockRepo)
 
 		// WHEN
 		actual, err := sut.ListForTargetTenant(fixCtxWithTenant(), targetTenantID)
@@ -95,7 +95,7 @@ func TestService_ListForTargetTenant(t *testing.T) {
 	})
 
 	t.Run("returns error when no tenant in context", func(t *testing.T) {
-		sut := scenarioassignment.NewService(nil, nil)
+		sut := scenarioassignment.NewService(nil)
 		_, err := sut.ListForTargetTenant(context.TODO(), targetTenantID)
 
 		require.EqualError(t, err, "cannot read tenant from context")
@@ -174,7 +174,7 @@ func TestService_List(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := scenarioassignment.NewService(repo, nil)
+			svc := scenarioassignment.NewService(repo)
 
 			// WHEN
 			items, err := svc.List(ctx, testCase.PageSize, after)
@@ -192,7 +192,7 @@ func TestService_List(t *testing.T) {
 		})
 	}
 	t.Run("Error when tenant not in context", func(t *testing.T) {
-		svc := scenarioassignment.NewService(nil, nil)
+		svc := scenarioassignment.NewService(nil)
 		// WHEN
 		_, err := svc.List(context.TODO(), 5, "")
 		// THEN
@@ -242,7 +242,7 @@ func TestService_ListForScenarioNames(t *testing.T) {
 		t.Run(testCase.Name, func(t *testing.T) {
 			repo := testCase.RepositoryFn()
 
-			svc := scenarioassignment.NewService(repo, nil)
+			svc := scenarioassignment.NewService(repo)
 
 			// WHEN
 			items, err := svc.ListForScenarioNames(ctx, scenarioNames)

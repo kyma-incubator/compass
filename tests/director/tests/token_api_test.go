@@ -7,6 +7,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
+
 	"github.com/stretchr/testify/require"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -26,8 +28,9 @@ func TestTokenGeneration(t *testing.T) {
 
 		input := fixtures.FixRuntimeRegisterInputWithoutLabels("test")
 
-		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenantId, &runtime)
+		runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, certSecuredGraphQLClient, tenantId, &input)
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 		tokenRequestNumber := 3

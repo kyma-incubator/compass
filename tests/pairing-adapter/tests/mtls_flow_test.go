@@ -49,9 +49,10 @@ func TestGettingTokenWithMTLSWorks(t *testing.T) {
 		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, &newIntSys)
 		newIntSys = createIntSystem(t, ctx, defaultTestTenant)
 
-		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys.ID)
+		var intSysAuth directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+		intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, newIntSys.ID)
 		require.NotEmpty(t, intSysAuth)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*directorSchema.OAuthCredentialData)
 		require.True(t, ok)
@@ -152,15 +153,10 @@ func createIntSystem(t *testing.T, ctx context.Context, defaultTestTenant string
 
 	// WHEN
 	t.Logf("Registering integration system with name %q...", name)
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, name)
-
-	// THEN
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
-	require.NotEmpty(t, intSys.Name)
+	intSys := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, defaultTestTenant, name)
 
 	t.Logf("Successfully registered integration system with name %q", name)
-	return *intSys
+	return intSys
 }
 
 func updateAdaptersConfigmap(t *testing.T, ctx context.Context, newIntSysID string, adapterConfig *config.PairingAdapterConfig) {

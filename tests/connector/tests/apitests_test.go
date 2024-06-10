@@ -14,9 +14,10 @@ import (
 
 func TestTokens(t *testing.T) {
 	input := fixtures.FixRuntimeRegisterInput("test-tokens-runtime")
+	var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
+	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	runtime, err := fixtures.RegisterRuntimeFromInputWithinTenant(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &input)
 
-	defer fixtures.CleanupRuntime(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &runtime)
 	require.NoError(t, err)
 	require.NotEmpty(t, runtime.ID)
 	runtimeID := runtime.ID
@@ -102,10 +103,9 @@ func TestTokens(t *testing.T) {
 }
 
 func TestTokenSuggestion(t *testing.T) {
-	intSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, intSystem)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSystem.ID)
+	var intSystem graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, &intSystem)
+	intSystem = fixtures.RegisterIntegrationSystem(t, ctx, directorClient.CertSecuredGraphqlClient, cfg.Tenant, "token-suggestion-int-sys")
 
 	tokenFromRaw := func(token graphql.OneTimeTokenForApplicationExt) string {
 		actualTokenFromRaw := gjson.Get(token.Raw, "token").String()
