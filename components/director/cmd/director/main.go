@@ -774,7 +774,7 @@ func runtimeSvc(transact persistence.Transactioner, cfg config, tenantMappingCon
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
-	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	asaSvc := scenarioassignment.NewService(asaRepo)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
 	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, asaSvc, nil, nil, systemAuthSvc, formationRepo, labelRepo, labelSvc, appRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, nil, nil, assignmentOperationSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
@@ -847,7 +847,7 @@ func runtimeCtxSvc(transact persistence.Transactioner, cfg config, securedHTTPCl
 
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
-	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	asaSvc := scenarioassignment.NewService(asaRepo)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsHTTPClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)
@@ -956,7 +956,7 @@ func applicationSvc(transact persistence.Transactioner, cfg config, securedHTTPC
 	formationRepo := formation.NewRepository(formationConv)
 	formationTemplateRepo := formationtemplate.NewRepository(formationTemplateConverter)
 
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 
 	runtimeContextConv := runtimectx.NewConverter()
@@ -1070,8 +1070,7 @@ func createFormationMappingAuthenticator(transact persistence.Transactioner, cfg
 	asaRepo := scenarioassignment.NewRepository(asaConverter)
 	formationConstraintRepo := formationconstraint.NewRepository(formationConstraintConverter)
 	formationTemplateConstraintReferencesRepo := formationtemplateconstraintreferences.NewRepository(formationTemplateConstraintReferencesConverter)
-	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
-	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	asaSvc := scenarioassignment.NewService(asaRepo)
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
@@ -1147,7 +1146,7 @@ func createFormationMappingHandler(transact persistence.Transactioner, appRepo a
 	assignmentOperationSvc := assignmentOp.NewService(assignmentOperationRepo, uidSvc)
 
 	labelDefinitionSvc := labeldef.NewService(labelDefinitionRepo, labelRepo, asaRepo, tenantRepo, uidSvc)
-	asaSvc := scenarioassignment.NewService(asaRepo, labelDefinitionSvc)
+	asaSvc := scenarioassignment.NewService(asaRepo)
 	labelSvc := label.NewLabelService(labelRepo, labelDefinitionRepo, uidSvc)
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	formationConstraintSvc := formationconstraint.NewService(formationConstraintRepo, formationTemplateConstraintReferencesRepo, uidSvc, formationConstraintConverter)
