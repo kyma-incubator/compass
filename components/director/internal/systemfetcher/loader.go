@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/internal/uid"
-	"github.com/kyma-incubator/compass/components/director/pkg/cert"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"time"
+
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -201,12 +202,12 @@ func (d *DataLoader) createDependentEntities(ctx context.Context, managedResourc
 	managedResources := make([]ManagedResource, 0, len(managedResourcesMap))
 	for _, managedResource := range managedResourcesMap {
 		var input ManagedResource
-		managedResourceJson, err := json.Marshal(managedResource)
+		managedResourceJSON, err := json.Marshal(managedResource)
 		if err != nil {
 			return nil, errors.Wrap(err, "while marshaling managed resources")
 		}
 
-		if err = json.Unmarshal(managedResourceJson, &input); err != nil {
+		if err = json.Unmarshal(managedResourceJSON, &input); err != nil {
 			return nil, errors.Wrap(err, "while unmarshalling managed resources into a struct")
 		}
 
