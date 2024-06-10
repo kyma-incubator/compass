@@ -569,7 +569,7 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
 	bundleInstanceAuthSvc := bundleinstanceauth.NewService(bundleInstanceAuthRepo, uidSvc)
 	bundleSvc := bundleutil.NewService(bundleRepo, apiSvc, eventAPISvc, docSvc, bundleInstanceAuthSvc, uidSvc)
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, scenariosSvc)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo)
 	tntSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookClient := webhookclient.NewClient(securedHTTPClient, mtlsClient)
 	webhookLabelBuilder := databuilder.NewWebhookLabelBuilder(labelRepo)

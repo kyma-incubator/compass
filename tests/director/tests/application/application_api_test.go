@@ -634,8 +634,9 @@ func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSyst
 	updatedApp := graphql.ApplicationExt{}
 
 	t.Run("should fail for non-integration system", func(t *testing.T) {
-		runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "test-runtime", tenant.TestTenants.GetDefaultTenantID())
+		var runtime graphql.RuntimeExt // needed so the 'defer' can be above the runtime registration
 		defer fixtures.CleanupRuntime(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &runtime)
+		runtime, err := fixtures.RegisterRuntime(t, ctx, certSecuredGraphQLClient, "test-runtime", tenant.TestTenants.GetDefaultTenantID())
 		require.NoError(t, err)
 		require.NotEmpty(t, runtime.ID)
 
@@ -666,14 +667,14 @@ func TestUpdateApplicationWithLocalTenantIDShouldBeAllowedOnlyForIntegrationSyst
 		expectedApp.Labels["name"] = "before"
 		expectedApp.LocalTenantID = ptr.String("localTenantID")
 
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "test-update-local-tenant")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+		var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), &intSys)
+		intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), "test-update-local-tenant")
 
-		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
+		var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+		intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenant.TestTenants.GetDefaultTenantID(), intSys.ID)
 		require.NotEmpty(t, intSysAuth)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
@@ -1772,14 +1773,14 @@ func TestMergeApplications(t *testing.T) {
 	}
 
 	t.Log("Create integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "app-template")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "app-template")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
@@ -2124,19 +2125,6 @@ func TestListApplicationsByLocalTenantID(t *testing.T) {
 	displayNameField := "displayName"
 	localTenantIDField := "localTenantId"
 
-	createIntegrationSystem := func() *graphql.IntegrationSystemExt {
-		integrationSystem, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "integration-system-name")
-		require.NoError(t, err)
-		require.NotEmpty(t, integrationSystem.ID)
-		return integrationSystem
-	}
-
-	createIntegrationSystemCredentials := func(integrationSystem *graphql.IntegrationSystemExt) *graphql.IntSysSystemAuth {
-		integrationSystemAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem.ID)
-		require.NotEmpty(t, integrationSystemAuth)
-		return integrationSystemAuth
-	}
-
 	createIntegrationSystemOauthClient := func(integrationSystemAuth *graphql.IntSysSystemAuth) *gcli.Client {
 		integrationSystemOauthCredentialData, ok := integrationSystemAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)
@@ -2203,13 +2191,15 @@ func TestListApplicationsByLocalTenantID(t *testing.T) {
 		return page, err
 	}
 
-	integrationSystem := createIntegrationSystem()
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem)
+	var integrationSystem graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &integrationSystem)
+	integrationSystem = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "integration-system-name")
 
-	integrationSystemAuth := createIntegrationSystemCredentials(integrationSystem)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, integrationSystemAuth.ID)
+	var integrationSystemAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &integrationSystemAuth)
+	integrationSystemAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, integrationSystem.ID)
 
-	integrationSystemOAuthClient := createIntegrationSystemOauthClient(integrationSystemAuth)
+	integrationSystemOAuthClient := createIntegrationSystemOauthClient(&integrationSystemAuth)
 
 	appTemplateOneName := fixtures.CreateAppTemplateName("template one")
 	appTemplateOne := createAppTemplate(integrationSystemOAuthClient, appTemplateOneName)
@@ -2300,14 +2290,14 @@ func TestGetApplicationByLocalTenantIDAndAppTemplateID(t *testing.T) {
 	tenantId := tenant.TestTenants.GetDefaultSubaccountTenantID()
 
 	t.Log("Creating integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "update-app-template-with-override")
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, "update-app-template-with-override")
 
-	intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
+	var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+	intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys.ID)
 	require.NotEmpty(t, intSysAuth)
-	defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 	intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 	require.True(t, ok)
