@@ -56,16 +56,18 @@ type DataLoader struct {
 	webhookSvc  webhookService
 	intSysSvc   intSysSvc
 	cfg         Config
+	kubeClient  KubeClient
 }
 
 // NewDataLoader creates new DataLoader
-func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc, webhookSvc webhookService) *DataLoader {
+func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc, webhookSvc webhookService, kubeClient KubeClient) *DataLoader {
 	return &DataLoader{
 		transaction: tx,
 		appTmplSvc:  appTmplSvc,
 		intSysSvc:   intSysSvc,
 		webhookSvc:  webhookSvc,
 		cfg:         cfg,
+		kubeClient:  kubeClient,
 	}
 }
 
@@ -264,6 +266,9 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 			}
 
 			log.C(ctx).Infof("Cannot find application template with name %q and region %s. Creation triggered...", appTmplInput.Name, region)
+			if err := d.setWebhooksCredentialsFromSecrets(ctx, appTmplInput.Webhooks); err != nil {
+				return errors.Wrap(err, "error while setting webhooks credentials from secret")
+			}
 			templateID, err := d.appTmplSvc.Create(ctx, appTmplInput)
 			if err != nil {
 				return errors.Wrapf(err, "error while creating application template with name %q and region %s", appTmplInput.Name, region)
@@ -295,6 +300,9 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 		}
 
 		if !areWebhooksEqual(webhooks, appTmplInput.Webhooks) {
+			if err := d.setWebhooksCredentialsFromSecrets(ctx, appTmplInput.Webhooks); err != nil {
+				return errors.Wrap(err, "error while setting webhooks credentials from secret")
+			}
 			if err := d.syncWebhooks(ctx, appTemplate.ID, webhooks, appTmplInput.Webhooks); err != nil {
 				return errors.Wrapf(err, "while updating webhooks for application tempate with id %q", appTemplate.ID)
 			}
@@ -304,6 +312,59 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 	}
 
 	return nil
+}
+func (d *DataLoader) setWebhooksCredentialsFromSecrets(ctx context.Context, webhooks []*model.WebhookInput) error {
+
+	secretNameToSecretKeyToSecretData, err := d.prepareWebhooksCredentialsMappings(ctx, webhooks)
+	if err != nil {
+		return errors.Wrap(err, "while preparing webhooks credentials mappings")
+	}
+	for i, wh := range webhooks {
+		if wh.Auth.SecretRef != nil && wh.Auth.SecretRef.SecretName != "" && wh.Auth.SecretRef.SecretKey != "" {
+			secretName := wh.Auth.SecretRef.SecretName
+			secretKey := wh.Auth.SecretRef.SecretKey
+
+			log.C(ctx).Infof("Setting credentials for webhook with id: %q for key: %q from secret with name: %q", wh.ID, secretKey, secretName)
+			secret, exists := secretNameToSecretKeyToSecretData[secretName]
+			if !exists {
+				log.C(ctx).Warnf("There is no secret with name: %q. No credential from secret will be set for webhook with id: %q", secretName, wh.ID)
+				continue
+			}
+			whAuth, exists := secret[secretKey]
+			if !exists {
+				log.C(ctx).Warnf("There is no credentials for key: %q in secret with name: %q. No credentials from secret will be set for webhook with id: %q", secretKey, secretName, wh.ID)
+				continue
+			}
+			webhooks[i].Auth = whAuth
+			log.C(ctx).Infof("Successfully set credentials for webhook with id: %q for key: %q from secret with name: %q", wh.ID, secretKey, secretName)
+		}
+	}
+	return nil
+}
+
+func (d *DataLoader) prepareWebhooksCredentialsMappings(ctx context.Context, webhooks []*model.WebhookInput) (map[string]map[string]*model.AuthInput, error) {
+	log.C(ctx).Infof("Preparing webhooks credentials mappings...")
+
+	secretNameToSecretKeyToSecretData := make(map[string]map[string]*model.AuthInput, 0)
+	for _, wh := range webhooks {
+		if wh.Auth.SecretRef != nil && wh.Auth.SecretRef.SecretName != "" {
+			secretName := wh.Auth.SecretRef.SecretName
+
+			if _, exists := secretNameToSecretKeyToSecretData[secretName]; !exists { //if secret name is missing -> go get it
+				secretDataBytes, err := d.kubeClient.GetSystemFetcherSecretData(ctx, secretName)
+				if err != nil {
+					log.C(ctx).Warnf(err.Error())
+					continue
+				}
+				secretDataCredentials := make(map[string]*model.AuthInput, 0)
+				if err := json.Unmarshal(secretDataBytes, &secretDataCredentials); err != nil {
+					return nil, errors.Wrapf(err, "while unmarshalling secret data from secret with name: %q", secretName)
+				}
+				secretNameToSecretKeyToSecretData[secretName] = secretDataCredentials
+			}
+		}
+	}
+	return secretNameToSecretKeyToSecretData, nil
 }
 
 func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplateInput) []model.ApplicationTemplateInput {

@@ -59,6 +59,7 @@ type AuthInput struct {
 	AdditionalQueryParams map[string][]string
 	RequestAuth           *CredentialRequestAuthInput
 	OneTimeToken          *OneTimeToken
+	SecretRef             *AuthSecretRefInput
 }
 
 // ToAuth missing godoc
@@ -227,4 +228,9 @@ func (i *CSRFTokenCredentialRequestAuthInput) ToCSRFTokenCredentialRequestAuth()
 		AdditionalQueryParams: i.AdditionalQueryParams,
 		TokenEndpointURL:      i.TokenEndpointURL,
 	}
+}
+
+type AuthSecretRefInput struct {
+	SecretName string
+	SecretKey  string
 }
