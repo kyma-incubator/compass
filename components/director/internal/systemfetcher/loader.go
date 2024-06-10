@@ -211,9 +211,6 @@ func (d *DataLoader) createDependentEntities(ctx context.Context, managedResourc
 			return nil, errors.Wrap(err, "while unmarshalling managed resources into a struct")
 		}
 
-		log.C(ctx).Errorf("KALO- app template input %v", input.ApplicationTemplateInput)
-		log.C(ctx).Errorf("KALO- cert subj mapping inputs %v", input.CertSubjMappingInputs)
-
 		intSystem, ok := managedResource[integrationSystemJSONKey]
 		if ok {
 			intSystemData, ok := intSystem.(map[string]interface{})
