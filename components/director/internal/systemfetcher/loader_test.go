@@ -40,6 +40,14 @@ func TestLoadData(t *testing.T) {
 		"\"description\":\"int-sys-desc\"}," +
 		"\"description\":\"app-tmpl-desc\"}]"
 
+	applicationTemplatesWithCertSubjMappingJSON := "[{" +
+		"\"name\":\"" + applicationTemplateName + "\"," +
+		"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": {\\\"legacy\\\": \\\"true\\\"}}\"," +
+		"\"certSubjectMappings\":[{" +
+		"\"subject\":\"test-subject\"," +
+		"\"consumer_type\":\"Managed Application Consumer\"," +
+		"\"tenant_access_levels\":[\"global\"]}]}]"
+
 	applicationTemplatesWithIntSysJSONAndPlaceholders := "[{" +
 		"\"name\":\"" + applicationTemplateName + "\"," +
 		"\"applicationInputJSON\":\"{\\\"name\\\": \\\"name\\\", \\\"labels\\\": {\\\"legacy\\\":\\\"true\\\"}}\"," +
@@ -79,14 +87,15 @@ func TestLoadData(t *testing.T) {
 	}
 
 	type testCase struct {
-		name              string
-		mockTransactioner func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
-		appTmplSvc        func() *automock.AppTmplService
-		intSysSvc         func() *automock.IntSysSvc
-		webhookSvc        func() *automock.WebhookService
-		readDirFunc       func(path string) ([]os.DirEntry, error)
-		readFileFunc      func(path string) ([]byte, error)
-		expectedErr       error
+		name               string
+		mockTransactioner  func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner)
+		appTmplSvc         func() *automock.AppTmplService
+		intSysSvc          func() *automock.IntSysSvc
+		webhookSvc         func() *automock.WebhookService
+		certSubjMappingSvc func() *automock.CertSubjMappingService
+		readDirFunc        func(path string) ([]os.DirEntry, error)
+		readFileFunc       func(path string) ([]byte, error)
+		expectedErr        error
 	}
 	tests := []testCase{
 		{
@@ -94,9 +103,10 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntStartTransaction()
 			},
-			appTmplSvc: mockAppTmplService,
-			intSysSvc:  mockIntSysService,
-			webhookSvc: mockWebhookService,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
 			readDirFunc: func(path string) ([]os.DirEntry, error) {
 				return nil, testErr
 			},
@@ -108,9 +118,10 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntStartTransaction()
 			},
-			appTmplSvc: mockAppTmplService,
-			intSysSvc:  mockIntSysService,
-			webhookSvc: mockWebhookService,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
 			readDirFunc: func(path string) ([]os.DirEntry, error) {
 				file := FakeFile{name: "test.txt"}
 				return []os.DirEntry{&file}, nil
@@ -123,10 +134,11 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntStartTransaction()
 			},
-			appTmplSvc:  mockAppTmplService,
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte("[]"), testErr
 			},
@@ -137,12 +149,13 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(testErr).ThatFailsOnBegin()
 			},
-			appTmplSvc:   mockAppTmplService,
-			intSysSvc:    mockIntSysService,
-			webhookSvc:   mockWebhookService,
-			readDirFunc:  mockReadDir,
-			readFileFunc: mockReadFile,
-			expectedErr:  testErr,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
+			readFileFunc:       mockReadFile,
+			expectedErr:        testErr,
 		},
 		{
 			name: "upsert application templates failed - GetByNameAndRegion returns error",
@@ -154,9 +167,10 @@ func TestLoadData(t *testing.T) {
 				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(nil, testErr).Once()
 				return appTmplSvc
 			},
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesJSON), nil
 			},
@@ -173,9 +187,10 @@ func TestLoadData(t *testing.T) {
 				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("", testErr).Once()
 				return appTmplSvc
 			},
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesJSON), nil
 			},
@@ -192,9 +207,10 @@ func TestLoadData(t *testing.T) {
 				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("", nil).Once()
 				return appTmplSvc
 			},
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesJSON), nil
 			},
@@ -205,10 +221,11 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 			},
-			appTmplSvc:  mockAppTmplService,
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				applicationTemplatesWithInvalidIntSysJSON := "[{" +
 					"\"name\":\"" + applicationTemplateName + "\"," +
@@ -223,10 +240,11 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 			},
-			appTmplSvc:  mockAppTmplService,
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				applicationTemplatesWithInvalidIntSysNameJSON := "[{" +
 					"\"name\":\"" + applicationTemplateName + "\"," +
@@ -243,10 +261,11 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 			},
-			appTmplSvc:  mockAppTmplService,
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				applicationTemplatesWithInvalidIntSysDescJSON := "[{" +
 					"\"name\":\"" + applicationTemplateName + "\"," +
@@ -263,10 +282,11 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 			},
-			appTmplSvc:  mockAppTmplService,
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				applicationTemplatesWithMissingIntSysNameJSON := "[{" +
 					"\"name\":\"" + applicationTemplateName + "\"," +
@@ -282,10 +302,11 @@ func TestLoadData(t *testing.T) {
 			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
 				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
 			},
-			appTmplSvc:  mockAppTmplService,
-			intSysSvc:   mockIntSysService,
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			appTmplSvc:         mockAppTmplService,
+			intSysSvc:          mockIntSysService,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				applicationTemplatesWithMissingIntSysDescJSON := "[{" +
 					"\"name\":\"" + applicationTemplateName + "\"," +
@@ -307,8 +328,9 @@ func TestLoadData(t *testing.T) {
 				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(model.IntegrationSystemPage{}, testErr).Once()
 				return intSysSvc
 			},
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSON), nil
 			},
@@ -326,8 +348,9 @@ func TestLoadData(t *testing.T) {
 				intSysSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.IntegrationSystemInput")).Return("", testErr).Once()
 				return intSysSvc
 			},
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSON), nil
 			},
@@ -364,8 +387,9 @@ func TestLoadData(t *testing.T) {
 				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
 				return intSysSvc
 			},
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSON), nil
 			},
@@ -388,11 +412,134 @@ func TestLoadData(t *testing.T) {
 				intSysSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.IntegrationSystemInput")).Return("int-sys-id", nil).Once()
 				return intSysSvc
 			},
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSON), nil
 			},
+		},
+		{
+			name: "Success - application template with certificate subject mappings",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(nil, fmt.Errorf("Object not found")).Once()
+				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("app-template-id", nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc:  mockIntSysService,
+			webhookSvc: mockWebhookService,
+			certSubjMappingSvc: func() *automock.CertSubjMappingService {
+				certSubjMappingSvc := &automock.CertSubjMappingService{}
+				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), "app-template-id").Return([]*model.CertSubjectMapping{}, nil).Once()
+				certSubjMappingSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("*model.CertSubjectMapping")).Return("", nil).Once()
+				return certSubjMappingSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithCertSubjMappingJSON), nil
+			},
+		},
+		{
+			name: "Success - application template with certificate subject mappings, the CSM already exists",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatSucceeds()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(nil, fmt.Errorf("Object not found")).Once()
+				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("app-template-id", nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc:  mockIntSysService,
+			webhookSvc: mockWebhookService,
+			certSubjMappingSvc: func() *automock.CertSubjMappingService {
+				certSubjMappingSvc := &automock.CertSubjMappingService{}
+				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), "app-template-id").Return([]*model.CertSubjectMapping{{Subject: "test-subject"}}, nil).Once()
+				certSubjMappingSvc.On("Update", txtest.CtxWithDBMatcher(), mock.AnythingOfType("*model.CertSubjectMapping")).Return(nil).Once()
+				return certSubjMappingSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithCertSubjMappingJSON), nil
+			},
+		},
+		{
+			name: "Fail - application template with certificate subject mappings, ListByConsumerID returns error",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(nil, fmt.Errorf("Object not found")).Once()
+				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("app-template-id", nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc:  mockIntSysService,
+			webhookSvc: mockWebhookService,
+			certSubjMappingSvc: func() *automock.CertSubjMappingService {
+				certSubjMappingSvc := &automock.CertSubjMappingService{}
+				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), "app-template-id").Return([]*model.CertSubjectMapping{}, testErr).Once()
+				return certSubjMappingSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithCertSubjMappingJSON), nil
+			},
+			expectedErr: testErr,
+		},
+		{
+			name: "Fail - application template with certificate subject mappings, Create returns error",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(nil, fmt.Errorf("Object not found")).Once()
+				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("app-template-id", nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc:  mockIntSysService,
+			webhookSvc: mockWebhookService,
+			certSubjMappingSvc: func() *automock.CertSubjMappingService {
+				certSubjMappingSvc := &automock.CertSubjMappingService{}
+				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), "app-template-id").Return([]*model.CertSubjectMapping{}, nil).Once()
+				certSubjMappingSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("*model.CertSubjectMapping")).Return("", testErr).Once()
+				return certSubjMappingSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithCertSubjMappingJSON), nil
+			},
+			expectedErr: testErr,
+		},
+		{
+			name: "Fail - application template with certificate subject mappings, Update returns error",
+			mockTransactioner: func() (*pAutomock.PersistenceTx, *pAutomock.Transactioner) {
+				return txtest.NewTransactionContextGenerator(nil).ThatDoesntExpectCommit()
+			},
+			appTmplSvc: func() *automock.AppTmplService {
+				appTmplSvc := &automock.AppTmplService{}
+				appTmplSvc.On("GetByNameAndRegion", txtest.CtxWithDBMatcher(), applicationTemplateName, nil).Return(nil, fmt.Errorf("Object not found")).Once()
+				appTmplSvc.On("Create", txtest.CtxWithDBMatcher(), mock.AnythingOfType("model.ApplicationTemplateInput")).Return("app-template-id", nil).Once()
+				return appTmplSvc
+			},
+			intSysSvc:  mockIntSysService,
+			webhookSvc: mockWebhookService,
+			certSubjMappingSvc: func() *automock.CertSubjMappingService {
+				certSubjMappingSvc := &automock.CertSubjMappingService{}
+				certSubjMappingSvc.On("ListByConsumerID", txtest.CtxWithDBMatcher(), "app-template-id").Return([]*model.CertSubjectMapping{{Subject: "test-subject"}}, nil).Once()
+				certSubjMappingSvc.On("Update", txtest.CtxWithDBMatcher(), mock.AnythingOfType("*model.CertSubjectMapping")).Return(testErr).Once()
+				return certSubjMappingSvc
+			},
+			readDirFunc: mockReadDir,
+			readFileFunc: func(path string) ([]byte, error) {
+				return []byte(applicationTemplatesWithCertSubjMappingJSON), nil
+			},
+			expectedErr: testErr,
 		},
 		{
 			name: "Success - integration system already exists",
@@ -421,8 +568,9 @@ func TestLoadData(t *testing.T) {
 				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
 				return intSysSvc
 			},
-			webhookSvc:  mockWebhookService,
-			readDirFunc: mockReadDir,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSON), nil
 			},
@@ -463,7 +611,8 @@ func TestLoadData(t *testing.T) {
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(nil, nil)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSON), nil
 			},
@@ -516,7 +665,8 @@ func TestLoadData(t *testing.T) {
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(nil, nil)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndPlaceholders), nil
 			},
@@ -548,12 +698,9 @@ func TestLoadData(t *testing.T) {
 				intSysSvc.On("List", txtest.CtxWithDBMatcher(), 200, "").Return(intSysPage, nil).Once()
 				return intSysSvc
 			},
-			webhookSvc: func() *automock.WebhookService {
-				svc := &automock.WebhookService{}
-				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(nil, nil)
-				return svc
-			},
-			readDirFunc: mockReadDir,
+			webhookSvc:         mockWebhookService,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				applicationTemplatesWithIntSysAndMissingLabelsJSON := "[{" +
 					"\"name\":\"" + applicationTemplateName + "\"," +
@@ -626,7 +773,8 @@ func TestLoadData(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), whID3, model.ApplicationTemplateWebhookReference).Return(nil)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
 			},
@@ -689,7 +837,8 @@ func TestLoadData(t *testing.T) {
 				svc.On("Update", txtest.CtxWithDBMatcher(), whID2, whInput2Update, model.ApplicationTemplateWebhookReference).Return(nil)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
 			},
@@ -755,7 +904,8 @@ func TestLoadData(t *testing.T) {
 				//svc.On("Delete", txtest.CtxWithDBMatcher(), whID3, model.ApplicationTemplateWebhookReference).Return(nil)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
 			},
@@ -819,7 +969,8 @@ func TestLoadData(t *testing.T) {
 				svc.On("Update", txtest.CtxWithDBMatcher(), whID1, whInputUpdate, model.ApplicationTemplateWebhookReference).Return(testErr)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
 			},
@@ -886,7 +1037,8 @@ func TestLoadData(t *testing.T) {
 				svc.On("Delete", txtest.CtxWithDBMatcher(), whID3, model.ApplicationTemplateWebhookReference).Return(testErr)
 				return svc
 			},
-			readDirFunc: mockReadDir,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndWebhooks), nil
 			},
@@ -940,8 +1092,9 @@ func TestLoadData(t *testing.T) {
 				svc.On("ListForApplicationTemplate", txtest.CtxWithDBMatcher(), "id").Return(nil, testErr)
 				return svc
 			},
-			readDirFunc: mockReadDir,
-			expectedErr: testErr,
+			certSubjMappingSvc: mockCertSubjMappingService,
+			readDirFunc:        mockReadDir,
+			expectedErr:        testErr,
 			readFileFunc: func(path string) ([]byte, error) {
 				return []byte(applicationTemplatesWithIntSysJSONAndPlaceholders), nil
 			},
@@ -953,10 +1106,11 @@ func TestLoadData(t *testing.T) {
 			appTmplSvc := testCase.appTmplSvc()
 			intSysSvc := testCase.intSysSvc()
 			webhookSvc := testCase.webhookSvc()
+			certSubjectMappingSvc := testCase.certSubjMappingSvc()
 			mockedTx, transactioner := testCase.mockTransactioner()
-			defer mock.AssertExpectationsForObjects(t, appTmplSvc, intSysSvc, mockedTx, transactioner)
+			defer mock.AssertExpectationsForObjects(t, appTmplSvc, intSysSvc, webhookSvc, certSubjectMappingSvc, mockedTx, transactioner)
 
-			dataLoader := systemfetcher.NewDataLoader(transactioner, systemfetcher.Config{}, appTmplSvc, intSysSvc, webhookSvc)
+			dataLoader := systemfetcher.NewDataLoader(transactioner, systemfetcher.Config{}, appTmplSvc, intSysSvc, webhookSvc, certSubjectMappingSvc)
 			err := dataLoader.LoadData(context.TODO(), testCase.readDirFunc, testCase.readFileFunc)
 
 			if testCase.expectedErr != nil {
@@ -987,6 +1141,10 @@ func mockIntSysService() *automock.IntSysSvc {
 
 func mockWebhookService() *automock.WebhookService {
 	return &automock.WebhookService{}
+}
+
+func mockCertSubjMappingService() *automock.CertSubjMappingService {
+	return &automock.CertSubjMappingService{}
 }
 
 type FakeFile struct {

@@ -22,6 +22,7 @@ type CertMappingRepository interface {
 	Exists(ctx context.Context, id string) (bool, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.CertSubjectMappingPage, error)
 	ListAll(ctx context.Context) ([]*model.CertSubjectMapping, error)
+	ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error)
 }
 
 type service struct {
@@ -114,6 +115,18 @@ func (s *service) ListAll(ctx context.Context) ([]*model.CertSubjectMapping, err
 	certSubjectMappings, err := s.repo.ListAll(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing certificate subject mappings")
+	}
+
+	return certSubjectMappings, nil
+}
+
+// ListByConsumerID retrieves certificate subject mappings filtered by consumer ID
+func (s *service) ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error) {
+	log.C(ctx).Infof("Listing certificate subject mappings by consumer id %q", consumerID)
+
+	certSubjectMappings, err := s.repo.ListByConsumerID(ctx, consumerID)
+	if err != nil {
+		return nil, errors.Wrap(err, "while listing certificate subject mappings by consumer id")
 	}
 
 	return certSubjectMappings, nil

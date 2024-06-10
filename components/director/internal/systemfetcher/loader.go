@@ -4,12 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/internal/uid"
+	"github.com/kyma-incubator/compass/components/director/pkg/cert"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
-
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
+	"time"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
@@ -49,31 +51,53 @@ type intSysSvc interface {
 	List(ctx context.Context, pageSize int, cursor string) (model.IntegrationSystemPage, error)
 }
 
+//go:generate mockery --name=certSubjMappingService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
+type certSubjMappingService interface {
+	ListByConsumerID(ctx context.Context, consumerID string) ([]*model.CertSubjectMapping, error)
+	Create(ctx context.Context, item *model.CertSubjectMapping) (string, error)
+	Update(ctx context.Context, in *model.CertSubjectMapping) error
+}
+
+//go:generate mockery --name=uidService --output=automock --outpkg=automock --case=underscore --exported=true --disable-version-string
+type uidService interface {
+	Generate() string
+}
+
+// ManagedResource represents a managed resource
+type ManagedResource struct {
+	model.ApplicationTemplateInput
+	CertSubjMappingInputs []model.CertSubjectMappingInput `json:"certSubjectMappings"`
+}
+
 // DataLoader loads and creates all the necessary data needed by system-fetcher
 type DataLoader struct {
-	transaction persistence.Transactioner
-	appTmplSvc  appTmplService
-	webhookSvc  webhookService
-	intSysSvc   intSysSvc
-	cfg         Config
+	transaction        persistence.Transactioner
+	appTmplSvc         appTmplService
+	webhookSvc         webhookService
+	intSysSvc          intSysSvc
+	certSubjMappingSvc certSubjMappingService
+	uidSvc             uidService
+	cfg                Config
 }
 
 // NewDataLoader creates new DataLoader
-func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc, webhookSvc webhookService) *DataLoader {
+func NewDataLoader(tx persistence.Transactioner, cfg Config, appTmplSvc appTmplService, intSysSvc intSysSvc, webhookSvc webhookService, certSubjMappingSvc certSubjMappingService) *DataLoader {
 	return &DataLoader{
-		transaction: tx,
-		appTmplSvc:  appTmplSvc,
-		intSysSvc:   intSysSvc,
-		webhookSvc:  webhookSvc,
-		cfg:         cfg,
+		transaction:        tx,
+		appTmplSvc:         appTmplSvc,
+		intSysSvc:          intSysSvc,
+		webhookSvc:         webhookSvc,
+		certSubjMappingSvc: certSubjMappingSvc,
+		uidSvc:             uid.NewService(),
+		cfg:                cfg,
 	}
 }
 
 // LoadData loads and creates all the necessary data needed by system-fetcher
 func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) ([]os.DirEntry, error), readFile func(filename string) ([]byte, error)) error {
-	appTemplateInputsMap, err := d.loadAppTemplates(ctx, readDir, readFile)
+	managedResourcesMap, err := d.loadManagedResources(ctx, readDir, readFile)
 	if err != nil {
-		return errors.Wrap(err, "failed while loading application templates")
+		return errors.Wrap(err, "failed while loading managed resources")
 	}
 
 	tx, err := d.transaction.Begin()
@@ -83,13 +107,18 @@ func (d *DataLoader) LoadData(ctx context.Context, readDir func(dirname string) 
 	defer d.transaction.RollbackUnlessCommitted(ctx, tx)
 	ctxWithTx := persistence.SaveToContext(ctx, tx)
 
-	appTemplateInputs, err := d.createAppTemplatesDependentEntities(ctxWithTx, appTemplateInputsMap)
+	managedResources, err := d.createDependentEntities(ctxWithTx, managedResourcesMap)
 	if err != nil {
-		return errors.Wrap(err, "failed while creating application templates dependent entities")
+		return errors.Wrap(err, "failed while creating dependent entities")
 	}
 
-	if err = d.upsertAppTemplates(ctxWithTx, appTemplateInputs); err != nil {
+	appTemplateToCertSubjMappingsMap, err := d.upsertAppTemplates(ctxWithTx, managedResources)
+	if err != nil {
 		return errors.Wrap(err, "failed while upserting application templates")
+	}
+
+	if err = d.upsertCertSubjectMappings(ctxWithTx, appTemplateToCertSubjMappingsMap); err != nil {
+		return errors.Wrap(err, "failed while upserting certificate subject mappings")
 	}
 
 	if err := tx.Commit(); err != nil {
@@ -133,7 +162,7 @@ func (d *DataLoader) syncWebhooks(ctx context.Context, appTemplateID string, web
 	return nil
 }
 
-func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname string) ([]os.DirEntry, error), readFile func(filename string) ([]byte, error)) ([]map[string]interface{}, error) {
+func (d *DataLoader) loadManagedResources(ctx context.Context, readDir func(dirname string) ([]os.DirEntry, error), readFile func(filename string) ([]byte, error)) ([]map[string]interface{}, error) {
 	appTemplatesFileLocation := applicationTemplatesDirectoryPath
 	if len(d.cfg.TemplatesFileLocation) > 0 {
 		appTemplatesFileLocation = d.cfg.TemplatesFileLocation
@@ -144,9 +173,9 @@ func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname 
 		return nil, errors.Wrapf(err, "while reading directory with application templates files [%s]", appTemplatesFileLocation)
 	}
 
-	var appTemplateInputs []map[string]interface{}
+	var managedResources []map[string]interface{}
 	for _, f := range files {
-		log.C(ctx).Infof("Loading application templates from file: %s", f.Name())
+		log.C(ctx).Infof("Loading managed resources from file: %s", f.Name())
 
 		if filepath.Ext(f.Name()) != ".json" {
 			return nil, apperrors.NewInternalError(fmt.Sprintf("unsupported file format %q, supported format: json", filepath.Ext(f.Name())))
@@ -157,31 +186,34 @@ func (d *DataLoader) loadAppTemplates(ctx context.Context, readDir func(dirname 
 			return nil, errors.Wrapf(err, "while reading application templates file %q", appTemplatesFileLocation+f.Name())
 		}
 
-		var templatesFromFile []map[string]interface{}
-		if err := json.Unmarshal(bytes, &templatesFromFile); err != nil {
-			return nil, errors.Wrapf(err, "while unmarshalling application templates from file %s", appTemplatesFileLocation+f.Name())
+		var resourcesFromFile []map[string]interface{}
+		if err := json.Unmarshal(bytes, &resourcesFromFile); err != nil {
+			return nil, errors.Wrapf(err, "while unmarshalling managed resources from file %s", appTemplatesFileLocation+f.Name())
 		}
 		log.C(ctx).Infof("Successfully loaded application templates from file: %s", f.Name())
-		appTemplateInputs = append(appTemplateInputs, templatesFromFile...)
+		managedResources = append(managedResources, resourcesFromFile...)
 	}
 
-	return appTemplateInputs, nil
+	return managedResources, nil
 }
 
-func (d *DataLoader) createAppTemplatesDependentEntities(ctx context.Context, appTmplInputs []map[string]interface{}) ([]model.ApplicationTemplateInput, error) {
-	appTemplateInputs := make([]model.ApplicationTemplateInput, 0, len(appTmplInputs))
-	for _, appTmplInput := range appTmplInputs {
-		var input model.ApplicationTemplateInput
-		appTmplInputJSON, err := json.Marshal(appTmplInput)
+func (d *DataLoader) createDependentEntities(ctx context.Context, managedResourcesMap []map[string]interface{}) ([]ManagedResource, error) {
+	managedResources := make([]ManagedResource, 0, len(managedResourcesMap))
+	for _, managedResource := range managedResourcesMap {
+		var input ManagedResource
+		managedResourceJson, err := json.Marshal(managedResource)
 		if err != nil {
-			return nil, errors.Wrap(err, "while marshaling application template input")
+			return nil, errors.Wrap(err, "while marshaling managed resources")
 		}
 
-		if err = json.Unmarshal(appTmplInputJSON, &input); err != nil {
-			return nil, errors.Wrap(err, "while unmarshalling application template input")
+		if err = json.Unmarshal(managedResourceJson, &input); err != nil {
+			return nil, errors.Wrap(err, "while unmarshalling managed resources into a struct")
 		}
 
-		intSystem, ok := appTmplInput[integrationSystemJSONKey]
+		log.C(ctx).Errorf("KALO- app template input %v", input.ApplicationTemplateInput)
+		log.C(ctx).Errorf("KALO- cert subj mapping inputs %v", input.CertSubjMappingInputs)
+
+		intSystem, ok := managedResource[integrationSystemJSONKey]
 		if ok {
 			intSystemData, ok := intSystem.(map[string]interface{})
 			if !ok {
@@ -218,10 +250,10 @@ func (d *DataLoader) createAppTemplatesDependentEntities(ctx context.Context, ap
 				return nil, err
 			}
 		}
-		appTemplateInputs = append(appTemplateInputs, input)
+		managedResources = append(managedResources, input)
 	}
 
-	return enrichApplicationTemplateInput(appTemplateInputs), nil
+	return enrichApplicationTemplateInput(managedResources), nil
 }
 
 func (d *DataLoader) listIntegrationSystems(ctx context.Context) ([]*model.IntegrationSystem, error) {
@@ -245,76 +277,124 @@ func (d *DataLoader) listIntegrationSystems(ctx context.Context) ([]*model.Integ
 	return integrationSystems, nil
 }
 
-func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs []model.ApplicationTemplateInput) error {
-	for _, appTmplInput := range appTemplateInputs {
+func (d *DataLoader) upsertAppTemplates(ctx context.Context, managedResources []ManagedResource) (map[string][]model.CertSubjectMappingInput, error) {
+	appTemplateToCertSubjMappingsMap := make(map[string][]model.CertSubjectMappingInput)
+	for _, managedResource := range managedResources {
 		var region interface{}
-		region, err := retrieveRegion(appTmplInput.Labels)
+		region, err := retrieveRegion(managedResource.ApplicationTemplateInput.Labels)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		if region == "" {
 			region = nil
 		}
 
-		log.C(ctx).Infof("Retrieving application template with name %q and region %s", appTmplInput.Name, region)
-		appTemplate, err := d.appTmplSvc.GetByNameAndRegion(ctx, appTmplInput.Name, region)
+		log.C(ctx).Infof("Retrieving application template with name %q and region %s", managedResource.ApplicationTemplateInput.Name, region)
+		appTemplate, err := d.appTmplSvc.GetByNameAndRegion(ctx, managedResource.ApplicationTemplateInput.Name, region)
 		if err != nil {
 			if !strings.Contains(err.Error(), "Object not found") {
-				return errors.Wrapf(err, "error while getting application template with name %q and region %s", appTmplInput.Name, region)
+				return nil, errors.Wrapf(err, "error while getting application template with name %q and region %s", managedResource.ApplicationTemplateInput.Name, region)
 			}
 
-			log.C(ctx).Infof("Cannot find application template with name %q and region %s. Creation triggered...", appTmplInput.Name, region)
-			templateID, err := d.appTmplSvc.Create(ctx, appTmplInput)
+			log.C(ctx).Infof("Cannot find application template with name %q and region %s. Creation triggered...", managedResource.ApplicationTemplateInput.Name, region)
+			templateID, err := d.appTmplSvc.Create(ctx, managedResource.ApplicationTemplateInput)
 			if err != nil {
-				return errors.Wrapf(err, "error while creating application template with name %q and region %s", appTmplInput.Name, region)
+				return nil, errors.Wrapf(err, "error while creating application template with name %q and region %s", managedResource.ApplicationTemplateInput.Name, region)
 			}
 			log.C(ctx).Infof("Successfully created application template with id: %q", templateID)
+
+			if len(managedResource.CertSubjMappingInputs) > 0 {
+				appTemplateToCertSubjMappingsMap[templateID] = managedResource.CertSubjMappingInputs
+			}
 			continue
 		}
 
-		if !areAppTemplatesEqual(appTemplate, appTmplInput) {
+		if len(managedResource.CertSubjMappingInputs) > 0 {
+			appTemplateToCertSubjMappingsMap[appTemplate.ID] = managedResource.CertSubjMappingInputs
+		}
+		if !areAppTemplatesEqual(appTemplate, managedResource.ApplicationTemplateInput) {
 			log.C(ctx).Infof("Updating application template with id %q", appTemplate.ID)
 			appTemplateUpdateInput := model.ApplicationTemplateUpdateInput{
-				Name:                 appTmplInput.Name,
-				Description:          appTmplInput.Description,
-				ApplicationNamespace: appTmplInput.ApplicationNamespace,
-				ApplicationInputJSON: appTmplInput.ApplicationInputJSON,
-				Placeholders:         appTmplInput.Placeholders,
-				AccessLevel:          appTmplInput.AccessLevel,
-				Labels:               appTmplInput.Labels,
+				Name:                 managedResource.ApplicationTemplateInput.Name,
+				Description:          managedResource.ApplicationTemplateInput.Description,
+				ApplicationNamespace: managedResource.ApplicationTemplateInput.ApplicationNamespace,
+				ApplicationInputJSON: managedResource.ApplicationTemplateInput.ApplicationInputJSON,
+				Placeholders:         managedResource.ApplicationTemplateInput.Placeholders,
+				AccessLevel:          managedResource.ApplicationTemplateInput.AccessLevel,
+				Labels:               managedResource.ApplicationTemplateInput.Labels,
 			}
 			if err := d.appTmplSvc.Update(ctx, appTemplate.ID, false, appTemplateUpdateInput); err != nil {
-				return errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
+				return nil, errors.Wrapf(err, "while updating application template with id %q", appTemplate.ID)
 			}
 			log.C(ctx).Infof("Successfully updated application template with id %q", appTemplate.ID)
 		}
 
 		webhooks, err := d.webhookSvc.ListForApplicationTemplate(ctx, appTemplate.ID)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		if !areWebhooksEqual(webhooks, appTmplInput.Webhooks) {
-			if err := d.syncWebhooks(ctx, appTemplate.ID, webhooks, appTmplInput.Webhooks); err != nil {
-				return errors.Wrapf(err, "while updating webhooks for application tempate with id %q", appTemplate.ID)
+		if !areWebhooksEqual(webhooks, managedResource.ApplicationTemplateInput.Webhooks) {
+			if err := d.syncWebhooks(ctx, appTemplate.ID, webhooks, managedResource.ApplicationTemplateInput.Webhooks); err != nil {
+				return nil, errors.Wrapf(err, "while updating webhooks for application tempate with id %q", appTemplate.ID)
 			}
 
 			log.C(ctx).Infof("Successfully updated the webhooks for application template with id %q", appTemplate.ID)
 		}
 	}
 
+	return appTemplateToCertSubjMappingsMap, nil
+}
+
+func (d *DataLoader) upsertCertSubjectMappings(ctx context.Context, appTemplateToCertSubjMappingsMap map[string][]model.CertSubjectMappingInput) error {
+	for templateID, certSubjectMappingInputs := range appTemplateToCertSubjMappingsMap {
+		existingCertSubjMappings, err := d.certSubjMappingSvc.ListByConsumerID(ctx, templateID)
+		if err != nil {
+			return errors.Wrapf(err, "error while listing certificate subject mappings by consumer id %q", templateID)
+		}
+
+		for _, csmi := range certSubjectMappingInputs {
+			if exists, csm := certSubjectMappingExists(csmi.Subject, existingCertSubjMappings); exists {
+				csm.ConsumerType = csmi.ConsumerType
+				csm.TenantAccessLevels = csmi.TenantAccessLevels
+
+				if err = d.certSubjMappingSvc.Update(ctx, csm); err != nil {
+					return errors.Wrapf(err, "error while updating certificate subject mapping with id %q", csm.ID)
+				}
+				continue
+			}
+
+			csm := csmi.ToModel(d.uidSvc.Generate())
+			csm.CreatedAt = time.Now()
+			csm.InternalConsumerID = &templateID
+
+			if _, err = d.certSubjMappingSvc.Create(ctx, csm); err != nil {
+				return errors.Wrapf(err, "error while creating certificate subject mapping")
+			}
+		}
+	}
+
 	return nil
 }
 
-func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplateInput) []model.ApplicationTemplateInput {
-	enriched := make([]model.ApplicationTemplateInput, 0, len(appTemplateInputs))
-	for _, appTemplateInput := range appTemplateInputs {
-		if appTemplateInput.Description == nil {
-			appTemplateInput.Description = str.Ptr(appTemplateInput.Name)
+func certSubjectMappingExists(subject string, certSubjMappings []*model.CertSubjectMapping) (bool, *model.CertSubjectMapping) {
+	for _, csm := range certSubjMappings {
+		if cert.SubjectsMatch(subject, csm.Subject) {
+			return true, csm
+		}
+	}
+	return false, nil
+}
+
+func enrichApplicationTemplateInput(managedResources []ManagedResource) []ManagedResource {
+	enriched := make([]ManagedResource, 0, len(managedResources))
+	for _, managedResource := range managedResources {
+		if managedResource.ApplicationTemplateInput.Description == nil {
+			managedResource.ApplicationTemplateInput.Description = str.Ptr(managedResource.ApplicationTemplateInput.Name)
 		}
 
-		if appTemplateInput.Placeholders == nil || len(appTemplateInput.Placeholders) == 0 {
-			appTemplateInput.Placeholders = []model.ApplicationTemplatePlaceholder{
+		if managedResource.ApplicationTemplateInput.Placeholders == nil || len(managedResource.ApplicationTemplateInput.Placeholders) == 0 {
+			managedResource.ApplicationTemplateInput.Placeholders = []model.ApplicationTemplatePlaceholder{
 				{
 					Name:        "name",
 					Description: str.Ptr("Application’s technical name"),
@@ -328,14 +408,14 @@ func enrichApplicationTemplateInput(appTemplateInputs []model.ApplicationTemplat
 			}
 		}
 
-		if appTemplateInput.AccessLevel == "" {
-			appTemplateInput.AccessLevel = model.GlobalApplicationTemplateAccessLevel
+		if managedResource.ApplicationTemplateInput.AccessLevel == "" {
+			managedResource.ApplicationTemplateInput.AccessLevel = model.GlobalApplicationTemplateAccessLevel
 		}
 
-		if appTemplateInput.Labels == nil {
-			appTemplateInput.Labels = map[string]interface{}{managedAppProvisioningLabelKey: false}
+		if managedResource.ApplicationTemplateInput.Labels == nil {
+			managedResource.ApplicationTemplateInput.Labels = map[string]interface{}{managedAppProvisioningLabelKey: false}
 		}
-		enriched = append(enriched, appTemplateInput)
+		enriched = append(enriched, managedResource)
 	}
 	return enriched
 }

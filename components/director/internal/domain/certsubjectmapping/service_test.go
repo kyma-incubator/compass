@@ -346,6 +346,61 @@ func TestService_ListAll(t *testing.T) {
 	}
 }
 
+func TestService_ListByConsumerID(t *testing.T) {
+	certSubjectMappings := []*model.CertSubjectMapping{CertSubjectMappingModel}
+	internalConsumerID := "internal-consumer-id"
+
+	testCases := []struct {
+		Name           string
+		Repo           func() *automock.CertMappingRepository
+		ExpectedOutput []*model.CertSubjectMapping
+		ExpectedError  error
+	}{
+		{
+			Name: "Success",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ListByConsumerID", emptyCtx, internalConsumerID).Return(certSubjectMappings, nil).Once()
+				return repo
+			},
+			ExpectedOutput: certSubjectMappings,
+		},
+		{
+			Name: "Error when listing certificate subject mappings by consumer id fail",
+			Repo: func() *automock.CertMappingRepository {
+				repo := &automock.CertMappingRepository{}
+				repo.On("ListByConsumerID", emptyCtx, internalConsumerID).Return(nil, testErr).Once()
+				return repo
+			},
+			ExpectedOutput: nil,
+			ExpectedError:  testErr,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.Name, func(t *testing.T) {
+			repo := testCase.Repo()
+
+			svc := certsubjectmapping.NewService(repo)
+
+			// WHEN
+			result, err := svc.ListByConsumerID(emptyCtx, internalConsumerID)
+
+			// THEN
+			if testCase.ExpectedError != nil {
+				require.Error(t, err)
+				require.Contains(t, err.Error(), testCase.ExpectedError.Error())
+			} else {
+				require.NoError(t, err)
+			}
+
+			require.Equal(t, testCase.ExpectedOutput, result)
+
+			mock.AssertExpectationsForObjects(t, repo)
+		})
+	}
+}
+
 func TestService_List(t *testing.T) {
 	pageSize := 100
 	invalidPageSize := -100
