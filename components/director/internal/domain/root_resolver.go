@@ -257,7 +257,7 @@ func NewRootResolver(
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, callbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.OAuth2Api)
