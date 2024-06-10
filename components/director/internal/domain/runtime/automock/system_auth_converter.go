@@ -18,6 +18,10 @@ type SystemAuthConverter struct {
 func (_m *SystemAuthConverter) ToGraphQL(in *model.SystemAuth) (graphql.SystemAuth, error) {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
+
 	var r0 graphql.SystemAuth
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.SystemAuth) (graphql.SystemAuth, error)); ok {

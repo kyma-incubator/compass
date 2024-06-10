@@ -20,6 +20,10 @@ type EventingService struct {
 func (_m *EventingService) CleanupAfterUnregisteringApplication(ctx context.Context, appID uuid.UUID) (*model.ApplicationEventingConfiguration, error) {
 	ret := _m.Called(ctx, appID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CleanupAfterUnregisteringApplication")
+	}
+
 	var r0 *model.ApplicationEventingConfiguration
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, uuid.UUID) (*model.ApplicationEventingConfiguration, error)); ok {
@@ -45,6 +49,10 @@ func (_m *EventingService) CleanupAfterUnregisteringApplication(ctx context.Cont
 // GetForApplication provides a mock function with given fields: ctx, app
 func (_m *EventingService) GetForApplication(ctx context.Context, app model.Application) (*model.ApplicationEventingConfiguration, error) {
 	ret := _m.Called(ctx, app)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetForApplication")
+	}
 
 	var r0 *model.ApplicationEventingConfiguration
 	var r1 error

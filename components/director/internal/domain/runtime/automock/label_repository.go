@@ -18,6 +18,10 @@ type LabelRepository struct {
 func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
@@ -31,6 +35,10 @@ func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType
 // DeleteAll provides a mock function with given fields: ctx, tenant, objectType, objectID
 func (_m *LabelRepository) DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteAll")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) error); ok {
@@ -46,6 +54,10 @@ func (_m *LabelRepository) DeleteAll(ctx context.Context, tenant string, objectT
 func (_m *LabelRepository) DeleteByKeyNegationPattern(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labelKeyPattern string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, labelKeyPattern)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteByKeyNegationPattern")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, labelKeyPattern)
@@ -59,6 +71,10 @@ func (_m *LabelRepository) DeleteByKeyNegationPattern(ctx context.Context, tenan
 // GetByKey provides a mock function with given fields: ctx, tenant, objectType, objectID, key
 func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByKey")
+	}
 
 	var r0 *model.Label
 	var r1 error
@@ -85,6 +101,10 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 // ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
 func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObject")
+	}
 
 	var r0 map[string]*model.Label
 	var r1 error

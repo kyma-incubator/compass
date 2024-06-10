@@ -18,6 +18,10 @@ type BundleConverter struct {
 func (_m *BundleConverter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error) {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for MultipleCreateInputFromGraphQL")
+	}
+
 	var r0 []*model.BundleCreateInput
 	var r1 error
 	if rf, ok := ret.Get(0).(func([]*graphql.BundleCreateInput) ([]*model.BundleCreateInput, error)); ok {
@@ -44,6 +48,10 @@ func (_m *BundleConverter) MultipleCreateInputFromGraphQL(in []*graphql.BundleCr
 func (_m *BundleConverter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bundle, error) {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for MultipleToGraphQL")
+	}
+
 	var r0 []*graphql.Bundle
 	var r1 error
 	if rf, ok := ret.Get(0).(func([]*model.Bundle) ([]*graphql.Bundle, error)); ok {
@@ -69,6 +77,10 @@ func (_m *BundleConverter) MultipleToGraphQL(in []*model.Bundle) ([]*graphql.Bun
 // ToGraphQL provides a mock function with given fields: in
 func (_m *BundleConverter) ToGraphQL(in *model.Bundle) (*graphql.Bundle, error) {
 	ret := _m.Called(in)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
 
 	var r0 *graphql.Bundle
 	var r1 error

@@ -4,13 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
-
-	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
-
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
-
-	"strings"
+	"github.com/kyma-incubator/compass/components/director/pkg/normalizer"
+	"k8s.io/utils/strings/slices"
 
 	"github.com/google/uuid"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
@@ -33,9 +29,9 @@ const (
 //
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
-	GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
+	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
+	GetOldestFromIDs(ctx context.Context, tenant string, runtimeIDs []string) (*model.Runtime, error)
+	List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 }
 
 // LabelRepository missing godoc
@@ -48,18 +44,28 @@ type LabelRepository interface {
 	Upsert(ctx context.Context, tenant string, label *model.Label) error
 }
 
+// FormationService is responsible for managing formations. Provides functionality for listing all formations by object ID and listing all IDs of objects that are part of the specified formations.
+//
+//go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
+type FormationService interface {
+	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+}
+
 type service struct {
 	appNameNormalizer normalizer.Normalizator
 	runtimeRepo       RuntimeRepository
 	labelRepo         LabelRepository
+	formationService  FormationService
 }
 
 // NewService missing godoc
-func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository) *service {
+func NewService(appNameNormalizer normalizer.Normalizator, runtimeRepo RuntimeRepository, labelRepo LabelRepository, formationService FormationService) *service {
 	return &service{
 		appNameNormalizer: appNameNormalizer,
 		runtimeRepo:       runtimeRepo,
 		labelRepo:         labelRepo,
+		formationService:  formationService,
 	}
 }
 
@@ -305,7 +311,7 @@ func (s *service) getDefaultRuntimeForAppEventing(ctx context.Context, tenantID 
 	labelFilterForRuntime := []*labelfilter.LabelFilter{labelfilter.NewForKey(labelKey)}
 
 	var cursor string
-	runtimesPage, err := s.runtimeRepo.List(ctx, tenantID, labelFilterForRuntime, 1, cursor)
+	runtimesPage, err := s.runtimeRepo.List(ctx, tenantID, []string{}, labelFilterForRuntime, 1, cursor)
 	if err != nil {
 		return nil, false, errors.Wrap(err, fmt.Sprintf("while fetching runtimes with label [key=%s]", labelKey))
 	}
@@ -345,22 +351,18 @@ func (s *service) ensureScenariosOrDeleteLabel(ctx context.Context, tenantID str
 }
 
 func (s *service) getRuntimeForApplicationScenarios(ctx context.Context, tenantID string, runtimeID, appID uuid.UUID) (*model.Runtime, bool, error) {
-	runtimeScenariosFilter, hasScenarios, err := s.getScenariosFilter(ctx, tenantID, appID)
+	runtimeIDs, err := s.getRuntimeIDsInFormationWithApp(ctx, tenantID, appID.String())
 	if err != nil {
-		return nil, false, errors.Wrap(err, "while getting application scenarios")
+		return nil, false, errors.Wrapf(err, "while getting runtimes IDs in formation with application: %s", appID)
 	}
 
-	if !hasScenarios {
+	if !slices.Contains(runtimeIDs, runtimeID.String()) {
 		return nil, false, nil
 	}
 
-	runtime, err := s.runtimeRepo.GetByFiltersAndID(ctx, tenantID, runtimeID.String(), runtimeScenariosFilter)
+	runtime, err := s.runtimeRepo.GetByID(ctx, tenantID, runtimeID.String())
 	if err != nil {
-		if !apperrors.IsNotFoundError(err) {
-			return nil, false, errors.Wrap(err, fmt.Sprintf("while getting the runtime [ID=%s] with scenarios with filter", runtimeID))
-		}
-
-		return nil, false, nil
+		return nil, false, errors.Wrap(err, fmt.Sprintf("while getting the runtime [ID=%s] with scenarios with filter", runtimeID))
 	}
 
 	return runtime, true, nil
@@ -375,16 +377,16 @@ func (s *service) deleteLabelFromRuntime(ctx context.Context, tenantID, labelKey
 }
 
 func (s *service) getOldestRuntime(ctx context.Context, tenantID string, appID uuid.UUID) (*model.Runtime, bool, error) {
-	runtimeScenariosFilter, hasScenarios, err := s.getScenariosFilter(ctx, tenantID, appID)
+	runtimeIDs, err := s.getRuntimeIDsInFormationWithApp(ctx, tenantID, appID.String())
 	if err != nil {
-		return nil, false, errors.Wrap(err, "while getting application scenarios")
+		return nil, false, errors.Wrapf(err, "while getting runtimes IDs in formation with application: %s", appID)
 	}
 
-	if !hasScenarios {
+	if len(runtimeIDs) == 0 {
 		return nil, false, nil
 	}
 
-	runtime, err := s.runtimeRepo.GetOldestForFilters(ctx, tenantID, runtimeScenariosFilter)
+	runtime, err := s.runtimeRepo.GetOldestFromIDs(ctx, tenantID, runtimeIDs)
 	if err != nil {
 		if !apperrors.IsNotFoundError(err) {
 			return nil, false, errors.Wrap(err, fmt.Sprintf("while getting the oldest runtime for application [ID=%s] scenarios with filter", appID))
@@ -396,27 +398,6 @@ func (s *service) getOldestRuntime(ctx context.Context, tenantID string, appID u
 	return runtime, true, nil
 }
 
-func (s *service) getScenariosFilter(ctx context.Context, tenantID string, appID uuid.UUID) ([]*labelfilter.LabelFilter, bool, error) {
-	appScenariosLabel, err := s.labelRepo.GetByKey(ctx, tenantID, model.ApplicationLabelableObject, appID.String(), model.ScenariosKey)
-	if err != nil {
-		if !apperrors.IsNotFoundError(err) {
-			return nil, false, errors.Wrap(err, fmt.Sprintf("while getting the label [key=%s] for application [ID=%s]", model.ScenariosKey, appID))
-		}
-
-		return nil, false, nil
-	}
-
-	scenarios, err := label.ValueToStringsSlice(appScenariosLabel.Value)
-	if err != nil {
-		return nil, false, errors.Wrap(err, fmt.Sprintf("while converting label [key=%s] value to a slice of strings", model.ScenariosKey))
-	}
-
-	scenariosQuery := BuildQueryForScenarios(scenarios)
-	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
-
-	return runtimeScenariosFilter, true, nil
-}
-
 func (s *service) setRuntimeForAppEventing(ctx context.Context, tenant string, runtime model.Runtime, appID uuid.UUID) error {
 	defaultEventingForAppLabel := model.NewLabelForRuntime(runtime.ID, tenant, getDefaultEventingForAppLabelKey(appID), "true")
 	if err := s.labelRepo.Upsert(ctx, tenant, defaultEventingForAppLabel); err != nil {
@@ -426,21 +407,29 @@ func (s *service) setRuntimeForAppEventing(ctx context.Context, tenant string, r
 	return nil
 }
 
-// BuildQueryForScenarios missing godoc
-func BuildQueryForScenarios(scenarios []string) string {
-	var queryBuilder strings.Builder
-	for idx, scenario := range scenarios {
-		if idx > 0 {
-			queryBuilder.WriteString(` || `)
-		}
-
-		queryBuilder.WriteString(fmt.Sprintf(`@ == "%s"`, scenario))
-	}
-	query := fmt.Sprintf(`$[*] ? ( %s )`, queryBuilder.String())
-
-	return query
-}
-
 func getDefaultEventingForAppLabelKey(appID uuid.UUID) string {
 	return fmt.Sprintf(RuntimeDefaultEventingLabelf, appID.String())
+}
+
+func (s *service) getRuntimeIDsInFormationWithApp(ctx context.Context, tenantID, appID string) ([]string, error) {
+	formationsForApplication, err := s.formationService.ListFormationsForObject(ctx, appID)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Formations for Application with ID: %s", appID)
+	}
+
+	if len(formationsForApplication) == 0 {
+		return nil, nil
+	}
+
+	formationNames := make([]string, 0, len(formationsForApplication))
+	for _, formation := range formationsForApplication {
+		formationNames = append(formationNames, formation.Name)
+	}
+
+	runtimeIDs, err := s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, model.FormationAssignmentTypeRuntime)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting Runtimes for Formations: %v", formationNames)
+	}
+
+	return runtimeIDs, nil
 }

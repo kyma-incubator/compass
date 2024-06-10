@@ -71,6 +71,7 @@ type ScenarioAssignmentService interface {
 type formationService interface {
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 	UnassignFormationsComingFromASA(ctx context.Context, in []*model.AutomaticScenarioAssignment) error
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
