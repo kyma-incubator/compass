@@ -44,7 +44,7 @@ type LabelRepository interface {
 	Upsert(ctx context.Context, tenant string, label *model.Label) error
 }
 
-// FormationService missing godoc
+// FormationService is responsible for managing formations. Provides functionality for listing all formations by object ID and listing all IDs of objects that are part of the specified formations.
 //
 //go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationService interface {
