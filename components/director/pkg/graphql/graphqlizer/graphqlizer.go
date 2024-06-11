@@ -774,6 +774,26 @@ func (g *Graphqlizer) FormationTemplateRegisterInputToGQL(in graphql.FormationTe
 	}`)
 }
 
+// InitialConfigurationToGQL missing godoc
+func (g *Graphqlizer) InitialConfigurationToGQL(in graphql.InitialConfiguration) (string, error) {
+	return g.genericToGQL(in, `{
+		sourceID: "{{ .SourceID}}"
+		targetID: "{{ .TargetID}}"
+		configuration: {{ marshal .Configuration }}
+	}`)
+}
+
+// InitialConfigurationsToGQL missing godoc
+func (g *Graphqlizer) InitialConfigurationsToGQL(in []*graphql.InitialConfiguration) (string, error) {
+	return g.genericToGQL(in, `
+		[
+			{{- range $i, $e := .}}
+				{{- if $i}}, {{- end}} {{ InitialConfigurationToGQL $e }}
+			{{- end }}
+		],
+	`)
+}
+
 // FormationTemplateUpdateInputToGQL missing godoc
 func (g *Graphqlizer) FormationTemplateUpdateInputToGQL(in graphql.FormationTemplateUpdateInput) (string, error) {
 	return g.genericToGQL(in, `{
@@ -1223,6 +1243,7 @@ func (g *Graphqlizer) genericToGQL(obj interface{}, tmpl string) (string, error)
 	fm["BundleCreateInputToGQL"] = g.BundleCreateInputToGQL
 	fm["LabelSelectorInputToGQL"] = g.LabelSelectorInputToGQL
 	fm["OneTimeTokenInputToGQL"] = g.OneTimeTokenInputToGQL
+	fm["InitialConfigurationToGQL"] = g.InitialConfigurationToGQL
 	fm["quote"] = strconv.Quote
 
 	t, err := template.New("tmpl").Funcs(fm).Parse(tmpl)

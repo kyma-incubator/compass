@@ -20,6 +20,10 @@ type RuntimeContextRepository struct {
 func (_m *RuntimeContextRepository) Create(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	ret := _m.Called(ctx, tenant, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.RuntimeContext) error); ok {
 		r0 = rf(ctx, tenant, item)
@@ -34,6 +38,10 @@ func (_m *RuntimeContextRepository) Create(ctx context.Context, tenant string, i
 func (_m *RuntimeContextRepository) Delete(ctx context.Context, tenant string, id string) error {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, tenant, id)
@@ -47,6 +55,10 @@ func (_m *RuntimeContextRepository) Delete(ctx context.Context, tenant string, i
 // Exists provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
 
 	var r0 bool
 	var r1 error
@@ -71,6 +83,10 @@ func (_m *RuntimeContextRepository) Exists(ctx context.Context, tenant string, i
 // GetByID provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, id string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
 
 	var r0 *model.RuntimeContext
 	var r1 error
@@ -98,6 +114,10 @@ func (_m *RuntimeContextRepository) GetByID(ctx context.Context, tenant string, 
 func (_m *RuntimeContextRepository) GetForRuntime(ctx context.Context, tenant string, id string, runtimeID string) (*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, id, runtimeID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetForRuntime")
+	}
+
 	var r0 *model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) (*model.RuntimeContext, error)); ok {
@@ -123,6 +143,10 @@ func (_m *RuntimeContextRepository) GetForRuntime(ctx context.Context, tenant st
 // List provides a mock function with given fields: ctx, runtimeID, tenant, filter, pageSize, cursor
 func (_m *RuntimeContextRepository) List(ctx context.Context, runtimeID string, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimeContextPage, error) {
 	ret := _m.Called(ctx, runtimeID, tenant, filter, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.RuntimeContextPage
 	var r1 error
@@ -150,6 +174,10 @@ func (_m *RuntimeContextRepository) List(ctx context.Context, runtimeID string, 
 func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenant string, runtimeID string) ([]*model.RuntimeContext, error) {
 	ret := _m.Called(ctx, tenant, runtimeID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllForRuntime")
+	}
+
 	var r0 []*model.RuntimeContext
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.RuntimeContext, error)); ok {
@@ -176,6 +204,10 @@ func (_m *RuntimeContextRepository) ListAllForRuntime(ctx context.Context, tenan
 func (_m *RuntimeContextRepository) ListByRuntimeIDs(ctx context.Context, tenantID string, runtimeIDs []string, pageSize int, cursor string) ([]*model.RuntimeContextPage, error) {
 	ret := _m.Called(ctx, tenantID, runtimeIDs, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByRuntimeIDs")
+	}
+
 	var r0 []*model.RuntimeContextPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.RuntimeContextPage, error)); ok {
@@ -201,6 +233,10 @@ func (_m *RuntimeContextRepository) ListByRuntimeIDs(ctx context.Context, tenant
 // Update provides a mock function with given fields: ctx, tenant, item
 func (_m *RuntimeContextRepository) Update(ctx context.Context, tenant string, item *model.RuntimeContext) error {
 	ret := _m.Called(ctx, tenant, item)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.RuntimeContext) error); ok {
