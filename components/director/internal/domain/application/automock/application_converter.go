@@ -20,6 +20,10 @@ type ApplicationConverter struct {
 func (_m *ApplicationConverter) CreateInputFromGraphQL(ctx context.Context, in graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error) {
 	ret := _m.Called(ctx, in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateInputFromGraphQL")
+	}
+
 	var r0 model.ApplicationRegisterInput
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, graphql.ApplicationRegisterInput) (model.ApplicationRegisterInput, error)); ok {
@@ -44,6 +48,10 @@ func (_m *ApplicationConverter) CreateInputFromGraphQL(ctx context.Context, in g
 func (_m *ApplicationConverter) GraphQLToModel(obj *graphql.Application, tenantID string) *model.Application {
 	ret := _m.Called(obj, tenantID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GraphQLToModel")
+	}
+
 	var r0 *model.Application
 	if rf, ok := ret.Get(0).(func(*graphql.Application, string) *model.Application); ok {
 		r0 = rf(obj, tenantID)
@@ -59,6 +67,10 @@ func (_m *ApplicationConverter) GraphQLToModel(obj *graphql.Application, tenantI
 // MultipleToGraphQL provides a mock function with given fields: in
 func (_m *ApplicationConverter) MultipleToGraphQL(in []*model.Application) []*graphql.Application {
 	ret := _m.Called(in)
+
+	if len(ret) == 0 {
+		panic("no return value specified for MultipleToGraphQL")
+	}
 
 	var r0 []*graphql.Application
 	if rf, ok := ret.Get(0).(func([]*model.Application) []*graphql.Application); ok {
@@ -76,6 +88,10 @@ func (_m *ApplicationConverter) MultipleToGraphQL(in []*model.Application) []*gr
 func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Application {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
+
 	var r0 *graphql.Application
 	if rf, ok := ret.Get(0).(func(*model.Application) *graphql.Application); ok {
 		r0 = rf(in)
@@ -91,6 +107,10 @@ func (_m *ApplicationConverter) ToGraphQL(in *model.Application) *graphql.Applic
 // UpdateInputFromGraphQL provides a mock function with given fields: in
 func (_m *ApplicationConverter) UpdateInputFromGraphQL(in graphql.ApplicationUpdateInput) model.ApplicationUpdateInput {
 	ret := _m.Called(in)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpdateInputFromGraphQL")
+	}
 
 	var r0 model.ApplicationUpdateInput
 	if rf, ok := ret.Get(0).(func(graphql.ApplicationUpdateInput) model.ApplicationUpdateInput); ok {

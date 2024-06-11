@@ -26,6 +26,7 @@ type RepoListTestSuite struct {
 	DisableConverterErrorTest bool
 	MethodName                string
 	DisableEmptySliceTest     bool
+	Context                   context.Context
 }
 
 // Run runs the generic repo list without paging test suite
@@ -49,7 +50,11 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 
 		t.Run("success", func(t *testing.T) {
 			sqlxDB, sqlMock := MockDatabase(t)
-			ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+			ctx := context.TODO()
+			if suite.Context != nil {
+				ctx = suite.Context
+			}
+			ctx = persistence.SaveToContext(ctx, sqlxDB)
 
 			configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 
@@ -72,7 +77,11 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 		if !suite.DisableEmptySliceTest {
 			t.Run("returns empty slice when no rows", func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
-				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+				ctx := context.TODO()
+				if suite.Context != nil {
+					ctx = suite.Context
+				}
+				ctx = persistence.SaveToContext(ctx, sqlxDB)
 
 				configureInvalidAllSelectQueries(sqlMock, suite.SQLQueryDetails)
 
@@ -91,7 +100,11 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 		for i := range suite.SQLQueryDetails {
 			t.Run(fmt.Sprintf("error if SQL query %d fail", i), func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
-				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+				ctx := context.TODO()
+				if suite.Context != nil {
+					ctx = suite.Context
+				}
+				ctx = persistence.SaveToContext(ctx, sqlxDB)
 
 				configureFailureForSQLQueryOnIndex(sqlMock, suite.SQLQueryDetails, i, testErr)
 
@@ -116,7 +129,11 @@ func (suite *RepoListTestSuite) Run(t *testing.T) bool {
 		if !suite.DisableConverterErrorTest {
 			t.Run("error when conversion fail", func(t *testing.T) {
 				sqlxDB, sqlMock := MockDatabase(t)
-				ctx := persistence.SaveToContext(context.TODO(), sqlxDB)
+				ctx := context.TODO()
+				if suite.Context != nil {
+					ctx = suite.Context
+				}
+				ctx = persistence.SaveToContext(ctx, sqlxDB)
 
 				configureValidSQLQueries(sqlMock, suite.SQLQueryDetails)
 

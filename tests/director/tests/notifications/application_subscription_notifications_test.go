@@ -167,14 +167,14 @@ func TestFormationNotificationsWithApplicationSubscription(stdT *testing.T) {
 		t.Logf("app1 ID: %q", app1.ID)
 
 		t.Log("Create integration system")
-		intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-subscription-notifications")
-		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, intSys)
-		require.NoError(t, err)
-		require.NotEmpty(t, intSys.ID)
+		var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, &intSys)
+		intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, "app-subscription-notifications")
 
-		intSysAuth := fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, intSys.ID)
+		var intSysAuth graphql.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSysAuth)
+		intSysAuth = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, subscriptionConsumerAccountID, intSys.ID)
 		require.NotEmpty(t, intSysAuth)
-		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, intSysAuth.ID)
 
 		intSysOauthCredentialData, ok := intSysAuth.Auth.Credential.(*graphql.OAuthCredentialData)
 		require.True(t, ok)

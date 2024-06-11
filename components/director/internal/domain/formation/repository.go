@@ -2,8 +2,12 @@ package formation
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/jmoiron/sqlx"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
 
@@ -15,7 +19,12 @@ import (
 	"github.com/pkg/errors"
 )
 
-const tableName string = `public.formations`
+const (
+	tableName                             string = `public.formations`
+	nameColumn                            string = `name`
+	listObjectIDsOfTypeForFormation       string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.source_type = ?;"
+	listObjectIDsOfTypeForFormationGlobal string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.source_type = ?;"
+)
 
 var (
 	updatableTableColumns = []string{"name", "state", "error", "last_state_change_timestamp", "last_notification_sent_timestamp"}
@@ -154,6 +163,89 @@ func (r *repository) ListByIDsGlobal(ctx context.Context, formationIDs []string)
 	}
 
 	return items, nil
+}
+
+// ListByIDs returns all Formations with id in `formationIDs` visible for the tenant from the context
+func (r *repository) ListByIDs(ctx context.Context, formationIDs []string) ([]*model.Formation, error) {
+	if len(formationIDs) == 0 {
+		return nil, nil
+	}
+
+	tnt, err := tenant.LoadFromContext(ctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while loading tenant from context")
+	}
+
+	var entityCollection EntityCollection
+	err = r.lister.List(ctx, resource.Formations, tnt, &entityCollection, repo.NewInConditionForStringValues(idTableColumn, formationIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Formation, 0, entityCollection.Len())
+	for _, entity := range entityCollection {
+		formationModel := r.conv.FromEntity(entity)
+
+		items = append(items, formationModel)
+	}
+
+	return items, nil
+}
+
+// ListObjectIDsOfTypeForFormations returns all object IDs of type `objectType` for Formations with names in `formationNames`
+func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	if len(formationNames) == 0 {
+		return nil, nil
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
+	args, _ := inCond.GetQueryArgs()
+
+	args = append(args, tenantID, objectType)
+	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormation, inCond.GetQueryPart())
+	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
+
+	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
+	var objectIDs []string
+	err = persist.SelectContext(ctx, &objectIDs, listObjectIDsOfTypeForFormationStatement, args...)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, persistence.MapSQLError(ctx, err, "objectIDsInFormation", resource.List, "while listing object IDs of type %q for formations %q", objectType, formationNames)
+	}
+
+	return objectIDs, nil
+}
+
+// ListObjectIDsOfTypeForFormationsGlobal returns all object IDs of type `objectType` for Formations with names in `formationNames` globally
+func (r *repository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	if len(formationNames) == 0 {
+		return nil, nil
+	}
+
+	persist, err := persistence.FromCtx(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	var objectIDs []string
+	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
+	args, _ := inCond.GetQueryArgs()
+
+	args = append(args, objectType)
+	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormationGlobal, inCond.GetQueryPart())
+	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
+
+	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
+	err = persist.SelectContext(ctx, &objectIDs, listObjectIDsOfTypeForFormationStatement, args...)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, persistence.MapSQLError(ctx, err, "objectIDsInFormation", resource.List, "while listing object IDs of type %q for formations %q", objectType, formationNames)
+	}
+
+	return objectIDs, nil
 }
 
 // ListByFormationNames returns all Formations with name in formationNames

@@ -18,6 +18,10 @@ type LabelRepository struct {
 func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
@@ -32,6 +36,10 @@ func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType
 func (_m *LabelRepository) DeleteAll(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteAll")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string) error); ok {
 		r0 = rf(ctx, tenant, objectType, objectID)
@@ -45,6 +53,10 @@ func (_m *LabelRepository) DeleteAll(ctx context.Context, tenant string, objectT
 // GetByKey provides a mock function with given fields: ctx, tenant, objectType, objectID, key
 func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByKey")
+	}
 
 	var r0 *model.Label
 	var r1 error
@@ -72,6 +84,10 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 func (_m *LabelRepository) ListForGlobalObject(ctx context.Context, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, objectType, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListForGlobalObject")
+	}
+
 	var r0 map[string]*model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, model.LabelableObject, string) (map[string]*model.Label, error)); ok {
@@ -97,6 +113,10 @@ func (_m *LabelRepository) ListForGlobalObject(ctx context.Context, objectType m
 // ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
 func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObject")
+	}
 
 	var r0 map[string]*model.Label
 	var r1 error
@@ -124,6 +144,10 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 func (_m *LabelRepository) ListGlobalByKey(ctx context.Context, key string) ([]*model.Label, error) {
 	ret := _m.Called(ctx, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListGlobalByKey")
+	}
+
 	var r0 []*model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Label, error)); ok {
@@ -149,6 +173,10 @@ func (_m *LabelRepository) ListGlobalByKey(ctx context.Context, key string) ([]*
 // ListGlobalByKeyAndObjects provides a mock function with given fields: ctx, objectType, objectIDs, key
 func (_m *LabelRepository) ListGlobalByKeyAndObjects(ctx context.Context, objectType model.LabelableObject, objectIDs []string, key string) ([]*model.Label, error) {
 	ret := _m.Called(ctx, objectType, objectIDs, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListGlobalByKeyAndObjects")
+	}
 
 	var r0 []*model.Label
 	var r1 error

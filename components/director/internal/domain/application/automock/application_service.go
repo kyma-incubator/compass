@@ -22,6 +22,10 @@ type ApplicationService struct {
 func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationRegisterInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, model.ApplicationRegisterInput) (string, error)); ok {
@@ -46,6 +50,10 @@ func (_m *ApplicationService) Create(ctx context.Context, in model.ApplicationRe
 func (_m *ApplicationService) Delete(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
@@ -60,6 +68,10 @@ func (_m *ApplicationService) Delete(ctx context.Context, id string) error {
 func (_m *ApplicationService) DeleteLabel(ctx context.Context, applicationID string, key string) error {
 	ret := _m.Called(ctx, applicationID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteLabel")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, applicationID, key)
@@ -73,6 +85,10 @@ func (_m *ApplicationService) DeleteLabel(ctx context.Context, applicationID str
 // Get provides a mock function with given fields: ctx, id
 func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
 
 	var r0 *model.Application
 	var r1 error
@@ -100,6 +116,10 @@ func (_m *ApplicationService) Get(ctx context.Context, id string) (*model.Applic
 func (_m *ApplicationService) GetByLocalTenantIDAndAppTemplateID(ctx context.Context, localTenantID string, appTemplateID string) (*model.Application, error) {
 	ret := _m.Called(ctx, localTenantID, appTemplateID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByLocalTenantIDAndAppTemplateID")
+	}
+
 	var r0 *model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
@@ -125,6 +145,10 @@ func (_m *ApplicationService) GetByLocalTenantIDAndAppTemplateID(ctx context.Con
 // GetBySystemNumber provides a mock function with given fields: ctx, systemNumber
 func (_m *ApplicationService) GetBySystemNumber(ctx context.Context, systemNumber string) (*model.Application, error) {
 	ret := _m.Called(ctx, systemNumber)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetBySystemNumber")
+	}
 
 	var r0 *model.Application
 	var r1 error
@@ -152,6 +176,10 @@ func (_m *ApplicationService) GetBySystemNumber(ctx context.Context, systemNumbe
 func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, applicationID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabel")
+	}
+
 	var r0 *model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
@@ -177,6 +205,10 @@ func (_m *ApplicationService) GetLabel(ctx context.Context, applicationID string
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
 func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.ApplicationPage
 	var r1 error
@@ -204,6 +236,10 @@ func (_m *ApplicationService) List(ctx context.Context, filter []*labelfilter.La
 func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application, error) {
 	ret := _m.Called(ctx)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAll")
+	}
+
 	var r0 []*model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context) ([]*model.Application, error)); ok {
@@ -229,6 +265,10 @@ func (_m *ApplicationService) ListAll(ctx context.Context) ([]*model.Application
 // ListAllGlobalByFilter provides a mock function with given fields: ctx, filter, pageSize, cursor
 func (_m *ApplicationService) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllGlobalByFilter")
+	}
 
 	var r0 *model.ApplicationWithTenantsPage
 	var r1 error
@@ -256,6 +296,10 @@ func (_m *ApplicationService) ListAllGlobalByFilter(ctx context.Context, filter 
 func (_m *ApplicationService) ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, localTenantID, filter, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByLocalTenantID")
+	}
+
 	var r0 *model.ApplicationPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.ApplicationPage, error)); ok {
@@ -281,6 +325,10 @@ func (_m *ApplicationService) ListByLocalTenantID(ctx context.Context, localTena
 // ListByRuntimeID provides a mock function with given fields: ctx, runtimeUUID, pageSize, cursor
 func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID uuid.UUID, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	ret := _m.Called(ctx, runtimeUUID, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByRuntimeID")
+	}
 
 	var r0 *model.ApplicationPage
 	var r1 error
@@ -308,6 +356,10 @@ func (_m *ApplicationService) ListByRuntimeID(ctx context.Context, runtimeUUID u
 func (_m *ApplicationService) ListLabels(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, applicationID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListLabels")
+	}
+
 	var r0 map[string]*model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (map[string]*model.Label, error)); ok {
@@ -333,6 +385,10 @@ func (_m *ApplicationService) ListLabels(ctx context.Context, applicationID stri
 // ListLabelsGlobal provides a mock function with given fields: ctx, applicationID
 func (_m *ApplicationService) ListLabelsGlobal(ctx context.Context, applicationID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, applicationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListLabelsGlobal")
+	}
 
 	var r0 map[string]*model.Label
 	var r1 error
@@ -360,6 +416,10 @@ func (_m *ApplicationService) ListLabelsGlobal(ctx context.Context, applicationI
 func (_m *ApplicationService) Merge(ctx context.Context, destID string, sourceID string) (*model.Application, error) {
 	ret := _m.Called(ctx, destID, sourceID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Merge")
+	}
+
 	var r0 *model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
@@ -386,6 +446,10 @@ func (_m *ApplicationService) Merge(ctx context.Context, destID string, sourceID
 func (_m *ApplicationService) SetLabel(ctx context.Context, label *model.LabelInput) error {
 	ret := _m.Called(ctx, label)
 
+	if len(ret) == 0 {
+		panic("no return value specified for SetLabel")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.LabelInput) error); ok {
 		r0 = rf(ctx, label)
@@ -400,6 +464,10 @@ func (_m *ApplicationService) SetLabel(ctx context.Context, label *model.LabelIn
 func (_m *ApplicationService) Unpair(ctx context.Context, id string) error {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Unpair")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) error); ok {
 		r0 = rf(ctx, id)
@@ -413,6 +481,10 @@ func (_m *ApplicationService) Unpair(ctx context.Context, id string) error {
 // Update provides a mock function with given fields: ctx, id, in
 func (_m *ApplicationService) Update(ctx context.Context, id string, in model.ApplicationUpdateInput) error {
 	ret := _m.Called(ctx, id, in)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.ApplicationUpdateInput) error); ok {

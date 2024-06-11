@@ -19,6 +19,10 @@ type TenantSvc struct {
 func (_m *TenantSvc) GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantByID")
+	}
+
 	var r0 *model.BusinessTenantMapping
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.BusinessTenantMapping, error)); ok {

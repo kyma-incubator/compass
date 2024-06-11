@@ -18,6 +18,10 @@ type APIDefinitionConverter struct {
 func (_m *APIDefinitionConverter) ToGraphQL(in *model.APIDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.APIDefinition, error) {
 	ret := _m.Called(in, spec, bundleRef)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
+
 	var r0 *graphql.APIDefinition
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.APIDefinition, *model.Spec, *model.BundleReference) (*graphql.APIDefinition, error)); ok {

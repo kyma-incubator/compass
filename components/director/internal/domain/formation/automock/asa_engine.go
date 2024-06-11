@@ -22,6 +22,10 @@ type AsaEngine struct {
 func (_m *AsaEngine) EnsureScenarioAssigned(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc formation.ProcessScenarioFunc) error {
 	ret := _m.Called(ctx, in, processScenarioFunc)
 
+	if len(ret) == 0 {
+		panic("no return value specified for EnsureScenarioAssigned")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.AutomaticScenarioAssignment, formation.ProcessScenarioFunc) error); ok {
 		r0 = rf(ctx, in, processScenarioFunc)
@@ -35,6 +39,10 @@ func (_m *AsaEngine) EnsureScenarioAssigned(ctx context.Context, in *model.Autom
 // GetMatchingFuncByFormationObjectType provides a mock function with given fields: objType
 func (_m *AsaEngine) GetMatchingFuncByFormationObjectType(objType graphql.FormationObjectType) (formation.MatchingFunc, error) {
 	ret := _m.Called(objType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetMatchingFuncByFormationObjectType")
+	}
 
 	var r0 formation.MatchingFunc
 	if rf, ok := ret.Get(0).(func(graphql.FormationObjectType) formation.MatchingFunc); ok {
@@ -59,6 +67,10 @@ func (_m *AsaEngine) GetMatchingFuncByFormationObjectType(objType graphql.Format
 func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error) {
 	ret := _m.Called(ctx, objectID, objType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetScenariosFromMatchingASAs")
+	}
+
 	var r0 []string
 	if rf, ok := ret.Get(0).(func(context.Context, string, graphql.FormationObjectType) []string); ok {
 		r0 = rf(ctx, objectID, objType)
@@ -82,6 +94,10 @@ func (_m *AsaEngine) GetScenariosFromMatchingASAs(ctx context.Context, objectID 
 func (_m *AsaEngine) IsFormationComingFromASA(ctx context.Context, objectID string, _a2 string, objectType graphql.FormationObjectType) (bool, error) {
 	ret := _m.Called(ctx, objectID, _a2, objectType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for IsFormationComingFromASA")
+	}
+
 	var r0 bool
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType) bool); ok {
 		r0 = rf(ctx, objectID, _a2, objectType)
@@ -102,6 +118,10 @@ func (_m *AsaEngine) IsFormationComingFromASA(ctx context.Context, objectID stri
 // UnassignFormationComingFromASA provides a mock function with given fields: ctx, in, processScenarioFunc
 func (_m *AsaEngine) UnassignFormationComingFromASA(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc formation.ProcessScenarioFunc) error {
 	ret := _m.Called(ctx, in, processScenarioFunc)
+
+	if len(ret) == 0 {
+		panic("no return value specified for RemoveAssignedScenario")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.AutomaticScenarioAssignment, formation.ProcessScenarioFunc) error); ok {

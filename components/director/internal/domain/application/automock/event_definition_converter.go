@@ -18,6 +18,10 @@ type EventDefinitionConverter struct {
 func (_m *EventDefinitionConverter) ToGraphQL(in *model.EventDefinition, spec *model.Spec, bundleRef *model.BundleReference) (*graphql.EventDefinition, error) {
 	ret := _m.Called(in, spec, bundleRef)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
+
 	var r0 *graphql.EventDefinition
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.EventDefinition, *model.Spec, *model.BundleReference) (*graphql.EventDefinition, error)); ok {

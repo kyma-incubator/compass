@@ -64,10 +64,9 @@ func TestUpdateIntegrationSystem(t *testing.T) {
 	newName := "new-int-system"
 	newDescription := "new description"
 	t.Log("Register integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
 
 	intSysInput := graphql.IntegrationSystemInput{Name: newName, Description: &newDescription}
 	intSysGQL, err := testctx.Tc.Graphqlizer.IntegrationSystemInputToGQL(intSysInput)
@@ -95,17 +94,16 @@ func TestUnregisterIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Register integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
 
 	unregisterIntegrationSystemRequest := fixtures.FixUnregisterIntegrationSystem(intSys.ID)
 	deleteOutput := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Unregister integration system")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, unregisterIntegrationSystemRequest, &deleteOutput)
 	require.NoError(t, err)
 
 	//THEN
@@ -126,17 +124,16 @@ func TestQueryIntegrationSystem(t *testing.T) {
 	name := "int-system"
 
 	t.Log("Register integration system")
-	intSys, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys.ID)
+	var intSys graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys)
+	intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name)
 
 	getIntegrationSystemRequest := fixtures.FixGetIntegrationSystemRequest(intSys.ID)
 	output := graphql.IntegrationSystemExt{}
 
 	// WHEN
 	t.Log("Get integration system")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getIntegrationSystemRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getIntegrationSystemRequest, &output)
 	require.NoError(t, err)
 	require.NotEmpty(t, output.ID)
 
@@ -155,15 +152,13 @@ func TestQueryIntegrationSystems(t *testing.T) {
 	name2 := "int-system-2"
 
 	t.Log("Register integration systems")
-	intSys1, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name1)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys1)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys1.ID)
+	var intSys1 graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys1)
+	intSys1 = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name1)
 
-	intSys2, err := fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name2)
-	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, intSys2)
-	require.NoError(t, err)
-	require.NotEmpty(t, intSys2.ID)
+	var intSys2 graphql.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+	defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, &intSys2)
+	intSys2 = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, tenantId, name2)
 
 	first := 100
 	after := ""
@@ -173,7 +168,7 @@ func TestQueryIntegrationSystems(t *testing.T) {
 
 	// WHEN
 	t.Log("List integration systems")
-	err = testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getIntegrationSystemsRequest, &output)
+	err := testctx.Tc.RunOperation(ctx, certSecuredGraphQLClient, getIntegrationSystemsRequest, &output)
 	require.NoError(t, err)
 
 	//THEN

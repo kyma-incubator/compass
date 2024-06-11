@@ -16,6 +16,10 @@ type OneTimeTokenService struct {
 func (_m *OneTimeTokenService) IsTokenValid(systemAuth *model.SystemAuth) (bool, error) {
 	ret := _m.Called(systemAuth)
 
+	if len(ret) == 0 {
+		panic("no return value specified for IsTokenValid")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.SystemAuth) (bool, error)); ok {

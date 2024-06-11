@@ -1058,7 +1058,7 @@ func TestFormationsForObject(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				service.On("ListFormationsForObjectGlobal", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
 				return service
 			},
 			ConverterFn: func() *automock.Converter {
@@ -1075,7 +1075,7 @@ func TestFormationsForObject(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(nil, testErr).Once()
+				service.On("ListFormationsForObjectGlobal", txtest.CtxWithDBMatcher(), ApplicationID).Return(nil, testErr).Once()
 				return service
 			},
 			ConverterFn:        unusedConverter,
@@ -1088,7 +1088,7 @@ func TestFormationsForObject(t *testing.T) {
 			TxFn: txGen.ThatSucceeds,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				service.On("ListFormationsForObjectGlobal", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
 				return service
 			},
 			ConverterFn: func() *automock.Converter {
@@ -1114,7 +1114,7 @@ func TestFormationsForObject(t *testing.T) {
 			TxFn: txGen.ThatFailsOnCommit,
 			ServiceFn: func() *automock.Service {
 				service := &automock.Service{}
-				service.On("ListFormationsForObject", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
+				service.On("ListFormationsForObjectGlobal", txtest.CtxWithDBMatcher(), ApplicationID).Return(modelFormations, nil).Once()
 				return service
 			},
 			ConverterFn:        unusedConverter,

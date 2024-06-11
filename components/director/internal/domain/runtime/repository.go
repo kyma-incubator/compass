@@ -111,33 +111,6 @@ func (r *pgRepository) GetByID(ctx context.Context, tenant, id string) (*model.R
 	return runtimeModel, nil
 }
 
-// GetByFiltersAndID missing godoc
-func (r *pgRepository) GetByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
-	tenantID, err := uuid.Parse(tenant)
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing tenant as UUID")
-	}
-
-	additionalConditions := repo.Conditions{repo.NewEqualCondition("id", id)}
-
-	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building filter query")
-	}
-	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
-	}
-
-	var runtimeEnt Runtime
-	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, additionalConditions, repo.NoOrderBy, &runtimeEnt); err != nil {
-		return nil, err
-	}
-
-	runtimeModel := r.conv.FromEntity(&runtimeEnt)
-
-	return runtimeModel, nil
-}
-
 // GetByFiltersAndIDUsingUnion retrieves runtime by its ID if it matches the provided filters. The results from the filter subqueries are combined sing UNION
 func (r *pgRepository) GetByFiltersAndIDUsingUnion(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	tenantID, err := uuid.Parse(tenant)
@@ -215,26 +188,6 @@ func (r *pgRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfi
 	return runtimeModel, nil
 }
 
-// ListByFiltersGlobal missing godoc
-func (r *pgRepository) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	filterSubquery, args, err := label.FilterQueryGlobal(model.RuntimeLabelableObject, label.IntersectSet, filters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building filter query")
-	}
-
-	var additionalConditions repo.Conditions
-	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
-	}
-
-	var entities RuntimeCollection
-	if err := r.listerGlobal.ListGlobal(ctx, &entities, additionalConditions...); err != nil {
-		return nil, err
-	}
-
-	return r.multipleFromEntities(entities), nil
-}
-
 // ListAll returns all runtimes in a tenant that match given label filter and owner check to false. The results from the separate filters are combined using 'INTERSECT'.
 func (r *pgRepository) ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	return r.listRuntimes(ctx, tenant, filter, label.IntersectSet, false)
@@ -258,14 +211,16 @@ func (r RuntimeCollection) Len() int {
 	return len(r)
 }
 
-// List missing godoc
-func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+// List lists runtimes by provided filters in the context of the provided tenant.
+// Runtime IDs are optional and are provided only of the initial filters contained `scenarios` filter.
+// The `scenarios` filter is processed outside the method and converted to list of IDs as the scenario metadata is no longer stored in `scenario` label.
+func (r *pgRepository) List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	var runtimesCollection RuntimeCollection
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
-	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
@@ -273,6 +228,9 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	var conditions repo.Conditions
 	if filterSubquery != "" {
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+	if len(runtimeIDs) > 0 {
+		conditions = append(conditions, repo.NewInConditionForStringValues("id", runtimeIDs))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Runtime, tenant, pageSize, cursor, "name", &runtimesCollection, conditions...)
@@ -315,70 +273,22 @@ func (r *pgRepository) Update(ctx context.Context, tenant string, item *model.Ru
 	return r.updater.UpdateSingle(ctx, resource.Runtime, tenant, runtimeEnt)
 }
 
-// GetOldestForFilters missing godoc
-func (r *pgRepository) GetOldestForFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
-	tenantID, err := uuid.Parse(tenant)
-	if err != nil {
-		return nil, errors.Wrap(err, "while parsing tenant as UUID")
-	}
-
-	var additionalConditions repo.Conditions
-	filterSubquery, args, err := label.FilterQuery(model.RuntimeLabelableObject, label.IntersectSet, tenantID, filter)
-	if err != nil {
-		return nil, errors.Wrap(err, "while building filter query")
-	}
-	if filterSubquery != "" {
-		additionalConditions = append(additionalConditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+// GetOldestFromIDs missing godoc
+func (r *pgRepository) GetOldestFromIDs(ctx context.Context, tenant string, runtimeIDs []string) (*model.Runtime, error) {
+	if len(runtimeIDs) == 0 {
+		return nil, nil
 	}
 
 	orderByParams := repo.OrderByParams{repo.NewAscOrderBy("creation_timestamp")}
 
 	var runtimeEnt Runtime
-	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, additionalConditions, orderByParams, &runtimeEnt); err != nil {
+	if err := r.singleGetter.Get(ctx, resource.Runtime, tenant, repo.Conditions{repo.NewInConditionForStringValues("id", runtimeIDs)}, orderByParams, &runtimeEnt); err != nil {
 		return nil, err
 	}
 
 	runtimeModel := r.conv.FromEntity(&runtimeEnt)
 
 	return runtimeModel, nil
-}
-
-// ListByScenariosAndIDs lists all runtimes with given IDs that are in any of the given scenarios
-func (r *pgRepository) ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error) {
-	if len(scenarios) == 0 || len(ids) == 0 {
-		return nil, nil
-	}
-	tenantUUID, err := uuid.Parse(tenant)
-	if err != nil {
-		return nil, apperrors.NewInvalidDataError("tenantID is not UUID")
-	}
-
-	var entities RuntimeCollection
-
-	// Scenarios query part
-	scenariosFilters := make([]*labelfilter.LabelFilter, 0, len(scenarios))
-	for _, scenarioValue := range scenarios {
-		query := fmt.Sprintf(`$[*] ? (@ == "%s")`, scenarioValue)
-		scenariosFilters = append(scenariosFilters, labelfilter.NewForKeyWithQuery(model.ScenariosKey, query))
-	}
-
-	scenariosSubquery, scenariosArgs, err := label.FilterQuery(model.RuntimeLabelableObject, label.UnionSet, tenantUUID, scenariosFilters)
-	if err != nil {
-		return nil, errors.Wrap(err, "while creating scenarios filter query")
-	}
-
-	var conditions repo.Conditions
-	if scenariosSubquery != "" {
-		conditions = append(conditions, repo.NewInConditionForSubQuery("id", scenariosSubquery, scenariosArgs))
-	}
-
-	conditions = append(conditions, repo.NewInConditionForStringValues("id", ids))
-
-	if err := r.lister.List(ctx, resource.Runtime, tenant, &entities, conditions...); err != nil {
-		return nil, err
-	}
-
-	return r.multipleFromEntities(entities), nil
 }
 
 // ListByScenarios lists all runtimes with given IDs that are in any of the given scenarios

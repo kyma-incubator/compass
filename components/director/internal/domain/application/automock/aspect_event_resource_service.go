@@ -18,6 +18,10 @@ type AspectEventResourceService struct {
 func (_m *AspectEventResourceService) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.AspectEventResource, map[string]int, error) {
 	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByApplicationIDs")
+	}
+
 	var r0 []*model.AspectEventResource
 	var r1 map[string]int
 	var r2 error

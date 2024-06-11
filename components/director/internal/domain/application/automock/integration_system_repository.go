@@ -17,6 +17,10 @@ type IntegrationSystemRepository struct {
 func (_m *IntegrationSystemRepository) Exists(ctx context.Context, id string) (bool, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
+
 	var r0 bool
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (bool, error)); ok {

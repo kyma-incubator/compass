@@ -18,6 +18,10 @@ type ApplicationTemplateConverter struct {
 func (_m *ApplicationTemplateConverter) ToGraphQL(in *model.ApplicationTemplate) (*graphql.ApplicationTemplate, error) {
 	ret := _m.Called(in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
+
 	var r0 *graphql.ApplicationTemplate
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.ApplicationTemplate) (*graphql.ApplicationTemplate, error)); ok {
