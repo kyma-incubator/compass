@@ -3,7 +3,6 @@ package clients
 import (
 	"bytes"
 	"encoding/json"
-	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// APIMetadataValidatorConfig holds the configuration
 type APIMetadataValidatorConfig struct {
 	ConfigureEndpoint string        `envconfig:"APP_API_METADATA_VALIDATOR_CONFIGURE_ENDPOINT"`
 	Timeout           time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
@@ -23,6 +23,7 @@ type ORDMetadataValidatorClient struct {
 	apiConfig  APIMetadataValidatorConfig
 }
 
+// NewAPIMetadataValidatorClient creates a new ORDMetadataValidatorClient
 func NewAPIMetadataValidatorClient(apiConfig APIMetadataValidatorConfig) *ORDMetadataValidatorClient {
 	httpClient := http.DefaultClient
 	httpClient.Timeout = apiConfig.Timeout
@@ -33,6 +34,7 @@ func NewAPIMetadataValidatorClient(apiConfig APIMetadataValidatorConfig) *ORDMet
 	}
 }
 
+// ConfigureValidationErrors makes a request to external services mock in order to mock the list of returned ValidationResult.
 func (c *ORDMetadataValidatorClient) ConfigureValidationErrors(t *testing.T, validationErrors []model.ValidationResult) {
 	validationErrorBytes, err := json.Marshal(validationErrors)
 	require.NoError(t, err)
@@ -44,15 +46,12 @@ func (c *ORDMetadataValidatorClient) ConfigureValidationErrors(t *testing.T, val
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
-
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	t.Logf("Configure validation errors response: %s", string(body))
-
 	require.Equal(t, http.StatusCreated, resp.StatusCode)
+
+	t.Logf("Configured the mocked server to return %d validation errors", len(validationErrors))
 }
 
+// ClearValidationErrors makes a request to external services mock to clean up the mocked ValidationResult.
 func (c *ORDMetadataValidatorClient) ClearValidationErrors(t *testing.T) {
 	url := c.apiConfig.ConfigureEndpoint
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
@@ -60,11 +59,8 @@ func (c *ORDMetadataValidatorClient) ClearValidationErrors(t *testing.T) {
 
 	resp, err := c.httpClient.Do(request)
 	require.NoError(t, err)
-
-	body, err := io.ReadAll(resp.Body)
-	require.NoError(t, err)
-
-	t.Logf("Delete validation errors response: %s", string(body))
-
 	require.Equal(t, http.StatusOK, resp.StatusCode)
+
+	t.Logf("Deleted the mocked validation errors")
+
 }

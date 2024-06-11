@@ -112,6 +112,7 @@ type DestinationServiceConfig struct {
 	TestDestinationInstanceID string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
 }
 
+// ORDMetadataValidatorConfig is a struct that holds the configuration for the mocked API metadata validator
 type ORDMetadataValidatorConfig struct {
 	ConfigureValidationErrorsEndpoint string `envconfig:"APP_API_METADATA_VALIDATOR_CONFIGURE_ENDPOINT,default=/apiMetadataValidator-configuration/v1/validationErrors"`
 	ValidationErrorsEndpoint          string `envconfig:"APP_API_METADATA_VALIDATOR_VALIDATE_ENDPOINT,default=/apiMetadataValidator/v1/validate"`

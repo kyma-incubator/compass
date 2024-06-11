@@ -19,7 +19,7 @@ const (
 	respErrorMsg = "An unexpected error occurred while processing the request"
 )
 
-// Handler is responsible to mock and handle any Destination Service requests
+// Handler is responsible to mock and handle the API Metadata validator request
 type Handler struct {
 	ORDValidationErrors []model.ValidationResult
 }
@@ -31,6 +31,8 @@ func NewHandler() *Handler {
 	}
 }
 
+// CreateValidationErrors is a method that caches a list of ValidationResult. It is used to mock what the API Metadata Validator
+// would return when validating an ORD document. This handler is invoked from e2e tests.
 func (h *Handler) CreateValidationErrors(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
@@ -41,7 +43,7 @@ func (h *Handler) CreateValidationErrors(writer http.ResponseWriter, r *http.Req
 
 	bodyBytes, err := io.ReadAll(r.Body)
 	if err != nil {
-		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading destination request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
+		httphelpers.RespondWithError(ctx, writer, errors.Wrap(err, "An error occurred while reading request body"), respErrorMsg, correlationID, http.StatusInternalServerError)
 		return
 	}
 
@@ -56,12 +58,15 @@ func (h *Handler) CreateValidationErrors(writer http.ResponseWriter, r *http.Req
 	httputils.Respond(writer, http.StatusCreated)
 }
 
+// DeleteValidationErrors deletes the local cache of ValidationResult. It is being invoked in e2e tests.
 func (h *Handler) DeleteValidationErrors(writer http.ResponseWriter, r *http.Request) {
 	h.ORDValidationErrors = make([]model.ValidationResult, 0)
 
 	httputils.Respond(writer, http.StatusOK)
 }
 
+// Validate mocks a validation request against the API Metadata Validator. It returns a mocked list of ValidationResult.
+// This handler is invoked by the ORD aggregator codebase.
 func (h *Handler) Validate(writer http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	correlationID := correlation.CorrelationIDFromContext(ctx)
