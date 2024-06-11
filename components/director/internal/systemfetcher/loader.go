@@ -314,7 +314,6 @@ func (d *DataLoader) upsertAppTemplates(ctx context.Context, appTemplateInputs [
 	return nil
 }
 func (d *DataLoader) setWebhooksCredentialsFromSecrets(ctx context.Context, webhooks []*model.WebhookInput) error {
-
 	secretNameToSecretKeyToSecretData, err := d.prepareWebhooksCredentialsMappings(ctx, webhooks)
 	if err != nil {
 		return errors.Wrap(err, "while preparing webhooks credentials mappings")

@@ -230,6 +230,7 @@ func (i *CSRFTokenCredentialRequestAuthInput) ToCSRFTokenCredentialRequestAuth()
 	}
 }
 
+// AuthSecretRefInput represents secret ref input
 type AuthSecretRefInput struct {
 	SecretName string
 	SecretKey  string
