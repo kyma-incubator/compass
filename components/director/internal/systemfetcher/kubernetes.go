@@ -90,8 +90,7 @@ func newKubernetesClient(ctx context.Context, cfg KubeConfig) (KubeClient, error
 func (k *kubernetesClient) GetSystemFetcherSecretData(ctx context.Context, secretName string) ([]byte, error) {
 	secret, err := k.client.CoreV1().Secrets(k.cfg.SecretNamespace).Get(ctx, secretName, metav1.GetOptions{})
 	if err != nil {
-		return nil, err
-		//return nil, errors.Wrapf(err, "while getting secret with name: %q in namespace: %q", secretName, k.cfg.SecretNamespace)
+		return nil, errors.Wrapf(err, "while getting secret with name: %q in namespace: %q", secretName, k.cfg.SecretNamespace)
 	}
 
 	secretDataBytes, ok := secret.Data["data"]
