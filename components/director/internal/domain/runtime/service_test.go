@@ -227,7 +227,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 		}
 	}
 
-	var nilConfiguration model.InitialConfigurations
+	var nilInitialConfiguration model.InitialConfigurations
 
 	testCases := []struct {
 		Name                string
@@ -335,7 +335,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: "test"}, nilConfiguration).Return(&model.Formation{Name: "test"}, nil).Once()
+				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: "test"}, nilInitialConfiguration).Return(&model.Formation{Name: "test"}, nil).Once()
 				svc.On("GetScenariosFromMatchingASAs", ctxWithGlobalaccountMatcher, runtimeID, graphql.FormationObjectTypeRuntime).Return([]string{"test"}, nil).Once()
 				return svc
 			},
@@ -375,7 +375,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: "test"}, nilConfiguration).Return(&model.Formation{Name: "test"}, nil).Once()
+				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: "test"}, nilInitialConfiguration).Return(&model.Formation{Name: "test"}, nil).Once()
 				svc.On("GetScenariosFromMatchingASAs", ctxWithGlobalaccountMatcher, runtimeID, graphql.FormationObjectTypeRuntime).Return([]string{"test"}, nil).Once()
 				return svc
 			},
@@ -679,7 +679,7 @@ func TestService_CreateWithMandatoryLabels(t *testing.T) {
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				svc := &automock.FormationService{}
-				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: "test"}, nilConfiguration).Return(nil, testErr).Once()
+				svc.On("AssignFormation", mock.Anything, tnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: "test"}, nilInitialConfiguration).Return(nil, testErr).Once()
 				svc.On("GetScenariosFromMatchingASAs", ctxWithGlobalaccountMatcher, runtimeID, graphql.FormationObjectTypeRuntime).Return([]string{"test"}, nil).Once()
 				return svc
 			},

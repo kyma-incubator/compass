@@ -289,7 +289,7 @@ func TestAssignFormation(t *testing.T) {
 	initialConfigurationsInputWithNonParticipant := []*graphql.InitialConfiguration{
 		{
 			SourceID:      Application3ID,
-			TargetID:      "asd",
+			TargetID:      "non-existing",
 			Configuration: "{\"key\": \"value\"}",
 		},
 	}

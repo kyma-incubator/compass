@@ -322,7 +322,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 			initCfgsSourceToTarget[cfg.SourceID] = make(map[string]json.RawMessage)
 		}
 
-		initialConfig := []byte(cfg.Configuration)
+		initialConfig := json.RawMessage(cfg.Configuration)
 		initCfgsSourceToTarget[cfg.SourceID][cfg.TargetID] = initialConfig
 	}
 
