@@ -71,7 +71,7 @@ func (s *globalRegistryService) SyncGlobalResources(ctx context.Context) (map[st
 		return nil, errors.Wrapf(err, "while fetching global registry documents from %s", s.config.URL)
 	}
 
-	validationErrors, err := s.documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString, "sap:base:v1")
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, s.config.URL, map[string]bool{}, docsString, "sap:base:v1", "")
 	if len(validationErrors) > 0 {
 		// convert validationErrors array of pointers to array of objects in order to log them properly
 		var validationErrorsObjects []ValidationError

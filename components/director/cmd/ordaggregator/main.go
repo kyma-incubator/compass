@@ -144,6 +144,8 @@ type config struct {
 	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
 	APIMetadataValidatorEnabled              bool   `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
 
+	ValidationRuleIgnoreList string `envconfig:"APP_VALIDATION_RULE_IGNORE_LIST"`
+
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig
 }
@@ -177,6 +179,9 @@ func main() {
 
 	ordWebhookMapping, err := application.UnmarshalMappings(cfg.ORDWebhookMappings)
 	exitOnError(err, "failed while unmarshalling ord webhook mappings")
+
+	ordValidationRuleIgnoreList, err := unmarshalORDValidationRuleIgnoreList(cfg.ValidationRuleIgnoreList)
+	exitOnError(err, "failed while unmarshalling ord validation ignorelist")
 
 	cfgProvider := createAndRunConfigProvider(ctx, cfg)
 
@@ -379,7 +384,7 @@ func main() {
 	apiValidatorURL := fmt.Sprintf("%s:%s", cfg.APIMetadataValidatorHost, cfg.APIMetadataValidatorPort)
 
 	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient, cfg.APIMetadataValidatorEnabled)
-	documentValidator := ord.NewDocumentValidator(validationClient)
+	documentValidator := ord.NewDocumentValidator(validationClient, ordValidationRuleIgnoreList)
 	documentSanitizer := ord.NewDocumentSanitizer()
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings, documentValidator)
@@ -709,4 +714,13 @@ func unmarshalMappings(tenantMappings string) (map[string]ord.CredentialExchange
 	}
 
 	return mappingsFromEnv, nil
+}
+
+func unmarshalORDValidationRuleIgnoreList(ignoreList string) (map[string][]string, error) {
+	var mapping map[string][]string
+	if err := json.Unmarshal([]byte(ignoreList), &mapping); err != nil {
+		return nil, errors.Wrap(err, "while unmarshalling the ignorelist for ORD validation rules")
+	}
+
+	return mapping, nil
 }

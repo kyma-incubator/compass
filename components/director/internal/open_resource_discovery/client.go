@@ -43,6 +43,7 @@ type Resource struct {
 	ID            string
 	ParentID      *string
 	Name          string
+	AppNamespace  string
 	LocalTenantID *string
 }
 

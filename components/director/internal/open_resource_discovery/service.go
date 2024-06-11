@@ -340,7 +340,7 @@ func (s *Service) processDocuments(ctx context.Context, resource Resource, webho
 	}
 
 	log.C(ctx).Infof("Validating ORD documents for resource with ID %s", resource.ID)
-	validationErrors, err := s.documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString, "")
+	validationErrors, err := s.documentValidator.Validate(ctx, documents, webhookBaseURL, globalResourcesOrdIDs, docsString, "", resource.AppNamespace)
 	if err != nil {
 		return validationErrors, err
 	}
@@ -1150,6 +1150,7 @@ func (s *Service) processApplicationWebhook(ctx context.Context, webhook *model.
 		ID:            app.ID,
 		ParentID:      app.ApplicationTemplateID,
 		Name:          app.Name,
+		AppNamespace:  str.PtrStrToStr(app.ApplicationNamespace),
 		LocalTenantID: app.LocalTenantID,
 	}
 
@@ -1177,9 +1178,10 @@ func (s *Service) processApplicationTemplateWebhook(ctx context.Context, webhook
 	ordWebhookMapping := s.getMappingORDConfiguration(appTemplate.Name)
 
 	resource := Resource{
-		Type: directorresource.ApplicationTemplate,
-		ID:   appTemplate.ID,
-		Name: appTemplate.Name,
+		Type:         directorresource.ApplicationTemplate,
+		ID:           appTemplate.ID,
+		AppNamespace: str.PtrStrToStr(appTemplate.ApplicationNamespace),
+		Name:         appTemplate.Name,
 	}
 
 	return s.processWebhookAndDocuments(ctx, webhook, resource, globalResourcesOrdIDs, ordWebhookMapping)

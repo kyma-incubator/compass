@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strconv"
 
 	"dario.cat/mergo"
@@ -16,23 +17,25 @@ import (
 //
 //go:generate mockery --name=Validator --output=automock --outpkg=automock --case=underscore --disable-version-string
 type Validator interface {
-	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string, ruleset string) ([]*ValidationError, error)
+	Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string, ruleset, appNamespace string) ([]*ValidationError, error)
 }
 
 // DocumentValidator validates the ORD documents
 type DocumentValidator struct {
-	client ValidatorClient
+	client                   ValidatorClient
+	ordRuleIgnoreListMapping map[string][]string
 }
 
 // NewDocumentValidator returns new document validator for validating ORD documents
-func NewDocumentValidator(client ValidatorClient) Validator {
+func NewDocumentValidator(client ValidatorClient, ordRuleIgnoreListMapping map[string][]string) Validator {
 	return &DocumentValidator{
-		client: client,
+		client:                   client,
+		ordRuleIgnoreListMapping: ordRuleIgnoreListMapping,
 	}
 }
 
 // Validate validates all ORD documents with the API Metadata Validator and checks resource duplications and entity relations
-func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, documentsAsString []string, ruleset string) ([]*ValidationError, error) {
+func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document, baseURL string, globalResourcesOrdIDs map[string]bool, documentsAsString []string, ruleset, appNamespace string) ([]*ValidationError, error) {
 	var combinedValidationErrors []*ValidationError
 
 	for i := range documents {
@@ -52,7 +55,9 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 
 		if len(currentDocumentErrors) > 0 {
 			log.C(ctx).Infof("There are %d validation errors from API Metadata Validator", len(currentDocumentErrors))
-			deleteInvalidResourcesFromDocument(documents[i], currentDocumentErrors)
+
+			ordRuleIgnoreList := v.ordRuleIgnoreListMapping[appNamespace]
+			deleteInvalidResourcesFromDocument(ctx, documents[i], currentDocumentErrors, ordRuleIgnoreList, appNamespace)
 
 			combinedValidationErrors = append(combinedValidationErrors, currentDocumentErrors...)
 		}
@@ -121,8 +126,13 @@ func findResourceOrdIDByPath(data interface{}, path []string) (string, error) {
 	return ordID, nil
 }
 
-func deleteInvalidResourcesFromDocument(document *Document, documentErrors []*ValidationError) {
+func deleteInvalidResourcesFromDocument(ctx context.Context, document *Document, documentErrors []*ValidationError, ordRuleIgnoreList []string, appNamespace string) {
 	for _, e := range documentErrors {
+		if str.ContainsInSlice(ordRuleIgnoreList, e.Type) {
+			log.C(ctx).Infof("ORD error %q is present in document, but it is ignored because an ignorelist mapping exist for app namespace %q", e.Type, appNamespace)
+			continue
+		}
+
 		if e.Severity != ErrorSeverity {
 			continue
 		}
