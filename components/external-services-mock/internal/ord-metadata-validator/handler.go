@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/correlation"
 	"github.com/kyma-incubator/compass/components/director/pkg/httputils"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 	"github.com/kyma-incubator/compass/components/director/pkg/model"
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
-	"io"
-	"net/http"
 )
 
 const (
@@ -56,7 +57,7 @@ func (h *Handler) CreateValidationErrors(writer http.ResponseWriter, r *http.Req
 }
 
 func (h *Handler) DeleteValidationErrors(writer http.ResponseWriter, r *http.Request) {
-	h.ORDValidationErrors = nil
+	h.ORDValidationErrors = make([]model.ValidationResult, 0)
 
 	httputils.Respond(writer, http.StatusOK)
 }

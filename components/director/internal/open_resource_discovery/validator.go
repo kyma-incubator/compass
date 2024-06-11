@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"strconv"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"dario.cat/mergo"
 	"github.com/kyma-incubator/compass/components/director/pkg/log"

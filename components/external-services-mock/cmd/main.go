@@ -11,6 +11,8 @@ import (
 	"sync"
 	"time"
 
+	ord_metadata_validator "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-metadata-validator"
+
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationsvc"
 
 	service_manager "github.com/kyma-incubator/compass/components/external-services-mock/internal/service-manager"
@@ -71,19 +73,20 @@ type config struct {
 	JWKSPath    string `envconfig:"default=/jwks.json"`
 	OAuthConfig
 	BasicCredentialsConfig
-	ProviderDestinationConfig formationnotification.ProviderDestinationConfig
-	NotificationConfig        formationnotification.Configuration
-	DestinationCreatorConfig  *destinationsvc.Config
-	DestinationServiceConfig  DestinationServiceConfig
-	ORDServers                ORDServers
-	SelfRegConfig             selfreg.Config
-	ServiceManagerConfig      service_manager.Config
-	DefaultTenant             string `envconfig:"APP_DEFAULT_TENANT"`
-	DefaultCustomerTenant     string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
-	TrustedTenant             string `envconfig:"APP_TRUSTED_TENANT"`
-	TrustedNewGA              string `envconfig:"APP_TRUSTED_NEW_GA"`
-	OnDemandTenant            string `envconfig:"APP_ON_DEMAND_TENANT"`
-	TenantRegion              string `envconfig:"APP_TENANT_REGION"`
+	ProviderDestinationConfig  formationnotification.ProviderDestinationConfig
+	NotificationConfig         formationnotification.Configuration
+	DestinationCreatorConfig   *destinationsvc.Config
+	DestinationServiceConfig   DestinationServiceConfig
+	ORDMetadataValidatorConfig ORDMetadataValidatorConfig
+	ORDServers                 ORDServers
+	SelfRegConfig              selfreg.Config
+	ServiceManagerConfig       service_manager.Config
+	DefaultTenant              string `envconfig:"APP_DEFAULT_TENANT"`
+	DefaultCustomerTenant      string `envconfig:"APP_DEFAULT_CUSTOMER_TENANT"`
+	TrustedTenant              string `envconfig:"APP_TRUSTED_TENANT"`
+	TrustedNewGA               string `envconfig:"APP_TRUSTED_NEW_GA"`
+	OnDemandTenant             string `envconfig:"APP_ON_DEMAND_TENANT"`
+	TenantRegion               string `envconfig:"APP_TENANT_REGION"`
 
 	KeyLoaderConfig credloader.KeysConfig
 
@@ -107,6 +110,11 @@ type DestinationServiceConfig struct {
 	SubaccountIDClaimKey      string `envconfig:"APP_DESTINATION_SUBACCOUNT_CLAIM_KEY"`
 	ServiceInstanceClaimKey   string `envconfig:"APP_DESTINATION_SERVICE_INSTANCE_CLAIM_KEY"`
 	TestDestinationInstanceID string `envconfig:"APP_TEST_DESTINATION_INSTANCE_ID"`
+}
+
+type ORDMetadataValidatorConfig struct {
+	ConfigureValidationErrorsEndpoint string `envconfig:"APP_ORD_METADATA_VALIDATOR_CONFIGURE_ENDPOINT,default=/ordMetadataValidator-configuration/v1/validationErrors"`
+	ValidationErrorsEndpoint          string `envconfig:"APP_ORD_METADATA_VALIDATOR_VALIDATE_ENDPOINT,default=/ordMetadataValidator/v1/validate"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -198,8 +206,9 @@ func main() {
 	}
 
 	destinationSvcHandler := destinationsvc.NewHandler(cfg.DestinationCreatorConfig)
+	ordMetadataValidatorHandler := ord_metadata_validator.NewHandler()
 
-	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationSvcHandler), wg)
+	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationSvcHandler, ordMetadataValidatorHandler), wg)
 	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationSvcHandler), wg)
 
 	for _, server := range ordServers {
@@ -217,7 +226,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationHandler *destinationsvc.Handler) *http.Server {
+func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationHandler *destinationsvc.Handler, ordMetadataValidatorHandler *ord_metadata_validator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
@@ -286,6 +295,10 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 
 	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
+
+	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ConfigureValidationErrorsEndpoint, ordMetadataValidatorHandler.CreateValidationErrors).Methods(http.MethodPost)
+	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ConfigureValidationErrorsEndpoint, ordMetadataValidatorHandler.DeleteValidationErrors).Methods(http.MethodDelete)
+	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ValidationErrorsEndpoint, ordMetadataValidatorHandler.Validate).Methods(http.MethodPost)
 
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)

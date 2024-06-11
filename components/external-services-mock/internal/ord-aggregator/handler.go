@@ -3,11 +3,12 @@ package ord_aggregator
 import (
 	"bytes"
 	"fmt"
-	"github.com/tidwall/sjson"
 	"math/rand"
 	"net/http"
 	"text/template"
 	"time"
+
+	"github.com/tidwall/sjson"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/httphelpers"
 	"github.com/pkg/errors"
