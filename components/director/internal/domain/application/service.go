@@ -274,18 +274,16 @@ func (s *service) ListAllGlobalByFilter(ctx context.Context, filters []*labelfil
 	if err != nil {
 		return nil, err
 	}
-	if hasScenariosFilter {
-		if len(appIDsInScenarios) == 0 {
-			return &model.ApplicationWithTenantsPage{
-				Data:       []*model.ApplicationWithTenants{},
-				TotalCount: 0,
-				PageInfo: &pagination.Page{
-					StartCursor: cursor,
-					EndCursor:   "",
-					HasNextPage: false,
-				},
-			}, nil
-		}
+	if hasScenariosFilter && len(appIDsInScenarios) == 0 {
+		return &model.ApplicationWithTenantsPage{
+			Data:       []*model.ApplicationWithTenants{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
 	}
 
 	return s.appRepo.ListAllGlobalByFilter(ctx, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
@@ -397,18 +395,16 @@ func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string,
 	if err != nil {
 		return nil, err
 	}
-	if hasScenariosFilter {
-		if len(appIDsInScenarios) == 0 {
-			return &model.ApplicationPage{
-				Data:       []*model.Application{},
-				TotalCount: 0,
-				PageInfo: &pagination.Page{
-					StartCursor: cursor,
-					EndCursor:   "",
-					HasNextPage: false,
-				},
-			}, nil
-		}
+	if hasScenariosFilter && len(appIDsInScenarios) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
 	}
 
 	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)

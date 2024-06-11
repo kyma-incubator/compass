@@ -257,7 +257,7 @@ func NewRootResolver(
 	tenantSvc := tenant.NewServiceWithLabels(tenantRepo, uidSvc, labelRepo, labelSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, tenantMappingConfig, callbackURL)
 	docSvc := document.NewService(docRepo, fetchRequestRepo, uidSvc)
-	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo, labelDefSvc)
+	scenarioAssignmentSvc := scenarioassignment.NewService(scenarioAssignmentRepo)
 	healthCheckSvc := healthcheck.NewService(healthcheckRepo)
 	systemAuthSvc := systemauth.NewService(systemAuthRepo, uidSvc)
 	oAuth20Svc := oauth20.NewService(cfgProvider, oAuth20Cfg.PublicAccessTokenEndpoint, hydra.OAuth2Api)
@@ -278,7 +278,11 @@ func NewRootResolver(
 	destinationSvc := destination.NewService(transact, destinationRepo, tenantRepo, uidSvc, destinationCreatorSvc)
 	constraintEngine := operators.NewConstraintEngine(transact, formationConstraintSvc, tenantSvc, scenarioAssignmentSvc, destinationSvc, destinationCreatorSvc, systemAuthSvc, formationRepo, labelRepo, labelSvc, applicationRepo, runtimeContextRepo, formationTemplateRepo, formationAssignmentRepo, nil, nil, assignmentOperationSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	notificationsBuilder := formation.NewNotificationsBuilder(webhookConverter, constraintEngine, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
+<<<<<<< HEAD
 	notificationsGenerator := formation.NewNotificationsGenerator(notificationsBuilder)
+=======
+	notificationsGenerator := formation.NewNotificationsGenerator(applicationRepo, runtimeRepo, runtimeContextRepo, labelRepo, webhookRepo, webhookDataInputBuilder, notificationsBuilder)
+>>>>>>> 85b22ab79e74a4b40a0c846d21511f1454a97121
 	notificationSvc := formation.NewNotificationService(tenantRepo, webhookClient, notificationsGenerator, constraintEngine, webhookConverter, formationTemplateRepo, formationAssignmentRepo, formationRepo)
 	faNotificationSvc := formationassignment.NewFormationAssignmentNotificationService(formationAssignmentRepo, webhookConverter, webhookRepo, tenantRepo, webhookDataInputBuilder, formationRepo, notificationsBuilder, runtimeContextRepo, labelSvc, featuresConfig.RuntimeTypeLabelKey, featuresConfig.ApplicationTypeLabelKey)
 	formationAssignmentStatusSvc := formationassignment.NewFormationAssignmentStatusService(formationAssignmentRepo, constraintEngine, faNotificationSvc)
