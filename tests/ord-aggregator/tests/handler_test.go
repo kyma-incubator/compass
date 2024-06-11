@@ -721,6 +721,46 @@ func TestORDAggregator(stdT *testing.T) {
 		t.Log("Successfully verified Error Severity is NONE when no errors")
 	})
 
+	t.Run("Verifying Operation Error Severity is NONE when there is no Errors", func(t *testing.T) {
+		t.Log("testConfig.ExternalServicesMockUnsecuredInvalidDocURL", testConfig.ExternalServicesMockUnsecuredInvalidDocURL)
+		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("system-one", expectedSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredInvalidDocURL, nil)
+		appInput.ApplicationNamespace = str.Ptr("test.app")
+
+		ctx := context.Background()
+
+		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+		require.NoError(t, err)
+		waitForAppORDOperationToBeProcessed(t, ctx, app.ID)
+		fetchedApp := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app.ID)
+		for _, currentOperation := range fetchedApp.Operations {
+			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
+				require.Equal(t, directorSchema.OperationErrorSeverityNone, currentOperation.ErrorSeverity)
+			}
+		}
+
+		require.NoError(t, err)
+		t.Log("Successfully verified Error Severity is NONE when no errors")
+		fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+
+		appInput1 := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("system-two", expectedSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredInvalidDocURL, nil)
+		appInput1.ApplicationNamespace = str.Ptr("test.app.noerror")
+
+		app1, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput1)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app1)
+		require.NoError(t, err)
+		waitForAppORDOperationToBeProcessed(t, ctx, app1.ID)
+		fetchedApp1 := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app1.ID)
+		for _, currentOperation := range fetchedApp1.Operations {
+			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
+				require.Equal(t, directorSchema.OperationStatusFailed, currentOperation.ErrorSeverity)
+			}
+		}
+
+		require.NoError(t, err)
+		t.Log("Successfully verified Error Severity is FAILED when no errors")
+	})
+
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {
 		ctx := context.Background()
 		appTechnicalProviderDirectorCertSecuredClient := certprovider.NewDirectorCertClientWithOtherSubject(t, ctx, testConfig.ExternalCertProviderConfig, testConfig.DirectorExternalCertSecuredURL, "app-template-verify-ord-doc-technical-cn", testConfig.SkipSSLValidation)

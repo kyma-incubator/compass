@@ -3,6 +3,7 @@ package ord_aggregator
 import (
 	"bytes"
 	"fmt"
+	"github.com/tidwall/sjson"
 	"math/rand"
 	"net/http"
 	"text/template"
@@ -64,6 +65,38 @@ func HandleFuncOrdDocumentWithAdditionalContent(expectedBaseURL, specsAccessStra
 
 		rw.WriteHeader(http.StatusOK)
 		_, err = rw.Write(res.Bytes())
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
+		}
+	}
+}
+
+func HandleFuncInvalidOrdDocument(expectedBaseURL, specsAccessStrategy string) func(rw http.ResponseWriter, req *http.Request) {
+	randomSuffix := fmt.Sprintf("-%s", randSeq(10))
+	return func(rw http.ResponseWriter, req *http.Request) {
+		t, err := template.New("").Parse(ordDocument)
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while creating template"), http.StatusInternalServerError)
+		}
+
+		data := map[string]string{
+			"randomSuffix":        randomSuffix,
+			"baseURL":             expectedBaseURL,
+			"specsAccessStrategy": specsAccessStrategy,
+		}
+
+		res := new(bytes.Buffer)
+		if err = t.Execute(res, data); err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while executing template"), http.StatusInternalServerError)
+		}
+
+		result, err := sjson.SetBytes(res.Bytes(), "packages[0].shortDescription", "Invalid/also invalid/final invalid short description symbols!")
+		if err != nil {
+			httphelpers.WriteError(rw, errors.Wrap(err, "error while setting invalid value in template"), http.StatusInternalServerError)
+		}
+
+		rw.WriteHeader(http.StatusOK)
+		_, err = rw.Write(result)
 		if err != nil {
 			httphelpers.WriteError(rw, errors.Wrap(err, "error while writing response"), http.StatusInternalServerError)
 		}

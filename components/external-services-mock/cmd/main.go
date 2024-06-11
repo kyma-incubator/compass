@@ -122,6 +122,7 @@ type ORDServers struct {
 	UnsecuredWithAdditionalContentPort int `envconfig:"default=8088"`
 	UnsecuredMultiTenantPort           int `envconfig:"default=8089"`
 	ProxyPort                          int `envconfig:"default=8090"`
+	InvalidDocumentUnsecuredPort       int `envconfig:"default=8091"`
 	CertSecuredBaseURL                 string
 	CertSecuredGlobalBaseURL           string
 }
@@ -512,6 +513,7 @@ func initORDServers(cfg config, key *rsa.PrivateKey) []*http.Server {
 	servers = append(servers, initSecuredGlobalRegistryORDServer(cfg))
 	servers = append(servers, initUnsecuredGlobalRegistryORDServer(cfg))
 	servers = append(servers, initCertSecuredProxyORDServer(cfg))
+	servers = append(servers, initUnsecuredORDServerWithInvalidDocument(cfg))
 	return servers
 }
 
@@ -675,6 +677,24 @@ func initOauthSecuredORDServer(cfg config, key *rsa.PrivateKey) *http.Server {
 
 	return &http.Server{
 		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.OauthPort),
+		Handler: router,
+	}
+}
+
+func initUnsecuredORDServerWithInvalidDocument(cfg config) *http.Server {
+	router := mux.NewRouter()
+
+	router.HandleFunc("/.well-known/open-resource-discovery", ord_aggregator.HandleFuncOrdConfig("", "open"))
+	router.HandleFunc("/test/fullPath", ord_aggregator.HandleFuncOrdConfigWithDocPath(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.InvalidDocumentUnsecuredPort), "/open-resource-discovery/v1/documents/example2", "open"))
+
+	router.HandleFunc("/open-resource-discovery/v1/documents/example1", ord_aggregator.HandleFuncInvalidOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.InvalidDocumentUnsecuredPort), "open"))
+	router.HandleFunc("/open-resource-discovery/v1/documents/example2", ord_aggregator.HandleFuncInvalidOrdDocument(fmt.Sprintf("%s:%d", cfg.BaseURL, cfg.ORDServers.InvalidDocumentUnsecuredPort), "open"))
+
+	router.HandleFunc("/external-api/spec", apispec.HandleFunc)
+	router.HandleFunc("/external-api/spec/flapping", apispec.FlappingHandleFunc())
+
+	return &http.Server{
+		Addr:    fmt.Sprintf(":%d", cfg.ORDServers.InvalidDocumentUnsecuredPort),
 		Handler: router,
 	}
 }

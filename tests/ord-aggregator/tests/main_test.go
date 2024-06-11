@@ -49,6 +49,7 @@ type config struct {
 	ExternalServicesMockUnsecuredMultiTenantURL           string
 	ExternalServicesMockBasicURL                          string
 	ExternalServicesMockOauthURL                          string
+	ExternalServicesMockUnsecuredInvalidDocURL            string `envconfig:"EXTERNAL_SERVICES_MOCK_UNSECURED_INVALID_DOC_URL"`
 	ClientID                                              string
 	ClientSecret                                          string
 	BasicUsername                                         string
