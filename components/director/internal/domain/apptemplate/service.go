@@ -7,7 +7,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
+	"github.com/kyma-incubator/compass/components/director/internal/systemfetcher"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/resource"
 
@@ -28,6 +30,14 @@ const applicationTypeLabelKey = "applicationType"
 const otherSystemType = "Other System Type"
 const providerSAP = "SAP"
 const labelsKey = "labels"
+
+var defaultSlisFilterValueForManagedByProperty = []interface{}{
+	map[string]interface{}{
+		"key":       "$.additionalAttributes.managedBy",
+		"value":     []string{"SAP Cloud"},
+		"operation": "exclude",
+	},
+}
 
 // ApplicationTemplateRepository is responsible for repository layer Application Templates operations
 //
@@ -134,7 +144,7 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 
 	log.C(ctx).Debugf("ID %s generated for Application Template with name %s", appTemplateID, in.Name)
 
-	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, in.Name)
+	appInputJSON, err := enrichLabels(in.ApplicationInputJSON, in.Name)
 	if err != nil {
 		return "", err
 	}
@@ -175,20 +185,6 @@ func (s *service) Create(ctx context.Context, in model.ApplicationTemplateInput)
 	err = s.labelUpsertService.UpsertMultipleLabels(ctx, "", model.AppTemplateLabelableObject, appTemplateID, in.Labels)
 	if err != nil {
 		return appTemplateID, errors.Wrapf(err, "while creating multiple labels for Application Template with id %s", appTemplateID)
-	}
-
-	return appTemplateID, nil
-}
-
-// TODO delete - CreateWithLabels creates an AppTemplate with provided labels
-func (s *service) createWithLabels(ctx context.Context, in model.ApplicationTemplateInput, labels map[string]interface{}) (string, error) {
-	for key, val := range labels {
-		in.Labels[key] = val
-	}
-
-	appTemplateID, err := s.Create(ctx, in)
-	if err != nil {
-		return "", errors.Wrapf(err, "while creating Application Template")
 	}
 
 	return appTemplateID, nil
@@ -322,7 +318,7 @@ func (s *service) Update(ctx context.Context, id string, override bool, in model
 		return err
 	}
 
-	appInputJSON, err := enrichWithApplicationTypeLabel(in.ApplicationInputJSON, in.Name)
+	appInputJSON, err := enrichLabels(in.ApplicationInputJSON, in.Name)
 	if err != nil {
 		return err
 	}
@@ -532,6 +528,17 @@ func validatePlaceholderValue(placeholder model.ApplicationTemplatePlaceholder, 
 
 	return nil
 }
+func enrichLabels(applicationInputJSON, appTemplateInputName string) (string, error) {
+	enrichedWithApplicationTypeLabel, err := enrichWithApplicationTypeLabel(applicationInputJSON, appTemplateInputName)
+	if err != nil {
+		return "", err
+	}
+	enrichedWithDefaultSlisFilterLabel, err := enrichWithDefaultSlisFilterLabel(enrichedWithApplicationTypeLabel, appTemplateInputName)
+	if err != nil {
+		return "", err
+	}
+	return enrichedWithDefaultSlisFilterLabel, nil
+}
 
 func enrichWithApplicationTypeLabel(applicationInputJSON, appTemplateInputName string) (string, error) {
 	var appInput map[string]interface{}
@@ -555,6 +562,56 @@ func enrichWithApplicationTypeLabel(applicationInputJSON, appTemplateInputName s
 		appInput[labelsKey] = labelsMap
 	} else {
 		appInput[labelsKey] = map[string]interface{}{applicationTypeLabelKey: appTemplateInputName}
+	}
+
+	inputJSON, err := json.Marshal(appInput)
+	if err != nil {
+		return "", errors.Wrapf(err, "while marshalling app input")
+	}
+	return string(inputJSON), nil
+}
+
+func enrichWithDefaultSlisFilterLabel(applicationInputJSON, appTemplateInputName string) (string, error) {
+	var appInput map[string]interface{}
+
+	if err := json.Unmarshal([]byte(applicationInputJSON), &appInput); err != nil {
+		return "", errors.Wrapf(err, "while unmarshaling application input json")
+	}
+
+	labels, ok := appInput[labelsKey]
+	if ok && labels != nil {
+		labelsMap, ok := labels.(map[string]interface{})
+		if !ok {
+			return "", errors.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
+		}
+
+		systemRole, hasSystemRole := labelsMap[label.GlobalSystemRoleLabelKey]
+		_, slisFilterLabelExists := labelsMap[systemfetcher.SlisFilterLabelKey]
+
+		if hasSystemRole && !slisFilterLabelExists {
+			systemRoleValues, ok := systemRole.([]interface{})
+			if !ok {
+				return "", errors.Errorf("invalid format of system roles for application template with Name %s", appTemplateInputName)
+			}
+
+			filtersFromSystemRoles := make([]interface{}, 0)
+
+			for _, systemRoleValue := range systemRoleValues {
+				systemRoleValueStr, ok := systemRoleValue.(string)
+				if !ok {
+					return "", errors.Errorf("system role value should be a string for application template with ID %s", appTemplateInputName)
+				}
+				slisFilter := map[string]interface{}{
+					"productId": systemRoleValueStr,
+					"filter":    defaultSlisFilterValueForManagedByProperty,
+				}
+
+				filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
+			}
+
+			labelsMap[systemfetcher.SlisFilterLabelKey] = filtersFromSystemRoles
+		}
+		appInput[labelsKey] = labelsMap
 	}
 
 	inputJSON, err := json.Marshal(appInput)

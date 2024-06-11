@@ -48,14 +48,6 @@ const (
 	displayNameLabelKey        = "displayName"
 )
 
-var defaultSlisFilterValueForManagedByProperty = []interface{}{
-	map[string]interface{}{
-		"key":       "$.additionalAttributes.managedBy",
-		"value":     []string{"SAP Cloud"},
-		"operation": "exclude",
-	},
-}
-
 // ApplicationTemplateService missing godoc
 //
 //go:generate mockery --name=ApplicationTemplateService --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -424,35 +416,6 @@ func (r *Resolver) CreateApplicationTemplate(ctx context.Context, in graphql.App
 	ctx = persistence.SaveToContext(ctx, tx)
 	if err := r.checkProviderAppTemplateExistence(ctx, labels, convertedIn); err != nil {
 		return nil, err
-	}
-
-	systemRole, hasSystemRole := labels[r.appTemplateProductLabel]
-	_, slisFilterLabelExists := labels[systemfetcher.SlisFilterLabelKey]
-
-	if hasSystemRole && !slisFilterLabelExists {
-		log.C(ctx).Infof("Application Template with name %s has system role, but doesn't have slis filter defined, creating it...", convertedIn.Name)
-
-		systemRoleValues, ok := systemRole.([]interface{})
-		if !ok {
-			return nil, errors.Errorf("invalid format of system roles for application template with ID %s", convertedIn.Name)
-		}
-
-		filtersFromSystemRoles := make([]interface{}, 0)
-
-		for _, systemRoleValue := range systemRoleValues {
-			systemRoleValueStr, ok := systemRoleValue.(string)
-			if !ok {
-				return nil, errors.Errorf("system role value should be a string for application template with ID %s", convertedIn.Name)
-			}
-			slisFilter := map[string]interface{}{
-				"productId": systemRoleValueStr,
-				"filter":    defaultSlisFilterValueForManagedByProperty,
-			}
-
-			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
-		}
-
-		labels[systemfetcher.SlisFilterLabelKey] = filtersFromSystemRoles
 	}
 
 	log.C(ctx).Infof("Creating an Application Template with name %s", convertedIn.Name)
