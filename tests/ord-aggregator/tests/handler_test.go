@@ -13,6 +13,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+	"github.com/kyma-incubator/compass/tests/pkg/clients"
+
 	"github.com/kyma-incubator/compass/tests/pkg/certs/certprovider"
 
 	"github.com/kyma-incubator/compass/tests/pkg/fixtures"
@@ -722,29 +725,55 @@ func TestORDAggregator(stdT *testing.T) {
 	})
 
 	t.Run("Verifying Operation Error Severity is NONE when there is no Errors", func(t *testing.T) {
-		t.Log("testConfig.ExternalServicesMockUnsecuredInvalidDocURL", testConfig.ExternalServicesMockUnsecuredInvalidDocURL)
-		appInput = fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("system-one", expectedSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredInvalidDocURL, nil)
-		appInput.ApplicationNamespace = str.Ptr("test.app")
-
 		ctx := context.Background()
 
-		app, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput)
-		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
-		require.NoError(t, err)
-		waitForAppORDOperationToBeProcessed(t, ctx, app.ID)
-		fetchedApp := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app.ID)
-		for _, currentOperation := range fetchedApp.Operations {
-			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
-				require.Equal(t, directorSchema.OperationErrorSeverityNone, currentOperation.ErrorSeverity)
-			}
+		// Setup client for ORD Service
+		t.Log("Create integration system")
+		var intSys directorSchema.IntegrationSystemExt // needed so the 'defer' can be above the integration system registration
+		defer fixtures.CleanupIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", &intSys)
+		intSys = fixtures.RegisterIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", "test-int-system")
+
+		var intSystemCredentials directorSchema.IntSysSystemAuth // needed so the 'defer' can be above the integration system auth creation
+		defer fixtures.DeleteSystemAuthForIntegrationSystem(t, ctx, certSecuredGraphQLClient, &intSystemCredentials)
+		intSystemCredentials = fixtures.RequestClientCredentialsForIntegrationSystem(t, ctx, certSecuredGraphQLClient, "", intSys.ID)
+		require.NotEmpty(t, intSystemCredentials)
+		unsecuredHttpClient := http.DefaultClient
+		unsecuredHttpClient.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
 		}
 
-		require.NoError(t, err)
-		t.Log("Successfully verified Error Severity is NONE when no errors")
-		fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app)
+		oauthCredentialData, ok := intSystemCredentials.Auth.Credential.(*directorSchema.OAuthCredentialData)
+		require.True(t, ok)
 
-		appInput1 := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("system-two", expectedSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredInvalidDocURL, nil)
-		appInput1.ApplicationNamespace = str.Ptr("test.app.noerror")
+		cfgWithInternalVisibilityScope := &clientcredentials.Config{
+			ClientID:     oauthCredentialData.ClientID,
+			ClientSecret: oauthCredentialData.ClientSecret,
+			TokenURL:     oauthCredentialData.URL,
+			Scopes:       []string{internalVisibilityScope},
+		}
+
+		ctx = context.WithValue(ctx, oauth2.HTTPClient, unsecuredHttpClient)
+		httpClient := cfgWithInternalVisibilityScope.Client(ctx)
+		httpClient.Timeout = 20 * time.Second
+
+		// Add an ORD validation error in the mocked API Metadata Validator (external services mock)
+		t.Log("Add a mocked ORD validation error")
+		apiMetadataValidatorClient := clients.NewAPIMetadataValidatorClient(testConfig.APIMetadataValidatorConfig)
+		validationErrors := []model.ValidationResult{{
+			Code:             "sap-ord-short-description-chars",
+			Path:             []string{"packages", "0", "shortDescription"},
+			Message:          "Short description is not that short",
+			Severity:         "error",
+			ProductStandards: nil,
+		}}
+		apiMetadataValidatorClient.ConfigureValidationErrors(t, validationErrors)
+		defer apiMetadataValidatorClient.ClearValidationErrors(t)
+
+		t.Log("Create first system that has application namespace equal to the ORD validation ignorelist")
+		appInput1 := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("system-one", expectedSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredInvalidDocURL, nil)
+		appInput1.ApplicationNamespace = str.Ptr("test.app")
 
 		app1, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput1)
 		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app1)
@@ -753,12 +782,44 @@ func TestORDAggregator(stdT *testing.T) {
 		fetchedApp1 := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app1.ID)
 		for _, currentOperation := range fetchedApp1.Operations {
 			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
-				require.Equal(t, directorSchema.OperationStatusFailed, currentOperation.ErrorSeverity)
+				require.Equal(t, directorSchema.OperationErrorSeverityError, currentOperation.ErrorSeverity)
+			}
+		}
+		t.Log("Successfully verified Error Severity is ERROR")
+
+		// Verify package error is ignored and the package is persisted
+		t.Log("Verify packages are persisted")
+		var respBody string
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/systemInstances(%s)?$expand=packages&$format=json", testConfig.ORDServiceURL, app1.ID), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		fmt.Println(respBody)
+		require.Len(t, gjson.Get(respBody, "packages").Array(), 2)
+
+		t.Logf("Cleanup app with ID %s", app1.ID)
+		fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app1)
+
+		t.Log("Create second system that has application namespace that is not present in the ORD validation ignorelist")
+		appInput2 := fixtures.FixSampleApplicationRegisterInputWithORDWebhooks("system-two", expectedSystemInstanceDescription, testConfig.ExternalServicesMockUnsecuredInvalidDocURL, nil)
+		appInput2.ApplicationNamespace = str.Ptr("test.app.no.ignore")
+
+		app2, err := fixtures.RegisterApplicationFromInput(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, appInput2)
+		defer fixtures.CleanupApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, &app2)
+		require.NoError(t, err)
+		waitForAppORDOperationToBeProcessed(t, ctx, app2.ID)
+		fetchedApp2 := fixtures.GetApplication(t, ctx, certSecuredGraphQLClient, testConfig.DefaultTestTenant, app2.ID)
+		for _, currentOperation := range fetchedApp2.Operations {
+			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
+				require.Equal(t, directorSchema.OperationErrorSeverityError, currentOperation.ErrorSeverity)
 			}
 		}
 
 		require.NoError(t, err)
-		t.Log("Successfully verified Error Severity is FAILED when no errors")
+		t.Log("Successfully verified Error Severity is FAILED")
+
+		// Verify package error is not ignored and the package is not persisted.
+		//The ORD document has 2 packages - the one should be fine and persisted, and the other should have validation errors and should not be persisted
+		t.Log("Verify errored package is not persisted")
+		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/systemInstances(%s)?$expand=packages&$format=json", testConfig.ORDServiceURL, app2.ID), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
+		require.Len(t, gjson.Get(respBody, "packages").Array(), 1)
 	})
 
 	t.Run("Verifying ORD Document for subscribed tenant", func(t *testing.T) {

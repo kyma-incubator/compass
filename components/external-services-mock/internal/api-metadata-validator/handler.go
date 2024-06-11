@@ -1,4 +1,4 @@
-package ord_metadata_validator
+package api_metadata_validator
 
 import (
 	"context"

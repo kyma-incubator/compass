@@ -11,7 +11,7 @@ import (
 	"sync"
 	"time"
 
-	ord_metadata_validator "github.com/kyma-incubator/compass/components/external-services-mock/internal/ord-metadata-validator"
+	api_metadata_validator "github.com/kyma-incubator/compass/components/external-services-mock/internal/api-metadata-validator"
 
 	"github.com/kyma-incubator/compass/components/external-services-mock/internal/destinationsvc"
 
@@ -113,8 +113,8 @@ type DestinationServiceConfig struct {
 }
 
 type ORDMetadataValidatorConfig struct {
-	ConfigureValidationErrorsEndpoint string `envconfig:"APP_ORD_METADATA_VALIDATOR_CONFIGURE_ENDPOINT,default=/ordMetadataValidator-configuration/v1/validationErrors"`
-	ValidationErrorsEndpoint          string `envconfig:"APP_ORD_METADATA_VALIDATOR_VALIDATE_ENDPOINT,default=/ordMetadataValidator/v1/validate"`
+	ConfigureValidationErrorsEndpoint string `envconfig:"APP_API_METADATA_VALIDATOR_CONFIGURE_ENDPOINT,default=/apiMetadataValidator-configuration/v1/validationErrors"`
+	ValidationErrorsEndpoint          string `envconfig:"APP_API_METADATA_VALIDATOR_VALIDATE_ENDPOINT,default=/apiMetadataValidator/v1/validate"`
 }
 
 // ORDServers is a configuration for ORD e2e tests. Those tests are more complex and require a dedicated server per application involved.
@@ -206,9 +206,9 @@ func main() {
 	}
 
 	destinationSvcHandler := destinationsvc.NewHandler(cfg.DestinationCreatorConfig)
-	ordMetadataValidatorHandler := ord_metadata_validator.NewHandler()
+	apiMetadataValidatorHandler := api_metadata_validator.NewHandler()
 
-	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationSvcHandler, ordMetadataValidatorHandler), wg)
+	go startServer(ctx, initDefaultServer(cfg, keyCache, key, staticClaimsMapping, httpClient, destinationSvcHandler, apiMetadataValidatorHandler), wg)
 	go startServer(ctx, initDefaultCertServer(cfg, key, staticClaimsMapping, destinationSvcHandler), wg)
 
 	for _, server := range ordServers {
@@ -226,7 +226,7 @@ func exitOnError(err error, context string) {
 	}
 }
 
-func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationHandler *destinationsvc.Handler, ordMetadataValidatorHandler *ord_metadata_validator.Handler) *http.Server {
+func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.PrivateKey, staticMappingClaims map[string]oauth.ClaimsGetterFunc, httpClient *http.Client, destinationHandler *destinationsvc.Handler, apiMetadataValidatorHandler *api_metadata_validator.Handler) *http.Server {
 	logger := logrus.New()
 	router := mux.NewRouter()
 	router.Use(panicrecovery.NewPanicRecoveryMiddleware(), correlation.AttachCorrelationIDToContext(), log.RequestLogger(healthzEndpoint), header.AttachHeadersToContext())
@@ -296,9 +296,9 @@ func initDefaultServer(cfg config, keyCache credloader.KeysCache, key *rsa.Priva
 	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateSubaccountLevelEndpoint+"/{name}", destinationHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 	router.HandleFunc(cfg.DestinationServiceConfig.TenantDestinationCertificateInstanceLevelEndpoint+"/{name}", destinationHandler.GetDestinationCertificateByNameFromDestinationSvc).Methods(http.MethodGet)
 
-	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ConfigureValidationErrorsEndpoint, ordMetadataValidatorHandler.CreateValidationErrors).Methods(http.MethodPost)
-	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ConfigureValidationErrorsEndpoint, ordMetadataValidatorHandler.DeleteValidationErrors).Methods(http.MethodDelete)
-	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ValidationErrorsEndpoint, ordMetadataValidatorHandler.Validate).Methods(http.MethodPost)
+	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ConfigureValidationErrorsEndpoint, apiMetadataValidatorHandler.CreateValidationErrors).Methods(http.MethodPost)
+	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ConfigureValidationErrorsEndpoint, apiMetadataValidatorHandler.DeleteValidationErrors).Methods(http.MethodDelete)
+	router.HandleFunc(cfg.ORDMetadataValidatorConfig.ValidationErrorsEndpoint, apiMetadataValidatorHandler.Validate).Methods(http.MethodPost)
 
 	var iasConfig ias.Config
 	err := envconfig.Init(&iasConfig)

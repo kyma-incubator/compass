@@ -38,7 +38,6 @@ const ordDocument = `{
             "label-value-2"
          ]
       }
-	  
    },
    "packages":[
       {
