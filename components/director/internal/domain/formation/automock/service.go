@@ -257,12 +257,12 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 	return r0, r1
 }
 
-// ListFormationsForObject provides a mock function with given fields: ctx, objectID
-func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+// ListFormationsForObjectGlobal provides a mock function with given fields: ctx, objectID
+func (_m *Service) ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, objectID)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ListFormationsForObject")
+		panic("no return value specified for ListFormationsForObjectGlobal")
 	}
 
 	var r0 []*model.Formation

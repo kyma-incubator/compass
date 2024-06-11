@@ -149,12 +149,10 @@ func (ns *notificationsService) GenerateFormationNotifications(ctx context.Conte
 }
 
 func (ns *notificationsService) SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error) {
-	joinPointDetails, err := ns.prepareDetailsForSendNotification(webhookNotificationReq)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while preparing details for send notification")
-	}
+	joinPointDetails := ns.prepareDetailsForSendNotification(webhookNotificationReq)
+
 	joinPointDetails.Location = formationconstraint.PreSendNotification
-	if err = ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
+	if err := ns.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreSendNotification, joinPointDetails, webhookNotificationReq.GetFormation().FormationTemplateID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.SendNotificationOperation, model.PreOperation)
 	}
 
@@ -196,7 +194,7 @@ func (ns *notificationsService) PrepareDetailsForNotificationStatusReturned(ctx 
 	}, nil
 }
 
-func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotificationReq webhookclient.WebhookExtRequest) (*formationconstraint.SendNotificationOperationDetails, error) {
+func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotificationReq webhookclient.WebhookExtRequest) *formationconstraint.SendNotificationOperationDetails {
 	webhookGql := webhookNotificationReq.GetWebhook()
 
 	joinPointDetails := &formationconstraint.SendNotificationOperationDetails{
@@ -211,7 +209,7 @@ func (ns *notificationsService) prepareDetailsForSendNotification(webhookNotific
 		Formation:                  webhookNotificationReq.GetFormation(),
 	}
 
-	return joinPointDetails, nil
+	return joinPointDetails
 }
 
 func (ns *notificationsService) extractCustomerTenantContext(ctx context.Context, internalTenantID string) (*webhookdir.CustomerTenantContext, error) {

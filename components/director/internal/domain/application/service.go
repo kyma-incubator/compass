@@ -7,13 +7,14 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/filtersanitizer"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/accessstrategy"
 
 	"dario.cat/mergo"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/eventing"
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
 	"github.com/kyma-incubator/compass/components/director/pkg/operation"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -71,10 +72,10 @@ type ApplicationRepository interface {
 	GetByIDForUpdate(ctx context.Context, tenant, id string) (*model.Application, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Application, error)
 	GetBySystemNumber(ctx context.Context, tenant, systemNumber string) (*model.Application, error)
-	ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, appIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	GetByLocalTenantIDAndAppTemplateID(ctx context.Context, tenant, localTenantID, appTemplateID string) (*model.Application, error)
 	GetByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Application, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
+	ListByIDsAndFilters(ctx context.Context, tenant string, appIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error)
 	ListAll(ctx context.Context, tenant string) ([]*model.Application, error)
 	ListAllByFilter(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Application, error)
 	ListGlobal(ctx context.Context, pageSize int, cursor string) (*model.ApplicationPage, error)
@@ -91,7 +92,7 @@ type ApplicationRepository interface {
 	TechnicalUpdate(ctx context.Context, item *model.Application) error
 	Delete(ctx context.Context, tenant, id string) error
 	DeleteGlobal(ctx context.Context, id string) error
-	ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
+	ListAllGlobalByFilter(ctx context.Context, appIDs []string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error)
 }
 
 // LabelRepository missing godoc
@@ -120,6 +121,10 @@ type WebhookRepository interface {
 //go:generate mockery --name=FormationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type FormationService interface {
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+	ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 }
 
 // RuntimeRepository missing godoc
@@ -127,7 +132,7 @@ type FormationService interface {
 //go:generate mockery --name=RuntimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type RuntimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
-	ListAll(ctx context.Context, tenantID string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 }
 
 // IntegrationSystemRepository missing godoc
@@ -160,6 +165,13 @@ type ApplicationHideCfgProvider interface {
 	GetApplicationHideSelectors() (map[string][]string, error)
 }
 
+// ScenariosFilterSanitizer missing godoc
+//
+//go:generate mockery --name=ScenariosFilterSanitizer --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ScenariosFilterSanitizer interface {
+	RemoveScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter, objectType model.FormationAssignmentType, isGlobal bool, listerFunc filtersanitizer.ObjectIDListerFunc, globalListerFunc filtersanitizer.ObjectIDListerFuncGlobal) (bool, []string, []*labelfilter.LabelFilter, error)
+}
+
 type service struct {
 	appNameNormalizer  normalizer.Normalizator
 	appHideCfgProvider ApplicationHideCfgProvider
@@ -175,6 +187,8 @@ type service struct {
 	bndlService      BundleService
 	timestampGen     timestamp.Generator
 	formationService FormationService
+
+	filterSanitizer ScenariosFilterSanitizer
 
 	selfRegisterDistinguishLabelKey string
 
@@ -196,13 +210,14 @@ func NewService(appNameNormalizer normalizer.Normalizator, appHideCfgProvider Ap
 		uidService:                      uidService,
 		timestampGen:                    timestamp.DefaultGenerator,
 		formationService:                formationService,
+		filterSanitizer:                 &filtersanitizer.FilterSanitizer{},
 		selfRegisterDistinguishLabelKey: selfRegisterDistinguishLabelKey,
 		ordWebhookMapping:               ordWebhookMapping,
 	}
 }
 
 // List missing godoc
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -212,7 +227,22 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.appRepo.List(ctx, appTenant, filter, pageSize, cursor)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, appTenant, filters, model.FormationAssignmentTypeApplication, false, s.formationService.ListObjectIDsOfTypeForFormations, s.formationService.ListObjectIDsOfTypeForFormationsGlobal)
+	if err != nil {
+		return nil, err
+	}
+	if hasScenariosFilter && len(appIDsInScenarios) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+	return s.appRepo.ListByIDsAndFilters(ctx, appTenant, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
 }
 
 // ListAll lists tenant scoped applications
@@ -236,12 +266,28 @@ func (s *service) ListGlobal(ctx context.Context, pageSize int, cursor string) (
 
 // ListAllGlobalByFilter lists a page of applications with their associated tenants filtered by the provided filters.
 // Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
-func (s *service) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+func (s *service) ListAllGlobalByFilter(ctx context.Context, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	if pageSize < 1 || pageSize > 200 {
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.appRepo.ListAllGlobalByFilter(ctx, filter, pageSize, cursor)
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, "", filters, model.FormationAssignmentTypeApplication, true, s.formationService.ListObjectIDsOfTypeForFormations, s.formationService.ListObjectIDsOfTypeForFormationsGlobal)
+	if err != nil {
+		return nil, err
+	}
+	if hasScenariosFilter && len(appIDsInScenarios) == 0 {
+		return &model.ApplicationWithTenantsPage{
+			Data:       []*model.ApplicationWithTenants{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+
+	return s.appRepo.ListAllGlobalByFilter(ctx, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
 }
 
 // ListAllByApplicationTemplateID lists all applications which have the given app template id
@@ -340,16 +386,32 @@ func (s *service) GetForUpdate(ctx context.Context, id string) (*model.Applicati
 }
 
 // ListByLocalTenantID returns applications retrieved by local tenant id and optionally - a filter
-func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+func (s *service) ListByLocalTenantID(ctx context.Context, localTenantID string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	appTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrap(err, "while loading tenant from context")
 	}
-	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, filter, pageSize, cursor)
+
+	hasScenariosFilter, appIDsInScenarios, filtersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, appTenant, filters, model.FormationAssignmentTypeApplication, false, s.formationService.ListObjectIDsOfTypeForFormations, s.formationService.ListObjectIDsOfTypeForFormationsGlobal)
+	if err != nil {
+		return nil, err
+	}
+	if hasScenariosFilter && len(appIDsInScenarios) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+
+	apps, err := s.appRepo.ListByLocalTenantID(ctx, appTenant, localTenantID, appIDsInScenarios, filtersWithoutScenarioFilter, pageSize, cursor)
 	if err != nil {
 		return nil, errors.Wrap(err, "while listing applications")
 	}
-
 	return apps, nil
 }
 
@@ -1038,7 +1100,7 @@ func (s *service) handleMergeLabels(ctx context.Context, srcAppLabels, destAppLa
 
 // ensureApplicationNotPartOfScenarioWithRuntime Checks if an application has scenarios associated with it. if a runtime is part of any scenario, then the application is considered being used by that runtime.
 func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Context, tenant, appID string) error {
-	formations, err := s.formationService.ListFormationsForObject(ctx, appID)
+	formations, err := s.formationService.ListFormationsForObjectGlobal(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting formations for Application with ID %s", appID)
 	}
@@ -1072,7 +1134,7 @@ func (s *service) ensureApplicationNotPartOfScenarioWithRuntime(ctx context.Cont
 // ensureApplicationNotPartOfAnyScenario Checks if an application has scenarios associated with it. If the application is
 // associated with any scenario it can not be deleted before unassigning from that scenario
 func (s *service) ensureApplicationNotPartOfAnyScenario(ctx context.Context, tenant, appID string) error {
-	formations, err := s.formationService.ListFormationsForObject(ctx, appID)
+	formations, err := s.formationService.ListFormationsForObjectGlobal(ctx, appID)
 	if err != nil {
 		return errors.Wrapf(err, "while getting formations for Application with ID %s", appID)
 	}
@@ -1179,64 +1241,6 @@ func (s *service) genericCreate(ctx context.Context, in model.ApplicationRegiste
 	return id, nil
 }
 
-func (s *service) filterUniqueNonExistingApplications(ctx context.Context, applicationInputs []model.ApplicationRegisterInputWithTemplate) ([]model.ApplicationRegisterInputWithTemplate, error) {
-	appTenant, err := tenant.LoadFromContext(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "while loading tenant from context")
-	}
-
-	allApps, err := s.appRepo.ListAll(ctx, appTenant)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while listing all applications for tenant %s", appTenant)
-	}
-	log.C(ctx).Debugf("Found %d existing systems", len(allApps))
-
-	type key struct {
-		name         string
-		systemNumber string
-	}
-
-	uniqueNonExistingApps := make(map[key]int)
-	keys := make([]key, 0)
-	for index, ai := range applicationInputs {
-		alreadyExits := false
-		systemNumber := ""
-		if ai.SystemNumber != nil {
-			systemNumber = *ai.SystemNumber
-		}
-		aiKey := key{
-			name:         ai.Name,
-			systemNumber: systemNumber,
-		}
-
-		if _, found := uniqueNonExistingApps[aiKey]; found {
-			continue
-		}
-
-		for _, a := range allApps {
-			bothSystemsAreWithoutSystemNumber := (ai.SystemNumber == nil && a.SystemNumber == nil)
-			bothSystemsHaveSystemNumber := (ai.SystemNumber != nil && a.SystemNumber != nil && *(ai.SystemNumber) == *(a.SystemNumber))
-			if ai.Name == a.Name && (bothSystemsAreWithoutSystemNumber || bothSystemsHaveSystemNumber) {
-				alreadyExits = true
-				break
-			}
-		}
-
-		if !alreadyExits {
-			uniqueNonExistingApps[aiKey] = index
-			keys = append(keys, aiKey)
-		}
-	}
-
-	result := make([]model.ApplicationRegisterInputWithTemplate, 0, len(uniqueNonExistingApps))
-	for _, key := range keys {
-		appInputIndex := uniqueNonExistingApps[key]
-		result = append(result, applicationInputs[appInputIndex])
-	}
-
-	return result, nil
-}
-
 func createLabel(key string, value string, objectID string) *model.LabelInput {
 	return &model.LabelInput{
 		Key:        key,
@@ -1266,11 +1270,13 @@ func (s *service) ensureIntSysExists(ctx context.Context, id *string) (bool, err
 }
 
 func (s *service) getRuntimeNamesForScenarios(ctx context.Context, tenant string, scenarios []string) ([]string, error) {
-	scenariosQuery := eventing.BuildQueryForScenarios(scenarios)
-	runtimeScenariosFilter := []*labelfilter.LabelFilter{labelfilter.NewForKeyWithQuery(model.ScenariosKey, scenariosQuery)}
+	log.C(ctx).Debugf("Listing runtimes for formations %v", scenarios)
+	runtimeIDs, err := s.formationService.ListObjectIDsOfTypeForFormations(ctx, tenant, scenarios, model.FormationAssignmentTypeRuntime)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while getting runtimes for scenarios")
+	}
 
-	log.C(ctx).Debugf("Listing runtimes matching the query %s", scenariosQuery)
-	runtimes, err := s.runtimeRepo.ListAll(ctx, tenant, runtimeScenariosFilter)
+	runtimes, err := s.runtimeRepo.ListByIDs(ctx, tenant, runtimeIDs)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting runtimes")
 	}

@@ -20,6 +20,10 @@ type RuntimeRepository struct {
 func (_m *RuntimeRepository) Create(ctx context.Context, tenant string, item *model.Runtime) error {
 	ret := _m.Called(ctx, tenant, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Runtime) error); ok {
 		r0 = rf(ctx, tenant, item)
@@ -34,6 +38,10 @@ func (_m *RuntimeRepository) Create(ctx context.Context, tenant string, item *mo
 func (_m *RuntimeRepository) Delete(ctx context.Context, tenant string, id string) error {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, tenant, id)
@@ -47,6 +55,10 @@ func (_m *RuntimeRepository) Delete(ctx context.Context, tenant string, id strin
 // Exists provides a mock function with given fields: ctx, tenant, id
 func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
 
 	var r0 bool
 	var r1 error
@@ -71,6 +83,10 @@ func (_m *RuntimeRepository) Exists(ctx context.Context, tenant string, id strin
 // GetByFilters provides a mock function with given fields: ctx, tenant, filter
 func (_m *RuntimeRepository) GetByFilters(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, filter)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByFilters")
+	}
 
 	var r0 *model.Runtime
 	var r1 error
@@ -98,6 +114,10 @@ func (_m *RuntimeRepository) GetByFilters(ctx context.Context, tenant string, fi
 func (_m *RuntimeRepository) GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error) {
 	ret := _m.Called(ctx, filter)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByFiltersGlobal")
+	}
+
 	var r0 *model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) (*model.Runtime, error)); ok {
@@ -124,6 +144,10 @@ func (_m *RuntimeRepository) GetByFiltersGlobal(ctx context.Context, filter []*l
 func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Runtime, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
 	var r0 *model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Runtime, error)); ok {
@@ -146,25 +170,29 @@ func (_m *RuntimeRepository) GetByID(ctx context.Context, tenant string, id stri
 	return r0, r1
 }
 
-// List provides a mock function with given fields: ctx, tenant, filter, pageSize, cursor
-func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
-	ret := _m.Called(ctx, tenant, filter, pageSize, cursor)
+// List provides a mock function with given fields: ctx, tenant, runtimeIDs, filters, pageSize, cursor
+func (_m *RuntimeRepository) List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+	ret := _m.Called(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.RuntimePage
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
-		return rf(ctx, tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*labelfilter.LabelFilter, int, string) (*model.RuntimePage, error)); ok {
+		return rf(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
-		r0 = rf(ctx, tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, []*labelfilter.LabelFilter, int, string) *model.RuntimePage); ok {
+		r0 = rf(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.RuntimePage)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, []*labelfilter.LabelFilter, int, string) error); ok {
-		r1 = rf(ctx, tenant, filter, pageSize, cursor)
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, []*labelfilter.LabelFilter, int, string) error); ok {
+		r1 = rf(ctx, tenant, runtimeIDs, filters, pageSize, cursor)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -175,6 +203,10 @@ func (_m *RuntimeRepository) List(ctx context.Context, tenant string, filter []*
 // ListAll provides a mock function with given fields: _a0, _a1, _a2
 func (_m *RuntimeRepository) ListAll(_a0 context.Context, _a1 string, _a2 []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
 	ret := _m.Called(_a0, _a1, _a2)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAll")
+	}
 
 	var r0 []*model.Runtime
 	var r1 error
@@ -198,35 +230,13 @@ func (_m *RuntimeRepository) ListAll(_a0 context.Context, _a1 string, _a2 []*lab
 	return r0, r1
 }
 
-// ListByFiltersGlobal provides a mock function with given fields: _a0, _a1
-func (_m *RuntimeRepository) ListByFiltersGlobal(_a0 context.Context, _a1 []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	ret := _m.Called(_a0, _a1)
-
-	var r0 []*model.Runtime
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)); ok {
-		return rf(_a0, _a1)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, []*labelfilter.LabelFilter) []*model.Runtime); ok {
-		r0 = rf(_a0, _a1)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Runtime)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, []*labelfilter.LabelFilter) error); ok {
-		r1 = rf(_a0, _a1)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // Update provides a mock function with given fields: ctx, tenant, item
 func (_m *RuntimeRepository) Update(ctx context.Context, tenant string, item *model.Runtime) error {
 	ret := _m.Called(ctx, tenant, item)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Runtime) error); ok {

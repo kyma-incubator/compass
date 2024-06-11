@@ -106,6 +106,36 @@ func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectI
 	return r0, r1
 }
 
+// ListObjectIDsOfTypeForFormations provides a mock function with given fields: ctx, tenantID, formationNames, objectType
+func (_m *FormationService) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	ret := _m.Called(ctx, tenantID, formationNames, objectType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListObjectIDsOfTypeForFormations")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.FormationAssignmentType) ([]string, error)); ok {
+		return rf(ctx, tenantID, formationNames, objectType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.FormationAssignmentType) []string); ok {
+		r0 = rf(ctx, tenantID, formationNames, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, model.FormationAssignmentType) error); ok {
+		r1 = rf(ctx, tenantID, formationNames, objectType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // UnassignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation, ignoreASA
 func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation, ignoreASA)

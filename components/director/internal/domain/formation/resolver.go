@@ -26,7 +26,7 @@ type Service interface {
 	GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
-	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
 	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, initialConfigurations model.InitialConfigurations) (*model.Formation, error)
@@ -200,7 +200,7 @@ func (r *Resolver) FormationsForObject(ctx context.Context, objectID string) ([]
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formations, err := r.service.ListFormationsForObject(ctx, objectID)
+	formations, err := r.service.ListFormationsForObjectGlobal(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}

@@ -1515,7 +1515,20 @@ func TestService_List(t *testing.T) {
 
 	first := 2
 	after := "test"
+
+	emptyRuntimePage := &model.RuntimePage{
+		Data:       []*model.Runtime{},
+		TotalCount: 0,
+		PageInfo: &pagination.Page{
+			HasNextPage: false,
+			EndCursor:   "",
+			StartCursor: after,
+		},
+	}
+
 	filter := []*labelfilter.LabelFilter{{Key: ""}}
+	scenarios := []string{"DEFAULT"}
+	scenariosFilter := []*labelfilter.LabelFilter{{Key: model.ScenariosKey, Query: str.Ptr("$[*] ? (@ == \"DEFAULT\")")}}
 
 	tnt := "tenant"
 	externalTnt := "external-tnt"
@@ -1526,6 +1539,7 @@ func TestService_List(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		RepositoryFn       func() *automock.RuntimeRepository
+		FormationServiceFn func() *automock.FormationService
 		InputLabelFilters  []*labelfilter.LabelFilter
 		InputPageSize      int
 		InputCursor        string
@@ -1536,7 +1550,7 @@ func TestService_List(t *testing.T) {
 			Name: "Success",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("List", ctx, tnt, filter, first, after).Return(runtimePage, nil).Once()
+				repo.On("List", ctx, tnt, []string{}, filter, first, after).Return(runtimePage, nil).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
@@ -1546,10 +1560,53 @@ func TestService_List(t *testing.T) {
 			ExpectedErrMessage: "",
 		},
 		{
+			Name: "Success - there are no applications in the formation",
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{}, nil).Once()
+				return svc
+			},
+			InputLabelFilters:  scenariosFilter,
+			InputPageSize:      first,
+			InputCursor:        after,
+			ExpectedResult:     emptyRuntimePage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Success - there are applications in the formation",
+			RepositoryFn: func() *automock.RuntimeRepository {
+				repo := &automock.RuntimeRepository{}
+				repo.On("List", ctx, tnt, []string{runtimeID}, []*labelfilter.LabelFilter{}, first, after).Return(runtimePage, nil).Once()
+				return repo
+			},
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return([]string{runtimeID}, nil).Once()
+				return svc
+			},
+			InputLabelFilters:  scenariosFilter,
+			InputPageSize:      first,
+			InputCursor:        after,
+			ExpectedResult:     runtimePage,
+			ExpectedErrMessage: "",
+		},
+		{
+			Name: "Error when lisintg objects for formation fails",
+			FormationServiceFn: func() *automock.FormationService {
+				svc := &automock.FormationService{}
+				svc.On("ListObjectIDsOfTypeForFormations", ctx, tnt, scenarios, model.FormationAssignmentTypeRuntime).Return(nil, testErr).Once()
+				return svc
+			},
+			InputLabelFilters:  scenariosFilter,
+			InputPageSize:      first,
+			InputCursor:        after,
+			ExpectedErrMessage: testErr.Error(),
+		},
+		{
 			Name: "Returns error when runtime listing failed",
 			RepositoryFn: func() *automock.RuntimeRepository {
 				repo := &automock.RuntimeRepository{}
-				repo.On("List", ctx, tnt, filter, first, after).Return(nil, testErr).Once()
+				repo.On("List", ctx, tnt, []string{}, filter, first, after).Return(nil, testErr).Once()
 				return repo
 			},
 			InputLabelFilters:  filter,
@@ -1580,9 +1637,16 @@ func TestService_List(t *testing.T) {
 
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
+			repo := &automock.RuntimeRepository{}
+			if testCase.RepositoryFn != nil {
+				repo = testCase.RepositoryFn()
+			}
+			formationSvc := &automock.FormationService{}
+			if testCase.FormationServiceFn != nil {
+				formationSvc = testCase.FormationServiceFn()
+			}
 
-			svc := runtime.NewService(repo, nil, nil, nil, nil, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
+			svc := runtime.NewService(repo, nil, nil, nil, formationSvc, nil, nil, nil, "", "", "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
 
 			// WHEN
 			rtm, err := svc.List(ctx, testCase.InputLabelFilters, testCase.InputPageSize, testCase.InputCursor)
@@ -1595,7 +1659,7 @@ func TestService_List(t *testing.T) {
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
 			}
 
-			repo.AssertExpectations(t)
+			mock.AssertExpectationsForObjects(t, repo, formationSvc)
 		})
 	}
 
@@ -2301,70 +2365,6 @@ func TestService_GetByFilters(t *testing.T) {
 			if testCase.ExpectedErrMessage == "" {
 				require.NoError(t, err)
 				require.Equal(t, modelRuntime, actualRuntime)
-			} else {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
-			}
-
-			mock.AssertExpectationsForObjects(t, repo, labelService, labelRepository, formationService, uidSvc)
-		})
-	}
-}
-
-func TestService_ListByFiltersGlobal(t *testing.T) {
-	// GIVEN
-	testErr := errors.New("Test error")
-	filters := []*labelfilter.LabelFilter{
-		{Key: "test-key", Query: str.Ptr("test-filter")},
-	}
-	modelRuntimes := []*model.Runtime{
-		fixModelRuntime(t, "foo", "tenant-foo", "Foo", "Lorem Ipsum", "test.ns.foo"),
-		fixModelRuntime(t, "bar", "tenant-bar", "Bar", "Lorem Ipsum", "test.ns.bar"),
-	}
-	ctx := context.TODO()
-
-	testCases := []struct {
-		Name               string
-		RepositoryFn       func() *automock.RuntimeRepository
-		ExpectedErrMessage string
-	}{
-		{
-			Name: "Success",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByFiltersGlobal", ctx, filters).Return(modelRuntimes, nil).Once()
-				return repo
-			},
-
-			ExpectedErrMessage: "",
-		},
-		{
-			Name: "Fails on repository error",
-			RepositoryFn: func() *automock.RuntimeRepository {
-				repo := &automock.RuntimeRepository{}
-				repo.On("ListByFiltersGlobal", ctx, filters).Return(nil, testErr).Once()
-				return repo
-			},
-
-			ExpectedErrMessage: testErr.Error(),
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			repo := testCase.RepositoryFn()
-			labelRepository := &automock.LabelRepository{}
-			labelService := unusedLabelService()
-			formationService := &automock.FormationService{}
-			uidSvc := &automock.UidService{}
-			svc := runtime.NewService(repo, labelRepository, labelService, uidSvc, formationService, nil, nil, nil, protectedLabelPattern, immutableLabelPattern, "", "", "", webhookMode, webhookType, urlTemplate, inputTemplate, headerTemplate, outputTemplate)
-
-			// WHEN
-			actualRuntimes, err := svc.ListByFiltersGlobal(ctx, filters)
-			// then
-			if testCase.ExpectedErrMessage == "" {
-				require.NoError(t, err)
-				require.Equal(t, modelRuntimes, actualRuntimes)
 			} else {
 				require.Error(t, err)
 				assert.Contains(t, err.Error(), testCase.ExpectedErrMessage)
