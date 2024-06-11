@@ -20,6 +20,10 @@ type SpecService struct {
 func (_m *SpecService) GetByReferenceObjectID(ctx context.Context, resourceType resource.Type, objectType model.SpecReferenceObjectType, objectID string) (*model.Spec, error) {
 	ret := _m.Called(ctx, resourceType, objectType, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByReferenceObjectID")
+	}
+
 	var r0 *model.Spec
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, model.SpecReferenceObjectType, string) (*model.Spec, error)); ok {

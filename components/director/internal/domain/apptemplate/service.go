@@ -27,7 +27,6 @@ import (
 )
 
 const applicationTypeLabelKey = "applicationType"
-const otherSystemType = "Other System Type"
 const providerSAP = "SAP"
 const labelsKey = "labels"
 

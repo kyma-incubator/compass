@@ -20,6 +20,10 @@ type RuntimeService struct {
 func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, runtimeID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabel")
+	}
+
 	var r0 *model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Label, error)); ok {
@@ -45,6 +49,10 @@ func (_m *RuntimeService) GetLabel(ctx context.Context, runtimeID string, key st
 // List provides a mock function with given fields: ctx, filter, pageSize, cursor
 func (_m *RuntimeService) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	ret := _m.Called(ctx, filter, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
 
 	var r0 *model.RuntimePage
 	var r1 error

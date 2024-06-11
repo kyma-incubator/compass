@@ -20,6 +20,10 @@ type BundleService struct {
 func (_m *BundleService) CreateMultiple(ctx context.Context, resourceType resource.Type, resourceID string, in []*model.BundleCreateInput) error {
 	ret := _m.Called(ctx, resourceType, resourceID, in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateMultiple")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, resource.Type, string, []*model.BundleCreateInput) error); ok {
 		r0 = rf(ctx, resourceType, resourceID, in)
@@ -33,6 +37,10 @@ func (_m *BundleService) CreateMultiple(ctx context.Context, resourceType resour
 // GetForApplication provides a mock function with given fields: ctx, id, applicationID
 func (_m *BundleService) GetForApplication(ctx context.Context, id string, applicationID string) (*model.Bundle, error) {
 	ret := _m.Called(ctx, id, applicationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetForApplication")
+	}
 
 	var r0 *model.Bundle
 	var r1 error
@@ -59,6 +67,10 @@ func (_m *BundleService) GetForApplication(ctx context.Context, id string, appli
 // ListByApplicationIDs provides a mock function with given fields: ctx, applicationIDs, pageSize, cursor
 func (_m *BundleService) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.BundlePage, error) {
 	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByApplicationIDs")
+	}
 
 	var r0 []*model.BundlePage
 	var r1 error

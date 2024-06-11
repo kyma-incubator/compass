@@ -7,6 +7,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/filtersanitizer"
+
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"k8s.io/utils/strings/slices"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/consumer"
@@ -40,8 +44,7 @@ type runtimeRepository interface {
 	Exists(ctx context.Context, tenant, id string) (bool, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	GetByFiltersGlobal(ctx context.Context, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
-	ListByFiltersGlobal(context.Context, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
+	List(ctx context.Context, tenant string, runtimeIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error)
 	Create(ctx context.Context, tenant string, item *model.Runtime) error
 	Update(ctx context.Context, tenant string, item *model.Runtime) error
 	ListAll(context.Context, string, []*labelfilter.LabelFilter) ([]*model.Runtime, error)
@@ -76,6 +79,13 @@ type uidService interface {
 	Generate() string
 }
 
+// ScenariosFilterSanitizer missing godoc
+//
+//go:generate mockery --name=ScenariosFilterSanitizer --output=automock --outpkg=automock --case=underscore --disable-version-string
+type ScenariosFilterSanitizer interface {
+	RemoveScenarioFilter(ctx context.Context, tenant string, filters []*labelfilter.LabelFilter, objectType model.FormationAssignmentType, isGlobal bool, listerFunc filtersanitizer.ObjectIDListerFunc, globalListerFunc filtersanitizer.ObjectIDListerFuncGlobal) (bool, []string, []*labelfilter.LabelFilter, error)
+}
+
 type service struct {
 	repo      runtimeRepository
 	labelRepo labelRepository
@@ -92,6 +102,8 @@ type service struct {
 	runtimeTypeLabelKey           string
 	kymaRuntimeTypeLabelValue     string
 	kymaApplicationNamespaceValue string
+
+	filterSanitizer ScenariosFilterSanitizer
 
 	kymaAdapterWebhookMode           string
 	kymaAdapterWebhookType           string
@@ -116,6 +128,7 @@ func NewService(repo runtimeRepository,
 		repo:                             repo,
 		labelRepo:                        labelRepo,
 		labelService:                     labelService,
+		filterSanitizer:                  &filtersanitizer.FilterSanitizer{},
 		uidService:                       uidService,
 		formationService:                 formationService,
 		tenantSvc:                        tenantService,
@@ -136,7 +149,7 @@ func NewService(repo runtimeRepository,
 }
 
 // List missing godoc
-func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
+func (s *service) List(ctx context.Context, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.RuntimePage, error) {
 	rtmTenant, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while loading tenant from context")
@@ -146,7 +159,22 @@ func (s *service) List(ctx context.Context, filter []*labelfilter.LabelFilter, p
 		return nil, apperrors.NewInvalidDataError("page size must be between 1 and 200")
 	}
 
-	return s.repo.List(ctx, rtmTenant, filter, pageSize, cursor)
+	hasScenariosFilter, runtimeIDs, labelFiltersWithoutScenarioFilter, err := s.filterSanitizer.RemoveScenarioFilter(ctx, rtmTenant, filters, model.FormationAssignmentTypeRuntime, false, s.formationService.ListObjectIDsOfTypeForFormations, nil)
+	if err != nil {
+		return nil, err
+	}
+	if hasScenariosFilter && len(runtimeIDs) == 0 {
+		return &model.RuntimePage{
+			Data:       []*model.Runtime{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: cursor,
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+	return s.repo.List(ctx, rtmTenant, runtimeIDs, labelFiltersWithoutScenarioFilter, pageSize, cursor)
 }
 
 // Get missing godoc
@@ -206,15 +234,6 @@ func (s *service) GetByFilters(ctx context.Context, filters []*labelfilter.Label
 		return nil, errors.Wrapf(err, "while getting runtime by filters from repo")
 	}
 	return runtime, nil
-}
-
-// ListByFiltersGlobal missing godoc
-func (s *service) ListByFiltersGlobal(ctx context.Context, filters []*labelfilter.LabelFilter) ([]*model.Runtime, error) {
-	runtimes, err := s.repo.ListByFiltersGlobal(ctx, filters)
-	if err != nil {
-		return nil, errors.Wrapf(err, "while getting runtimes by filters from repo")
-	}
-	return runtimes, nil
 }
 
 // ListByFilters lists all runtimes in a given tenant that match given label filter.
@@ -576,7 +595,7 @@ func (s *service) ensureRuntimeExists(ctx context.Context, tnt string, runtimeID
 
 func (s *service) assignRuntimeScenarios(ctx context.Context, rtmTenant, id string, scenarios []string) error {
 	for _, scenario := range scenarios {
-		if _, err := s.formationService.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+		if _, err := s.formationService.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, nil); err != nil {
 			return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, id)
 		}
 	}

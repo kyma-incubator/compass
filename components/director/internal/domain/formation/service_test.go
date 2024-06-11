@@ -194,7 +194,7 @@ func TestService_ListFormationsForObject(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+				repo.On("ListByIDs", ctx, mock.MatchedBy(func(formationIDs []string) bool {
 					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
 				})).Return(modelFormations, nil).Once()
 				return repo
@@ -221,7 +221,7 @@ func TestService_ListFormationsForObject(t *testing.T) {
 			},
 			FormationRepoFn: func() *automock.FormationRepository {
 				repo := &automock.FormationRepository{}
-				repo.On("ListByIDsGlobal", ctx, mock.MatchedBy(func(formationIDs []string) bool {
+				repo.On("ListByIDs", ctx, mock.MatchedBy(func(formationIDs []string) bool {
 					return assert.ElementsMatch(t, formationIDs, []string{FormationID, FormationID2})
 				})).Return(nil, testErr).Once()
 				return repo

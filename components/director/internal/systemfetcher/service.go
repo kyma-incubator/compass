@@ -113,12 +113,6 @@ func NewSystemFetcher(tx persistence.Transactioner, ts tenantService, ss systems
 	}
 }
 
-type tenantSystems struct {
-	tenant        *model.BusinessTenantMapping
-	systems       []System
-	syncTimestamp time.Time
-}
-
 // SetTemplateRenderer replaces the current template renderer
 func (s *SystemFetcher) SetTemplateRenderer(templateRenderer TemplateRenderer) {
 	s.templateRenderer = templateRenderer

@@ -13,6 +13,10 @@ type ApplicationHideCfgProvider struct {
 func (_m *ApplicationHideCfgProvider) GetApplicationHideSelectors() (map[string][]string, error) {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetApplicationHideSelectors")
+	}
+
 	var r0 map[string][]string
 	var r1 error
 	if rf, ok := ret.Get(0).(func() (map[string][]string, error)); ok {

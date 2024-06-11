@@ -26,10 +26,10 @@ type Service interface {
 	GetFormationByName(ctx context.Context, formationName, tnt string) (*model.Formation, error)
 	List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
-	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
+	ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error)
 	CreateFormation(ctx context.Context, tnt string, formation model.Formation, templateName string) (*model.Formation, error)
 	DeleteFormation(ctx context.Context, tnt string, formation model.Formation) (*model.Formation, error)
-	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, initialConfigurations model.InitialConfigurations) (*model.Formation, error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error)
 	FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error)
@@ -55,7 +55,7 @@ type formationAssignmentService interface {
 	ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error)
 	ProcessFormationAssignments(ctx context.Context, formationAssignmentsForObject []*model.FormationAssignment, requests []*webhookclient.FormationAssignmentNotificationRequestTargetMapping, operation func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error), formationOperation model.FormationOperation) error
 	ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
-	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error)
+	GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, initialConfigurations model.InitialConfigurations) ([]*model.FormationAssignmentInput, error)
 	PersistAssignments(ctx context.Context, tnt string, assignments []*model.FormationAssignmentInput) ([]*model.FormationAssignment, error)
 	CleanupFormationAssignment(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error)
 	GetAssignmentsForFormation(ctx context.Context, tenantID, formationID string) ([]*model.FormationAssignment, error)
@@ -200,7 +200,7 @@ func (r *Resolver) FormationsForObject(ctx context.Context, objectID string) ([]
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
-	formations, err := r.service.ListFormationsForObject(ctx, objectID)
+	formations, err := r.service.ListFormationsForObjectGlobal(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +276,7 @@ func (r *Resolver) DeleteFormation(ctx context.Context, formation graphql.Format
 }
 
 // AssignFormation assigns object to the provided formation
-func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
+func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput, initialConfigurations []*graphql.InitialConfiguration) (*graphql.Formation, error) {
 	tnt, err := tenant.LoadFromContext(ctx)
 	if err != nil {
 		return nil, err
@@ -290,6 +290,42 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 
 	ctx = persistence.SaveToContext(ctx, tx)
 
+	formationFromDB, err := r.service.GetFormationByName(ctx, formation.Name, tnt)
+	if err != nil {
+		return nil, err
+	}
+
+	assignmentsForFormation, err := r.formationAssignmentSvc.GetAssignmentsForFormation(ctx, tnt, formationFromDB.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	participants := make(map[string]struct{}, len(assignmentsForFormation))
+	for _, assignment := range assignmentsForFormation {
+		participants[assignment.Source] = struct{}{}
+		participants[assignment.Target] = struct{}{}
+	}
+
+	initCfgsSourceToTarget := make(model.InitialConfigurations)
+	for _, cfg := range initialConfigurations {
+		if cfg.SourceID != objectID && cfg.TargetID != objectID {
+			return nil, errors.Errorf("Initial Configuration does not contain assigned object %s as \"source\" or \"target\": %v", objectID, cfg)
+		}
+
+		_, isSourceParticipant := participants[cfg.SourceID]
+		_, isTargetParticipant := participants[cfg.TargetID]
+		if (!isSourceParticipant && cfg.SourceID != objectID) || (!isTargetParticipant && cfg.TargetID != objectID) {
+			return nil, errors.Errorf("Initial Configurations contains non-participant \"source\" or \"target\": %v", cfg)
+		}
+
+		if _, ok := initCfgsSourceToTarget[cfg.SourceID]; !ok {
+			initCfgsSourceToTarget[cfg.SourceID] = make(map[string]json.RawMessage)
+		}
+
+		initialConfig := json.RawMessage(cfg.Configuration)
+		initCfgsSourceToTarget[cfg.SourceID][cfg.TargetID] = initialConfig
+	}
+
 	tenantMapping, err := r.tenantSvc.GetTenantByID(ctx, tnt)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while getting parent tenant by internal ID %q...", tnt)
@@ -302,7 +338,7 @@ func (r *Resolver) AssignFormation(ctx context.Context, objectID string, objectT
 		}
 	}
 
-	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation))
+	newFormation, err := r.service.AssignFormation(ctx, tnt, objectID, objectType, r.conv.FromGraphQL(formation), initCfgsSourceToTarget)
 	if err != nil {
 		return nil, err
 	}

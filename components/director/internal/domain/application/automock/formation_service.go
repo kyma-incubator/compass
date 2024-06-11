@@ -16,34 +16,19 @@ type FormationService struct {
 	mock.Mock
 }
 
-// AssignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation
-func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
-
-	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, objectID, objectType, formation)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*model.Formation)
-		}
-	}
-
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, objectID, objectType, formation)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // ListFormationsForObject provides a mock function with given fields: ctx, objectID
 func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListFormationsForObject")
+	}
+
 	var r0 []*model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Formation, error)); ok {
+		return rf(ctx, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
 		r0 = rf(ctx, objectID)
 	} else {
@@ -52,9 +37,98 @@ func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectI
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListFormationsForObjectGlobal provides a mock function with given fields: ctx, objectID
+func (_m *FormationService) ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	ret := _m.Called(ctx, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListFormationsForObjectGlobal")
+	}
+
+	var r0 []*model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Formation, error)); ok {
+		return rf(ctx, objectID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
+		r0 = rf(ctx, objectID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.Formation)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, objectID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListObjectIDsOfTypeForFormations provides a mock function with given fields: ctx, tenantID, formationNames, objectType
+func (_m *FormationService) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	ret := _m.Called(ctx, tenantID, formationNames, objectType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListObjectIDsOfTypeForFormations")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.FormationAssignmentType) ([]string, error)); ok {
+		return rf(ctx, tenantID, formationNames, objectType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, []string, model.FormationAssignmentType) []string); ok {
+		r0 = rf(ctx, tenantID, formationNames, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, []string, model.FormationAssignmentType) error); ok {
+		r1 = rf(ctx, tenantID, formationNames, objectType)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// ListObjectIDsOfTypeForFormationsGlobal provides a mock function with given fields: ctx, formationNames, objectType
+func (_m *FormationService) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	ret := _m.Called(ctx, formationNames, objectType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListObjectIDsOfTypeForFormationsGlobal")
+	}
+
+	var r0 []string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, model.FormationAssignmentType) ([]string, error)); ok {
+		return rf(ctx, formationNames, objectType)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, []string, model.FormationAssignmentType) []string); ok {
+		r0 = rf(ctx, formationNames, objectType)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]string)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, []string, model.FormationAssignmentType) error); ok {
+		r1 = rf(ctx, formationNames, objectType)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -66,7 +140,15 @@ func (_m *FormationService) ListFormationsForObject(ctx context.Context, objectI
 func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, formation, ignoreASA)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UnassignFormation")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, formation, ignoreASA)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) *model.Formation); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, formation, ignoreASA)
 	} else {
@@ -75,7 +157,6 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, formation, ignoreASA)
 	} else {
@@ -85,13 +166,12 @@ func (_m *FormationService) UnassignFormation(ctx context.Context, tnt string, o
 	return r0, r1
 }
 
-type mockConstructorTestingTNewFormationService interface {
+// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewFormationService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewFormationService creates a new instance of FormationService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewFormationService(t mockConstructorTestingTNewFormationService) *FormationService {
+}) *FormationService {
 	mock := &FormationService{}
 	mock.Mock.Test(t)
 

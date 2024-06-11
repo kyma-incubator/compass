@@ -19,6 +19,10 @@ type LabelRepository struct {
 func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r0 = rf(ctx, tenant, objectType, objectID, key)
@@ -33,6 +37,10 @@ func (_m *LabelRepository) Delete(ctx context.Context, tenant string, objectType
 func (_m *LabelRepository) DeleteByKey(ctx context.Context, tenant string, key string) error {
 	ret := _m.Called(ctx, tenant, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteByKey")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
 		r0 = rf(ctx, tenant, key)
@@ -46,6 +54,10 @@ func (_m *LabelRepository) DeleteByKey(ctx context.Context, tenant string, key s
 // GetByKey provides a mock function with given fields: ctx, tenant, objectType, objectID, key
 func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetByKey")
+	}
 
 	var r0 *model.Label
 	var r1 error
@@ -72,6 +84,10 @@ func (_m *LabelRepository) GetByKey(ctx context.Context, tenant string, objectTy
 // Upsert provides a mock function with given fields: ctx, tenant, label
 func (_m *LabelRepository) Upsert(ctx context.Context, tenant string, label *model.Label) error {
 	ret := _m.Called(ctx, tenant, label)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Upsert")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.Label) error); ok {

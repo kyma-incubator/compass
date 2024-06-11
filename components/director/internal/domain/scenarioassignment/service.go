@@ -20,24 +20,15 @@ type Repository interface {
 	ListForScenarioNames(ctx context.Context, tenantID string, scenarioNames []string) ([]*model.AutomaticScenarioAssignment, error)
 }
 
-// ScenariosDefService missing godoc
-//
-//go:generate mockery --name=ScenariosDefService --output=automock --outpkg=automock --case=underscore --disable-version-string
-type ScenariosDefService interface {
-	GetAvailableScenarios(ctx context.Context, tenantID string) ([]string, error)
-}
-
 // NewService missing godoc
-func NewService(repo Repository, scenarioDefSvc ScenariosDefService) *service {
+func NewService(repo Repository) *service {
 	return &service{
-		repo:            repo,
-		scenariosDefSvc: scenarioDefSvc,
+		repo: repo,
 	}
 }
 
 type service struct {
-	repo            Repository
-	scenariosDefSvc ScenariosDefService
+	repo Repository
 }
 
 // ListForTargetTenant missing godoc

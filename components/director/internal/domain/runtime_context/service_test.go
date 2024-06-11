@@ -129,6 +129,7 @@ func TestService_Create(t *testing.T) {
 	ctxWithTenant := tenant.SaveToContext(ctxWithoutTenant, tnt, externalTnt)
 	ctxWithParentTenant := tenant.SaveToContext(ctxWithTenant, parentTnt, "")
 	formations := []string{"scenario"}
+	var nilConfiguration model.InitialConfigurations
 
 	testCases := []struct {
 		Name                       string
@@ -156,7 +157,7 @@ func TestService_Create(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
-				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, nilConfiguration).Return(nil, nil).Once()
 				return formationSvc
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
@@ -188,7 +189,7 @@ func TestService_Create(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
-				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, nilConfiguration).Return(nil, nil).Once()
 				formationSvc.On("UnassignFormation", ctxWithParentTenant, parentTnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true).Return(nil, nil).Once()
 				return formationSvc
 			},
@@ -279,7 +280,7 @@ func TestService_Create(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
-				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, nil).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, nilConfiguration).Return(nil, nil).Once()
 				formationSvc.On("UnassignFormation", ctxWithParentTenant, parentTnt, runtimeID, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, true).Return(nil, testErr).Once()
 				return formationSvc
 			},
@@ -392,7 +393,7 @@ func TestService_Create(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("GetScenariosFromMatchingASAs", ctxWithParentTenant, id, graphql.FormationObjectTypeRuntimeContext).Return(formations, nil).Once()
-				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}).Return(nil, testErr).Once()
+				formationSvc.On("AssignFormation", ctxWithParentTenant, parentTnt, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, nilConfiguration).Return(nil, testErr).Once()
 				return formationSvc
 			},
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {

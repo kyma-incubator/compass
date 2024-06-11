@@ -18,6 +18,10 @@ type LabelService struct {
 func (_m *LabelService) GetByKey(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, key string) (*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID, key)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByKey")
+	}
+
 	var r0 *model.Label
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) (*model.Label, error)); ok {
@@ -44,6 +48,10 @@ func (_m *LabelService) GetByKey(ctx context.Context, tenant string, objectType 
 func (_m *LabelService) UpsertLabel(ctx context.Context, tenant string, labelInput *model.LabelInput) error {
 	ret := _m.Called(ctx, tenant, labelInput)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertLabel")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, *model.LabelInput) error); ok {
 		r0 = rf(ctx, tenant, labelInput)
@@ -57,6 +65,10 @@ func (_m *LabelService) UpsertLabel(ctx context.Context, tenant string, labelInp
 // UpsertMultipleLabels provides a mock function with given fields: ctx, tenant, objectType, objectID, labels
 func (_m *LabelService) UpsertMultipleLabels(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string, labels map[string]interface{}) error {
 	ret := _m.Called(ctx, tenant, objectType, objectID, labels)
+
+	if len(ret) == 0 {
+		panic("no return value specified for UpsertMultipleLabels")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, map[string]interface{}) error); ok {

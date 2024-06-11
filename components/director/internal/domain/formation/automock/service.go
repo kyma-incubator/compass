@@ -17,22 +17,29 @@ type Service struct {
 	mock.Mock
 }
 
-// AssignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
-func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
+// AssignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4, initialConfigurations
+func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation, initialConfigurations model.InitialConfigurations) (*model.Formation, error) {
+	ret := _m.Called(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
+
+	if len(ret) == 0 {
+		panic("no return value specified for AssignFormation")
+	}
 
 	var r0 *model.Formation
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, objectID, objectType, _a4)
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, model.InitialConfigurations) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, model.InitialConfigurations) *model.Formation); ok {
+		r0 = rf(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Formation)
 		}
 	}
 
-	var r1 error
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, objectID, objectType, _a4)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, model.InitialConfigurations) error); ok {
+		r1 = rf(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -44,7 +51,15 @@ func (_m *Service) AssignFormation(ctx context.Context, tnt string, objectID str
 func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Formation, templateName string) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, _a2, templateName)
 
+	if len(ret) == 0 {
+		panic("no return value specified for CreateFormation")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, _a2, templateName)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation, string) *model.Formation); ok {
 		r0 = rf(ctx, tnt, _a2, templateName)
 	} else {
@@ -53,7 +68,6 @@ func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Fo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation, string) error); ok {
 		r1 = rf(ctx, tnt, _a2, templateName)
 	} else {
@@ -67,7 +81,15 @@ func (_m *Service) CreateFormation(ctx context.Context, tnt string, _a2 model.Fo
 func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Formation) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, _a2)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteFormation")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, _a2)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.Formation) *model.Formation); ok {
 		r0 = rf(ctx, tnt, _a2)
 	} else {
@@ -76,7 +98,6 @@ func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Fo
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, model.Formation) error); ok {
 		r1 = rf(ctx, tnt, _a2)
 	} else {
@@ -90,7 +111,15 @@ func (_m *Service) DeleteFormation(ctx context.Context, tnt string, _a2 model.Fo
 func (_m *Service) FinalizeDraftFormation(ctx context.Context, formationID string) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for FinalizeDraftFormation")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, formationID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
 		r0 = rf(ctx, formationID)
 	} else {
@@ -99,7 +128,6 @@ func (_m *Service) FinalizeDraftFormation(ctx context.Context, formationID strin
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, formationID)
 	} else {
@@ -113,7 +141,15 @@ func (_m *Service) FinalizeDraftFormation(ctx context.Context, formationID strin
 func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -122,7 +158,6 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -136,7 +171,15 @@ func (_m *Service) Get(ctx context.Context, id string) (*model.Formation, error)
 func (_m *Service) GetFormationByName(ctx context.Context, formationName string, tnt string) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationName, tnt)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetFormationByName")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Formation, error)); ok {
+		return rf(ctx, formationName, tnt)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) *model.Formation); ok {
 		r0 = rf(ctx, formationName, tnt)
 	} else {
@@ -145,7 +188,6 @@ func (_m *Service) GetFormationByName(ctx context.Context, formationName string,
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
 		r1 = rf(ctx, formationName, tnt)
 	} else {
@@ -159,7 +201,15 @@ func (_m *Service) GetFormationByName(ctx context.Context, formationName string,
 func (_m *Service) GetGlobalByID(ctx context.Context, id string) (*model.Formation, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetGlobalByID")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.Formation, error)); ok {
+		return rf(ctx, id)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) *model.Formation); ok {
 		r0 = rf(ctx, id)
 	} else {
@@ -168,7 +218,6 @@ func (_m *Service) GetGlobalByID(ctx context.Context, id string) (*model.Formati
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, id)
 	} else {
@@ -182,7 +231,15 @@ func (_m *Service) GetGlobalByID(ctx context.Context, id string) (*model.Formati
 func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*model.FormationPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
 	var r0 *model.FormationPage
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, int, string) (*model.FormationPage, error)); ok {
+		return rf(ctx, pageSize, cursor)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, int, string) *model.FormationPage); ok {
 		r0 = rf(ctx, pageSize, cursor)
 	} else {
@@ -191,7 +248,6 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, int, string) error); ok {
 		r1 = rf(ctx, pageSize, cursor)
 	} else {
@@ -201,11 +257,19 @@ func (_m *Service) List(ctx context.Context, pageSize int, cursor string) (*mode
 	return r0, r1
 }
 
-// ListFormationsForObject provides a mock function with given fields: ctx, objectID
-func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+// ListFormationsForObjectGlobal provides a mock function with given fields: ctx, objectID
+func (_m *Service) ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error) {
 	ret := _m.Called(ctx, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListFormationsForObjectGlobal")
+	}
+
 	var r0 []*model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Formation, error)); ok {
+		return rf(ctx, objectID)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string) []*model.Formation); ok {
 		r0 = rf(ctx, objectID)
 	} else {
@@ -214,7 +278,6 @@ func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string)
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, objectID)
 	} else {
@@ -228,7 +291,15 @@ func (_m *Service) ListFormationsForObject(ctx context.Context, objectID string)
 func (_m *Service) ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset bool) (*model.Formation, error) {
 	ret := _m.Called(ctx, formationID, reset)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ResynchronizeFormationNotifications")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, bool) (*model.Formation, error)); ok {
+		return rf(ctx, formationID, reset)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, bool) *model.Formation); ok {
 		r0 = rf(ctx, formationID, reset)
 	} else {
@@ -237,7 +308,6 @@ func (_m *Service) ResynchronizeFormationNotifications(ctx context.Context, form
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, bool) error); ok {
 		r1 = rf(ctx, formationID, reset)
 	} else {
@@ -251,7 +321,15 @@ func (_m *Service) ResynchronizeFormationNotifications(ctx context.Context, form
 func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 model.Formation, ignoreASA bool) (*model.Formation, error) {
 	ret := _m.Called(ctx, tnt, objectID, objectType, _a4, ignoreASA)
 
+	if len(ret) == 0 {
+		panic("no return value specified for UnassignFormation")
+	}
+
 	var r0 *model.Formation
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, _a4, ignoreASA)
+	}
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) *model.Formation); ok {
 		r0 = rf(ctx, tnt, objectID, objectType, _a4, ignoreASA)
 	} else {
@@ -260,7 +338,6 @@ func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID s
 		}
 	}
 
-	var r1 error
 	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, bool) error); ok {
 		r1 = rf(ctx, tnt, objectID, objectType, _a4, ignoreASA)
 	} else {
@@ -270,13 +347,12 @@ func (_m *Service) UnassignFormation(ctx context.Context, tnt string, objectID s
 	return r0, r1
 }
 
-type mockConstructorTestingTNewService interface {
+// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+// The first argument is typically a *testing.T value.
+func NewService(t interface {
 	mock.TestingT
 	Cleanup(func())
-}
-
-// NewService creates a new instance of Service. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-func NewService(t mockConstructorTestingTNewService) *Service {
+}) *Service {
 	mock := &Service{}
 	mock.Mock.Test(t)
 
