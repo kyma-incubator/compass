@@ -56,6 +56,7 @@ const (
 	// Entity constants
 	ApplicationID           = "04f3568d-3e0c-4f6b-b646-e6979e9d060c"
 	Application2ID          = "6f5389cf-4f9e-46b3-9870-624d792d94ad"
+	Application3ID          = "a05fc871-9d45-482e-9e9c-b89c91ad1381"
 	ApplicationTemplateID   = "58963c6f-24f6-4128-a05c-51d5356e7e09"
 	ApplicationTemplate2ID  = "88963c6f-24f6-4128-a05c-51d5356e7e09"
 	RuntimeID               = "rt-id"

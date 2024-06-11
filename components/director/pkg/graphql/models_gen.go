@@ -696,6 +696,12 @@ type HealthCheckPage struct {
 
 func (HealthCheckPage) IsPageable() {}
 
+type InitialConfiguration struct {
+	SourceID      string `json:"sourceID"`
+	TargetID      string `json:"targetID"`
+	Configuration JSON   `json:"configuration"`
+}
+
 type IntSysSystemAuth struct {
 	ID                string                   `json:"id"`
 	Auth              *Auth                    `json:"auth,omitempty"`

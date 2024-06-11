@@ -21,6 +21,11 @@ const (
 	FormationAssignmentTypeRuntimeContext FormationAssignmentType = "RUNTIME_CONTEXT"
 )
 
+// InitialConfigurations holds the Initial configuration provided for the AssignFormation mutation.
+// It is a map with key SourceID from the InitialConfiguration object and values - map with key TargetID
+// from the InitialConfiguration Object and value - the configuration
+type InitialConfigurations map[string]map[string]json.RawMessage
+
 // FormationAssignment represent structure for FormationAssignment
 type FormationAssignment struct {
 	ID                            string                  `json:"id"`

@@ -16,9 +16,9 @@ type FormationService struct {
 	mock.Mock
 }
 
-// AssignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation
-func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
-	ret := _m.Called(ctx, tnt, objectID, objectType, formation)
+// AssignFormation provides a mock function with given fields: ctx, tnt, objectID, objectType, formation, initialConfigurations
+func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, formation model.Formation, initialConfigurations model.InitialConfigurations) (*model.Formation, error) {
+	ret := _m.Called(ctx, tnt, objectID, objectType, formation, initialConfigurations)
 
 	if len(ret) == 0 {
 		panic("no return value specified for AssignFormation")
@@ -26,19 +26,19 @@ func (_m *FormationService) AssignFormation(ctx context.Context, tnt string, obj
 
 	var r0 *model.Formation
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) (*model.Formation, error)); ok {
-		return rf(ctx, tnt, objectID, objectType, formation)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, model.InitialConfigurations) (*model.Formation, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, formation, initialConfigurations)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) *model.Formation); ok {
-		r0 = rf(ctx, tnt, objectID, objectType, formation)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, model.InitialConfigurations) *model.Formation); ok {
+		r0 = rf(ctx, tnt, objectID, objectType, formation, initialConfigurations)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).(*model.Formation)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation) error); ok {
-		r1 = rf(ctx, tnt, objectID, objectType, formation)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, model.Formation, model.InitialConfigurations) error); ok {
+		r1 = rf(ctx, tnt, objectID, objectType, formation, initialConfigurations)
 	} else {
 		r1 = ret.Error(1)
 	}

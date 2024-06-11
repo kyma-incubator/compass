@@ -13,7 +13,6 @@ import (
 func TestGraphqlizer_LabelsToGQL(t *testing.T) {
 	// GIVEN
 	g := graphqlizer.Graphqlizer{}
-
 	testCases := []struct {
 		Name          string
 		Input         graphql.Labels

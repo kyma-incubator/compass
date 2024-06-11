@@ -131,7 +131,7 @@ func DeleteFormationWithinTenantExpectError(t *testing.T, ctx context.Context, g
 }
 
 func AssignFormationWithTenantObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
-	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, tenantID, string(graphql.FormationObjectTypeTenant), parent)
+	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, tenantID, string(graphql.FormationObjectTypeTenant), parent, "")
 }
 
 func AssignFormationWithTenantObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, tenantID, parent string) *graphql.Formation {
@@ -171,7 +171,14 @@ func UnassignFormationApplicationGlobal(t require.TestingT, ctx context.Context,
 }
 
 func AssignFormationWithApplicationObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
-	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID)
+	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, appID, string(graphql.FormationObjectTypeApplication), tenantID, "")
+}
+
+func AssignFormationWithInitialConfigurations(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID, objectType, tenantID string, initialConfigurations []*graphql.InitialConfiguration) *graphql.Formation {
+	configurationsString, err := testctx.Tc.Graphqlizer.InitialConfigurationsToGQL(initialConfigurations)
+	require.NoError(t, err)
+
+	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, objectID, objectType, tenantID, configurationsString)
 }
 
 func AssignFormationWithApplicationObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, appID, tenantID string) *graphql.Formation {
@@ -183,7 +190,7 @@ func UnassignFormationWithApplicationObjectType(t require.TestingT, ctx context.
 }
 
 func AssignFormationWithRuntimeObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, runtimeID, tenantID string) *graphql.Formation {
-	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, runtimeID, string(graphql.FormationObjectTypeRuntime), tenantID)
+	return assignFormationWithCustomObjectType(t, ctx, gqlClient, in, runtimeID, string(graphql.FormationObjectTypeRuntime), tenantID, "")
 }
 
 func AssignFormationWithRuntimeObjectTypeExpectError(t *testing.T, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, runtimeID, tenantID string) *graphql.Formation {
@@ -202,8 +209,15 @@ func UnassignFormationWithRuntimeContextObjectType(t require.TestingT, ctx conte
 	return unassignFormationWithCustomObjectType(t, ctx, gqlClient, in, runtimeContextID, string(graphql.FormationObjectTypeRuntimeContext), tenantID)
 }
 
-func assignFormationWithCustomObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID, objectType, tenantID string) *graphql.Formation {
-	createRequest := FixAssignFormationRequest(objectID, objectType, in.Name)
+func assignFormationWithCustomObjectType(t require.TestingT, ctx context.Context, gqlClient *gcli.Client, in graphql.FormationInput, objectID, objectType, tenantID, initialConfigurations string) *graphql.Formation {
+	var createRequest *gcli.Request
+
+	if initialConfigurations != "" {
+		createRequest = FixAssignFormationRequestWithInitialConfigurations(objectID, objectType, in.Name, initialConfigurations)
+	} else {
+		createRequest = FixAssignFormationRequest(objectID, objectType, in.Name)
+
+	}
 
 	formation := graphql.Formation{}
 
