@@ -13,7 +13,7 @@ import (
 )
 
 const unknownReferenceCode = "sap-ord-unknown-reference"
-const duplicateResourceCode = "sap-ord-unknown-reference"
+const duplicateResourceCode = "sap-ord-duplicate-resource"
 
 // DocumentSanitizer represents the sanitizer of ORD documents
 type DocumentSanitizer struct {

@@ -516,19 +516,19 @@ func TestService_Processing(t *testing.T) {
 
 	successfulDocumentValidatorForStaticDocFn := func() *automock.Validator {
 		docValidator := &automock.Validator{}
-		docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDStaticDocument()}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+		docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDStaticDocument()}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 		return docValidator
 	}
 
 	successfulDocumentValidatorForApplicationFn := func() *automock.Validator {
 		docValidator := &automock.Validator{}
-		docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDDocument()}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+		docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDDocument()}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 		return docValidator
 	}
 
 	successfulDocumentValidatorForProxyFn := func() *automock.Validator {
 		docValidator := &automock.Validator{}
-		docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDDocumentWithoutCredentialExchanges()}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+		docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDDocumentWithoutCredentialExchanges()}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 		return docValidator
 	}
 
@@ -1057,7 +1057,7 @@ func TestService_Processing(t *testing.T) {
 			labelSvcFn:    successfulLabelGetByKey,
 			documentValidatorFn: func() *automock.Validator {
 				docValidator := &automock.Validator{}
-				docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDDocument()}, baseURL, map[string]bool{}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{fixORDDocument()}, baseURL, map[string]bool{}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 		},
@@ -1351,7 +1351,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalTenantID")
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 		},
@@ -1392,7 +1392,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.DescribedSystemInstance.LocalTenantID = str.Ptr("ordLocalTenantID")
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: testErr,
@@ -1458,7 +1458,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.EventResources[0].Name = "" // invalid document
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Run(func(args mock.Arguments) {
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Run(func(args mock.Arguments) {
 					docs := args.Get(1).([]*ord.Document)
 					docs[0].EventResources = docs[0].EventResources[1:]
 				}).Return(validatingORDDocsErr, nil)
@@ -1539,7 +1539,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].Name = "" // invalid document
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Run(func(args mock.Arguments) {
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Run(func(args mock.Arguments) {
 					docs := args.Get(1).([]*ord.Document)
 					docs[0].ConsumptionBundles = docs[0].ConsumptionBundles[1:]
 				}).Return(validatingORDDocsErr, nil)
@@ -1601,7 +1601,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.Vendors[0].OrdID = "" // invalid document
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Run(func(args mock.Arguments) {
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Run(func(args mock.Arguments) {
 					docs := args.Get(1).([]*ord.Document)
 					docs[0].Vendors = docs[0].Vendors[1:]
 				}).Return(validatingORDDocsErr, nil)
@@ -1663,7 +1663,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.Products[0].Title = "" // invalid document
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Run(func(args mock.Arguments) {
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Run(func(args mock.Arguments) {
 					docs := args.Get(1).([]*ord.Document)
 					docs[0].Products = docs[0].Products[1:]
 				}).Return(validatingORDDocsErr, nil)
@@ -1696,7 +1696,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.Packages[0].Title = "" // invalid document
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Run(func(args mock.Arguments) {
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Run(func(args mock.Arguments) {
 					docs := args.Get(1).([]*ord.Document)
 					docs[0].Packages = docs[0].Packages[1:]
 				}).Return(validatingORDDocsErr, nil)
@@ -1921,7 +1921,7 @@ func TestService_Processing(t *testing.T) {
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithMultipleSameTypesFormat, credentialExchangeStrategyType, credentialExchangeStrategyType))
 
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: errors.New("There are differences in the Credential Exchange Strategies for Tenant Mappings for application with ID testApp. They should be the same."),
@@ -1966,7 +1966,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: testErr,
@@ -2013,7 +2013,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: testErr,
@@ -2062,7 +2062,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: testErr,
@@ -2108,7 +2108,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: testErr,
@@ -2174,7 +2174,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			processFnName: processApplicationFnName,
@@ -2234,7 +2234,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.ConsumptionBundles[0].CredentialExchangeStrategies = json.RawMessage(fmt.Sprintf(credentialExchangeStrategiesWithCustomTypeFormat, credentialExchangeStrategyType))
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			ExpectedErr: testErr,
@@ -2845,7 +2845,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			processFnName: processApplicationFnName,
@@ -2901,7 +2901,7 @@ func TestService_Processing(t *testing.T) {
 				docValidator := &automock.Validator{}
 				doc := fixORDDocument()
 				doc.Vendors = nil
-				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "").Return(nil, nil)
+				docValidator.On("Validate", mock.Anything, []*ord.Document{doc}, baseURL, map[string]bool{sapVendor: true}, []string{}, "", "").Return(nil, nil)
 				return docValidator
 			},
 			processFnName: processApplicationFnName,

@@ -99,7 +99,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.Name, func(t *testing.T) {
-			validator := ord.NewDocumentValidator(test.ClientValidatorFn())
+			validator := ord.NewDocumentValidator(test.ClientValidatorFn(), nil)
 
 			result := &ord.Document{}
 			err := json.Unmarshal([]byte(test.InputDocument), &result)
@@ -107,7 +107,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				return
 			}
 
-			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument}, "")
+			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument}, "", "")
 
 			if test.ExpectedRuntimeError != nil {
 				require.Error(t, err)

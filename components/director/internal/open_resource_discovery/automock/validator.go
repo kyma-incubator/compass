@@ -14,25 +14,25 @@ type Validator struct {
 	mock.Mock
 }
 
-// Validate provides a mock function with given fields: ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset
-func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string, ruleset string) ([]*ord.ValidationError, error) {
-	ret := _m.Called(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
+// Validate provides a mock function with given fields: ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset, appNamespace
+func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, baseURL string, globalResourcesOrdIDs map[string]bool, docsString []string, ruleset string, appNamespace string) ([]*ord.ValidationError, error) {
+	ret := _m.Called(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset, appNamespace)
 
 	var r0 []*ord.ValidationError
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string) ([]*ord.ValidationError, error)); ok {
-		return rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
+	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string, string) ([]*ord.ValidationError, error)); ok {
+		return rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset, appNamespace)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string) []*ord.ValidationError); ok {
-		r0 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
+	if rf, ok := ret.Get(0).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string, string) []*ord.ValidationError); ok {
+		r0 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset, appNamespace)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*ord.ValidationError)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string) error); ok {
-		r1 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset)
+	if rf, ok := ret.Get(1).(func(context.Context, []*ord.Document, string, map[string]bool, []string, string, string) error); ok {
+		r1 = rf(ctx, documents, baseURL, globalResourcesOrdIDs, docsString, ruleset, appNamespace)
 	} else {
 		r1 = ret.Error(1)
 	}
@@ -40,12 +40,13 @@ func (_m *Validator) Validate(ctx context.Context, documents []*ord.Document, ba
 	return r0, r1
 }
 
-// NewValidator creates a new instance of Validator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewValidator(t interface {
+type mockConstructorTestingTNewValidator interface {
 	mock.TestingT
 	Cleanup(func())
-}) *Validator {
+}
+
+// NewValidator creates a new instance of Validator. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewValidator(t mockConstructorTestingTNewValidator) *Validator {
 	mock := &Validator{}
 	mock.Mock.Test(t)
 

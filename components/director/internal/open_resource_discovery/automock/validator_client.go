@@ -40,12 +40,13 @@ func (_m *ValidatorClient) Validate(ctx context.Context, ruleset string, request
 	return r0, r1
 }
 
-// NewValidatorClient creates a new instance of ValidatorClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
-// The first argument is typically a *testing.T value.
-func NewValidatorClient(t interface {
+type mockConstructorTestingTNewValidatorClient interface {
 	mock.TestingT
 	Cleanup(func())
-}) *ValidatorClient {
+}
+
+// NewValidatorClient creates a new instance of ValidatorClient. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewValidatorClient(t mockConstructorTestingTNewValidatorClient) *ValidatorClient {
 	mock := &ValidatorClient{}
 	mock.Mock.Test(t)
 
