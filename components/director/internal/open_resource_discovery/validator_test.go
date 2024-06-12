@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/tidwall/sjson"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery/automock"
 	"github.com/pkg/errors"
@@ -14,9 +16,27 @@ import (
 )
 
 func TestDocumentValidator_Validate(t *testing.T) {
+	testNamespace := "test.ns"
+	ignoredValidationRule := "type1"
+	ignorelistMapping := map[string][]string{
+		testNamespace: {ignoredValidationRule},
+	}
+
 	validatorClientCallWithoutValidationErrors := func() *automock.ValidatorClient {
 		clientValidator := &automock.ValidatorClient{}
 		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{}, nil)
+		return clientValidator
+	}
+	validatorClientCallWithValidationErrors := func() *automock.ValidatorClient {
+		clientValidator := &automock.ValidatorClient{}
+		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{
+			{
+				Code:     ignoredValidationRule,
+				Severity: "error",
+				Message:  "errors are found",
+				Path:     []string{"packages", "0", "shortDescription"},
+			},
+		}, nil)
 		return clientValidator
 	}
 
@@ -27,6 +47,8 @@ func TestDocumentValidator_Validate(t *testing.T) {
 		InputBaseURL             string
 		ExpectedRuntimeError     error
 		ExpectedValidationErrors []*ord.ValidationError
+		ExpectedValidResources   func() ([]*ord.Document, error)
+		Namespace                string
 	}{
 		{
 			Name:              "Success without errors",
@@ -95,19 +117,57 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			InputBaseURL:             baseURL,
 			ExpectedValidationErrors: validationErrorMismatchedBaseURL,
 		},
+		{
+			Name:                     "Should not delete failed resources when matching the ignored list",
+			ClientValidatorFn:        validatorClientCallWithValidationErrors,
+			InputDocument:            fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL),
+			InputBaseURL:             baseURL,
+			Namespace:                testNamespace,
+			ExpectedValidationErrors: validationErrorForInvalidPackage,
+			ExpectedValidResources: func() ([]*ord.Document, error) {
+				doc := &ord.Document{}
+				if err := json.Unmarshal([]byte(fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL)), &doc); err != nil {
+					return nil, err
+				}
+				return []*ord.Document{doc}, nil
+			},
+		},
+		{
+			Name:                     "Should delete failed resources when not matching the ignored list",
+			ClientValidatorFn:        validatorClientCallWithValidationErrors,
+			InputDocument:            fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL),
+			InputBaseURL:             baseURL,
+			Namespace:                "non.ignorelisted",
+			ExpectedValidationErrors: validationErrorForInvalidPackage,
+			ExpectedValidResources: func() ([]*ord.Document, error) {
+				doc := &ord.Document{}
+
+				// remove the invalid resource (package) from the doc
+				resources, err := sjson.SetRaw(fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL), "packages", `[]`)
+				if err != nil {
+					return nil, err
+				}
+
+				if err = json.Unmarshal([]byte(resources), &doc); err != nil {
+					return nil, err
+				}
+				return []*ord.Document{doc}, nil
+			},
+		},
 	}
 
 	for _, test := range testCases {
 		t.Run(test.Name, func(t *testing.T) {
-			validator := ord.NewDocumentValidator(test.ClientValidatorFn(), nil)
+			validator := ord.NewDocumentValidator(test.ClientValidatorFn(), ignorelistMapping)
 
 			result := &ord.Document{}
 			err := json.Unmarshal([]byte(test.InputDocument), &result)
 			if err != nil {
 				return
 			}
+			ordDoc := []*ord.Document{result}
 
-			validationErrors, err := validator.Validate(context.TODO(), []*ord.Document{result}, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument}, "", "")
+			validationErrors, err := validator.Validate(context.TODO(), ordDoc, test.InputBaseURL, map[string]bool{}, []string{test.InputDocument}, "", test.Namespace)
 
 			if test.ExpectedRuntimeError != nil {
 				require.Error(t, err)
@@ -127,6 +187,12 @@ func TestDocumentValidator_Validate(t *testing.T) {
 				}
 			} else {
 				require.Empty(t, validationErrors)
+			}
+
+			if test.ExpectedValidResources != nil {
+				expectedResources, err := test.ExpectedValidResources()
+				require.NoError(t, err)
+				require.Equal(t, ordDoc, expectedResources)
 			}
 		})
 	}

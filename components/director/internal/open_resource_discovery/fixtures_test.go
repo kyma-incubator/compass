@@ -954,6 +954,37 @@ const ordDocumentWithWrongBaseURL = `{
    ]
 }`
 
+const ordDocumentWithInvalidPackage = `{
+   "$schema":"./spec/v1/generated/Document.schema.json",
+   "openResourceDiscovery":"1.8",
+   "policyLevel": "sap:core:v1",
+   "description":"Test Document",
+   "describedSystemInstance":{
+      "baseUrl": "%s",
+      "labels":{
+         "label-key-1":[
+            "label-value-1"
+         ]
+      }
+   },
+   "packages":[
+      {
+         "ordId":"ns:package:PACKAGE_ID:v1",
+         "title":"PACKAGE 1 TITLE",
+         "shortDescription":"",
+         "description":"lorem ipsum dolor set",
+         "version":"1.1.2",
+         "licenseType":"AAL",
+         "lineOfBusiness":[
+            "Finance"
+         ],
+         "industry":[
+            "Automotive"
+         ]
+      }
+   ]
+}`
+
 var validationResultsErrorSeverity = []ord.ValidationResult{
 	{Code: "code", Path: []string{"apiResources", "0", "title"}, Severity: ord.ErrorSeverity, Message: ""},
 	{Code: "code", Path: []string{"eventResources", "0", "shortDescription"}, Severity: ord.ErrorSeverity, Message: ""},
@@ -1004,6 +1035,15 @@ var validationErrorMissingBaseURL = []*ord.ValidationError{
 
 var validationErrorMismatchedBaseURL = []*ord.ValidationError{
 	{OrdID: "", Severity: ord.ErrorSeverity, Type: "sap-ord-baseUrl-mismatch", Description: "describedSystemInstance should be the same as the one providing the documents - https://differentbase.com : http://test.com:8080"},
+}
+
+var validationErrorForInvalidPackage = []*ord.ValidationError{
+	{
+		OrdID:       "ns:package:PACKAGE_ID:v1",
+		Type:        "type1",
+		Severity:    ord.ErrorSeverity,
+		Description: "errors are found",
+	},
 }
 
 var (
