@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/tidwall/sjson"
 
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
@@ -24,12 +26,12 @@ func TestDocumentValidator_Validate(t *testing.T) {
 
 	validatorClientCallWithoutValidationErrors := func() *automock.ValidatorClient {
 		clientValidator := &automock.ValidatorClient{}
-		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{}, nil)
+		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]model.ValidationResult{}, nil)
 		return clientValidator
 	}
 	validatorClientCallWithValidationErrors := func() *automock.ValidatorClient {
 		clientValidator := &automock.ValidatorClient{}
-		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{
+		clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]model.ValidationResult{
 			{
 				Code:     ignoredValidationRule,
 				Severity: "error",
@@ -60,7 +62,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			Name: "Runtime error from API Metadata Validator",
 			ClientValidatorFn: func() *automock.ValidatorClient {
 				clientValidator := &automock.ValidatorClient{}
-				clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]ord.ValidationResult{}, errors.New("Test runtime error"))
+				clientValidator.On("Validate", mock.Anything, "", mock.Anything).Return([]model.ValidationResult{}, errors.New("Test runtime error"))
 				return clientValidator
 			},
 			InputDocument:        fmt.Sprintf(ordDocument, baseURL),

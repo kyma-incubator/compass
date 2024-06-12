@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
 	"github.com/stretchr/testify/require"
 
@@ -16,7 +18,7 @@ import (
 
 var successfulRoundTripFuncCustom = func(t *testing.T) func(req *http.Request) *http.Response {
 	return func(req *http.Request) *http.Response {
-		mockResponse := []ord.ValidationResult{
+		mockResponse := []model.ValidationResult{
 			{
 				Code:     "1001",
 				Path:     []string{"path1", "path2"},
@@ -45,7 +47,7 @@ var errorRoundTripFunc = func(t *testing.T) func(req *http.Request) *http.Respon
 
 func TestValidationClient_Validate(t *testing.T) {
 	// Mock response
-	mockResponse := []ord.ValidationResult{
+	mockResponse := []model.ValidationResult{
 		{
 			Code:     "1001",
 			Path:     []string{"path1", "path2"},

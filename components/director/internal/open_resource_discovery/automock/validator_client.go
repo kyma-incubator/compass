@@ -5,7 +5,7 @@ package automock
 import (
 	context "context"
 
-	ord "github.com/kyma-incubator/compass/components/director/internal/open_resource_discovery"
+	model "github.com/kyma-incubator/compass/components/director/pkg/model"
 	mock "github.com/stretchr/testify/mock"
 )
 
@@ -15,19 +15,19 @@ type ValidatorClient struct {
 }
 
 // Validate provides a mock function with given fields: ctx, ruleset, requestBody
-func (_m *ValidatorClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ord.ValidationResult, error) {
+func (_m *ValidatorClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]model.ValidationResult, error) {
 	ret := _m.Called(ctx, ruleset, requestBody)
 
-	var r0 []ord.ValidationResult
+	var r0 []model.ValidationResult
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]ord.ValidationResult, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]model.ValidationResult, error)); ok {
 		return rf(ctx, ruleset, requestBody)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) []ord.ValidationResult); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []model.ValidationResult); ok {
 		r0 = rf(ctx, ruleset, requestBody)
 	} else {
 		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]ord.ValidationResult)
+			r0 = ret.Get(0).([]model.ValidationResult)
 		}
 	}
 

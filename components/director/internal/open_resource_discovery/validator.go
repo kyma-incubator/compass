@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 
 	"dario.cat/mergo"
@@ -216,7 +218,7 @@ func deleteInvalidResourcesFromDocument(ctx context.Context, document *Document,
 	}
 }
 
-func (v *DocumentValidator) toValidationErrors(document interface{}, validationResults []ValidationResult) []*ValidationError {
+func (v *DocumentValidator) toValidationErrors(document interface{}, validationResults []model.ValidationResult) []*ValidationError {
 	valErrs := make([]*ValidationError, 0)
 
 	for _, valResult := range validationResults {

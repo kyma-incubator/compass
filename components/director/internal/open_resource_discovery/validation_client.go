@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/log"
 
 	"github.com/pkg/errors"
@@ -24,16 +26,7 @@ const (
 //
 //go:generate mockery --name=ValidatorClient --output=automock --outpkg=automock --case=underscore --disable-version-string
 type ValidatorClient interface {
-	Validate(ctx context.Context, ruleset, requestBody string) ([]ValidationResult, error)
-}
-
-// ValidationResult represents the structure of the response from the successful requests to API Metadata Validator
-type ValidationResult struct {
-	Code             string   `json:"code"`
-	Path             []string `json:"path"`
-	Message          string   `json:"message"`
-	Severity         string   `json:"severity"`
-	ProductStandards []string `json:"productStandards"`
+	Validate(ctx context.Context, ruleset, requestBody string) ([]model.ValidationResult, error)
 }
 
 // ValidationClient represents the client for the API Metadata Validator
@@ -53,7 +46,7 @@ func NewValidationClient(url string, client *http.Client, enabled bool) *Validat
 }
 
 // Validate sends request to API Metadata Validator to validate one ORD document
-func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]ValidationResult, error) {
+func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, requestBody string) ([]model.ValidationResult, error) {
 	log.C(ctx).Infof("Creating request to API Metadata Validator with base url %s and validation endpoint %s", vc.url, validateEndpoint)
 	req, err := vc.createRequest(ruleset, requestBody)
 	if err != nil {
@@ -73,7 +66,7 @@ func (vc *ValidationClient) Validate(ctx context.Context, ruleset string, reques
 
 	log.C(ctx).Infof("Successful request to API Metadata Validator")
 
-	var results []ValidationResult
+	var results []model.ValidationResult
 	if err := json.NewDecoder(resp.Body).Decode(&results); err != nil {
 		return nil, errors.Wrap(err, "failed to decode response body")
 	}

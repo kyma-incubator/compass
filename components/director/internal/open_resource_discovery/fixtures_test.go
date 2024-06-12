@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	pkgmodel "github.com/kyma-incubator/compass/components/director/pkg/model"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/application"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/graphql"
@@ -985,7 +987,7 @@ const ordDocumentWithInvalidPackage = `{
    ]
 }`
 
-var validationResultsErrorSeverity = []ord.ValidationResult{
+var validationResultsErrorSeverity = []pkgmodel.ValidationResult{
 	{Code: "code", Path: []string{"apiResources", "0", "title"}, Severity: ord.ErrorSeverity, Message: ""},
 	{Code: "code", Path: []string{"eventResources", "0", "shortDescription"}, Severity: ord.ErrorSeverity, Message: ""},
 	{Code: "code", Path: []string{"entityTypes", "0", "description"}, Severity: ord.ErrorSeverity, Message: ""},
@@ -1013,7 +1015,7 @@ var validationErrorsErrorSeverity = []*ord.ValidationError{
 	{OrdID: "sap.xref:package:SomePackage:v1", Severity: ord.ErrorSeverity, Type: "code", Description: ""},
 }
 
-var validationResultsWarningSeverity = []ord.ValidationResult{
+var validationResultsWarningSeverity = []pkgmodel.ValidationResult{
 	{Code: "code", Path: []string{"apiResources", "0", "lastUpdate"}, Severity: ord.WarningSeverity},
 }
 
