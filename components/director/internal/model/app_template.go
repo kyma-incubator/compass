@@ -120,6 +120,7 @@ func (a *ApplicationTemplateInput) ToApplicationTemplate(id string) ApplicationT
 		Placeholders:         a.Placeholders,
 		AccessLevel:          a.AccessLevel,
 		Webhooks:             webhooks,
+		Labels:               a.Labels,
 	}
 }
 

@@ -13,6 +13,7 @@ import (
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/automock"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/label"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -38,9 +39,17 @@ func TestService_Create(t *testing.T) {
 
 	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
 	appInputJSONOtherSystemType := fmt.Sprintf(appInputJSONWithAppTypeLabelString, "random-name")
+	appInputWithAppTypeAndSystemRoleLabelJSON := fmt.Sprintf(appInputJSONWithAppTypeAndSystemRoleLabelString, testName)
+	appInputWithAppTypeAndSystemRoleAndDefaultSlisLabelJSON := fmt.Sprintf(appInputJSONWithAppTypeAndSystemRoleAndDefaultSlisLabelString, testName)
 
 	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, []*model.Webhook{})
+	modelAppTemplate.Labels = map[string]interface{}{"test": "test"}
+
 	modelAppTemplateOtherSystemType := fixModelAppTemplateWithAppInputJSON(testID, testNameOtherSystemType, appInputJSONOtherSystemType, []*model.Webhook{})
+	modelAppTemplateOtherSystemType.Labels = map[string]interface{}{"test": "test"}
+
+	modelAppTemplateWithAppTypeSystemRoleAndDefSlisLabel := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputWithAppTypeAndSystemRoleAndDefaultSlisLabelJSON, []*model.Webhook{})
+	modelAppTemplateWithAppTypeSystemRoleAndDefSlisLabel.Labels = map[string]interface{}{"test": "test"}
 
 	appTemplateInputWithWebhooks := fixModelAppTemplateInput(testName, appInputJSONString)
 	appTemplateInputWithWebhooks.Webhooks = []*model.WebhookInput{
@@ -99,6 +108,30 @@ func TestService_Create(t *testing.T) {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
 				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
 				appTemplateRepo.On("Create", ctx, mock.AnythingOfType("model.ApplicationTemplate")).Return(nil).Once()
+				return appTemplateRepo
+			},
+			WebhookRepoFn: func() *automock.WebhookRepository {
+				webhookRepo := &automock.WebhookRepository{}
+				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
+				return webhookRepo
+			},
+			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
+				labelUpsertService := &automock.LabelUpsertService{}
+				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, "foo", map[string]interface{}{"test": "test"}).Return(nil).Once()
+				return labelUpsertService
+			},
+			LabelRepoFn:    UnusedLabelRepo,
+			ExpectedOutput: testID,
+		},
+		{
+			Name: "Success when providing product label without slis filter - should set default slis filter",
+			Input: func() *model.ApplicationTemplateInput {
+				return fixModelAppTemplateInput(testName, appInputWithAppTypeAndSystemRoleLabelJSON)
+			},
+			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
+				appTemplateRepo := &automock.ApplicationTemplateRepository{}
+				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
+				appTemplateRepo.On("Create", ctx, *modelAppTemplateWithAppTypeSystemRoleAndDefSlisLabel).Return(nil).Once()
 				return appTemplateRepo
 			},
 			WebhookRepoFn: func() *automock.WebhookRepository {
@@ -273,6 +306,9 @@ func TestService_Create(t *testing.T) {
 		},
 	}
 
+	oldGlobalSystemRoleLabelKey := label.GlobalSystemRoleLabelKey
+	label.GlobalSystemRoleLabelKey = "systemRole"
+
 	for _, testCase := range testCases {
 		t.Run(testCase.Name, func(t *testing.T) {
 			appTemplateRepo := testCase.AppTemplateRepoFn()
@@ -305,94 +341,7 @@ func TestService_Create(t *testing.T) {
 			idSvc.AssertExpectations(t)
 		})
 	}
-}
-
-func TestService_CreateWithLabels(t *testing.T) {
-	// GIVEN
-	ctx := tenant.SaveToContext(context.TODO(), testTenant, testExternalTenant)
-
-	uidSvcFn := func() *automock.UIDService {
-		uidSvc := &automock.UIDService{}
-		uidSvc.On("Generate").Return(testID)
-		return uidSvc
-	}
-
-	appInputJSON := fmt.Sprintf(appInputJSONWithAppTypeLabelString, testName)
-	modelAppTemplate := fixModelAppTemplateWithAppInputJSON(testID, testName, appInputJSON, []*model.Webhook{})
-
-	testCases := []struct {
-		Name              string
-		Input             *model.ApplicationTemplateInput
-		AppTemplateID     string
-		AppTemplateRepoFn func() *automock.ApplicationTemplateRepository
-		WebhookRepoFn     func() *automock.WebhookRepository
-		LabelUpsertSvcFn  func() *automock.LabelUpsertService
-		ExpectedError     error
-		ExpectedOutput    string
-	}{
-		{
-			Name:  "Success",
-			Input: fixModelAppTemplateInput(testName, appInputJSON),
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
-				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(nil).Once()
-				return appTemplateRepo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				webhookRepo := &automock.WebhookRepository{}
-				webhookRepo.On("CreateMany", ctx, "", []*model.Webhook{}).Return(nil).Once()
-				return webhookRepo
-			},
-			LabelUpsertSvcFn: func() *automock.LabelUpsertService {
-				labelUpsertService := &automock.LabelUpsertService{}
-				labelUpsertService.On("UpsertMultipleLabels", ctx, "", model.AppTemplateLabelableObject, "foo", map[string]interface{}{"createWithLabels": "OK", "test": "test"}).Return(nil).Once()
-				return labelUpsertService
-			},
-			ExpectedError:  nil,
-			ExpectedOutput: testID,
-		},
-		{
-			Name:  "Error when creating application template",
-			Input: fixModelAppTemplateInput(testName, appInputJSON),
-			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
-				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appTemplateRepo.On("ListByName", ctx, testName).Return([]*model.ApplicationTemplate{}, nil).Once()
-				appTemplateRepo.On("Create", ctx, *modelAppTemplate).Return(testError).Once()
-				return appTemplateRepo
-			},
-			WebhookRepoFn:    UnusedWebhookRepo,
-			LabelUpsertSvcFn: UnusedLabelUpsertSvc,
-			ExpectedError:    testError,
-			ExpectedOutput:   "",
-		},
-	}
-
-	for _, testCase := range testCases {
-		t.Run(testCase.Name, func(t *testing.T) {
-			appTemplateRepo := testCase.AppTemplateRepoFn()
-			webhookRepo := testCase.WebhookRepoFn()
-			labelUpsertSvc := testCase.LabelUpsertSvcFn()
-			idSvc := uidSvcFn()
-			timeSvc := TimeService()
-
-			svc := apptemplate.NewService(appTemplateRepo, webhookRepo, idSvc, labelUpsertSvc, nil, nil, timeSvc)
-
-			defer mock.AssertExpectationsForObjects(t, appTemplateRepo, labelUpsertSvc, idSvc)
-
-			// WHEN
-			result, err := svc.Create(ctx, *testCase.Input)
-
-			// THEN
-			if testCase.ExpectedError != nil {
-				require.Error(t, err)
-				assert.Contains(t, err.Error(), testCase.ExpectedError.Error())
-			} else {
-				assert.NoError(t, err)
-			}
-			assert.Equal(t, testCase.ExpectedOutput, result)
-		})
-	}
+	label.GlobalSystemRoleLabelKey = oldGlobalSystemRoleLabelKey
 }
 
 func TestService_Get(t *testing.T) {
@@ -1509,7 +1458,7 @@ func TestService_Update(t *testing.T) {
 			InputOverride: true,
 			AppTemplateRepoFn: func() *automock.ApplicationTemplateRepository {
 				appTemplateRepo := &automock.ApplicationTemplateRepository{}
-				appInputJSON := `{"name":"foo","providerName":"compass","description":"Lorem ipsum","labels":{"applicationType":"random-text","test":["val","val2"]},"healthCheckURL":"https://foo.bar","webhooks":[{"type":"","url":"webhook1.foo.bar","auth":null},{"type":"","url":"webhook2.foo.bar","auth":null}],"integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii"}`
+				appInputJSON := `{"description":"Lorem ipsum","healthCheckURL":"https://foo.bar","integrationSystemID":"iiiiiiiii-iiii-iiii-iiii-iiiiiiiiiiii","labels":{"applicationType":"random-text","test":["val","val2"]},"name":"foo","providerName":"compass","webhooks":[{"auth":null,"type":"","url":"webhook1.foo.bar"},{"auth":null,"type":"","url":"webhook2.foo.bar"}]}`
 
 				modelOtherSystemTypeUpdate := fixModelAppTemplateWithAppInputJSONAndLabels(testID, testNameOtherSystemType, appInputJSON, []*model.Webhook{}, newTestLabels)
 				modelOtherSystemTypeUpdate.CreatedAt = time.Time{}

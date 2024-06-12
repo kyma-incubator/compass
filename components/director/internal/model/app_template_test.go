@@ -67,6 +67,7 @@ func TestApplicationTemplateInput_ToApplicationTemplate(t *testing.T) {
 				Placeholders:         testPlaceholders,
 				AccessLevel:          testAccessLevel,
 				Webhooks:             expectedTestWebhooks,
+				Labels:               map[string]interface{}{"test": "test"},
 			},
 		},
 		{

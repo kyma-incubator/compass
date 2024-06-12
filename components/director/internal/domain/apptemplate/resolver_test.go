@@ -18,6 +18,7 @@ import (
 	"github.com/kyma-incubator/compass/components/director/internal/labelfilter"
 
 	"github.com/kyma-incubator/compass/components/director/internal/domain/apptemplate/apptmpltest"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/scenarioassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
 	"github.com/stretchr/testify/mock"
 
@@ -504,6 +505,14 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 		selfregmanager.RegionLabel:       region,
 	}
 
+	modelAppTemplateInputWithSelRegLabelsAndSubaccount := fixModelAppTemplateInput(testName, appInputJSONString)
+	modelAppTemplateInputWithSelRegLabelsAndSubaccount.ID = &testUUID
+	modelAppTemplateInputWithSelRegLabelsAndSubaccount.Labels = graphql.Labels{
+		apptmpltest.TestDistinguishLabel:   "selfRegVal",
+		selfregmanager.RegionLabel:         region,
+		scenarioassignment.SubaccountIDKey: testTenant,
+	}
+
 	modelGlobalAppTemplateInputWithProductLabels := fixGlobalModelAppTemplateInputWithProductLabel(testName, appInputJSONWithRegionString)
 	modelGlobalAppTemplateInputWithProductLabels.ID = &testUUID
 
@@ -751,7 +760,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			},
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabelsAndSubaccount).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplate, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				return appTemplateSvc
@@ -776,7 +785,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabelsAndSubaccount).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
@@ -795,40 +804,6 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			Ctx:                     ctxWithCertConsumer,
 			Input:                   gqlAppTemplateInputWithSelfRegLabels,
 			ExpectedError:           fmt.Errorf("subject is already allow-listed. Not possible to associate app template consumer %q with already allow-listed subject", modelAppTemplate.ID),
-		},
-		{
-			Name: "Success when providing product label without slis filter - should set default slis filter",
-			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
-				persistTx := &persistenceautomock.PersistenceTx{}
-				persistTx.On("Commit").Return(nil).Once()
-
-				transact := &persistenceautomock.Transactioner{}
-				transact.On("Begin").Return(persistTx, nil).Once()
-				transact.On("RollbackUnlessCommitted", mock.Anything, persistTx).Return(false)
-
-				return persistTx, transact
-			},
-			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
-				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithProductLabelAndDefaultEnrichedSlisFilter).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter.ID, nil).Once()
-				appTemplateSvc.On("Get", txtest.CtxWithDBMatcher(), testID).Return(modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter, nil).Once()
-				appTemplateSvc.On("ListByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForProduct).Return([]*model.ApplicationTemplate{}, nil).Once()
-				return appTemplateSvc
-			},
-			AppTemplateConvFn: func() *automock.ApplicationTemplateConverter {
-				appTemplateConv := &automock.ApplicationTemplateConverter{}
-				appTemplateConv.On("InputFromGraphQL", *gqlAppTemplateInputWithProviderAndProductLabel).Return(*modelAppTemplateInputWithProductLabel, nil).Once()
-				appTemplateConv.On("ToGraphQL", modelAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter).Return(gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter, nil).Once()
-				return appTemplateConv
-			},
-			WebhookConvFn:           UnusedWebhookConv,
-			WebhookSvcFn:            SuccessfulWebhookSvc(gqlAppTemplateInputWithProviderAndProductLabel.Webhooks, gqlAppTemplateInputWithProviderAndProductLabel.Webhooks),
-			SelfRegManagerFn:        apptmpltest.SelfRegManagerOnlyGetDistinguishedLabelKeyTwice(),
-			CertSubjectMappingSvcFn: UnusedCertSubjMappingSvc,
-			LabelSvcFn:              UnusedLabelService,
-			Ctx:                     ctxWithTokenConsumer,
-			Input:                   gqlAppTemplateInputWithProviderAndProductLabel,
-			ExpectedOutput:          gqlAppTemplateWithProductLabelAndDefaultEnrichedSlisFilter,
 		},
 		{
 			Name: "Success when providing product label with valid slis filter",
@@ -894,7 +869,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabelsAndSubaccount).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				return appTemplateSvc
 			},
@@ -917,7 +892,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 			TxFn: txGen.ThatDoesntExpectCommit,
 			AppTemplateSvcFn: func() *automock.ApplicationTemplateService {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabels).Return(modelAppTemplate.ID, nil).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabelsAndSubaccount).Return(modelAppTemplate.ID, nil).Once()
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
 				return appTemplateSvc
 			},
@@ -1546,7 +1521,7 @@ func TestResolver_CreateApplicationTemplate(t *testing.T) {
 				appTemplateSvc := &automock.ApplicationTemplateService{}
 				modelAppTemplateInput.Labels = distinguishLabel
 				appTemplateSvc.On("GetByFilters", txtest.CtxWithDBMatcher(), getAppTemplateFiltersForSelfReg).Return(nil, nil).Once()
-				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInput).Return("", testError).Once()
+				appTemplateSvc.On("Create", txtest.CtxWithDBMatcher(), *modelAppTemplateInputWithSelRegLabelsAndSubaccount).Return("", testError).Once()
 				appTemplateSvc.AssertNotCalled(t, "Get")
 				return appTemplateSvc
 			},
