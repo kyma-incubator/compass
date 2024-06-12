@@ -783,6 +783,8 @@ func TestORDAggregator(stdT *testing.T) {
 		for _, currentOperation := range fetchedApp1.Operations {
 			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
 				require.Equal(t, directorSchema.OperationErrorSeverityError, currentOperation.ErrorSeverity)
+				require.Len(t, gjson.Get(str.PtrStrToStr(currentOperation.Error), "error.message.validation_errors").Array(), 1)
+				require.Equal(t, "sap-ord-short-description-chars", gjson.Get(str.PtrStrToStr(currentOperation.Error), "error.message.validation_errors.0.type").String())
 			}
 		}
 		t.Log("Successfully verified Error Severity is ERROR")
@@ -791,7 +793,6 @@ func TestORDAggregator(stdT *testing.T) {
 		t.Log("Verify packages are persisted")
 		var respBody string
 		respBody = makeRequestWithHeaders(t, httpClient, fmt.Sprintf("%s/systemInstances(%s)?$expand=packages&$format=json", testConfig.ORDServiceURL, app1.ID), map[string][]string{tenantHeader: {testConfig.DefaultTestTenant}})
-		fmt.Println(respBody)
 		require.Len(t, gjson.Get(respBody, "packages").Array(), 2)
 
 		t.Logf("Cleanup app with ID %s", app1.ID)
@@ -809,6 +810,8 @@ func TestORDAggregator(stdT *testing.T) {
 		for _, currentOperation := range fetchedApp2.Operations {
 			if currentOperation.OperationType == directorSchema.ScheduledOperationTypeOrdAggregation {
 				require.Equal(t, directorSchema.OperationErrorSeverityError, currentOperation.ErrorSeverity)
+				require.Len(t, gjson.Get(str.PtrStrToStr(currentOperation.Error), "error.message.validation_errors").Array(), 13)
+				require.Equal(t, "sap-ord-short-description-chars", gjson.Get(str.PtrStrToStr(currentOperation.Error), "error.message.validation_errors.0.type").String())
 			}
 		}
 

@@ -18,24 +18,24 @@ type APIMetadataValidatorConfig struct {
 	Timeout           time.Duration `envconfig:"APP_DESTINATIONS_TIMEOUT,default=30s"`
 }
 
-type ORDMetadataValidatorClient struct {
+type APIMetadataValidatorClient struct {
 	httpClient *http.Client
 	apiConfig  APIMetadataValidatorConfig
 }
 
-// NewAPIMetadataValidatorClient creates a new ORDMetadataValidatorClient
-func NewAPIMetadataValidatorClient(apiConfig APIMetadataValidatorConfig) *ORDMetadataValidatorClient {
+// NewAPIMetadataValidatorClient creates a new APIMetadataValidatorClient
+func NewAPIMetadataValidatorClient(apiConfig APIMetadataValidatorConfig) *APIMetadataValidatorClient {
 	httpClient := http.DefaultClient
 	httpClient.Timeout = apiConfig.Timeout
 
-	return &ORDMetadataValidatorClient{
+	return &APIMetadataValidatorClient{
 		httpClient: httpClient,
 		apiConfig:  apiConfig,
 	}
 }
 
 // ConfigureValidationErrors makes a request to external services mock in order to mock the list of returned ValidationResult.
-func (c *ORDMetadataValidatorClient) ConfigureValidationErrors(t *testing.T, validationErrors []model.ValidationResult) {
+func (c *APIMetadataValidatorClient) ConfigureValidationErrors(t *testing.T, validationErrors []model.ValidationResult) {
 	validationErrorBytes, err := json.Marshal(validationErrors)
 	require.NoError(t, err)
 
@@ -52,7 +52,7 @@ func (c *ORDMetadataValidatorClient) ConfigureValidationErrors(t *testing.T, val
 }
 
 // ClearValidationErrors makes a request to external services mock to clean up the mocked ValidationResult.
-func (c *ORDMetadataValidatorClient) ClearValidationErrors(t *testing.T) {
+func (c *APIMetadataValidatorClient) ClearValidationErrors(t *testing.T) {
 	url := c.apiConfig.ConfigureEndpoint
 	request, err := http.NewRequest(http.MethodDelete, url, nil)
 	require.NoError(t, err)
@@ -62,5 +62,4 @@ func (c *ORDMetadataValidatorClient) ClearValidationErrors(t *testing.T) {
 	require.Equal(t, http.StatusOK, resp.StatusCode)
 
 	t.Logf("Deleted the mocked validation errors")
-
 }
