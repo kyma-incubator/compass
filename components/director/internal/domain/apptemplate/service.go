@@ -578,40 +578,42 @@ func enrichWithDefaultSlisFilterLabel(applicationInputJSON, appTemplateInputName
 	}
 
 	labels, ok := appInput[labelsKey]
-	if ok && labels != nil {
-		labelsMap, ok := labels.(map[string]interface{})
-		if !ok {
-			return "", errors.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
-		}
-
-		systemRole, hasSystemRole := labelsMap[label.GlobalSystemRoleLabelKey]
-		_, slisFilterLabelExists := labelsMap[systemfetcher.SlisFilterLabelKey]
-
-		if hasSystemRole && !slisFilterLabelExists {
-			systemRoleValues, ok := systemRole.([]interface{})
-			if !ok {
-				return "", errors.Errorf("invalid format of system roles for application template with Name %s", appTemplateInputName)
-			}
-
-			filtersFromSystemRoles := make([]interface{}, 0)
-
-			for _, systemRoleValue := range systemRoleValues {
-				systemRoleValueStr, ok := systemRoleValue.(string)
-				if !ok {
-					return "", errors.Errorf("system role value should be a string for application template with ID %s", appTemplateInputName)
-				}
-				slisFilter := map[string]interface{}{
-					"productId": systemRoleValueStr,
-					"filter":    defaultSlisFilterValueForManagedByProperty,
-				}
-
-				filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
-			}
-
-			labelsMap[systemfetcher.SlisFilterLabelKey] = filtersFromSystemRoles
-		}
-		appInput[labelsKey] = labelsMap
+	if !ok {
+		appInput[labelsKey] = map[string]interface{}{}
 	}
+
+	labelsMap, ok := labels.(map[string]interface{})
+	if !ok {
+		return "", errors.Errorf("app input json labels are type %T instead of map[string]interface{}. %v", labelsMap, labels)
+	}
+
+	systemRole, hasSystemRole := labelsMap[label.GlobalSystemRoleLabelKey]
+	_, slisFilterLabelExists := labelsMap[systemfetcher.SlisFilterLabelKey]
+
+	if hasSystemRole && !slisFilterLabelExists {
+		systemRoleValues, ok := systemRole.([]interface{})
+		if !ok {
+			return "", errors.Errorf("invalid format of system roles for application template with Name %s", appTemplateInputName)
+		}
+
+		filtersFromSystemRoles := make([]interface{}, 0)
+
+		for _, systemRoleValue := range systemRoleValues {
+			systemRoleValueStr, ok := systemRoleValue.(string)
+			if !ok {
+				return "", errors.Errorf("system role value should be a string for application template with ID %s", appTemplateInputName)
+			}
+			slisFilter := map[string]interface{}{
+				"productId": systemRoleValueStr,
+				"filter":    defaultSlisFilterValueForManagedByProperty,
+			}
+
+			filtersFromSystemRoles = append(filtersFromSystemRoles, slisFilter)
+		}
+
+		labelsMap[systemfetcher.SlisFilterLabelKey] = filtersFromSystemRoles
+	}
+	appInput[labelsKey] = labelsMap
 
 	inputJSON, err := json.Marshal(appInput)
 	if err != nil {
