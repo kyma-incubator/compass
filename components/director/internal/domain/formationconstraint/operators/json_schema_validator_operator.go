@@ -10,23 +10,23 @@ import (
 )
 
 const (
-	// InitialConfigValidatorOperator represents the ConfigSchemaValidator operator
-	InitialConfigValidatorOperator = "InitialConfigValidator"
+	// JSONSchemaValidatorOperator represents the JSONSchemaValidator operator
+	JSONSchemaValidatorOperator = "JSONSchemaValidator"
 )
 
-// NewConfigSchemaValidatorInput is input constructor for InitialConfigValidatorOperator operator. It returns empty OperatorInput
-func NewConfigSchemaValidatorInput() OperatorInput {
-	return &formationconstraint.InitialConfigValidatorOperatorInput{}
+// NewJSONSchemaValidatorOperatorInput is input constructor for JSONSchemaValidatorOperator operator. It returns empty OperatorInput
+func NewJSONSchemaValidatorOperatorInput() OperatorInput {
+	return &formationconstraint.JSONSchemaValidatorOperatorInput{}
 }
 
-func (e *ConstraintEngine) ConfigSchemaValidator(ctx context.Context, input OperatorInput) (bool, error) {
-	log.C(ctx).Infof("Starting executing operator: %s", InitialConfigValidatorOperator)
+func (e *ConstraintEngine) JSONSchemaValidator(ctx context.Context, input OperatorInput) (bool, error) {
+	log.C(ctx).Infof("Starting executing operator: %s", JSONSchemaValidatorOperator)
 
-	i, ok := input.(*formationconstraint.InitialConfigValidatorOperatorInput)
+	i, ok := input.(*formationconstraint.JSONSchemaValidatorOperatorInput)
 	if !ok {
-		return false, errors.Errorf("Incompatible input for operator: %s", InitialConfigValidatorOperator)
+		return false, errors.Errorf("Incompatible input for operator: %s", JSONSchemaValidatorOperator)
 	}
-	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %s, subtype: %s and ID: %s. And source resource type: %s with ID: %s", InitialConfigValidatorOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, i.SourceResourceID)
+	log.C(ctx).Infof("Enforcing %q constraint on resource of type: %s, subtype: %s and ID: %s. And source resource type: %s with ID: %s", JSONSchemaValidatorOperator, i.ResourceType, i.ResourceSubtype, i.ResourceID, i.SourceResourceType, i.SourceResourceID)
 
 	formationAssignment, err := RetrieveFormationAssignmentPointer(ctx, i.FAMemoryAddress)
 	if err != nil {
@@ -35,7 +35,7 @@ func (e *ConstraintEngine) ConfigSchemaValidator(ctx context.Context, input Oper
 
 	isAssignmentInitialCfgEmpty := isFormationAssignmentConfigEmpty(formationAssignment)
 	if isAssignmentInitialCfgEmpty {
-		log.C(ctx).Infof("The formation assignment with ID: %s has no initial configuration. Returning without processing the %q operator.", formationAssignment.ID, InitialConfigValidatorOperator)
+		log.C(ctx).Infof("The formation assignment with ID: %s has no initial configuration. Returning without processing the %q operator.", formationAssignment.ID, JSONSchemaValidatorOperator)
 		return true, nil
 	}
 
@@ -96,6 +96,6 @@ func (e *ConstraintEngine) ConfigSchemaValidator(ctx context.Context, input Oper
 		return false, errors.Wrap(result.Error, "while validating the initial config against the JSON Schema")
 	}
 
-	log.C(ctx).Infof("Finished executing operator: %s", InitialConfigValidatorOperator)
+	log.C(ctx).Infof("Finished executing operator: %s", JSONSchemaValidatorOperator)
 	return true, nil
 }

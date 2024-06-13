@@ -1544,6 +1544,19 @@ func fixAssignAppDetails(formationName string) *formationconstraint.AssignFormat
 	}
 }
 
+func fixGenerateAssignmentDetails(formationAssignment *model.FormationAssignment) *formationconstraint.GenerateFormationAssignmentDetails {
+	return &formationconstraint.GenerateFormationAssignmentDetails{
+		ResourceType:          model.ApplicationResourceType,
+		ResourceSubtype:       applicationType,
+		ResourceID:            ApplicationID,
+		SourceResourceType:    model.FormationAssignmentTypeApplication,
+		SourceResourceID:      Application2ID,
+		TenantID:              TntInternalID,
+		FormationTemplateName: testFormationTemplateName,
+		FormationAssignment:   formationAssignment,
+	}
+}
+
 func fixAssignRuntimeDetails(formationName string) *formationconstraint.AssignFormationOperationDetails {
 	return &formationconstraint.AssignFormationOperationDetails{
 		ResourceType:        model.RuntimeResourceType,

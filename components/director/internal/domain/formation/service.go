@@ -750,7 +750,6 @@ func (s *service) prepareDetailsForGenerateAssignment(tnt, objectID string, obje
 		SourceResourceID:      assignment.Source,
 		TenantID:              tnt,
 		FormationTemplateName: formationTemplate.Name,
-		FormationTemplateID:   formationTemplate.ID,
 		FormationAssignment:   assignment,
 	}
 }

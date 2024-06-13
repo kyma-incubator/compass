@@ -5,6 +5,8 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences"
 	"github.com/kyma-incubator/compass/components/director/internal/domain/formationtemplateconstraintreferences/automock"
@@ -82,8 +84,9 @@ func TestRepository_Delete(t *testing.T) {
 		ConverterMockProvider: func() testdb.Mock {
 			return &automock.ConstraintReferenceConverter{}
 		},
-		IsGlobal:   true,
-		MethodArgs: []interface{}{templateID, constraintID},
+		IsGlobal:      true,
+		MethodArgs:    []interface{}{templateID, constraintID},
+		ExpectedError: apperrors.NotFound,
 	}
 
 	suite.Run(t)

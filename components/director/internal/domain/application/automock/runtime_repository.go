@@ -50,10 +50,6 @@ func (_m *RuntimeRepository) ListByIDs(ctx context.Context, tenant string, ids [
 		panic("no return value specified for ListByIDs")
 	}
 
-	if len(ret) == 0 {
-		panic("no return value specified for ListAll")
-	}
-
 	var r0 []*model.Runtime
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Runtime, error)); ok {

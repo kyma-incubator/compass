@@ -131,29 +131,6 @@ var (
 	webhookModelAsyncCallback = graphql.WebhookModeAsyncCallback
 )
 
-// InitialConfigValidatorOperator variables
-var (
-	initialConfigJSONSchema                      = `{"$schema":"http://json-schema.org/draft-04/schema#","additionalProperties":false,"type":"object","properties":{"rainbow":{"type":"boolean","default":false,"description":"Follow the rainbow"},"name":{"type":"string","minLength":1,"maxLength":30,"default":"This is a default string","description":"The name of the broker"},"color":{"type":"string","enum":["red","amber","green"],"default":"green","description":"Your favourite color"},"config":{"type":"object","properties":{"url":{"type":"string"},"port":{"type":"integer"}}}}}`
-	initialConfigRawJSON                         = json.RawMessage(`{"rainbow":true,"name":"unit-tests","color":"red","config":{"key":"value","url":"urlValue","port":123}}`)
-	initialConfigRawJSONInvalidAgainstJSONSchema = json.RawMessage(`{"name":"unit-tests","color":"not-valid"}`)
-
-	faWithInitialConfig                  = fixFormationAssignmentWithConfigAndState(initialConfigRawJSON, model.InitialAssignmentState)
-	faWithEmptyConfig                    = fixFormationAssignmentWithConfigAndState(emptyConfig, model.InitialAssignmentState)
-	faWithConfigInvalidAgainstJSONSchema = fixFormationAssignmentWithConfigAndState(initialConfigRawJSONInvalidAgainstJSONSchema, model.InitialAssignmentState)
-
-	initialConfigOperatorInput                                             = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
-	initialConfigOperatorInputWithEmptyAssignmentConfig                    = fixInitialConfigValidatorOperationInput(faWithEmptyConfig, initialConfigJSONSchema)
-	initialConfigOperatorInputWithEmptyJSONSchema                          = fixInitialConfigValidatorOperationInput(faWithInitialConfig, "")
-	initialConfigOperatorInputWithInvalidJSONSchema                        = fixInitialConfigValidatorOperationInput(faWithInitialConfig, "invalid")
-	initialConfigOperatorInputWithAssignmentConfigInvalidAgainstJSONSchema = fixInitialConfigValidatorOperationInput(faWithConfigInvalidAgainstJSONSchema, initialConfigJSONSchema)
-	initialConfigOperatorInputWithExceptFormationType                      = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
-	initialConfigOperatorInputWithExceptSubtypes                           = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
-	initialConfigOperatorInputWithNonExistingOnlyForSourceSubtypes         = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
-	initialConfigOperatorInputWithOnlyForSourceSubtypes                    = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
-
-	initialConfigOperatorInputWithoutAssignmentMemoryAddress = &formationconstraintpkg.InitialConfigValidatorOperatorInput{}
-)
-
 // Destination Creator variables
 var (
 	invalidFAConfig              = json.RawMessage("invalid-Destination-config")
@@ -379,6 +356,29 @@ var (
 	inputWithoutWebhookMemoryAddress = &formationconstraintpkg.RedirectNotificationInput{}
 	webhookURL                       = "testWebhookURL"
 	webhookURLTemplate               = "testWebhookURLTemplate"
+)
+
+// JSONSchemaValidatorOperator variables
+var (
+	initialConfigJSONSchema                      = `{"$schema":"http://json-schema.org/draft-04/schema#","additionalProperties":false,"type":"object","properties":{"rainbow":{"type":"boolean","default":false,"description":"Follow the rainbow"},"name":{"type":"string","minLength":1,"maxLength":30,"default":"This is a default string","description":"The name of the broker"},"color":{"type":"string","enum":["red","amber","green"],"default":"green","description":"Your favourite color"},"config":{"type":"object","properties":{"url":{"type":"string"},"port":{"type":"integer"}}}}}`
+	initialConfigRawJSON                         = json.RawMessage(`{"rainbow":true,"name":"unit-tests","color":"red","config":{"key":"value","url":"urlValue","port":123}}`)
+	initialConfigRawJSONInvalidAgainstJSONSchema = json.RawMessage(`{"name":"unit-tests","color":"not-valid"}`)
+
+	faWithInitialConfig                  = fixFormationAssignmentWithConfigAndState(initialConfigRawJSON, model.InitialAssignmentState)
+	faWithEmptyConfig                    = fixFormationAssignmentWithConfigAndState(emptyConfig, model.InitialAssignmentState)
+	faWithConfigInvalidAgainstJSONSchema = fixFormationAssignmentWithConfigAndState(initialConfigRawJSONInvalidAgainstJSONSchema, model.InitialAssignmentState)
+
+	JSONSchemaOperatorInput                                         = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	JSONSchemaOperatorInputWithEmptyAssignmentConfig                = fixJSONSchemaValidatorOperationInput(faWithEmptyConfig, initialConfigJSONSchema)
+	JSONSchemaOperatorInputWithEmptySchema                          = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, "")
+	JSONSchemaOperatorInputWithInvalidSchema                        = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, "invalid")
+	JSONSchemaOperatorInputWithAssignmentConfigInvalidAgainstSchema = fixJSONSchemaValidatorOperationInput(faWithConfigInvalidAgainstJSONSchema, initialConfigJSONSchema)
+	JSONSchemaOperatorInputWithExceptFormationType                  = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	JSONSchemaOperatorInputWithExceptSubtypes                       = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	JSONSchemaOperatorInputWithNonExistingOnlyForSourceSubtypes     = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	JSONSchemaOperatorInputWithOnlyForSourceSubtypes                = fixJSONSchemaValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+
+	JSONSchemaOperatorInputWithoutAssignmentMemoryAddress = &formationconstraintpkg.JSONSchemaValidatorOperatorInput{}
 )
 
 // AsynchronousFlowControlOperator fixtures
@@ -683,10 +683,10 @@ func fixAssignmentPairWithSyncWebhook() *formationassignment.AssignmentMappingPa
 	}
 }
 
-// InitialConfigValidatorOperator fixtures
+// JSONSchemaValidatorOperator fixtures
 
-func fixInitialConfigValidatorOperationInput(formationAssignment *model.FormationAssignment, jsonSchema string) *formationconstraintpkg.InitialConfigValidatorOperatorInput {
-	return &formationconstraintpkg.InitialConfigValidatorOperatorInput{
+func fixJSONSchemaValidatorOperationInput(formationAssignment *model.FormationAssignment, jsonSchema string) *formationconstraintpkg.JSONSchemaValidatorOperatorInput {
+	return &formationconstraintpkg.JSONSchemaValidatorOperatorInput{
 		ResourceType:          model.ApplicationResourceType,
 		ResourceSubtype:       resourceSubtype,
 		ResourceID:            appID,

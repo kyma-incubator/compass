@@ -24,6 +24,7 @@ type RepoDeleteTestSuite struct {
 	MethodArgs            []interface{}
 	IsDeleteMany          bool
 	IsGlobal              bool
+	ExpectedError         apperrors.ErrorType
 }
 
 // Run runs the generic repo delete test suite
@@ -67,8 +68,12 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				require.Error(t, err)
 
 				if suite.IsGlobal {
-					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
-					require.Contains(t, err.Error(), "delete should remove single row, but removed 0 rows")
+					if suite.ExpectedError != 0 {
+						require.Equal(t, suite.ExpectedError, apperrors.ErrorCode(err))
+					} else {
+						require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+						require.Contains(t, err.Error(), "delete should remove single row, but removed 0 rows")
+					}
 				} else {
 					require.Equal(t, apperrors.Unauthorized, apperrors.ErrorCode(err))
 					require.Contains(t, err.Error(), apperrors.ShouldBeOwnerMsg)
@@ -90,8 +95,12 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 				// THEN
 				require.Error(t, err)
-				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
-				require.Contains(t, err.Error(), "delete should remove single row, but removed")
+				if suite.ExpectedError != 0 {
+					require.Equal(t, suite.ExpectedError, apperrors.ErrorCode(err))
+				} else {
+					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+					require.Contains(t, err.Error(), "delete should remove single row, but removed")
+				}
 
 				sqlMock.AssertExpectations(t)
 				convMock.AssertExpectations(t)
@@ -111,8 +120,12 @@ func (suite *RepoDeleteTestSuite) Run(t *testing.T) bool {
 				err := callDelete(pgRepository, ctx, suite.MethodName, suite.MethodArgs)
 				// THEN
 				require.Error(t, err)
-				require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
-				require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+				if suite.ExpectedError != 0 {
+					require.Equal(t, suite.ExpectedError, apperrors.ErrorCode(err))
+				} else {
+					require.Equal(t, apperrors.InternalError, apperrors.ErrorCode(err))
+					require.Contains(t, err.Error(), "Internal Server Error: Unexpected error while executing SQL query")
+				}
 
 				sqlMock.AssertExpectations(t)
 				convMock.AssertExpectations(t)

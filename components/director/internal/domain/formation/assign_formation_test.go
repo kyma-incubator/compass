@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 
@@ -73,6 +75,17 @@ func TestServiceAssignFormation(t *testing.T) {
 	formationAssignments := []*model.FormationAssignment{{
 		ID:          FormationAssignmentID,
 		FormationID: FormationID,
+	}}
+
+	formationAssignmentsWithInitialConfig := []*model.FormationAssignment{{
+		ID:          FormationAssignmentID,
+		FormationID: FormationID,
+		TenantID:    TntInternalID,
+		Source:      Application2ID,
+		SourceType:  model.FormationAssignmentTypeApplication,
+		Target:      ApplicationID,
+		TargetType:  model.FormationAssignmentTypeApplication,
+		Value:       TestConfigValueRawJSON,
 	}}
 
 	formationAssignments2 := []*model.FormationAssignment{
@@ -315,14 +328,15 @@ func TestServiceAssignFormation(t *testing.T) {
 			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
 				formationAssignmentSvc := &automock.FormationAssignmentService{}
 				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedFormation, initialConfigurations).Return(formationAssignmentInputs, nil).Once()
-				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(formationAssignments, nil).Once()
-				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignments, notifications, mock.Anything, model.AssignFormation).Return(nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(formationAssignmentsWithInitialConfig, nil).Once()
+				formationAssignmentSvc.On("ProcessFormationAssignments", txtest.CtxWithDBMatcher(), formationAssignmentsWithInitialConfig, notifications, mock.Anything, model.AssignFormation).Return(nil).Once()
 				return formationAssignmentSvc
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postAssignLocation, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreAssign, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostAssign, fixAssignAppDetails(testFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostGenerateFormationAssignment, fixGenerateAssignmentDetails(formationAssignmentsWithInitialConfig[0]), FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -945,6 +959,63 @@ func TestServiceAssignFormation(t *testing.T) {
 			ObjectID:          TargetTenant,
 			InputFormation:    inputFormation,
 			ExpectedFormation: expectedFormation,
+		},
+		{
+			Name: "Error when preparing join point details for generate assignment fails",
+			TxFn: func() (*persistenceautomock.PersistenceTx, *persistenceautomock.Transactioner) {
+				return txGen.ThatSucceedsMultipleTimesAndThenDoesntExpectCommit(1)
+			},
+			LabelServiceFn: func() *automock.LabelService {
+				labelService := &automock.LabelService{}
+				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &applicationTypeLblInput).Return(applicationTypeLbl, nil).Twice()
+				labelService.On("GetLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(applicationLbl, nil).Once()
+				labelService.On("UpdateLabel", ctxWithTenantAndLoggerMatcher(), TntInternalID, applicationLbl.ID, &model.LabelInput{
+					Key:        model.ScenariosKey,
+					Value:      []string{testFormationName, secondTestFormationName},
+					ObjectID:   ApplicationID,
+					ObjectType: model.ApplicationLabelableObject,
+					Version:    0,
+				}).Return(nil).Once()
+				return labelService
+			},
+			ApplicationRepoFn: func() *automock.ApplicationRepository {
+				repo := &automock.ApplicationRepository{}
+
+				repo.On("GetByID", mock.Anything, TntInternalID, ApplicationID).Return(existingApp, nil).Once()
+				return repo
+			},
+			FormationRepositoryFn: func() *automock.FormationRepository {
+				formationRepo := &automock.FormationRepository{}
+				formationRepo.On("GetByName", ctxWithTenantAndLoggerMatcher(), secondTestFormationName, TntInternalID).Return(expectedSecondFormation, nil).Once()
+				return formationRepo
+			},
+			FormationTemplateRepositoryFn: func() *automock.FormationTemplateRepository {
+				repo := &automock.FormationTemplateRepository{}
+				repo.On("Get", ctxWithTenantAndLoggerMatcher(), FormationTemplateID).Return(expectedFormationTemplate, nil).Once()
+				return repo
+			},
+			FormationAssignmentServiceFn: func() *automock.FormationAssignmentService {
+				formationAssignmentSvc := &automock.FormationAssignmentService{}
+				formationAssignmentSvc.On("GenerateAssignments", ctxWithTenantAndLoggerMatcher(), TntInternalID, ApplicationID, graphql.FormationObjectTypeApplication, expectedSecondFormation, initialConfigurations).Return(formationAssignmentInputs, nil).Once()
+				formationAssignmentSvc.On("PersistAssignments", txtest.CtxWithDBMatcher(), TntInternalID, formationAssignmentInputs).Return(formationAssignmentsWithInitialConfig, nil).Once()
+				return formationAssignmentSvc
+			},
+			ConstraintEngineFn: func() *automock.ConstraintEngine {
+				engine := &automock.ConstraintEngine{}
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preAssignLocation, fixAssignAppDetails(secondTestFormationName), FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostGenerateFormationAssignment, fixGenerateAssignmentDetails(formationAssignmentsWithInitialConfig[0]), FormationTemplateID).Return(testErr).Once()
+				return engine
+			},
+			ObjectType:         graphql.FormationObjectTypeApplication,
+			ObjectID:           ApplicationID,
+			InputFormation:     inputSecondFormation,
+			ExpectedErrMessage: testErr.Error(),
 		},
 		{
 			Name: "error when creating operation",

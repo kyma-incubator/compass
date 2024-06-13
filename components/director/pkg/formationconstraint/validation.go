@@ -34,8 +34,8 @@ const (
 	RedirectNotificationOperator = "RedirectNotification"
 	// AsynchronousFlowControlOperator represents the asynchronous flow control operator
 	AsynchronousFlowControlOperator = "AsynchronousFlowControl"
-	// InitialConfigValidatorOperator represents the ConfigSchemaValidator operator
-	InitialConfigValidatorOperator = "InitialConfigValidator"
+	// JSONSchemaValidatorOperator represents the JSONSchemaValidator operator
+	JSONSchemaValidatorOperator = "JSONSchemaValidator"
 )
 
 // OperatorInput represent the input needed by the operators
@@ -52,7 +52,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	ConfigMutatorOperator:                                        &ConfigMutatorInput{},
 	RedirectNotificationOperator:                                 &RedirectNotificationInput{},
 	AsynchronousFlowControlOperator:                              &AsynchronousFlowControlOperatorInput{},
-	InitialConfigValidatorOperator:                               &InitialConfigValidatorOperatorInput{},
+	JSONSchemaValidatorOperator:                                  &JSONSchemaValidatorOperatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails

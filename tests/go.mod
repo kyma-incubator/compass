@@ -27,8 +27,6 @@ require (
 	k8s.io/utils v0.0.0-20221128185143-99ec85e7a448
 )
 
-replace github.com/kyma-incubator/compass/components/director => /Users/I507827/SAPDevelop/go-workspace/src/github.com/kyma-incubator/compass/components/director
-
 require (
 	github.com/99designs/gqlgen v0.17.44 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect

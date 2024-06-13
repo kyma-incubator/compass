@@ -182,7 +182,6 @@ type GenerateFormationAssignmentDetails struct {
 	SourceResourceID      string
 	TenantID              string
 	FormationTemplateName string
-	FormationTemplateID   string
 	FormationAssignment   *model.FormationAssignment
 }
 

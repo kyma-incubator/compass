@@ -262,7 +262,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 			addConstraintOp := operations.NewAddConstraintOperation("e2e-initial-config-validator-with-empty-json-schema").
 				WithTargetOperation(graphql.TargetOperationGenerateFormationAssignment).
 				WithType(graphql.ConstraintTypePost).
-				WithOperator(formationconstraintpkg.InitialConfigValidatorOperator).
+				WithOperator(formationconstraintpkg.JSONSchemaValidatorOperator).
 				WithResourceType(graphql.ResourceTypeApplication).
 				WithResourceSubtype("ANY").
 				WithInputTemplate("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{.SourceResourceType}}\\\",\\\"source_resource_id\\\": \\\"{{.SourceResourceID}}\\\",\\\"tenant_id\\\": \\\"{{.TenantID}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"json_schema\\\": \\\"\\\"}").
@@ -292,7 +292,7 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		op = operations.NewAddConstraintOperation("e2e-initial-config-validator-constraint").
 			WithTargetOperation(graphql.TargetOperationGenerateFormationAssignment).
 			WithType(graphql.ConstraintTypePost).
-			WithOperator(formationconstraintpkg.InitialConfigValidatorOperator).
+			WithOperator(formationconstraintpkg.JSONSchemaValidatorOperator).
 			WithResourceType(graphql.ResourceTypeApplication).
 			WithResourceSubtype("ANY").
 			WithInputTemplate("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{.SourceResourceType}}\\\",\\\"source_resource_id\\\": \\\"{{.SourceResourceID}}\\\",\\\"tenant_id\\\": \\\"{{.TenantID}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"json_schema\\\": \\\"{\\\\\\\"$schema\\\\\\\":\\\\\\\"http:\\\\/\\\\/json-schema.org\\\\/draft-04\\\\/schema#\\\\\\\",\\\\\\\"additionalProperties\\\\\\\":false,\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"rainbow\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"boolean\\\\\\\",\\\\\\\"default\\\\\\\":false,\\\\\\\"description\\\\\\\":\\\\\\\"Follow the rainbow\\\\\\\"},\\\\\\\"name\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"minLength\\\\\\\":1,\\\\\\\"maxLength\\\\\\\":30,\\\\\\\"default\\\\\\\":\\\\\\\"This is a default string\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"The name of the broker\\\\\\\"},\\\\\\\"color\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"enum\\\\\\\":[\\\\\\\"red\\\\\\\",\\\\\\\"amber\\\\\\\",\\\\\\\"green\\\\\\\"],\\\\\\\"default\\\\\\\":\\\\\\\"green\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Your favourite color\\\\\\\"},\\\\\\\"config\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"url\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"port\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"integer\\\\\\\"}}}}}\\\"}").
