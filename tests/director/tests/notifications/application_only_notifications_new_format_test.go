@@ -3,6 +3,7 @@ package notifications
 import (
 	"context"
 	"fmt"
+	"github.com/kyma-incubator/compass/tests/pkg/testctx"
 	"net/http"
 	"strings"
 	"testing"
@@ -252,6 +253,50 @@ func TestFormationNotificationsWithApplicationOnlyParticipantsNewFormat(t *testi
 		asserter := asserters.NewFormationAssignmentAsserter(expectationsBuilder.GetExpectations(), expectationsBuilder.GetExpectedAssignmentsCount(), certSecuredGraphQLClient, tnt)
 		statusAsserter := asserters.NewFormationStatusAsserter(tnt, certSecuredGraphQLClient)
 		op = operations.NewAssignAppToFormationOperation(app1ID, tnt).WithAsserters(asserter, statusAsserter).Operation()
+		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
+		op.Execute(t, ctx, certSecuredGraphQLClient)
+
+		t.Run("Should fail when assigning participant with initial config and there is a global initial config validator constraint with empty JSON schema", func(t *testing.T) {
+			defer cleanupNotificationsFromExternalSvcMock(t, certSecuredHTTPClient)
+
+			addConstraintOp := operations.NewAddConstraintOperation("e2e-initial-config-validator-with-empty-json-schema").
+				WithTargetOperation(graphql.TargetOperationGenerateFormationAssignment).
+				WithType(graphql.ConstraintTypePost).
+				WithOperator(formationconstraintpkg.InitialConfigValidatorOperator).
+				WithResourceType(graphql.ResourceTypeApplication).
+				WithResourceSubtype("ANY").
+				WithInputTemplate("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{.SourceResourceType}}\\\",\\\"source_resource_id\\\": \\\"{{.SourceResourceID}}\\\",\\\"tenant_id\\\": \\\"{{.TenantID}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"json_schema\\\": \\\"\\\"}").
+				WithScope(graphql.ConstraintScopeGlobal).Operation()
+
+			defer addConstraintOp.Cleanup(t, ctx, certSecuredGraphQLClient)
+			addConstraintOp.Execute(t, ctx, certSecuredGraphQLClient)
+
+			t.Logf("Assign application 2 to formation %s", formationName)
+			initCfg := []*graphql.InitialConfiguration{
+				{SourceID: app1ID, TargetID: app2ID, Configuration: graphql.JSON(fixtures.InitialConfiguration1)},
+				{SourceID: app2ID, TargetID: app1ID, Configuration: graphql.JSON(fixtures.InitialConfiguration2)},
+			}
+			configurationsString, err := testctx.Tc.Graphqlizer.InitialConfigurationsToGQL(initCfg)
+			require.NoError(t, err)
+
+			var assignedFormation graphql.Formation
+			defer fixtures.CleanupFormation(t, ctx, certSecuredGraphQLClient, graphql.FormationInput{Name: formationName}, app2ID, graphql.FormationObjectTypeApplication, tnt)
+			assignReq := fixtures.FixAssignFormationRequestWithInitialConfigurations(app2ID, string(graphql.FormationObjectTypeApplication), formationName, configurationsString)
+			err = testctx.Tc.RunOperationWithCustomTenant(ctx, certSecuredGraphQLClient, tnt, assignReq, &assignedFormation)
+			require.Error(t, err)
+			require.Contains(t, err.Error(), "could not be validated due to empty JSON schema")
+
+			addConstraintOp.Cleanup(t, ctx, certSecuredGraphQLClient)
+		})
+
+		op = operations.NewAddConstraintOperation("e2e-initial-config-validator-constraint").
+			WithTargetOperation(graphql.TargetOperationGenerateFormationAssignment).
+			WithType(graphql.ConstraintTypePost).
+			WithOperator(formationconstraintpkg.InitialConfigValidatorOperator).
+			WithResourceType(graphql.ResourceTypeApplication).
+			WithResourceSubtype("ANY").
+			WithInputTemplate("{\\\"resource_type\\\": \\\"{{.ResourceType}}\\\",\\\"resource_subtype\\\": \\\"{{.ResourceSubtype}}\\\",\\\"resource_id\\\": \\\"{{.ResourceID}}\\\",\\\"source_resource_type\\\": \\\"{{.SourceResourceType}}\\\",\\\"source_resource_id\\\": \\\"{{.SourceResourceID}}\\\",\\\"tenant_id\\\": \\\"{{.TenantID}}\\\",{{ if .FormationAssignment }}\\\"formation_assignment_memory_address\\\":{{ .FormationAssignment.GetAddress }},{{ end }}\\\"json_schema\\\": \\\"{\\\\\\\"$schema\\\\\\\":\\\\\\\"http:\\\\/\\\\/json-schema.org\\\\/draft-04\\\\/schema#\\\\\\\",\\\\\\\"additionalProperties\\\\\\\":false,\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"rainbow\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"boolean\\\\\\\",\\\\\\\"default\\\\\\\":false,\\\\\\\"description\\\\\\\":\\\\\\\"Follow the rainbow\\\\\\\"},\\\\\\\"name\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"minLength\\\\\\\":1,\\\\\\\"maxLength\\\\\\\":30,\\\\\\\"default\\\\\\\":\\\\\\\"This is a default string\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"The name of the broker\\\\\\\"},\\\\\\\"color\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\",\\\\\\\"enum\\\\\\\":[\\\\\\\"red\\\\\\\",\\\\\\\"amber\\\\\\\",\\\\\\\"green\\\\\\\"],\\\\\\\"default\\\\\\\":\\\\\\\"green\\\\\\\",\\\\\\\"description\\\\\\\":\\\\\\\"Your favourite color\\\\\\\"},\\\\\\\"config\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"object\\\\\\\",\\\\\\\"properties\\\\\\\":{\\\\\\\"url\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"string\\\\\\\"},\\\\\\\"port\\\\\\\":{\\\\\\\"type\\\\\\\":\\\\\\\"integer\\\\\\\"}}}}}\\\"}").
+			WithScope(graphql.ConstraintScopeGlobal).Operation()
 		defer op.Cleanup(t, ctx, certSecuredGraphQLClient)
 		op.Execute(t, ctx, certSecuredGraphQLClient)
 

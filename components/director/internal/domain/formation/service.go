@@ -582,12 +582,13 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, errors.Errorf("Formation %q of type %q does not support resources of type %q", ft.formation.Name, ft.formationTemplate.Name, objectType)
 	}
 
-	joinPointDetails, err := s.prepareDetailsForAssign(ctx, tnt, objectID, objectType, ft.formation, ft.formationTemplate)
+	objectSubtype, err := s.getObjectSubtype(ctx, tnt, objectID, objectType)
 	if err != nil {
-		return nil, errors.Wrapf(err, "while preparing joinpoint details for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
+		return nil, errors.Wrapf(err, "while getting object subtype for object with ID: %s of type: %s", objectID, objectType)
 	}
 
-	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	assignJoinPointDetails := s.prepareDetailsForAssign(tnt, objectID, objectType, objectSubtype, ft.formation, ft.formationTemplate)
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PreAssign, assignJoinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PreOperation)
 	}
 
@@ -631,6 +632,15 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return nil
 		}); terr != nil {
 			return nil, terr
+		}
+
+		for _, a := range assignments {
+			if !formationassignmentpkg.IsConfigEmpty(string(a.Value)) {
+				generateAssignmentJoinPointDetails := s.prepareDetailsForGenerateAssignment(tnt, objectID, objectType, objectSubtype, ft.formationTemplate, a)
+				if err := s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostGenerateFormationAssignment, generateAssignmentJoinPointDetails, ft.formationTemplate.ID); err != nil {
+					return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationAssignmentOperation, model.PostOperation)
+				}
+			}
 		}
 
 		// create operations in a transaction similar to how we persist the FAs above (using terr as well)
@@ -711,20 +721,15 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		return nil, fmt.Errorf("unknown formation type %s", objectType)
 	}
 
-	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostAssign, joinPointDetails, ft.formationTemplate.ID); err != nil {
+	if err = s.constraintEngine.EnforceConstraints(ctx, formationconstraint.PostAssign, assignJoinPointDetails, ft.formationTemplate.ID); err != nil {
 		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.AssignFormationOperation, model.PostOperation)
 	}
 
 	return formationFromDB, nil
 }
 
-func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.AssignFormationOperationDetails, error) {
-	resourceSubtype, err := s.getObjectSubtype(ctx, tnt, objectID, objectType)
-	if err != nil {
-		return nil, err
-	}
-
-	joinPointDetails := &formationconstraint.AssignFormationOperationDetails{
+func (s *service) prepareDetailsForAssign(tnt, objectID string, objectType graphql.FormationObjectType, resourceSubtype string, formation *model.Formation, formationTemplate *model.FormationTemplate) *formationconstraint.AssignFormationOperationDetails {
+	return &formationconstraint.AssignFormationOperationDetails{
 		ResourceType:        model.ResourceType(objectType),
 		ResourceSubtype:     resourceSubtype,
 		ResourceID:          objectID,
@@ -734,7 +739,20 @@ func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID str
 		FormationName:       formation.Name,
 		TenantID:            tnt,
 	}
-	return joinPointDetails, nil
+}
+
+func (s *service) prepareDetailsForGenerateAssignment(tnt, objectID string, objectType graphql.FormationObjectType, objectSubtype string, formationTemplate *model.FormationTemplate, assignment *model.FormationAssignment) *formationconstraint.GenerateFormationAssignmentDetails {
+	return &formationconstraint.GenerateFormationAssignmentDetails{
+		ResourceType:          model.ResourceType(objectType),
+		ResourceSubtype:       objectSubtype,
+		ResourceID:            objectID,
+		SourceResourceType:    assignment.SourceType,
+		SourceResourceID:      assignment.Source,
+		TenantID:              tnt,
+		FormationTemplateName: formationTemplate.Name,
+		FormationTemplateID:   formationTemplate.ID,
+		FormationAssignment:   assignment,
+	}
 }
 
 func (s *service) prepareDetailsForUnassign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.UnassignFormationOperationDetails, error) {

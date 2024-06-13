@@ -2,6 +2,7 @@ package formationtemplateconstraintreferences
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/internal/repo"
@@ -85,7 +86,10 @@ func (r *repository) Create(ctx context.Context, item *model.FormationTemplateCo
 // Delete deletes a formationTemplateConstraintReference for formationTemplate ID and constraint ID
 func (r *repository) Delete(ctx context.Context, formationTemplateID, constraintID string) error {
 	log.C(ctx).Debugf("Deleting FormationTemplateConstraintReference with formationTemplate ID: %q and formationConstraint ID: %q...", formationTemplateID, constraintID)
-	return r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(formationTemplateColumn, formationTemplateID), repo.NewEqualCondition(formationConstraintColumn, constraintID)})
+	if err := r.deleter.DeleteOneGlobal(ctx, repo.Conditions{repo.NewEqualCondition(formationTemplateColumn, formationTemplateID), repo.NewEqualCondition(formationConstraintColumn, constraintID)}); apperrors.IsInternalServerError(err) {
+		return apperrors.NewNotFoundErrorWithMessage(resource.FormationTemplateConstraintReference, "", fmt.Sprintf("%s for formation template ID %s and constraint ID %s not found", resource.FormationTemplateConstraintReference, formationTemplateID, constraintID))
+	}
+	return nil
 }
 
 func (r *repository) multipleFromEntities(entities EntityCollection) ([]*model.FormationTemplateConstraintReference, error) {

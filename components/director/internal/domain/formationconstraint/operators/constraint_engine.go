@@ -182,6 +182,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 			ConfigMutatorOperator:                                        NewConfigMutatorInput,
 			RedirectNotificationOperator:                                 NewRedirectNotificationInput,
 			AsynchronousFlowControlOperator:                              AsynchronousFlowControlOperatorInput,
+			InitialConfigValidatorOperator:                               NewConfigSchemaValidatorInput,
 		},
 		runtimeTypeLabelKey:     runtimeTypeLabelKey,
 		applicationTypeLabelKey: applicationTypeLabelKey,
@@ -196,6 +197,7 @@ func NewConstraintEngine(transact persistence.Transactioner, constraintSvc forma
 		ConfigMutatorOperator:                                        ce.MutateConfig,
 		RedirectNotificationOperator:                                 ce.RedirectNotification,
 		AsynchronousFlowControlOperator:                              ce.AsynchronousFlowControlOperator,
+		InitialConfigValidatorOperator:                               ce.ConfigSchemaValidator,
 	}
 	return ce
 }

@@ -15,8 +15,8 @@ var (
 	StatusAPIAsyncConfigJSON      = str.Ptr("{\"asyncKey\":\"asyncValue\",\"asyncKey2\":{\"asyncNestedKey\":\"asyncNestedValue\"}}")
 	StatusAPIResetConfigJSON      = str.Ptr("{\"resetKey\":\"resetValue\",\"resetKey2\":{\"resetKey\":\"resetValue2\"}}")
 	StatusAPISyncErrorMessageJSON = str.Ptr("{\"error\":{\"message\":\"failed to parse request\",\"errorCode\":2}}")
-	InitialConfiguration1         = "{\"initial\":\"configuration\"}"
-	InitialConfiguration2         = "{\"initial\":\"configuration2\"}"
+	InitialConfiguration1         = "{\"name\":\"e2e-tests-initial-config1\",\"color\":\"red\"}"
+	InitialConfiguration2         = "{\"name\":\"e2e-tests-initial-config2\",\"color\":\"green\"}"
 	StatusAPISyncError            = &graphql.FormationStatusError{
 		Message:   StatusAPISyncErrorMessage,
 		ErrorCode: 2,

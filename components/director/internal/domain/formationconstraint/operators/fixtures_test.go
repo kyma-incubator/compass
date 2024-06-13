@@ -28,6 +28,7 @@ const (
 	testInternalTenantID     = "aaaddec6-5456-4a1e-9ae0-74447f5d6ae9"
 	inputAppID               = "eb2d5110-ca3a-11ed-afa1-0242ac120002"
 	appID                    = "b55131c4-ca3a-11ed-afa1-0242ac120002"
+	sourceAppID              = "35bd2ee8-d902-49aa-aac0-2c6bbcd4c5a7"
 	runtimeID                = "c66341c4-ca3a-11ed-afa1-0242ac120564"
 	runtimeCtxID             = "f7156h4-ca3a-11ed-afa1-0242ac121237"
 	formationAssignmentID    = "c54341c4-ca3a-11ed-afa1-0242ac120564"
@@ -80,6 +81,7 @@ const (
 	inputAppType            = "input-type"
 	testScenarioGroup       = "scenarioGroup"
 	testJSONConfig          = `{"key": "val"}`
+	formationTemplateName   = "test-formation-template"
 )
 
 // Common variables used across different operators' tests
@@ -88,6 +90,7 @@ var (
 	testErr        = errors.New("test error")
 	corrleationIDs []string
 	defaultTime    = time.Time{}
+	emptyConfig    = json.RawMessage("{}")
 
 	preNotificationStatusReturnedLocation = fixJoinPointLocation(model.NotificationStatusReturned, model.PreOperation)
 	preSendNotificationLocation           = fixJoinPointLocation(model.SendNotificationOperation, model.PreOperation)
@@ -128,9 +131,31 @@ var (
 	webhookModelAsyncCallback = graphql.WebhookModeAsyncCallback
 )
 
+// InitialConfigValidatorOperator variables
+var (
+	initialConfigJSONSchema                      = `{"$schema":"http://json-schema.org/draft-04/schema#","additionalProperties":false,"type":"object","properties":{"rainbow":{"type":"boolean","default":false,"description":"Follow the rainbow"},"name":{"type":"string","minLength":1,"maxLength":30,"default":"This is a default string","description":"The name of the broker"},"color":{"type":"string","enum":["red","amber","green"],"default":"green","description":"Your favourite color"},"config":{"type":"object","properties":{"url":{"type":"string"},"port":{"type":"integer"}}}}}`
+	initialConfigRawJSON                         = json.RawMessage(`{"rainbow":true,"name":"unit-tests","color":"red","config":{"key":"value","url":"urlValue","port":123}}`)
+	initialConfigRawJSONInvalidAgainstJSONSchema = json.RawMessage(`{"name":"unit-tests","color":"not-valid"}`)
+
+	faWithInitialConfig                  = fixFormationAssignmentWithConfigAndState(initialConfigRawJSON, model.InitialAssignmentState)
+	faWithEmptyConfig                    = fixFormationAssignmentWithConfigAndState(emptyConfig, model.InitialAssignmentState)
+	faWithConfigInvalidAgainstJSONSchema = fixFormationAssignmentWithConfigAndState(initialConfigRawJSONInvalidAgainstJSONSchema, model.InitialAssignmentState)
+
+	initialConfigOperatorInput                                             = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	initialConfigOperatorInputWithEmptyAssignmentConfig                    = fixInitialConfigValidatorOperationInput(faWithEmptyConfig, initialConfigJSONSchema)
+	initialConfigOperatorInputWithEmptyJSONSchema                          = fixInitialConfigValidatorOperationInput(faWithInitialConfig, "")
+	initialConfigOperatorInputWithInvalidJSONSchema                        = fixInitialConfigValidatorOperationInput(faWithInitialConfig, "invalid")
+	initialConfigOperatorInputWithAssignmentConfigInvalidAgainstJSONSchema = fixInitialConfigValidatorOperationInput(faWithConfigInvalidAgainstJSONSchema, initialConfigJSONSchema)
+	initialConfigOperatorInputWithExceptFormationType                      = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	initialConfigOperatorInputWithExceptSubtypes                           = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	initialConfigOperatorInputWithNonExistingOnlyForSourceSubtypes         = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+	initialConfigOperatorInputWithOnlyForSourceSubtypes                    = fixInitialConfigValidatorOperationInput(faWithInitialConfig, initialConfigJSONSchema)
+
+	initialConfigOperatorInputWithoutAssignmentMemoryAddress = &formationconstraintpkg.InitialConfigValidatorOperatorInput{}
+)
+
 // Destination Creator variables
 var (
-	emptyConfig                  = json.RawMessage("{}")
 	invalidFAConfig              = json.RawMessage("invalid-Destination-config")
 	configWithDifferentStructure = json.RawMessage(testJSONConfig)
 	destsConfigValueRawJSON      = json.RawMessage(
@@ -165,13 +190,13 @@ var (
 	statusRportWitOauth2mTLSCertData                                = fixNotificationStatusReportWithStateAndConfig(string(model.ReadyAssignmentState), destsConfigWithOauth2mTLSCertDataRawJSON)
 
 	fa                           = fixFormationAssignmentWithConfig(destsConfigValueRawJSON)
-	faDeprecatedDestinationKey   = fixFormationAssignmentWithConfig(destsConfigValueRawJSONDeprecatedKey)
 	reverseFa                    = fixFormationAssignmentWithConfig(destsReverseConfigValueRawJSON)
 	faWithInitialState           = fixFormationAssignmentWithState(model.InitialAssignmentState)
 	faWithInvalidConfig          = fixFormationAssignmentWithConfig(invalidFAConfig)
 	faWithSAMLCertData           = fixFormationAssignmentWithConfig(destsConfigWithSAMLCertDataRawJSON)
 	faWithClientCertAuthCertData = fixFormationAssignmentWithConfig(destsConfigWithClientCertauthCertDataRawJSON)
 	faWithOauth2mTLSCertData     = fixFormationAssignmentWithConfig(destsConfigWithOauth2mTLSCertDataRawJSON)
+	faDeprecatedDestinationKey   = fixFormationAssignmentWithConfig(destsConfigValueRawJSONDeprecatedKey)
 
 	faConfigWithDifferentStructure = fixFormationAssignmentWithConfig(configWithDifferentStructure)
 
@@ -658,12 +683,36 @@ func fixAssignmentPairWithSyncWebhook() *formationassignment.AssignmentMappingPa
 	}
 }
 
+// InitialConfigValidatorOperator fixtures
+
+func fixInitialConfigValidatorOperationInput(formationAssignment *model.FormationAssignment, jsonSchema string) *formationconstraintpkg.InitialConfigValidatorOperatorInput {
+	return &formationconstraintpkg.InitialConfigValidatorOperatorInput{
+		ResourceType:          model.ApplicationResourceType,
+		ResourceSubtype:       resourceSubtype,
+		ResourceID:            appID,
+		SourceResourceType:    model.ApplicationResourceType,
+		SourceResourceID:      sourceAppID,
+		TenantID:              testTenantID,
+		FormationTemplateName: formationTemplateName,
+		FAMemoryAddress:       formationAssignment.GetAddress(),
+		JSONSchema:            jsonSchema,
+	}
+}
+
 // Common fixtures for all operators
 
 func fixFormationAssignmentWithConfig(config json.RawMessage) *model.FormationAssignment {
 	return &model.FormationAssignment{
 		ID:    formationAssignmentID,
 		State: string(model.ReadyAssignmentState),
+		Value: config,
+	}
+}
+
+func fixFormationAssignmentWithConfigAndState(config json.RawMessage, state model.FormationAssignmentState) *model.FormationAssignment {
+	return &model.FormationAssignment{
+		ID:    formationAssignmentID,
+		State: string(state),
 		Value: config,
 	}
 }

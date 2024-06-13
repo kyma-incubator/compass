@@ -94,3 +94,33 @@ type AsynchronousFlowControlOperatorInput struct {
 	FAMemoryAddress                       uintptr `json:"formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	ReverseFAMemoryAddress                uintptr `json:"reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 }
+
+type InitialConfigValidatorOperatorInput struct {
+	ResourceType          model.ResourceType `json:"resource_type"`
+	ResourceSubtype       string             `json:"resource_subtype"`
+	ResourceID            string             `json:"resource_id"`
+	SourceResourceType    model.ResourceType `json:"source_resource_type"`
+	SourceResourceID      string             `json:"source_resource_id"`
+	TenantID              string             `json:"tenant_id"`
+	FormationTemplateName string             `json:"formation_template_name"`
+	FAMemoryAddress       uintptr            `json:"formation_assignment_memory_address"` // contains the memory address of the join point details' formation assignment in form of an integer
+	ExceptSubtypes        []string           `json:"except_subtypes"`
+	ExceptFormationTypes  []string           `json:"except_formation_types"`
+	OnlyForSourceSubtypes []string           `json:"only_for_source_subtypes"`
+	JSONSchema            string             `json:"json_schema"`
+}
+
+func (i *InitialConfigValidatorOperatorInput) WithExceptFormationTypes(formationTypes []string) *InitialConfigValidatorOperatorInput {
+	i.ExceptFormationTypes = formationTypes
+	return i
+}
+
+func (i *InitialConfigValidatorOperatorInput) WithExceptSubtypes(subtypes []string) *InitialConfigValidatorOperatorInput {
+	i.ExceptSubtypes = subtypes
+	return i
+}
+
+func (i *InitialConfigValidatorOperatorInput) WithOnlyForSourceSubtypes(sourceSubtypes []string) *InitialConfigValidatorOperatorInput {
+	i.OnlyForSourceSubtypes = sourceSubtypes
+	return i
+}

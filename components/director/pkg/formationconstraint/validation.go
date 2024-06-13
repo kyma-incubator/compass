@@ -34,6 +34,8 @@ const (
 	RedirectNotificationOperator = "RedirectNotification"
 	// AsynchronousFlowControlOperator represents the asynchronous flow control operator
 	AsynchronousFlowControlOperator = "AsynchronousFlowControl"
+	// InitialConfigValidatorOperator represents the ConfigSchemaValidator operator
+	InitialConfigValidatorOperator = "InitialConfigValidator"
 )
 
 // OperatorInput represent the input needed by the operators
@@ -50,6 +52,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	ConfigMutatorOperator:                                        &ConfigMutatorInput{},
 	RedirectNotificationOperator:                                 &RedirectNotificationInput{},
 	AsynchronousFlowControlOperator:                              &AsynchronousFlowControlOperatorInput{},
+	InitialConfigValidatorOperator:                               &InitialConfigValidatorOperatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
@@ -64,6 +67,7 @@ var JoinPointDetailsByLocation = map[JoinPointLocation]JoinPointDetails{
 	PostDelete:   &CRUDFormationOperationDetails{},
 	PreGenerateFormationAssignmentNotifications:  emptyGenerateFormationAssignmentNotificationOperationDetails(),
 	PostGenerateFormationAssignmentNotifications: emptyGenerateFormationAssignmentNotificationOperationDetails(),
+	PostGenerateFormationAssignment:              emptyGenerateFormationAssignmentOperationDetails(),
 	PreGenerateFormationNotifications:            emptyGenerateFormationNotificationOperationDetails(),
 	PostGenerateFormationNotifications:           emptyGenerateFormationNotificationOperationDetails(),
 	PreSendNotification:                          emptySendNotificationOperationDetails(),
@@ -173,6 +177,12 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *GenerateFor
 				Labels:                map[string]string{},
 			},
 		},
+	}
+}
+
+func emptyGenerateFormationAssignmentOperationDetails() *GenerateFormationAssignmentDetails {
+	return &GenerateFormationAssignmentDetails{
+		FormationAssignment: &model.FormationAssignment{},
 	}
 }
 
