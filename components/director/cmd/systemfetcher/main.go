@@ -167,6 +167,8 @@ func main() {
 	ctx, err = log.Configure(ctx, &cfg.Log)
 	exitOnError(err, "Error while configuring logger")
 
+	label.GlobalSystemRoleLabelKey = cfg.TemplateConfig.LabelFilter
+
 	transact, closeFunc, err := persistence.Configure(ctx, cfg.Database)
 	exitOnError(err, "Error while establishing the connection to the database")
 	defer func() {
