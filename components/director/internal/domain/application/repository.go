@@ -189,7 +189,7 @@ func (r *pgRepository) GetBySystemNumber(ctx context.Context, tenant, systemNumb
 }
 
 // ListByLocalTenantID returns applications with matching local tenant id and optionally - a filter
-func (r *pgRepository) ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+func (r *pgRepository) ListByLocalTenantID(ctx context.Context, tenant, localTenantID string, appIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 	conditions := repo.Conditions{repo.NewEqualCondition("local_tenant_id", localTenantID)}
 
@@ -198,13 +198,16 @@ func (r *pgRepository) ListByLocalTenantID(ctx context.Context, tenant, localTen
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
 
-	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
 	if filterSubquery != "" {
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+	if len(appIDs) > 0 {
+		conditions = append(conditions, repo.NewInConditionForStringValues("id", appIDs))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)
@@ -323,7 +326,7 @@ func (r *pgRepository) ListAllByFilter(ctx context.Context, tenant string, filte
 
 // ListAllGlobalByFilter lists a page of applications with their associated tenants filtered by the provided filters.
 // Associated tenants are all tenants of type 'customer' or 'cost-object' that have access to the application.
-func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
+func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, appIDs []string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationWithTenantsPage, error) {
 	var entities EntityCollection
 
 	filterSubquery, args, err := label.FilterQueryGlobal(model.ApplicationLabelableObject, label.IntersectSet, filter)
@@ -331,12 +334,17 @@ func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, filter []*labe
 		return nil, errors.Wrap(err, "while building filter query")
 	}
 
-	var conditionTree *repo.ConditionTree
+	var conditions []repo.Condition
 	if filterSubquery != "" {
-		conditionTree = &repo.ConditionTree{Operand: repo.NewInConditionForSubQuery("id", filterSubquery, args)}
+		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+	if len(appIDs) > 0 {
+		conditions = append(conditions, repo.NewInConditionForStringValues("id", appIDs))
 	}
 
-	page, totalCount, err := r.globalPageableQuerier.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entities, conditionTree)
+	conditionsTree := repo.And(repo.ConditionTreesFromConditions(conditions)...)
+
+	page, totalCount, err := r.globalPageableQuerier.ListGlobalWithAdditionalConditions(ctx, pageSize, cursor, "id", &entities, conditionsTree)
 	if err != nil {
 		return nil, err
 	}
@@ -477,14 +485,16 @@ func (r *pgRepository) ListAllByApplicationTemplateID(ctx context.Context, appli
 	return items, nil
 }
 
-// List missing godoc
-func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
+// ListByIDsAndFilters lists applications by provided filters in the context of the provided tenant.
+// App IDs are optional and are provided only of the initial filters contained `scenarios` filter.
+// The `scenarios` filter is processed outside the method and converted to list of IDs as the scenario metadata is no longer stored in `scenario` label.
+func (r *pgRepository) ListByIDsAndFilters(ctx context.Context, tenant string, appIDs []string, filters []*labelfilter.LabelFilter, pageSize int, cursor string) (*model.ApplicationPage, error) {
 	var appsCollection EntityCollection
 	tenantID, err := uuid.Parse(tenant)
 	if err != nil {
 		return nil, errors.Wrap(err, "while parsing tenant as UUID")
 	}
-	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filter)
+	filterSubquery, args, err := label.FilterQuery(model.ApplicationLabelableObject, label.IntersectSet, tenantID, filters)
 	if err != nil {
 		return nil, errors.Wrap(err, "while building filter query")
 	}
@@ -492,6 +502,9 @@ func (r *pgRepository) List(ctx context.Context, tenant string, filter []*labelf
 	var conditions repo.Conditions
 	if filterSubquery != "" {
 		conditions = append(conditions, repo.NewInConditionForSubQuery("id", filterSubquery, args))
+	}
+	if len(appIDs) > 0 {
+		conditions = append(conditions, repo.NewInConditionForStringValues("id", appIDs))
 	}
 
 	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant, pageSize, cursor, "id", &appsCollection, conditions...)

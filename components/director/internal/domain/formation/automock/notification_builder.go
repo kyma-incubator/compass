@@ -25,6 +25,10 @@ type NotificationBuilder struct {
 func (_m *NotificationBuilder) BuildFormationAssignmentNotificationRequest(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, _a2 *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error) {
 	ret := _m.Called(ctx, joinPointDetails, _a2)
 
+	if len(ret) == 0 {
+		panic("no return value specified for BuildFormationAssignmentNotificationRequest")
+	}
+
 	var r0 *webhookclient.FormationAssignmentNotificationRequest
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, *model.Webhook) (*webhookclient.FormationAssignmentNotificationRequest, error)); ok {
@@ -50,6 +54,10 @@ func (_m *NotificationBuilder) BuildFormationAssignmentNotificationRequest(ctx c
 // BuildFormationNotificationRequests provides a mock function with given fields: ctx, joinPointDetails, _a2, formationTemplateWebhooks
 func (_m *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Context, joinPointDetails *formationconstraint.GenerateFormationNotificationOperationDetails, _a2 *model.Formation, formationTemplateWebhooks []*model.Webhook) ([]*webhookclient.FormationNotificationRequest, error) {
 	ret := _m.Called(ctx, joinPointDetails, _a2, formationTemplateWebhooks)
+
+	if len(ret) == 0 {
+		panic("no return value specified for BuildFormationNotificationRequests")
+	}
 
 	var r0 []*webhookclient.FormationNotificationRequest
 	var r1 error
@@ -77,6 +85,10 @@ func (_m *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 func (_m *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotificationGeneration(operation model.FormationOperation, formationTemplateID string, _a2 *model.Formation, sourceApplicationTemplate *webhook.ApplicationTemplateWithLabels, sourceApplication *webhook.ApplicationWithLabels, targetApplicationTemplate *webhook.ApplicationTemplateWithLabels, targetApplication *webhook.ApplicationWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	ret := _m.Called(operation, formationTemplateID, _a2, sourceApplicationTemplate, sourceApplication, targetApplicationTemplate, targetApplication, assignment, reverseAssignment, tenantContext, tenantID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for PrepareDetailsForApplicationTenantMappingNotificationGeneration")
+	}
+
 	var r0 *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails
 	var r1 error
 	if rf, ok := ret.Get(0).(func(model.FormationOperation, string, *model.Formation, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.ApplicationTemplateWithLabels, *webhook.ApplicationWithLabels, *webhook.FormationAssignment, *webhook.FormationAssignment, *webhook.CustomerTenantContext, string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error)); ok {
@@ -102,6 +114,10 @@ func (_m *NotificationBuilder) PrepareDetailsForApplicationTenantMappingNotifica
 // PrepareDetailsForConfigurationChangeNotificationGeneration provides a mock function with given fields: operation, formationTemplateID, _a2, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType, tenantContext, tenantID
 func (_m *NotificationBuilder) PrepareDetailsForConfigurationChangeNotificationGeneration(operation model.FormationOperation, formationTemplateID string, _a2 *model.Formation, applicationTemplate *webhook.ApplicationTemplateWithLabels, application *webhook.ApplicationWithLabels, runtime *webhook.RuntimeWithLabels, runtimeContext *webhook.RuntimeContextWithLabels, assignment *webhook.FormationAssignment, reverseAssignment *webhook.FormationAssignment, targetType model.ResourceType, tenantContext *webhook.CustomerTenantContext, tenantID string) (*formationconstraint.GenerateFormationAssignmentNotificationOperationDetails, error) {
 	ret := _m.Called(operation, formationTemplateID, _a2, applicationTemplate, application, runtime, runtimeContext, assignment, reverseAssignment, targetType, tenantContext, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PrepareDetailsForConfigurationChangeNotificationGeneration")
+	}
 
 	var r0 *formationconstraint.GenerateFormationAssignmentNotificationOperationDetails
 	var r1 error

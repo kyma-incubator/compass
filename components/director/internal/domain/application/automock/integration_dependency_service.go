@@ -18,6 +18,10 @@ type IntegrationDependencyService struct {
 func (_m *IntegrationDependencyService) ListByApplicationIDs(ctx context.Context, applicationIDs []string, pageSize int, cursor string) ([]*model.IntegrationDependencyPage, error) {
 	ret := _m.Called(ctx, applicationIDs, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByApplicationIDs")
+	}
+
 	var r0 []*model.IntegrationDependencyPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, []string, int, string) ([]*model.IntegrationDependencyPage, error)); ok {

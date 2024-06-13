@@ -19,6 +19,10 @@ type LabelRepository struct {
 func (_m *LabelRepository) Delete(_a0 context.Context, _a1 string, _a2 model.LabelableObject, _a3 string, _a4 string) error {
 	ret := _m.Called(_a0, _a1, _a2, _a3, _a4)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, model.LabelableObject, string, string) error); ok {
 		r0 = rf(_a0, _a1, _a2, _a3, _a4)
@@ -32,6 +36,10 @@ func (_m *LabelRepository) Delete(_a0 context.Context, _a1 string, _a2 model.Lab
 // ListForObject provides a mock function with given fields: ctx, tenant, objectType, objectID
 func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObject")
+	}
 
 	var r0 map[string]*model.Label
 	var r1 error
@@ -58,6 +66,10 @@ func (_m *LabelRepository) ListForObject(ctx context.Context, tenant string, obj
 // ListForObjectIDs provides a mock function with given fields: ctx, tenant, objectType, objectIDs
 func (_m *LabelRepository) ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error) {
 	ret := _m.Called(ctx, tenant, objectType, objectIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListForObjectIDs")
+	}
 
 	var r0 map[string]map[string]interface{}
 	var r1 error

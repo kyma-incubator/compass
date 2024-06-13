@@ -472,13 +472,6 @@ func (r *Resolver) APIDefinitionsDataLoader(keys []dataloader.ParamAPIDef) ([]*g
 		return nil, []error{err}
 	}
 
-	var apiDefIDs []string
-	for _, page := range apiDefPages {
-		for _, apiDefinition := range page.Data {
-			apiDefIDs = append(apiDefIDs, apiDefinition.ID)
-		}
-	}
-
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleAPIReference, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
@@ -602,13 +595,6 @@ func (r *Resolver) EventDefinitionsDataLoader(keys []dataloader.ParamEventDef) (
 	eventAPIDefPages, err := r.eventSvc.ListByBundleIDs(ctx, bundleIDs, *first, cursor)
 	if err != nil {
 		return nil, []error{err}
-	}
-
-	var eventAPIDefIDs []string
-	for _, page := range eventAPIDefPages {
-		for _, eventAPIDefinition := range page.Data {
-			eventAPIDefIDs = append(eventAPIDefIDs, eventAPIDefinition.ID)
-		}
 	}
 
 	references, _, err := r.bundleReferenceSvc.ListByBundleIDs(ctx, model.BundleEventReference, bundleIDs, *first, cursor)

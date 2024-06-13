@@ -18,6 +18,10 @@ type WebhookService struct {
 func (_m *WebhookService) ListAllApplicationWebhooks(ctx context.Context, applicationTemplateID string) ([]*model.Webhook, error) {
 	ret := _m.Called(ctx, applicationTemplateID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllApplicationWebhooks")
+	}
+
 	var r0 []*model.Webhook
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.Webhook, error)); ok {

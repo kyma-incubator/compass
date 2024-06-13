@@ -18,6 +18,10 @@ type APIDefinitionService struct {
 func (_m *APIDefinitionService) GetForApplication(ctx context.Context, id string, appID string) (*model.APIDefinition, error) {
 	ret := _m.Called(ctx, id, appID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetForApplication")
+	}
+
 	var r0 *model.APIDefinition
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.APIDefinition, error)); ok {

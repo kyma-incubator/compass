@@ -18,6 +18,10 @@ type IntegrationDependencyConverter struct {
 func (_m *IntegrationDependencyConverter) ToGraphQL(in *model.IntegrationDependency, aspects []*model.Aspect, aspectEventResourcesByAspectID map[string][]*model.AspectEventResource) (*graphql.IntegrationDependency, error) {
 	ret := _m.Called(in, aspects, aspectEventResourcesByAspectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ToGraphQL")
+	}
+
 	var r0 *graphql.IntegrationDependency
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*model.IntegrationDependency, []*model.Aspect, map[string][]*model.AspectEventResource) (*graphql.IntegrationDependency, error)); ok {

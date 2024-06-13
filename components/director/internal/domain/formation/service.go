@@ -46,7 +46,6 @@ type runtimeRepository interface {
 	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	ListByScenariosAndIDs(ctx context.Context, tenant string, scenarios []string, ids []string) ([]*model.Runtime, error)
 	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
 	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
@@ -71,6 +70,9 @@ type FormationRepository interface {
 	GetByName(ctx context.Context, name, tenantID string) (*model.Formation, error)
 	GetGlobalByID(ctx context.Context, id string) (*model.Formation, error)
 	List(ctx context.Context, tenant string, pageSize int, cursor string) (*model.FormationPage, error)
+	ListByIDs(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
+	ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
+	ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error)
 	ListByIDsGlobal(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 	Create(ctx context.Context, item *model.Formation) error
 	DeleteByName(ctx context.Context, tenantID, name string) error
@@ -172,6 +174,8 @@ type assignmentOperationService interface {
 	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 	DeleteByIDs(ctx context.Context, ids []string) error
 }
+
+type listFormationsFn func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
 
 type service struct {
 	applicationRepository                  applicationRepository
@@ -275,8 +279,16 @@ func (s *service) List(ctx context.Context, pageSize int, cursor string) (*model
 	return s.formationRepository.List(ctx, formationTenant, pageSize, cursor)
 }
 
+// ListFormationsForObjectGlobal returns all Formations that `objectID` is part of
+func (s *service) ListFormationsForObjectGlobal(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	return s.listFormationsForObject(ctx, objectID, s.formationRepository.ListByIDsGlobal)
+}
+
 // ListFormationsForObject returns all Formations that `objectID` is part of
 func (s *service) ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error) {
+	return s.listFormationsForObject(ctx, objectID, s.formationRepository.ListByIDs)
+}
+func (s *service) listFormationsForObject(ctx context.Context, objectID string, listFormations listFormationsFn) ([]*model.Formation, error) {
 	assignments, err := s.formationAssignmentService.ListAllForObjectGlobal(ctx, objectID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formations assignments for participant with ID %s", objectID)
@@ -296,7 +308,15 @@ func (s *service) ListFormationsForObject(ctx context.Context, objectID string) 
 		uniqueFormationIDs = append(uniqueFormationIDs, formationID)
 	}
 
-	return s.formationRepository.ListByIDsGlobal(ctx, uniqueFormationIDs)
+	return listFormations(ctx, uniqueFormationIDs)
+}
+
+func (s *service) ListObjectIDsOfTypeForFormations(ctx context.Context, tenantID string, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	return s.formationRepository.ListObjectIDsOfTypeForFormations(ctx, tenantID, formationNames, objectType)
+}
+
+func (s *service) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context, formationNames []string, objectType model.FormationAssignmentType) ([]string, error) {
+	return s.formationRepository.ListObjectIDsOfTypeForFormationsGlobal(ctx, formationNames, objectType)
 }
 
 // Get returns the Formation by its id
