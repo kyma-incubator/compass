@@ -95,6 +95,7 @@ type AsynchronousFlowControlOperatorInput struct {
 	ReverseFAMemoryAddress                uintptr `json:"reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 }
 
+// JSONSchemaValidatorOperatorInput is an input for JSONSchemaValidatorOperator operator
 type JSONSchemaValidatorOperatorInput struct {
 	ResourceType          model.ResourceType `json:"resource_type"`
 	ResourceSubtype       string             `json:"resource_subtype"`
@@ -110,16 +111,19 @@ type JSONSchemaValidatorOperatorInput struct {
 	JSONSchema            string             `json:"json_schema"`
 }
 
+// WithExceptFormationTypes sets the ExceptFormationTypes field of the JSONSchemaValidatorOperatorInput
 func (i *JSONSchemaValidatorOperatorInput) WithExceptFormationTypes(formationTypes []string) *JSONSchemaValidatorOperatorInput {
 	i.ExceptFormationTypes = formationTypes
 	return i
 }
 
+// WithExceptSubtypes sets the ExceptSubtypes field of the JSONSchemaValidatorOperatorInput
 func (i *JSONSchemaValidatorOperatorInput) WithExceptSubtypes(subtypes []string) *JSONSchemaValidatorOperatorInput {
 	i.ExceptSubtypes = subtypes
 	return i
 }
 
+// WithOnlyForSourceSubtypes sets the OnlyForSourceSubtypes field of the JSONSchemaValidatorOperatorInput
 func (i *JSONSchemaValidatorOperatorInput) WithOnlyForSourceSubtypes(sourceSubtypes []string) *JSONSchemaValidatorOperatorInput {
 	i.OnlyForSourceSubtypes = sourceSubtypes
 	return i

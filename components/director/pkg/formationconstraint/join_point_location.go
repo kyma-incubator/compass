@@ -89,7 +89,7 @@ var (
 		OperationName:  model.NotificationStatusReturned,
 		ConstraintType: model.PostOperation,
 	}
-	//PostGenerateFormationAssignment represents the location after GenerateFormationAssignmentOperation operation execution
+	// PostGenerateFormationAssignment represents the location after GenerateFormationAssignmentOperation operation execution
 	PostGenerateFormationAssignment = JoinPointLocation{
 		OperationName:  model.GenerateFormationAssignmentOperation,
 		ConstraintType: model.PostOperation,

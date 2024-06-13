@@ -174,6 +174,7 @@ func (d *NotificationStatusReturnedOperationDetails) GetMatchingDetails() Matchi
 	}
 }
 
+// GenerateFormationAssignmentDetails contains details applicable to generate formation assignment join point
 type GenerateFormationAssignmentDetails struct {
 	ResourceType          model.ResourceType
 	ResourceSubtype       string

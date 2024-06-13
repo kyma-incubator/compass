@@ -19,6 +19,7 @@ func NewJSONSchemaValidatorOperatorInput() OperatorInput {
 	return &formationconstraint.JSONSchemaValidatorOperatorInput{}
 }
 
+// JSONSchemaValidator is an operator that validates the configuration of a formation assignment against a JSON schema
 func (e *ConstraintEngine) JSONSchemaValidator(ctx context.Context, input OperatorInput) (bool, error) {
 	log.C(ctx).Infof("Starting executing operator: %s", JSONSchemaValidatorOperator)
 
