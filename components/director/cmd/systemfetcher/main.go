@@ -133,6 +133,8 @@ type config struct {
 	CertLoaderConfig credloader.CertConfig
 	KeyLoaderConfig  credloader.KeysConfig
 
+	KubeConfig systemfetcher.KubeConfig
+
 	SelfRegisterDistinguishLabelKey string `envconfig:"APP_SELF_REGISTER_DISTINGUISH_LABEL_KEY"`
 
 	ORDWebhookMappings string `envconfig:"APP_ORD_WEBHOOK_MAPPINGS"`
@@ -312,18 +314,6 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 	applicationRepo := application.NewRepository(appConverter)
 	timeSvc := directortime.NewService()
 	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
-	intSysConverter := integrationsystem.NewConverter()
-	intSysRepo := integrationsystem.NewRepository(intSysConverter)
-	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
-	tenantConverter := tenant.NewConverter()
-	tenantRepo := tenant.NewRepository(tenantConverter)
-	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
-	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
-
-	dataLoader := systemfetcher.NewDataLoader(transact, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
-	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
-		return nil, errors.Wrapf(err, "while loading template data")
-	}
 
 	var placeholdersMapping []systemfetcher.PlaceholderMapping
 	err := json.Unmarshal([]byte(cfg.TemplateConfig.PlaceholderToSystemKeyMappings), &placeholdersMapping)
@@ -586,6 +576,10 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	formationSvc := formation.NewService(tx, applicationRepo, labelDefRepo, labelRepo, formationRepo, formationTemplateRepo, labelSvc, uidSvc, scenariosSvc, scenarioAssignmentRepo, scenarioAssignmentSvc, tntSvc, runtimeRepo, runtimeContextRepo, formationAssignmentSvc, assignmentOperationSvc, faNotificationSvc, notificationSvc, constraintEngine, webhookRepo, formationStatusSvc, cfg.Features.RuntimeTypeLabelKey, cfg.Features.ApplicationTypeLabelKey)
 	appSvc := application.NewService(&normalizer.DefaultNormalizator{}, cfgProvider, applicationRepo, webhookRepo, runtimeRepo, labelRepo, intSysRepo, labelSvc, bundleSvc, uidSvc, formationSvc, cfg.SelfRegisterDistinguishLabelKey, ordWebhookMapping)
 	systemsSyncSvc := systemssync.NewService(systemsSyncRepo)
+	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
+	intSysSvc := integrationsystem.NewService(intSysRepo, uidSvc)
+	timeSvc := directortime.NewService()
+	appTemplateSvc := apptemplate.NewService(appTemplateRepo, webhookRepo, uidSvc, labelSvc, labelRepo, applicationRepo, timeSvc)
 
 	constraintEngine.SetFormationAssignmentNotificationService(faNotificationSvc)
 	constraintEngine.SetFormationAssignmentService(formationAssignmentSvc)
@@ -617,6 +611,15 @@ func createSystemFetcher(ctx context.Context, cfg config, cfgProvider *configpro
 	directorClient := &systemfetcher.DirectorGraphClient{
 		Client:        graphqlClient,
 		Authenticator: pkgAuth.NewServiceAccountTokenAuthorizationProvider(),
+	}
+
+	kubeClient, err := systemfetcher.NewKubernetesClient(ctx, cfg.KubeConfig)
+	if err != nil {
+		return nil, errors.Wrapf(err, "while initializing kube client")
+	}
+	dataLoader := systemfetcher.NewDataLoader(tx, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc, kubeClient)
+	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
+		return nil, errors.Wrapf(err, "while loading template data")
 	}
 
 	templateRenderer, err := reloadTemplates(ctx, cfg, tx)
