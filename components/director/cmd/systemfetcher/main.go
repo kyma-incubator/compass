@@ -319,8 +319,10 @@ func reloadTemplates(ctx context.Context, cfg config, transact persistence.Trans
 	tenantRepo := tenant.NewRepository(tenantConverter)
 	tenantSvc := tenant.NewService(tenantRepo, uidSvc, tenantConverter)
 	webhookSvc := webhook.NewService(webhookRepo, applicationRepo, uidSvc, tenantSvc, map[string]interface{}{}, "")
+	certSubjMappingRepo := certsubjectmapping.NewRepository(certsubjectmapping.NewConverter())
+	certSubjMappingSvc := certsubjectmapping.NewService(certSubjMappingRepo)
 
-	dataLoader := systemfetcher.NewDataLoader(transact, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc)
+	dataLoader := systemfetcher.NewDataLoader(transact, cfg.SystemFetcher, appTemplateSvc, intSysSvc, webhookSvc, certSubjMappingSvc)
 	if err := dataLoader.LoadData(ctx, os.ReadDir, os.ReadFile); err != nil {
 		return nil, errors.Wrapf(err, "while loading template data")
 	}
