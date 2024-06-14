@@ -155,7 +155,7 @@ const (
 	displayNamePlaceholder                       = "display-name"
 	regionLabelKey                               = "region"
 	dataCenterLabelKey                           = "dataCenter"
-	leadingSystemBusinessTypeIDLabelKey          = "leadingSystemBusinessTypeID"
+	leadingSystemBusinessTypeIDLabelKey          = "leadingSystemBusinessTypeId"
 	leadingSystemBusinessTypeDescriptionLabelKey = "leadingSystemBusinessTypeDescription"
 	applicationTypeLabelKey                      = "applicationType"
 	slisFilterLabelKey                           = "slisFilter"
@@ -918,7 +918,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"%s", "leadingSystemBusinessTypeID":"%s", "leadingSystemBusinessTypeDescription":"%s"},
+		"additionalAttributes": {"systemSCPLandscapeID":"%s", "leadingSystemBusinessTypeId":"%s", "leadingSystemBusinessTypeDescription":"%s"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
 		"regionId": "XYZ"
@@ -933,7 +933,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"%s","leadingSystemBusinessType":"%s", "leadingSystemBusinessTypeDescription":"%s"},
+		"additionalAttributes": {"systemSCPLandscapeID":"%s","leadingSystemBusinessTypeId":"%s", "leadingSystemBusinessTypeDescription":"%s"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
 		"regionId": "XYZ"
