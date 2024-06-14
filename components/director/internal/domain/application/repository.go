@@ -7,6 +7,8 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
+
 	"github.com/jmoiron/sqlx"
 	tnt "github.com/kyma-incubator/compass/components/director/internal/domain/tenant"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
@@ -398,6 +400,38 @@ func (r *pgRepository) ListAllGlobalByFilter(ctx context.Context, appIDs []strin
 		TotalCount: totalCount,
 		PageInfo:   page,
 	}, nil
+}
+
+func (r *pgRepository) ListByIDs(ctx context.Context, tenant uuid.UUID, applicationIDs []string, pageSize int, cursor string) (*model.ApplicationPage, error) {
+	var appsCollection EntityCollection
+
+	if len(applicationIDs) == 0 {
+		return &model.ApplicationPage{
+			Data:       []*model.Application{},
+			TotalCount: 0,
+			PageInfo: &pagination.Page{
+				StartCursor: "",
+				EndCursor:   "",
+				HasNextPage: false,
+			},
+		}, nil
+	}
+
+	page, totalCount, err := r.pageableQuerier.List(ctx, resource.Application, tenant.String(), pageSize, cursor, "id", &appsCollection, repo.NewInConditionForStringValues("id", applicationIDs))
+	if err != nil {
+		return nil, err
+	}
+
+	items := make([]*model.Application, 0, len(appsCollection))
+
+	for _, appEnt := range appsCollection {
+		m := r.conv.FromEntity(&appEnt)
+		items = append(items, m)
+	}
+	return &model.ApplicationPage{
+		Data:       items,
+		TotalCount: totalCount,
+		PageInfo:   page}, nil
 }
 
 // listAssociatedTenants retrieves all tenants of type 'cost-object' or 'customer' that have access to the provided applications

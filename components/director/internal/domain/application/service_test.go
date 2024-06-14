@@ -4102,11 +4102,11 @@ func TestService_ListByRuntimeID(t *testing.T) {
 
 	first := 10
 	cursor := "test"
-	scenarios := []interface{}{"Easter", "Christmas", "Winter-Sale"}
-	hidingSelectors := map[string][]string{"foo": {"bar", "baz"}}
+	scenarios := []string{"Easter", "Christmas", "Winter-Sale"}
 
 	formations := []*model.Formation{{Name: "Easter"}, {Name: "Christmas"}, {Name: "Winter-Sale"}}
 
+	applicationIDs := []string{"test1", "test2"}
 	applications := []*model.Application{
 		fixModelApplication("test1", "tenant-foo", "test1", "test1"),
 		fixModelApplication("test2", "tenant-foo", "test2", "test2"),
@@ -4120,7 +4120,6 @@ func TestService_ListByRuntimeID(t *testing.T) {
 		LabelRepositoryFn   func() *automock.LabelRepository
 		AppRepositoryFn     func() *automock.ApplicationRepository
 		FormationServiceFn  func() *automock.FormationService
-		ConfigProviderFn    func() *automock.ApplicationHideCfgProvider
 		ExpectedResult      *model.ApplicationPage
 		ExpectedError       error
 	}{
@@ -4135,19 +4134,15 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, hidingSelectors).
+				appRepository.On("ListByIDs", ctx, tenantUUID, applicationIDs, first, cursor).
 					Return(applicationPage, nil).Once()
 				return appRepository
 			},
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(formations, nil).Once()
+				formationSvc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(applicationIDs, nil).Once()
 				return formationSvc
-			},
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				cfgProvider.On("GetApplicationHideSelectors").Return(hidingSelectors, nil).Once()
-				return cfgProvider
 			},
 			ExpectedError:  nil,
 			ExpectedResult: applicationPage,
@@ -4164,14 +4159,11 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(nil, nil).Once()
+				formationSvc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(applicationIDs, nil).Once()
 				return formationSvc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError: nil,
+			ExpectedError:   nil,
 			ExpectedResult: &model.ApplicationPage{
 				Data:       []*model.Application{},
 				PageInfo:   &pagination.Page{},
@@ -4192,12 +4184,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				return labelRepository
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  testError,
-			ExpectedResult: nil,
+			ExpectedError:   testError,
+			ExpectedResult:  nil,
 		},
 		{
 			Name:  "Return error when runtime not exits",
@@ -4213,12 +4201,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				return labelRepository
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  errors.New("runtime does not exist"),
-			ExpectedResult: nil,
+			ExpectedError:   errors.New("runtime does not exist"),
+			ExpectedResult:  nil,
 		},
 		{
 			Name:  "Return error when listing formations for runtime failed",
@@ -4235,12 +4219,8 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				return formationSvc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				return cfgProvider
-			},
-			ExpectedError:  testError,
-			ExpectedResult: nil,
+			ExpectedError:   testError,
+			ExpectedResult:  nil,
 		},
 		{
 			Name:  "Return error when listing application by scenarios failed",
@@ -4254,24 +4234,20 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(formations, nil).Once()
+				formationSvc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(applicationIDs, nil).Once()
 				return formationSvc
 			},
 			AppRepositoryFn: func() *automock.ApplicationRepository {
 				appRepository := &automock.ApplicationRepository{}
-				appRepository.On("ListByScenarios", ctx, tenantUUID, convertToStringArray(t, scenarios), first, cursor, hidingSelectors).
+				appRepository.On("ListByIDs", ctx, tenantUUID, applicationIDs, first, cursor).
 					Return(nil, testError).Once()
 				return appRepository
-			},
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				cfgProvider.On("GetApplicationHideSelectors").Return(hidingSelectors, nil).Once()
-				return cfgProvider
 			},
 			ExpectedError:  testError,
 			ExpectedResult: nil,
 		},
 		{
-			Name:  "Return error when config provider returns error",
+			Name:  "Return error when listing object IDs for formation returns error",
 			Input: runtimeUUID,
 			RuntimeRepositoryFn: func() *automock.RuntimeRepository {
 				runtimeRepository := &automock.RuntimeRepository{}
@@ -4282,16 +4258,12 @@ func TestService_ListByRuntimeID(t *testing.T) {
 			FormationServiceFn: func() *automock.FormationService {
 				formationSvc := &automock.FormationService{}
 				formationSvc.On("ListFormationsForObject", ctx, runtimeUUID.String()).Return(formations, nil).Once()
+				formationSvc.On("ListObjectIDsOfTypeForFormations", ctx, tenantUUID.String(), scenarios, model.FormationAssignmentTypeApplication).Return(nil, testError).Once()
 				return formationSvc
 			},
 			AppRepositoryFn: UnusedApplicationRepository,
-			ConfigProviderFn: func() *automock.ApplicationHideCfgProvider {
-				cfgProvider := &automock.ApplicationHideCfgProvider{}
-				cfgProvider.On("GetApplicationHideSelectors").Return(nil, testError).Once()
-				return cfgProvider
-			},
-			ExpectedError:  testError,
-			ExpectedResult: nil,
+			ExpectedError:   testError,
+			ExpectedResult:  nil,
 		},
 	}
 
@@ -4304,12 +4276,11 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				labelRepository = testCase.LabelRepositoryFn()
 			}
 			appRepository := testCase.AppRepositoryFn()
-			cfgProvider := testCase.ConfigProviderFn()
 			formationSvc := UnusedFormationService()
 			if testCase.FormationServiceFn != nil {
 				formationSvc = testCase.FormationServiceFn()
 			}
-			svc := application.NewService(nil, cfgProvider, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, formationSvc, "", nil)
+			svc := application.NewService(nil, nil, appRepository, nil, runtimeRepository, labelRepository, nil, nil, nil, nil, formationSvc, "", nil)
 
 			// WHEN
 			results, err := svc.ListByRuntimeID(ctx, testCase.Input, first, cursor)
@@ -4323,7 +4294,7 @@ func TestService_ListByRuntimeID(t *testing.T) {
 				require.NoError(t, err)
 			}
 			assert.Equal(t, testCase.ExpectedResult, results)
-			mock.AssertExpectationsForObjects(t, runtimeRepository, labelRepository, appRepository, cfgProvider)
+			mock.AssertExpectationsForObjects(t, runtimeRepository, labelRepository, appRepository)
 		})
 	}
 }
