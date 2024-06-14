@@ -144,7 +144,8 @@ type config struct {
 	APIMetadataValidatorPort                 string `envconfig:"APP_API_METADATA_VALIDATOR_PORT"`
 	APIMetadataValidatorEnabled              bool   `envconfig:"APP_API_METADATA_VALIDATOR_ENABLED"`
 
-	ValidationRuleIgnoreList string `envconfig:"APP_VALIDATION_RULE_IGNORE_LIST"`
+	ValidationRuleIgnoreList          string `envconfig:"APP_VALIDATION_RULE_IGNORE_LIST"`
+	ValidationRuleGlobalIgnoreListKey string `envconfig:"APP_VALIDATION_RULE_GLOBAL_IGNORE_LIST_KEY"`
 
 	MetricsConfig           ord.MetricsConfig
 	OperationsManagerConfig operationsmanager.OperationsManagerConfig
@@ -384,7 +385,7 @@ func main() {
 	apiValidatorURL := fmt.Sprintf("%s:%s", cfg.APIMetadataValidatorHost, cfg.APIMetadataValidatorPort)
 
 	validationClient := ord.NewValidationClient(apiValidatorURL, http.DefaultClient, cfg.APIMetadataValidatorEnabled)
-	documentValidator := ord.NewDocumentValidator(validationClient, ordValidationRuleIgnoreList)
+	documentValidator := ord.NewDocumentValidator(validationClient, ordValidationRuleIgnoreList, cfg.ValidationRuleGlobalIgnoreListKey)
 	documentSanitizer := ord.NewDocumentSanitizer()
 
 	globalRegistrySvc := ord.NewGlobalRegistryService(transact, cfg.GlobalRegistryConfig, vendorSvc, productSvc, ordClientWithoutTenantExecutor, credentialExchangeStrategyTenantMappings, documentValidator)

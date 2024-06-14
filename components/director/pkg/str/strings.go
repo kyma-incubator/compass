@@ -159,3 +159,19 @@ func ConvertToStringArray(arr []interface{}) ([]string, error) {
 
 	return stringArr, nil
 }
+
+func MergeWithoutDuplicates(a, b []string) []string {
+	occurrence := make(map[string]bool)
+	var result []string
+
+	// Merge both slices
+	for _, v := range append(a, b...) {
+		// Check if the value is already present in the map
+		if !occurrence[v] {
+			result = append(result, v) // If not present, append to result slice and mark as present
+			occurrence[v] = true
+		}
+	}
+
+	return result
+}

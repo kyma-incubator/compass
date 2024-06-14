@@ -17,6 +17,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const globalIgnoreListKey = "global"
+
 func TestDocumentValidator_Validate(t *testing.T) {
 	testNamespace := "test.ns"
 	ignoredValidationRule := "type1"
@@ -51,6 +53,7 @@ func TestDocumentValidator_Validate(t *testing.T) {
 		ExpectedValidationErrors []*ord.ValidationError
 		ExpectedValidResources   func() ([]*ord.Document, error)
 		Namespace                string
+		IgnoreListOverride       map[string][]string
 	}{
 		{
 			Name:              "Success without errors",
@@ -135,6 +138,24 @@ func TestDocumentValidator_Validate(t *testing.T) {
 			},
 		},
 		{
+			Name:              "Should not delete failed resources when matching the global ignored list",
+			ClientValidatorFn: validatorClientCallWithValidationErrors,
+			InputDocument:     fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL),
+			InputBaseURL:      baseURL,
+			Namespace:         testNamespace,
+			IgnoreListOverride: map[string][]string{
+				globalIgnoreListKey: {ignoredValidationRule},
+			},
+			ExpectedValidationErrors: validationErrorForInvalidPackage,
+			ExpectedValidResources: func() ([]*ord.Document, error) {
+				doc := &ord.Document{}
+				if err := json.Unmarshal([]byte(fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL)), &doc); err != nil {
+					return nil, err
+				}
+				return []*ord.Document{doc}, nil
+			},
+		},
+		{
 			Name:                     "Should delete failed resources when not matching the ignored list",
 			ClientValidatorFn:        validatorClientCallWithValidationErrors,
 			InputDocument:            fmt.Sprintf(ordDocumentWithInvalidPackage, baseURL),
@@ -160,7 +181,12 @@ func TestDocumentValidator_Validate(t *testing.T) {
 
 	for _, test := range testCases {
 		t.Run(test.Name, func(t *testing.T) {
-			validator := ord.NewDocumentValidator(test.ClientValidatorFn(), ignorelistMapping)
+			ignoreList := ignorelistMapping
+			if test.IgnoreListOverride != nil {
+				ignoreList = test.IgnoreListOverride
+			}
+
+			validator := ord.NewDocumentValidator(test.ClientValidatorFn(), ignoreList, globalIgnoreListKey)
 
 			result := &ord.Document{}
 			err := json.Unmarshal([]byte(test.InputDocument), &result)

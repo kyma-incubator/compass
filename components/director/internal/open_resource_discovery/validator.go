@@ -25,15 +25,17 @@ type Validator interface {
 
 // DocumentValidator validates the ORD documents
 type DocumentValidator struct {
-	client                   ValidatorClient
-	ordRuleIgnoreListMapping map[string][]string
+	client                            ValidatorClient
+	ordRuleIgnoreListMapping          map[string][]string
+	validationRuleGlobalIgnoreListKey string
 }
 
 // NewDocumentValidator returns new document validator for validating ORD documents
-func NewDocumentValidator(client ValidatorClient, ordRuleIgnoreListMapping map[string][]string) Validator {
+func NewDocumentValidator(client ValidatorClient, ordRuleIgnoreListMapping map[string][]string, validationRuleGlobalIgnoreListKey string) Validator {
 	return &DocumentValidator{
-		client:                   client,
-		ordRuleIgnoreListMapping: ordRuleIgnoreListMapping,
+		client:                            client,
+		ordRuleIgnoreListMapping:          ordRuleIgnoreListMapping,
+		validationRuleGlobalIgnoreListKey: validationRuleGlobalIgnoreListKey,
 	}
 }
 
@@ -59,7 +61,7 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 		if len(currentDocumentErrors) > 0 {
 			log.C(ctx).Infof("There are %d validation errors from API Metadata Validator", len(currentDocumentErrors))
 
-			ordRuleIgnoreList := v.ordRuleIgnoreListMapping[appNamespace]
+			ordRuleIgnoreList := v.determineIgnoreList(appNamespace)
 			deleteInvalidResourcesFromDocument(ctx, documents[i], currentDocumentErrors, ordRuleIgnoreList, appNamespace)
 
 			combinedValidationErrors = append(combinedValidationErrors, currentDocumentErrors...)
@@ -87,6 +89,15 @@ func (v *DocumentValidator) Validate(ctx context.Context, documents []*Document,
 	combinedValidationErrors = append(combinedValidationErrors, resourceReferenceErrors...)
 
 	return combinedValidationErrors, nil
+}
+
+// determineIgnoreList Merge the namespaced ignorelist with the global ignorelist.
+// Global here means namespace-independent ignorelist
+func (v *DocumentValidator) determineIgnoreList(appNamespace string) []string {
+	globalIgnoreList := v.ordRuleIgnoreListMapping[v.validationRuleGlobalIgnoreListKey]
+	namespacedOrdRuleIgnoreList := v.ordRuleIgnoreListMapping[appNamespace]
+
+	return str.MergeWithoutDuplicates(globalIgnoreList, namespacedOrdRuleIgnoreList)
 }
 
 func findResourceOrdIDByPath(data interface{}, path []string) (string, error) {
