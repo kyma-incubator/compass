@@ -160,6 +160,7 @@ func ConvertToStringArray(arr []interface{}) ([]string, error) {
 	return stringArr, nil
 }
 
+// MergeWithoutDuplicates merges multiple string arrays into a single array without duplicates
 func MergeWithoutDuplicates(a, b []string) []string {
 	occurrence := make(map[string]bool)
 	var result []string
