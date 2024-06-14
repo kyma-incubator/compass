@@ -79,7 +79,7 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10", "leadingSystemBusinessType": "123456789"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10", "leadingSystemBusinessTypeId": "123456789", "leadingSystemBusinessTypeDescription": "desc"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
 		"regionId": "XYZ"
@@ -111,7 +111,7 @@ const (
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10", "leadingSystemBusinessType": "123456789"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10", "leadingSystemBusinessTypeId": "123456789", "leadingSystemBusinessTypeDescription": "desc"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
 		"regionId": "XYZ"
@@ -129,7 +129,7 @@ const (
         "systemId": "system-id-1",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10", "leadingSystemBusinessType": "123456789"},
+		"additionalAttributes": {"systemSCPLandscapeID":"cf-eu10", "leadingSystemBusinessTypeId": "123456789", "leadingSystemBusinessTypeDescription": "desc"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
         "regionId": "XYZ"
@@ -150,14 +150,15 @@ const (
         "regionId": "XYZ"
 	}]`
 
-	nameLabelKey                      = "displayName"
-	namePlaceholder                   = "name"
-	displayNamePlaceholder            = "display-name"
-	regionLabelKey                    = "region"
-	dataCenterLabelKey                = "dataCenter"
-	leadingSystemBusinessTypeLabelKey = "leadingSystemBusinessType"
-	applicationTypeLabelKey           = "applicationType"
-	slisFilterLabelKey                = "slisFilter"
+	nameLabelKey                                 = "displayName"
+	namePlaceholder                              = "name"
+	displayNamePlaceholder                       = "display-name"
+	regionLabelKey                               = "region"
+	dataCenterLabelKey                           = "dataCenter"
+	leadingSystemBusinessTypeIDLabelKey          = "leadingSystemBusinessTypeID"
+	leadingSystemBusinessTypeDescriptionLabelKey = "leadingSystemBusinessTypeDescription"
+	applicationTypeLabelKey                      = "applicationType"
+	slisFilterLabelKey                           = "slisFilter"
 )
 
 var (
@@ -218,7 +219,7 @@ func TestSystemFetcherSuccess(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789"),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789", "desc"),
 		},
 	}
 
@@ -287,7 +288,7 @@ func TestSystemFetcherSuccessForCustomerTenant(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789"),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789", "desc"),
 		},
 	}
 
@@ -450,7 +451,7 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "", ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -461,7 +462,7 @@ func TestSystemFetcherSuccessWithMultipleLabelValues(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, "", "XYZ", "", ""),
 		},
 	}
 
@@ -525,7 +526,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789"),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789", "desc"),
 		},
 		{
 			Application: directorSchema.Application{
@@ -536,7 +537,7 @@ func TestSystemFetcherSuccessExpectORDWebhook(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ", "", ""),
 		},
 	}
 
@@ -637,7 +638,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", "", ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -647,7 +648,7 @@ func TestSystemFetcherSuccessMissingORDWebhookEmptyBaseURL(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, "", "XYZ", "", ""),
 		},
 	}
 
@@ -885,7 +886,7 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", "", ""),
 		},
 	}
 
@@ -900,9 +901,11 @@ func TestSystemFetcherDuplicateSystemsForTwoTenants(t *testing.T) {
 func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 	ctx := context.TODO()
 	region1 := "cf-eu10"
-	leadingSystemBusinessType1 := "123456789"
+	leadingSystemBusinessTypeID1 := "123456789"
+	leadingSystemBusinessTypeDescription1 := "desc1"
 	region2 := "cf-eu20"
-	leadingSystemBusinessType2 := "987654321"
+	leadingSystemBusinessTypeID2 := "987654321"
+	leadingSystemBusinessTypeDescription2 := "desc2"
 	mockSystems := []byte(fmt.Sprintf(`[{
 		"systemNumber": "1",
 		"displayName": "name1",
@@ -915,7 +918,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"%s", "leadingSystemBusinessType":"%s"},
+		"additionalAttributes": {"systemSCPLandscapeID":"%s", "leadingSystemBusinessTypeID":"%s", "leadingSystemBusinessTypeDescription":"%s"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
 		"regionId": "XYZ"
@@ -930,11 +933,11 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 		"baseUrl": "",
 		"infrastructureProvider": "",
 		"additionalUrls": {"mainUrl":"http://mainurl.com"},
-		"additionalAttributes": {"systemSCPLandscapeID":"%s","leadingSystemBusinessType":"%s"},
+		"additionalAttributes": {"systemSCPLandscapeID":"%s","leadingSystemBusinessType":"%s", "leadingSystemBusinessTypeDescription":"%s"},
 		"businessTypeId": "tbtID",
 		"businessTypeDescription": "tbt description name",
 		"regionId": "XYZ"
-	}]`, cfg.SystemInformationSourceKey, region1, leadingSystemBusinessType1, cfg.SystemInformationSourceKey, region2, leadingSystemBusinessType2))
+	}]`, cfg.SystemInformationSourceKey, region1, leadingSystemBusinessTypeID1, leadingSystemBusinessTypeDescription1, cfg.SystemInformationSourceKey, region2, leadingSystemBusinessTypeID2, leadingSystemBusinessTypeDescription2))
 	setMockSystems(t, mockSystems, tenant.TestTenants.GetDefaultTenantID())
 	defer cleanupMockSystems(t)
 
@@ -982,7 +985,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, region1, "XYZ", leadingSystemBusinessType1),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, region1, "XYZ", leadingSystemBusinessTypeID1, leadingSystemBusinessTypeDescription1),
 		},
 		{
 			Application: directorSchema.Application{
@@ -993,7 +996,7 @@ func TestSystemFetcherSuccessForRegionalAppTemplates(t *testing.T) {
 				SystemNumber:          str.Ptr("2"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2, "XYZ", leadingSystemBusinessType2),
+			Labels: applicationLabels("name2", appTemplateName2, intSys.ID, true, region2, "XYZ", leadingSystemBusinessTypeID2, leadingSystemBusinessTypeDescription2),
 		},
 	}
 
@@ -1139,7 +1142,7 @@ func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
 					SystemNumber:          str.Ptr("1"),
 					IntegrationSystemID:   &intSys.ID,
 				},
-				Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789"),
+				Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "cf-eu10", "XYZ", "123456789", "desc"),
 			},
 		}
 
@@ -1197,7 +1200,7 @@ func TestSystemFetcherSuccessWithSlisFilterSet(t *testing.T) {
 					SystemNumber:          str.Ptr("2"),
 					IntegrationSystemID:   &intSys.ID,
 				},
-				Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, "", "XYZ", ""),
+				Labels: applicationLabels("name2", appTemplateName1, intSys.ID, true, "", "XYZ", "", ""),
 			},
 		}
 
@@ -1350,7 +1353,7 @@ func TestSystemFetcherDuplicateSystems(t *testing.T) {
 				SystemNumber:          str.Ptr("1"),
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", "", ""),
 		},
 	}
 
@@ -1475,7 +1478,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				ApplicationTemplateID: &template.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name1", appTemplateName1, intSys.ID, true, "", "XYZ", "", ""),
 		},
 		{
 			Application: directorSchema.Application{
@@ -1484,7 +1487,7 @@ func TestSystemFetcherCreateAndDelete(t *testing.T) {
 				ApplicationTemplateID: &template2.ID,
 				IntegrationSystemID:   &intSys.ID,
 			},
-			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true, "", "XYZ", ""),
+			Labels: applicationLabels("name3", appTemplateName2, intSys.ID, true, "", "XYZ", "", ""),
 		},
 	}
 
@@ -1806,7 +1809,7 @@ func getFixExpectedMockSystems(count int, templateID, templateName, intSysID str
 				IntegrationSystemID:   &intSysID,
 				SystemNumber:          str.Ptr(fmt.Sprintf("%d", i)),
 			},
-			Labels: applicationLabels(systemName, templateName, intSysID, true, "", "XYZ", ""),
+			Labels: applicationLabels(systemName, templateName, intSysID, true, "", "XYZ", "", ""),
 		}
 	}
 	return result
@@ -1833,7 +1836,7 @@ func cleanupMockSystems(t *testing.T) {
 	log.D().Info("Successfully reset mock systems")
 }
 
-func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool, regionLabel, dataCenterLabel, leadingSystemBusinessTypeLabel string) directorSchema.Labels {
+func applicationLabels(name, appTemplateName, integrationSystemID string, fromTemplate bool, regionLabel, dataCenterLabel, leadingSystemBusinessTypeIDLabel, leadingSystemBusinessTypeDescriptionLabel string) directorSchema.Labels {
 	labels := directorSchema.Labels{
 		"managed":                "true",
 		"name":                   fmt.Sprintf("mp-%s", name),
@@ -1857,8 +1860,12 @@ func applicationLabels(name, appTemplateName, integrationSystemID string, fromTe
 		labels[dataCenterLabelKey] = dataCenterLabel
 	}
 
-	if len(leadingSystemBusinessTypeLabel) > 0 {
-		labels[leadingSystemBusinessTypeLabelKey] = leadingSystemBusinessTypeLabel
+	if len(leadingSystemBusinessTypeIDLabel) > 0 {
+		labels[leadingSystemBusinessTypeIDLabelKey] = leadingSystemBusinessTypeIDLabel
+	}
+
+	if len(leadingSystemBusinessTypeDescriptionLabel) > 0 {
+		labels[leadingSystemBusinessTypeDescriptionLabelKey] = leadingSystemBusinessTypeDescriptionLabel
 	}
 
 	return labels
