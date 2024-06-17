@@ -46,8 +46,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationAssignmentNotifications, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:              generateConfigurationChangeNotificationDetails,
@@ -64,8 +63,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationAssignmentNotifications, generateAppToAppNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:              generateAppToAppNotificationDetails,
@@ -77,7 +75,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			Name: "error while enforcing constraints pre operation",
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationAssignmentNotifications, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			Details: generateConfigurationChangeNotificationDetails,
@@ -87,7 +85,7 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			Name: "error when webhook type is not supported",
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationAssignmentNotifications, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
@@ -103,28 +101,12 @@ func TestBuildFormationAssignmentNotificationRequest(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationAssignmentNotifications, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			Details:            generateConfigurationChangeNotificationDetails,
 			Webhook:            webhook,
 			ExpectedErrMessage: "while converting webhook with ID",
-		},
-		{
-			Name: "error while enforcing constraints post operation",
-			WebhookConverter: func() *automock.WebhookConverter {
-				conv := &automock.WebhookConverter{}
-				conv.On("ToGraphQL", webhook).Return(gqlWebhook, nil).Once()
-				return conv
-			},
-			ConstraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateFormationAssignmentNotificationLocation, generateConfigurationChangeNotificationDetails, FormationTemplateID).Return(testErr).Once()
-				return engine
-			},
-			Details: generateConfigurationChangeNotificationDetails,
-			Webhook: webhook,
 		},
 	}
 
@@ -176,8 +158,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			name: "Successfully build formation notification requests",
 			constraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationNotifications, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
@@ -192,7 +173,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			name: "Error when enforcing pre generate formation notification constraints",
 			constraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationNotifications, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
@@ -202,7 +183,7 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			name: "Success when there are no formation template webhooks",
 			constraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationNotifications, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			formationTemplateWebhooks: emptyFormationLifecycleWebhooks,
@@ -211,28 +192,12 @@ func TestBuildFormationNotificationRequests(t *testing.T) {
 			name: "Error when converting formation template webhook to graphql one",
 			constraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreGenerateFormationNotifications, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookConverterFn: func() *automock.WebhookConverter {
 				webhookConv := &automock.WebhookConverter{}
 				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(nil, testErr).Once()
-				return webhookConv
-			},
-			formationTemplateWebhooks: formationLifecycleSyncWebhooks,
-			expectedErrMsg:            testErr.Error(),
-		},
-		{
-			name: "Error when enforcing post generate formation notification constraints",
-			constraintEngineFn: func() *automock.ConstraintEngine {
-				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postGenerateFormationNotificationLocation, formationNotificationDetails, FormationTemplateID).Return(testErr).Once()
-				return engine
-			},
-			webhookConverterFn: func() *automock.WebhookConverter {
-				webhookConv := &automock.WebhookConverter{}
-				webhookConv.On("ToGraphQL", formationLifecycleSyncWebhook).Return(formationLifecycleGQLWebhook, nil).Once()
 				return webhookConv
 			},
 			formationTemplateWebhooks: formationLifecycleSyncWebhooks,

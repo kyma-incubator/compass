@@ -94,3 +94,37 @@ type AsynchronousFlowControlOperatorInput struct {
 	FAMemoryAddress                       uintptr `json:"formation_assignment_memory_address"`         // contains the memory address of the join point details' formation assignment in form of an integer
 	ReverseFAMemoryAddress                uintptr `json:"reverse_formation_assignment_memory_address"` // contains the memory address of the join point details' reverse formation assignment in form of an integer
 }
+
+// JSONSchemaValidatorOperatorInput is an input for JSONSchemaValidatorOperator operator
+type JSONSchemaValidatorOperatorInput struct {
+	ResourceType          model.ResourceType `json:"resource_type"`
+	ResourceSubtype       string             `json:"resource_subtype"`
+	ResourceID            string             `json:"resource_id"`
+	SourceResourceType    model.ResourceType `json:"source_resource_type"`
+	SourceResourceID      string             `json:"source_resource_id"`
+	TenantID              string             `json:"tenant_id"`
+	FormationTemplateName string             `json:"formation_template_name"`
+	FAMemoryAddress       uintptr            `json:"formation_assignment_memory_address"` // contains the memory address of the join point details' formation assignment in form of an integer
+	ExceptSubtypes        []string           `json:"except_subtypes"`
+	ExceptFormationTypes  []string           `json:"except_formation_types"`
+	OnlyForSourceSubtypes []string           `json:"only_for_source_subtypes"`
+	JSONSchema            string             `json:"json_schema"`
+}
+
+// WithExceptFormationTypes sets the ExceptFormationTypes field of the JSONSchemaValidatorOperatorInput
+func (i *JSONSchemaValidatorOperatorInput) WithExceptFormationTypes(formationTypes []string) *JSONSchemaValidatorOperatorInput {
+	i.ExceptFormationTypes = formationTypes
+	return i
+}
+
+// WithExceptSubtypes sets the ExceptSubtypes field of the JSONSchemaValidatorOperatorInput
+func (i *JSONSchemaValidatorOperatorInput) WithExceptSubtypes(subtypes []string) *JSONSchemaValidatorOperatorInput {
+	i.ExceptSubtypes = subtypes
+	return i
+}
+
+// WithOnlyForSourceSubtypes sets the OnlyForSourceSubtypes field of the JSONSchemaValidatorOperatorInput
+func (i *JSONSchemaValidatorOperatorInput) WithOnlyForSourceSubtypes(sourceSubtypes []string) *JSONSchemaValidatorOperatorInput {
+	i.OnlyForSourceSubtypes = sourceSubtypes
+	return i
+}

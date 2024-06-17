@@ -34,6 +34,8 @@ const (
 	RedirectNotificationOperator = "RedirectNotification"
 	// AsynchronousFlowControlOperator represents the asynchronous flow control operator
 	AsynchronousFlowControlOperator = "AsynchronousFlowControl"
+	// JSONSchemaValidatorOperator represents the JSONSchemaValidator operator
+	JSONSchemaValidatorOperator = "JSONSchemaValidator"
 )
 
 // OperatorInput represent the input needed by the operators
@@ -50,6 +52,7 @@ var FormationConstraintInputByOperator = map[string]OperatorInput{
 	ConfigMutatorOperator:                                        &ConfigMutatorInput{},
 	RedirectNotificationOperator:                                 &RedirectNotificationInput{},
 	AsynchronousFlowControlOperator:                              &AsynchronousFlowControlOperatorInput{},
+	JSONSchemaValidatorOperator:                                  &JSONSchemaValidatorOperatorInput{},
 }
 
 // JoinPointDetailsByLocation represents a mapping between JoinPointLocation and JoinPointDetails
@@ -62,14 +65,13 @@ var JoinPointDetailsByLocation = map[JoinPointLocation]JoinPointDetails{
 	PostCreate:   &CRUDFormationOperationDetails{},
 	PreDelete:    &CRUDFormationOperationDetails{},
 	PostDelete:   &CRUDFormationOperationDetails{},
-	PreGenerateFormationAssignmentNotifications:  emptyGenerateFormationAssignmentNotificationOperationDetails(),
-	PostGenerateFormationAssignmentNotifications: emptyGenerateFormationAssignmentNotificationOperationDetails(),
-	PreGenerateFormationNotifications:            emptyGenerateFormationNotificationOperationDetails(),
-	PostGenerateFormationNotifications:           emptyGenerateFormationNotificationOperationDetails(),
-	PreSendNotification:                          emptySendNotificationOperationDetails(),
-	PostSendNotification:                         emptySendNotificationOperationDetails(),
-	PreNotificationStatusReturned:                emptyNotificationStatusReturnedOperationDetails(),
-	PostNotificationStatusReturned:               emptyNotificationStatusReturnedOperationDetails(),
+	PreGenerateFormationAssignmentNotifications: emptyGenerateFormationAssignmentNotificationOperationDetails(),
+	PostGenerateFormationAssignment:             emptyGenerateFormationAssignmentOperationDetails(),
+	PreGenerateFormationNotifications:           emptyGenerateFormationNotificationOperationDetails(),
+	PreSendNotification:                         emptySendNotificationOperationDetails(),
+	PostSendNotification:                        emptySendNotificationOperationDetails(),
+	PreNotificationStatusReturned:               emptyNotificationStatusReturnedOperationDetails(),
+	PostNotificationStatusReturned:              emptyNotificationStatusReturnedOperationDetails(),
 }
 
 // FormationConstraintInputWrapper is a wrapper structure of the graphql.FormationConstraintInput,
@@ -173,6 +175,12 @@ func emptyGenerateFormationAssignmentNotificationOperationDetails() *GenerateFor
 				Labels:                map[string]string{},
 			},
 		},
+	}
+}
+
+func emptyGenerateFormationAssignmentOperationDetails() *GenerateFormationAssignmentDetails {
+	return &GenerateFormationAssignmentDetails{
+		FormationAssignment: &model.FormationAssignment{},
 	}
 }
 

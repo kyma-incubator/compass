@@ -2321,6 +2321,7 @@ const (
 	TargetOperationCreateFormation                         TargetOperation = "CREATE_FORMATION"
 	TargetOperationDeleteFormation                         TargetOperation = "DELETE_FORMATION"
 	TargetOperationGenerateFormationAssignmentNotification TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
+	TargetOperationGenerateFormationAssignment             TargetOperation = "GENERATE_FORMATION_ASSIGNMENT"
 	TargetOperationGenerateFormationNotification           TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
 	TargetOperationLoadFormations                          TargetOperation = "LOAD_FORMATIONS"
 	TargetOperationSelectSystemsForFormation               TargetOperation = "SELECT_SYSTEMS_FOR_FORMATION"
@@ -2334,6 +2335,7 @@ var AllTargetOperation = []TargetOperation{
 	TargetOperationCreateFormation,
 	TargetOperationDeleteFormation,
 	TargetOperationGenerateFormationAssignmentNotification,
+	TargetOperationGenerateFormationAssignment,
 	TargetOperationGenerateFormationNotification,
 	TargetOperationLoadFormations,
 	TargetOperationSelectSystemsForFormation,
@@ -2343,7 +2345,7 @@ var AllTargetOperation = []TargetOperation{
 
 func (e TargetOperation) IsValid() bool {
 	switch e {
-	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation, TargetOperationSendNotification, TargetOperationNotificationStatusReturned:
+	case TargetOperationAssignFormation, TargetOperationUnassignFormation, TargetOperationCreateFormation, TargetOperationDeleteFormation, TargetOperationGenerateFormationAssignmentNotification, TargetOperationGenerateFormationAssignment, TargetOperationGenerateFormationNotification, TargetOperationLoadFormations, TargetOperationSelectSystemsForFormation, TargetOperationSendNotification, TargetOperationNotificationStatusReturned:
 		return true
 	}
 	return false

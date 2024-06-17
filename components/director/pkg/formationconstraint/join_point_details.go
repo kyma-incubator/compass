@@ -173,3 +173,23 @@ func (d *NotificationStatusReturnedOperationDetails) GetMatchingDetails() Matchi
 		ResourceSubtype: d.ResourceSubtype,
 	}
 }
+
+// GenerateFormationAssignmentDetails contains details applicable to generate formation assignment join point
+type GenerateFormationAssignmentDetails struct {
+	ResourceType          model.ResourceType
+	ResourceSubtype       string
+	ResourceID            string
+	SourceResourceType    model.FormationAssignmentType
+	SourceResourceID      string
+	TenantID              string
+	FormationTemplateName string
+	FormationAssignment   *model.FormationAssignment
+}
+
+// GetMatchingDetails returns matching details for GenerateFormationAssignmentDetails
+func (d *GenerateFormationAssignmentDetails) GetMatchingDetails() MatchingDetails {
+	return MatchingDetails{
+		ResourceType:    d.ResourceType,
+		ResourceSubtype: d.ResourceSubtype,
+	}
+}

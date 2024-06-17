@@ -1,6 +1,8 @@
 package formationconstraint
 
-import "github.com/kyma-incubator/compass/components/director/internal/model"
+import (
+	"github.com/kyma-incubator/compass/components/director/internal/model"
+)
 
 // JoinPointLocation contains information to distinguish join points
 type JoinPointLocation struct {
@@ -54,20 +56,10 @@ var (
 		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
 		ConstraintType: model.PreOperation,
 	}
-	// PostGenerateFormationAssignmentNotifications represents the location after GenerateFormationAssignmentNotifications operation execution
-	PostGenerateFormationAssignmentNotifications = JoinPointLocation{
-		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
-		ConstraintType: model.PostOperation,
-	}
 	// PreGenerateFormationNotifications represents the location before GenerateFormationNotifications operation execution
 	PreGenerateFormationNotifications = JoinPointLocation{
 		OperationName:  model.GenerateFormationNotificationOperation,
 		ConstraintType: model.PreOperation,
-	}
-	// PostGenerateFormationNotifications represents the location after GenerateFormationNotifications operation execution
-	PostGenerateFormationNotifications = JoinPointLocation{
-		OperationName:  model.GenerateFormationNotificationOperation,
-		ConstraintType: model.PostOperation,
 	}
 	// PreSendNotification represents the location before SendNotification operation execution
 	PreSendNotification = JoinPointLocation{
@@ -87,6 +79,11 @@ var (
 	// PostNotificationStatusReturned represents the location after NotificationStatusReturned operation execution
 	PostNotificationStatusReturned = JoinPointLocation{
 		OperationName:  model.NotificationStatusReturned,
+		ConstraintType: model.PostOperation,
+	}
+	// PostGenerateFormationAssignment represents the location after GenerateFormationAssignmentOperation operation execution
+	PostGenerateFormationAssignment = JoinPointLocation{
+		OperationName:  model.GenerateFormationAssignmentOperation,
 		ConstraintType: model.PostOperation,
 	}
 )

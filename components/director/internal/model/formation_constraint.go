@@ -26,6 +26,8 @@ const (
 	DeleteFormationOperation TargetOperation = "DELETE_FORMATION"
 	// GenerateFormationAssignmentNotificationOperation represents the generate formation assignment notifications operation
 	GenerateFormationAssignmentNotificationOperation TargetOperation = "GENERATE_FORMATION_ASSIGNMENT_NOTIFICATION"
+	// GenerateFormationAssignmentOperation represents the generate formation assignment operation
+	GenerateFormationAssignmentOperation TargetOperation = "GENERATE_FORMATION_ASSIGNMENT"
 	// GenerateFormationNotificationOperation represents the generate formation notifications operation
 	GenerateFormationNotificationOperation TargetOperation = "GENERATE_FORMATION_NOTIFICATION"
 	// SendNotificationOperation represents the send notification operation

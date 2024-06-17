@@ -6,8 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/pkg/persistence"
-	"github.com/stretchr/testify/require"
+	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 
 	"github.com/kyma-incubator/compass/components/director/internal/model"
 	"github.com/kyma-incubator/compass/components/director/pkg/pagination"
@@ -175,6 +174,25 @@ func TestRepository_Exists(t *testing.T) {
 }
 
 func TestRepository_Delete(t *testing.T) {
+	suiteWithoutTenant := testdb.RepoDeleteTestSuite{
+		Name: "Delete Formation Template By ID when there is no tenant",
+		SQLQueryDetails: []testdb.SQLQueryDetails{
+			{
+				Query:         regexp.QuoteMeta(`DELETE FROM public.formation_templates WHERE id = $1 AND tenant_id IS NULL`),
+				Args:          []driver.Value{testFormationTemplateID},
+				ValidResult:   sqlmock.NewResult(-1, 1),
+				InvalidResult: sqlmock.NewResult(-1, 2),
+			},
+		},
+		RepoConstructorFunc: formationtemplate.NewRepository,
+		ConverterMockProvider: func() testdb.Mock {
+			return &automock.EntityConverter{}
+		},
+		IsGlobal:      true,
+		MethodArgs:    []interface{}{testFormationTemplateID, ""},
+		ExpectedError: apperrors.TenantRequired,
+	}
+
 	suiteWithTenant := testdb.RepoDeleteTestSuite{
 		Name: "Delete Formation Template By ID when there is tenant",
 		SQLQueryDetails: []testdb.SQLQueryDetails{
@@ -192,26 +210,8 @@ func TestRepository_Delete(t *testing.T) {
 		MethodArgs: []interface{}{testFormationTemplateID, testTenantID},
 	}
 
+	suiteWithoutTenant.Run(t)
 	suiteWithTenant.Run(t)
-
-	t.Run("Return tenant is required error when deleting tenant scoped formation template with provided tenant header", func(t *testing.T) {
-		// GIVEN
-		db, mock := testdb.MockDatabase(t)
-		defer mock.AssertExpectations(t)
-		ctx := persistence.SaveToContext(ctx, db)
-
-		mock.ExpectExec(regexp.QuoteMeta(`DELETE FROM public.formation_templates WHERE id = $1 AND tenant_id IS NULL`)).
-			WithArgs(testFormationTemplateID).WillReturnResult(sqlmock.NewResult(-1, 0))
-
-		// WHEN
-		mockConverter := &automock.EntityConverter{}
-		r := formationtemplate.NewRepository(mockConverter)
-		err := r.Delete(ctx, testFormationTemplateID, "")
-
-		// THEN
-		require.Error(t, err)
-		require.Contains(t, err.Error(), "Tenant is required")
-	})
 }
 
 func TestRepository_List(t *testing.T) {
