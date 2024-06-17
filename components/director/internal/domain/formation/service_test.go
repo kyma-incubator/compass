@@ -3,6 +3,8 @@ package formation_test
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
+
 	persistenceautomock "github.com/kyma-incubator/compass/components/director/pkg/persistence/automock"
 	"github.com/kyma-incubator/compass/components/director/pkg/persistence/txtest"
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -513,8 +515,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -561,8 +563,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -609,8 +611,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -661,8 +663,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			FormationInput: &model.Formation{
@@ -708,8 +710,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			FormationInput: &model.Formation{
@@ -728,7 +730,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			FormationInput: &model.Formation{
@@ -757,7 +759,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			TemplateName:       testFormationTemplateName,
@@ -792,7 +794,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -812,7 +814,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			FormationTemplateRepoFn: func() *automock.FormationTemplateRepository {
@@ -838,7 +840,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			LabelDefServiceFn:  unusedLabelDefService,
@@ -864,7 +866,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			TemplateName:       testFormationTemplateName,
@@ -890,7 +892,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			TemplateName:       testFormationTemplateName,
@@ -917,7 +919,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			TemplateName:       testFormationTemplateName,
@@ -964,7 +966,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -984,7 +986,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			TemplateName:       testFormationTemplateName,
@@ -1011,7 +1013,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1056,8 +1058,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1105,8 +1107,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1160,8 +1162,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1209,8 +1211,8 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1262,7 +1264,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1312,7 +1314,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1362,7 +1364,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1411,7 +1413,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1465,7 +1467,7 @@ func TestServiceCreateFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preCreateLocation, createFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreCreate, createFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1638,8 +1640,8 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1692,8 +1694,8 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1746,8 +1748,8 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1789,7 +1791,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1831,7 +1833,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1873,7 +1875,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1918,7 +1920,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -1963,7 +1965,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2013,7 +2015,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2064,7 +2066,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2116,7 +2118,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2180,7 +2182,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2215,7 +2217,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			InputFormation:     in,
@@ -2307,8 +2309,8 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctx, postDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PostDelete, deleteFormationDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2343,7 +2345,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2384,7 +2386,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2427,7 +2429,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {
@@ -2470,7 +2472,7 @@ func TestServiceDeleteFormation(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctx, preDeleteLocation, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctx, formationconstraint.PreDelete, deleteFormationDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			webhookRepoFn: func() *automock.WebhookRepository {

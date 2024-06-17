@@ -60,11 +60,6 @@ func (nb *NotificationBuilder) BuildFormationAssignmentNotificationRequest(
 		return nil, errors.Wrapf(err, "while creating webhook request")
 	}
 
-	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PostGenerateFormationAssignmentNotifications, joinPointDetails, joinPointDetails.Formation.FormationTemplateID); err != nil {
-		log.C(ctx).Errorf("Did not generate notifications due to error: %v", errors.Wrapf(err, "While enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationAssignmentNotificationOperation, model.PostOperation))
-		return nil, nil
-	}
-
 	return req, nil
 }
 
@@ -101,10 +96,6 @@ func (nb *NotificationBuilder) BuildFormationNotificationRequests(ctx context.Co
 			FormationType: joinPointDetails.FormationType,
 		}
 		requests = append(requests, req)
-	}
-
-	if err := nb.constraintEngine.EnforceConstraints(ctx, formationconstraintpkg.PostGenerateFormationNotifications, joinPointDetails, joinPointDetails.FormationTemplateID); err != nil {
-		return nil, errors.Wrapf(err, "while enforcing constraints for target operation %q and constraint type %q", model.GenerateFormationNotificationOperation, model.PostOperation)
 	}
 
 	return requests, nil

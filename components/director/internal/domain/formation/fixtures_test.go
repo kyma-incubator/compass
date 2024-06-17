@@ -654,67 +654,6 @@ var (
 	formationLifecycleAsyncWebhooks = []*model.Webhook{formationLifecycleAsyncWebhook}
 	emptyFormationLifecycleWebhooks []*model.Webhook
 
-	// Formation constraints join point location variables
-	preGenerateFormationAssignmentNotificationLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
-		ConstraintType: model.PreOperation,
-	}
-
-	postGenerateFormationAssignmentNotificationLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.GenerateFormationAssignmentNotificationOperation,
-		ConstraintType: model.PostOperation,
-	}
-
-	preGenerateFormationNotificationLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.GenerateFormationNotificationOperation,
-		ConstraintType: model.PreOperation,
-	}
-
-	postGenerateFormationNotificationLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.GenerateFormationNotificationOperation,
-		ConstraintType: model.PostOperation,
-	}
-
-	preAssignLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.AssignFormationOperation,
-		ConstraintType: model.PreOperation,
-	}
-
-	postAssignLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.AssignFormationOperation,
-		ConstraintType: model.PostOperation,
-	}
-
-	preUnassignLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.UnassignFormationOperation,
-		ConstraintType: model.PreOperation,
-	}
-
-	postUnassignLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.UnassignFormationOperation,
-		ConstraintType: model.PostOperation,
-	}
-
-	preCreateLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.CreateFormationOperation,
-		ConstraintType: model.PreOperation,
-	}
-
-	postCreateLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.CreateFormationOperation,
-		ConstraintType: model.PostOperation,
-	}
-
-	preDeleteLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.DeleteFormationOperation,
-		ConstraintType: model.PreOperation,
-	}
-
-	postDeleteLocation = formationconstraint.JoinPointLocation{
-		OperationName:  model.DeleteFormationOperation,
-		ConstraintType: model.PostOperation,
-	}
-
 	// Formation constraints join point details variables
 	createFormationDetails = &formationconstraint.CRUDFormationOperationDetails{
 		FormationType:       testFormationTemplateName,

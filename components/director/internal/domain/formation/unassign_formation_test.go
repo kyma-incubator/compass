@@ -339,8 +339,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -395,7 +395,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -441,7 +441,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -487,7 +487,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -537,8 +537,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -610,8 +610,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -675,8 +675,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -725,7 +725,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -788,8 +788,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -838,7 +838,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -884,7 +884,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -958,7 +958,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1031,7 +1031,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1099,7 +1099,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1163,7 +1163,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1227,8 +1227,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1294,7 +1294,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1360,8 +1360,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1435,7 +1435,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1502,7 +1502,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1569,7 +1569,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1637,7 +1637,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1693,7 +1693,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -1740,7 +1740,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1786,7 +1786,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1844,7 +1844,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -1908,7 +1908,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -1967,7 +1967,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2024,7 +2024,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2082,7 +2082,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2141,7 +2141,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2200,7 +2200,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2266,7 +2266,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2334,7 +2334,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2382,7 +2382,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2440,7 +2440,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2513,7 +2513,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -2580,8 +2580,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
 					return engine
 				},
 				AssignmentOperationServiceFn: func() *automock.AssignmentOperationService {
@@ -2624,7 +2624,7 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(testErr).Once()
 					return engine
 				},
 				ObjectType:         objectTypeData.ObjectType,
@@ -2728,8 +2728,8 @@ func TestServiceUnassignFormation(t *testing.T) {
 				},
 				ConstraintEngineFn: func() *automock.ConstraintEngine {
 					engine := &automock.ConstraintEngine{}
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
-					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
+					engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, objectTypeData.UnassignDetails, FormationTemplateID).Return(nil).Once()
 					return engine
 				},
 				ASAEngineFn: func() *automock.AsaEngine {
@@ -2900,8 +2900,8 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
@@ -2949,7 +2949,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ObjectType:         graphql.FormationObjectTypeTenant,
@@ -2988,8 +2988,8 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), postUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(testErr).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PostUnassign, unassignTenantDetails, FormationTemplateID).Return(testErr).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
@@ -3027,7 +3027,7 @@ func TestServiceUnassignFormation_Tenant(t *testing.T) {
 			},
 			ConstraintEngineFn: func() *automock.ConstraintEngine {
 				engine := &automock.ConstraintEngine{}
-				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), preUnassignLocation, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
+				engine.On("EnforceConstraints", ctxWithTenantAndLoggerMatcher(), formationconstraint.PreUnassign, unassignTenantDetails, FormationTemplateID).Return(nil).Once()
 				return engine
 			},
 			ASAEngineFn: func() *automock.AsaEngine {
