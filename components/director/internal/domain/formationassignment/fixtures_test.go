@@ -515,8 +515,8 @@ func fixFormationAssignmentsWithObjectTypeAndID(objectType model.FormationAssign
 	}
 }
 
-func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string) []*model.FormationAssignmentInput {
-	return []*model.FormationAssignmentInput{
+func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationAssignmentType, objectID, appID, rtmID, rtmCtxID string, configurations model.InitialConfigurations) []*model.FormationAssignmentInput {
+	assignments := []*model.FormationAssignmentInput{
 		{
 			FormationID: "ID",
 			Source:      objectID,
@@ -589,6 +589,14 @@ func fixFormationAssignmentInputsWithObjectTypeAndID(objectType model.FormationA
 			Error:       nil,
 		},
 	}
+
+	for i, assignment := range assignments {
+		if val, ok := configurations[assignment.Source]; ok {
+			assignments[i].Value = val[assignment.Target]
+		}
+	}
+
+	return assignments
 }
 
 func fixFormationAssignmentsForSelf(appID, rtmID, rtmCtxID string) []*model.FormationAssignment {

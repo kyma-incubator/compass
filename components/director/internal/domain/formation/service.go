@@ -566,7 +566,7 @@ func (s *service) DeleteFormationEntityAndScenarios(ctx context.Context, tnt, fo
 //
 // If the graphql.FormationObjectType is graphql.FormationObjectTypeTenant it will
 // create automatic scenario assignment with the caller and target tenant which then will assign the right Runtime / RuntimeContexts based on the formation template's runtimeType.
-func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (f *model.Formation, err error) {
+func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, initialConfigurations model.InitialConfigurations) (f *model.Formation, err error) {
 	log.C(ctx).Infof("Assigning object with ID %q of type %q to formation %q", objectID, objectType, formation.Name)
 
 	ft, err := s.getFormationWithTemplate(ctx, formation.Name, tnt)
@@ -608,7 +608,7 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 		// If 'err' is used for the name of the returned error, a new variable that shadows the 'err' variable from the outer scope
 		// is created. As the defer statement is declared in the scope of the case fragment of the switch it will be bound to the 'err' variable in the same scope
 		// which is the new one. Then the deffer will not execute its logic in case of error in the outer scope.
-		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB)
+		assignmentInputs, terr := s.formationAssignmentService.GenerateAssignments(ctx, tnt, objectID, objectType, formationFromDB, initialConfigurations)
 		if terr != nil {
 			return nil, terr
 		}
@@ -1622,7 +1622,11 @@ func (s *service) CreateAutomaticScenarioAssignment(ctx context.Context, in *mod
 		return nil, errors.Wrap(err, "while persisting Assignment")
 	}
 
-	if err = s.asaEngine.EnsureScenarioAssigned(ctx, in, s.AssignFormation); err != nil {
+	assignScenarioFunc := func(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error) {
+		return s.AssignFormation(ctx, tnt, objectID, objectType, formation, nil)
+	}
+
+	if err = s.asaEngine.EnsureScenarioAssigned(ctx, in, assignScenarioFunc); err != nil {
 		return nil, errors.Wrap(err, "while assigning scenario to runtimes matching selector")
 	}
 

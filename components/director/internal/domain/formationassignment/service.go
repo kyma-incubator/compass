@@ -401,7 +401,7 @@ func (s *service) Exists(ctx context.Context, id string) (bool, error) {
 // For the second assignment the source and target are swapped.
 //
 // In case of objectType==RUNTIME_CONTEXT formationAssignments for the object and it's parent runtime are not generated.
-func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation) ([]*model.FormationAssignmentInput, error) {
+func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, initialConfigurations model.InitialConfigurations) ([]*model.FormationAssignmentInput, error) {
 	allAssignments, err := s.repo.ListAllForFormation(ctx, tnt, formation.ID)
 	if err != nil {
 		return nil, errors.Wrapf(err, "while listing formation assignments for formation %q", formation.ID)
@@ -467,7 +467,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		if !isAssigned || appID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, appID)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeApplication, appID, initialConfigurations)...)
 	}
 
 	// When runtime context is assigned to formation its parent runtime is unassigned from the formation.
@@ -487,14 +487,14 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		if !isAssigned || runtimeID == objectID || runtimeID == parentID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtimeID)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntime, runtimeID, initialConfigurations)...)
 	}
 
 	for runtimeCtxID, isAssigned := range rtCtxIDs {
 		if !isAssigned || runtimeCtxID == objectID {
 			continue
 		}
-		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtxID)...)
+		assignments = append(assignments, s.GenerateAssignmentsForParticipant(objectID, objectType, formation, model.FormationAssignmentTypeRuntimeContext, runtimeCtxID, initialConfigurations)...)
 	}
 
 	assignments = append(assignments, &model.FormationAssignmentInput{
@@ -504,7 +504,7 @@ func (s *service) GenerateAssignments(ctx context.Context, tnt, objectID string,
 		Target:      objectID,
 		TargetType:  model.FormationAssignmentType(objectType),
 		State:       string(model.InitialFormationState),
-		Value:       nil,
+		Value:       getInitialConfiguration(objectID, objectID, initialConfigurations),
 		Error:       nil,
 	})
 
@@ -531,7 +531,7 @@ func (s *service) PersistAssignments(ctx context.Context, tnt string, assignment
 }
 
 // GenerateAssignmentsForParticipant creates in-memory the assignments for two participants in the initial state
-func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participantID string) []*model.FormationAssignmentInput {
+func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType graphql.FormationObjectType, formation *model.Formation, participantType model.FormationAssignmentType, participantID string, initialConfigurations model.InitialConfigurations) []*model.FormationAssignmentInput {
 	assignments := make([]*model.FormationAssignmentInput, 0, 2)
 	assignments = append(assignments, &model.FormationAssignmentInput{
 		FormationID: formation.ID,
@@ -540,7 +540,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 		Target:      participantID,
 		TargetType:  participantType,
 		State:       string(model.InitialAssignmentState),
-		Value:       nil,
+		Value:       getInitialConfiguration(objectID, participantID, initialConfigurations),
 		Error:       nil,
 	})
 	assignments = append(assignments, &model.FormationAssignmentInput{
@@ -550,7 +550,7 @@ func (s *service) GenerateAssignmentsForParticipant(objectID string, objectType 
 		Target:      objectID,
 		TargetType:  model.FormationAssignmentType(objectType),
 		State:       string(model.InitialAssignmentState),
-		Value:       nil,
+		Value:       getInitialConfiguration(participantID, objectID, initialConfigurations),
 		Error:       nil,
 	})
 	return assignments
@@ -1040,4 +1040,13 @@ func isConfigNotEmpty(config *string) bool {
 
 func isErrorNotEmpty(responseError *string) bool {
 	return responseError != nil && *responseError != ""
+}
+
+func getInitialConfiguration(src, tgt string, initialConfigurations model.InitialConfigurations) json.RawMessage {
+	if targetToCfg, ok := initialConfigurations[src]; ok {
+		if config, ok := targetToCfg[tgt]; ok {
+			return config
+		}
+	}
+	return nil
 }

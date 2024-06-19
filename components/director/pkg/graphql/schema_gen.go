@@ -578,7 +578,7 @@ type ComplexityRoot struct {
 		AddIntegrationDependencyToApplication        func(childComplexity int, appID string, in IntegrationDependencyInput) int
 		AddTenantAccess                              func(childComplexity int, in TenantAccessInput) int
 		AddWebhook                                   func(childComplexity int, applicationID *string, applicationTemplateID *string, runtimeID *string, formationTemplateID *string, in WebhookInput) int
-		AssignFormation                              func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput) int
+		AssignFormation                              func(childComplexity int, objectID string, objectType FormationObjectType, formation FormationInput, initialConfigurations []*InitialConfiguration) int
 		AttachConstraintToFormationTemplate          func(childComplexity int, constraintID string, formationTemplateID string) int
 		CreateApplicationTemplate                    func(childComplexity int, in ApplicationTemplateInput) int
 		CreateBundleInstanceAuth                     func(childComplexity int, bundleID string, in BundleInstanceAuthCreateInput) int
@@ -1002,7 +1002,7 @@ type MutationResolver interface {
 	ResynchronizeFormationNotifications(ctx context.Context, formationID string, reset *bool) (*Formation, error)
 	FinalizeDraftFormation(ctx context.Context, formationID string) (*Formation, error)
 	DeleteFormation(ctx context.Context, formation FormationInput) (*Formation, error)
-	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
+	AssignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput, initialConfigurations []*InitialConfiguration) (*Formation, error)
 	UnassignFormation(ctx context.Context, objectID string, objectType FormationObjectType, formation FormationInput) (*Formation, error)
 	UnassignFormationGlobal(ctx context.Context, objectID string, objectType FormationObjectType, formation string) (*Formation, error)
 	CreateFormationConstraint(ctx context.Context, formationConstraint FormationConstraintInput) (*FormationConstraint, error)
@@ -3618,7 +3618,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.AssignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput)), true
+		return e.complexity.Mutation.AssignFormation(childComplexity, args["objectID"].(string), args["objectType"].(FormationObjectType), args["formation"].(FormationInput), args["initialConfigurations"].([]*InitialConfiguration)), true
 
 	case "Mutation.attachConstraintToFormationTemplate":
 		if e.complexity.Mutation.AttachConstraintToFormationTemplate == nil {
@@ -5966,6 +5966,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputFormationInput,
 		ec.unmarshalInputFormationTemplateRegisterInput,
 		ec.unmarshalInputFormationTemplateUpdateInput,
+		ec.unmarshalInputInitialConfiguration,
 		ec.unmarshalInputIntegrationDependencyInput,
 		ec.unmarshalInputIntegrationSystemInput,
 		ec.unmarshalInputLabelDefinitionInput,
@@ -6936,6 +6937,15 @@ func (ec *executionContext) field_Mutation_assignFormation_args(ctx context.Cont
 		}
 	}
 	args["formation"] = arg2
+	var arg3 []*InitialConfiguration
+	if tmp, ok := rawArgs["initialConfigurations"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("initialConfigurations"))
+		arg3, err = ec.unmarshalOInitialConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐInitialConfigurationᚄ(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["initialConfigurations"] = arg3
 	return args, nil
 }
 
@@ -31256,7 +31266,7 @@ func (ec *executionContext) _Mutation_assignFormation(ctx context.Context, field
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		directive0 := func(rctx context.Context) (interface{}, error) {
 			ctx = rctx // use context from middleware stack in children
-			return ec.resolvers.Mutation().AssignFormation(rctx, fc.Args["objectID"].(string), fc.Args["objectType"].(FormationObjectType), fc.Args["formation"].(FormationInput))
+			return ec.resolvers.Mutation().AssignFormation(rctx, fc.Args["objectID"].(string), fc.Args["objectType"].(FormationObjectType), fc.Args["formation"].(FormationInput), fc.Args["initialConfigurations"].([]*InitialConfiguration))
 		}
 		directive1 := func(ctx context.Context) (interface{}, error) {
 			path, err := ec.unmarshalNString2string(ctx, "graphql.mutation.assignFormation")
@@ -48378,6 +48388,47 @@ func (ec *executionContext) unmarshalInputFormationTemplateUpdateInput(ctx conte
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputInitialConfiguration(ctx context.Context, obj interface{}) (InitialConfiguration, error) {
+	var it InitialConfiguration
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"sourceID", "targetID", "configuration"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "sourceID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("sourceID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.SourceID = data
+		case "targetID":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("targetID"))
+			data, err := ec.unmarshalNID2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.TargetID = data
+		case "configuration":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("configuration"))
+			data, err := ec.unmarshalNJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Configuration = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputIntegrationDependencyInput(ctx context.Context, obj interface{}) (IntegrationDependencyInput, error) {
 	var it IntegrationDependencyInput
 	asMap := map[string]interface{}{}
@@ -58579,6 +58630,11 @@ func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.Selec
 	return res
 }
 
+func (ec *executionContext) unmarshalNInitialConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐInitialConfiguration(ctx context.Context, v interface{}) (*InitialConfiguration, error) {
+	res, err := ec.unmarshalInputInitialConfiguration(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNInt2int(ctx context.Context, v interface{}) (int, error) {
 	res, err := graphql.UnmarshalInt(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -58742,6 +58798,16 @@ func (ec *executionContext) marshalNIntegrationSystemPage2ᚖgithubᚗcomᚋkyma
 		return graphql.Null
 	}
 	return ec._IntegrationSystemPage(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalNJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, v interface{}) (JSON, error) {
+	var res JSON
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNJSON2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐJSON(ctx context.Context, sel ast.SelectionSet, v JSON) graphql.Marshaler {
+	return v
 }
 
 func (ec *executionContext) marshalNLabel2githubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐLabel(ctx context.Context, sel ast.SelectionSet, v Label) graphql.Marshaler {
@@ -60786,6 +60852,26 @@ func (ec *executionContext) marshalOID2ᚖstring(ctx context.Context, sel ast.Se
 	}
 	res := graphql.MarshalID(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOInitialConfiguration2ᚕᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐInitialConfigurationᚄ(ctx context.Context, v interface{}) ([]*InitialConfiguration, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var vSlice []interface{}
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]*InitialConfiguration, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNInitialConfiguration2ᚖgithubᚗcomᚋkymaᚑincubatorᚋcompassᚋcomponentsᚋdirectorᚋpkgᚋgraphqlᚐInitialConfiguration(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
 }
 
 func (ec *executionContext) unmarshalOInt2ᚖint(ctx context.Context, v interface{}) (*int, error) {

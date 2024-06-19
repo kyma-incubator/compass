@@ -57,7 +57,7 @@ type LabelUpsertService interface {
 type formationService interface {
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	ListFormationsForObject(ctx context.Context, objectID string) ([]*model.Formation, error)
-	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation) (*model.Formation, error)
+	AssignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, initialConfigurations model.InitialConfigurations) (f *model.Formation, err error)
 	UnassignFormation(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation model.Formation, ignoreASA bool) (*model.Formation, error)
 }
 
@@ -158,7 +158,7 @@ func (s *service) Create(ctx context.Context, in model.RuntimeContextInput) (str
 		}
 
 		for _, scenario := range scenariosFromAssignments {
-			if _, err := s.formationService.AssignFormation(ctxWithParentTenant, parentTenantID, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}); err != nil {
+			if _, err := s.formationService.AssignFormation(ctxWithParentTenant, parentTenantID, id, graphql.FormationObjectTypeRuntimeContext, model.Formation{Name: scenario}, nil); err != nil {
 				return "", errors.Wrapf(err, "while assigning formation with name %q for runtime context", scenario)
 			}
 

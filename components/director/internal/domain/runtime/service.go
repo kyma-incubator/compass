@@ -595,7 +595,7 @@ func (s *service) ensureRuntimeExists(ctx context.Context, tnt string, runtimeID
 
 func (s *service) assignRuntimeScenarios(ctx context.Context, rtmTenant, id string, scenarios []string) error {
 	for _, scenario := range scenarios {
-		if _, err := s.formationService.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}); err != nil {
+		if _, err := s.formationService.AssignFormation(ctx, rtmTenant, id, graphql.FormationObjectTypeRuntime, model.Formation{Name: scenario}, nil); err != nil {
 			return errors.Wrapf(err, "while assigning formation %q from runtime with ID %q", scenario, id)
 		}
 	}

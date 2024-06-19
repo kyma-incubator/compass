@@ -819,6 +819,12 @@ input FormationTemplateUpdateInput {
 	discoveryConsumers: [String!]
 }
 
+input InitialConfiguration {
+	sourceID: ID!
+	targetID: ID!
+	configuration: JSON!
+}
+
 input IntegrationDependencyInput {
 	name: String!
 	description: String
@@ -2098,7 +2104,7 @@ type Mutation {
 	- [assign runtime to formation](examples/assign-formation/assign-runtime-to-formation.graphql)
 	- [assign tenant to formation](examples/assign-formation/assign-tenant-to-formation.graphql)
 	"""
-	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
+	assignFormation(objectID: ID!, objectType: FormationObjectType!, formation: FormationInput!, initialConfigurations: [InitialConfiguration!]): Formation! @hasScopes(path: "graphql.mutation.assignFormation")
 	"""
 	**Examples**
 	- [unassign application from formation](examples/unassign-formation/unassign-application-from-formation.graphql)

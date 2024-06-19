@@ -790,8 +790,8 @@ func (r *mutationResolver) UpdateFormationTemplate(ctx context.Context, id strin
 	return r.formationTemplate.UpdateFormationTemplate(ctx, id, in)
 }
 
-func (r *mutationResolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {
-	return r.formation.AssignFormation(ctx, objectID, objectType, formation)
+func (r *mutationResolver) AssignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput, initialConfigurations []*graphql.InitialConfiguration) (*graphql.Formation, error) {
+	return r.formation.AssignFormation(ctx, objectID, objectType, formation, initialConfigurations)
 }
 
 func (r *mutationResolver) UnassignFormation(ctx context.Context, objectID string, objectType graphql.FormationObjectType, formation graphql.FormationInput) (*graphql.Formation, error) {

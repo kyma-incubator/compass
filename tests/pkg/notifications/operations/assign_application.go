@@ -15,6 +15,7 @@ type AssignAppToFormationOperation struct {
 	applicationID           string
 	tenantID                string
 	formationName           string
+	initialConfigurations   []*graphql.InitialConfiguration
 	formationNameContextKey string
 	asserters               []asserters.Asserter
 }
@@ -25,6 +26,11 @@ func NewAssignAppToFormationOperation(applicationID string, tenantID string) *As
 
 func (o *AssignAppToFormationOperation) WithFormationNameContextKey(formationNAmeContextKey string) *AssignAppToFormationOperation {
 	o.formationNameContextKey = formationNAmeContextKey
+	return o
+}
+
+func (o *AssignAppToFormationOperation) WithInitialConfiguration(initialConfigurations []*graphql.InitialConfiguration) *AssignAppToFormationOperation {
+	o.initialConfigurations = initialConfigurations
 	return o
 }
 
@@ -48,7 +54,12 @@ func (o *AssignAppToFormationOperation) Execute(t *testing.T, ctx context.Contex
 		formationName = ctx.Value(o.formationNameContextKey).(string)
 	}
 
-	fixtures.AssignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
+	if o.initialConfigurations != nil {
+		fixtures.AssignFormationWithInitialConfigurations(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, string(graphql.FormationObjectTypeApplication), o.tenantID, o.initialConfigurations)
+	} else {
+		fixtures.AssignFormationWithApplicationObjectType(t, ctx, gqlClient, graphql.FormationInput{Name: formationName}, o.applicationID, o.tenantID)
+	}
+
 	for _, asserter := range o.asserters {
 		asserter.AssertExpectations(t, ctx)
 	}

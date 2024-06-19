@@ -65,9 +65,9 @@ func (_m *FormationAssignmentService) DeleteAssignmentsForObjectID(ctx context.C
 	return r0
 }
 
-// GenerateAssignments provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4
-func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 *model.Formation) ([]*model.FormationAssignmentInput, error) {
-	ret := _m.Called(ctx, tnt, objectID, objectType, _a4)
+// GenerateAssignments provides a mock function with given fields: ctx, tnt, objectID, objectType, _a4, initialConfigurations
+func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, tnt string, objectID string, objectType graphql.FormationObjectType, _a4 *model.Formation, initialConfigurations model.InitialConfigurations) ([]*model.FormationAssignmentInput, error) {
+	ret := _m.Called(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
 
 	if len(ret) == 0 {
 		panic("no return value specified for GenerateAssignments")
@@ -75,19 +75,19 @@ func (_m *FormationAssignmentService) GenerateAssignments(ctx context.Context, t
 
 	var r0 []*model.FormationAssignmentInput
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) ([]*model.FormationAssignmentInput, error)); ok {
-		return rf(ctx, tnt, objectID, objectType, _a4)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation, model.InitialConfigurations) ([]*model.FormationAssignmentInput, error)); ok {
+		return rf(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) []*model.FormationAssignmentInput); ok {
-		r0 = rf(ctx, tnt, objectID, objectType, _a4)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation, model.InitialConfigurations) []*model.FormationAssignmentInput); ok {
+		r0 = rf(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
 	} else {
 		if ret.Get(0) != nil {
 			r0 = ret.Get(0).([]*model.FormationAssignmentInput)
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation) error); ok {
-		r1 = rf(ctx, tnt, objectID, objectType, _a4)
+	if rf, ok := ret.Get(1).(func(context.Context, string, string, graphql.FormationObjectType, *model.Formation, model.InitialConfigurations) error); ok {
+		r1 = rf(ctx, tnt, objectID, objectType, _a4, initialConfigurations)
 	} else {
 		r1 = ret.Error(1)
 	}
