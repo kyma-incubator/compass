@@ -5,12 +5,13 @@ package automock
 import (
 	context "context"
 
-	formationassignment "github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 	formationconstraint "github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
 
 	mock "github.com/stretchr/testify/mock"
 
 	model "github.com/kyma-incubator/compass/components/director/internal/model"
+
+	notifications "github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
 
 	statusreport "github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
@@ -23,15 +24,19 @@ type FaNotificationService struct {
 }
 
 // GenerateFormationAssignmentNotificationExt provides a mock function with given fields: ctx, faRequestMapping, reverseFaRequestMapping, operation
-func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping *formationassignment.FormationAssignmentRequestMapping, reverseFaRequestMapping *formationassignment.FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
+func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping *notifications.FormationAssignmentRequestMapping, reverseFaRequestMapping *notifications.FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
 	ret := _m.Called(ctx, faRequestMapping, reverseFaRequestMapping, operation)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GenerateFormationAssignmentNotificationExt")
+	}
 
 	var r0 *webhookclient.FormationAssignmentNotificationRequestExt
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *notifications.FormationAssignmentRequestMapping, *notifications.FormationAssignmentRequestMapping, model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error)); ok {
 		return rf(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) *webhookclient.FormationAssignmentNotificationRequestExt); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *notifications.FormationAssignmentRequestMapping, *notifications.FormationAssignmentRequestMapping, model.FormationOperation) *webhookclient.FormationAssignmentNotificationRequestExt); ok {
 		r0 = rf(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 	} else {
 		if ret.Get(0) != nil {
@@ -39,7 +44,7 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.FormationAssignmentRequestMapping, *formationassignment.FormationAssignmentRequestMapping, model.FormationOperation) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *notifications.FormationAssignmentRequestMapping, *notifications.FormationAssignmentRequestMapping, model.FormationOperation) error); ok {
 		r1 = rf(ctx, faRequestMapping, reverseFaRequestMapping, operation)
 	} else {
 		r1 = ret.Error(1)
@@ -51,6 +56,10 @@ func (_m *FaNotificationService) GenerateFormationAssignmentNotificationExt(ctx 
 // PrepareDetailsForNotificationStatusReturned provides a mock function with given fields: ctx, tenantID, fa, operation, notificationStatusReport
 func (_m *FaNotificationService) PrepareDetailsForNotificationStatusReturned(ctx context.Context, tenantID string, fa *model.FormationAssignment, operation model.FormationOperation, notificationStatusReport *statusreport.NotificationStatusReport) (*formationconstraint.NotificationStatusReturnedOperationDetails, error) {
 	ret := _m.Called(ctx, tenantID, fa, operation, notificationStatusReport)
+
+	if len(ret) == 0 {
+		panic("no return value specified for PrepareDetailsForNotificationStatusReturned")
+	}
 
 	var r0 *formationconstraint.NotificationStatusReturnedOperationDetails
 	var r1 error

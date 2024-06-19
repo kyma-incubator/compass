@@ -18,6 +18,10 @@ type AssignmentOperationService struct {
 func (_m *AssignmentOperationService) Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error) {
 	ret := _m.Called(ctx, in)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.AssignmentOperationInput) (string, error)); ok {
@@ -41,6 +45,10 @@ func (_m *AssignmentOperationService) Create(ctx context.Context, in *model.Assi
 // GetLatestOperation provides a mock function with given fields: ctx, assignmentID, formationID
 func (_m *AssignmentOperationService) GetLatestOperation(ctx context.Context, assignmentID string, formationID string) (*model.AssignmentOperation, error) {
 	ret := _m.Called(ctx, assignmentID, formationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLatestOperation")
+	}
 
 	var r0 *model.AssignmentOperation
 	var r1 error

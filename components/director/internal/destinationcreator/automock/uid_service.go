@@ -13,6 +13,10 @@ type UIDService struct {
 func (_m *UIDService) Generate() string {
 	ret := _m.Called()
 
+	if len(ret) == 0 {
+		panic("no return value specified for Generate")
+	}
+
 	var r0 string
 	if rf, ok := ret.Get(0).(func() string); ok {
 		r0 = rf()

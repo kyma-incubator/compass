@@ -6,7 +6,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 	webhookclient "github.com/kyma-incubator/compass/components/director/pkg/webhook_client"
 
@@ -630,10 +631,10 @@ func fixWebhookWithAsyncCallbackMode() *graphql.Webhook {
 	}
 }
 
-func fixAssignmentPairWithAsyncWebhook() *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+func fixAssignmentPairWithAsyncWebhook() *notifications.AssignmentMappingPairWithOperation {
+	return &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
+			AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 				Request: &webhookclient.FormationAssignmentNotificationRequest{
 					Webhook: fixWebhookWithAsyncCallbackMode(),
 				},
@@ -644,10 +645,10 @@ func fixAssignmentPairWithAsyncWebhook() *formationassignment.AssignmentMappingP
 	}
 }
 
-func fixAssignmentPairWithSyncWebhook() *formationassignment.AssignmentMappingPairWithOperation {
-	return &formationassignment.AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-			AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+func fixAssignmentPairWithSyncWebhook() *notifications.AssignmentMappingPairWithOperation {
+	return &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
+			AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 				Request: &webhookclient.FormationAssignmentNotificationRequest{
 					Webhook: fixWebhookWithSyncMode(),
 				},

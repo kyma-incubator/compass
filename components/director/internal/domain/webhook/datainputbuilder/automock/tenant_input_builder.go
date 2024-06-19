@@ -21,6 +21,10 @@ type TenantInputBuilder struct {
 func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Context, tenant string, labels map[string]string) (*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, tenant, labels)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantForApplicationTemplate")
+	}
+
 	var r0 *webhook.TenantWithLabels
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]string) (*webhook.TenantWithLabels, error)); ok {
@@ -47,6 +51,10 @@ func (_m *TenantInputBuilder) GetTenantForApplicationTemplate(ctx context.Contex
 func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID string, resourceType resource.Type) (*webhook.TenantWithLabels, error) {
 	ret := _m.Called(ctx, objectID, resourceType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTenantForObject")
+	}
+
 	var r0 *webhook.TenantWithLabels
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, resource.Type) (*webhook.TenantWithLabels, error)); ok {
@@ -62,58 +70,6 @@ func (_m *TenantInputBuilder) GetTenantForObject(ctx context.Context, objectID s
 
 	if rf, ok := ret.Get(1).(func(context.Context, string, resource.Type) error); ok {
 		r1 = rf(ctx, objectID, resourceType)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetTenantsForApplicationTemplates provides a mock function with given fields: ctx, tenant, labels, objectIDs
-func (_m *TenantInputBuilder) GetTenantsForApplicationTemplates(ctx context.Context, tenant string, labels map[string]map[string]string, objectIDs []string) (map[string]*webhook.TenantWithLabels, error) {
-	ret := _m.Called(ctx, tenant, labels, objectIDs)
-
-	var r0 map[string]*webhook.TenantWithLabels
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) (map[string]*webhook.TenantWithLabels, error)); ok {
-		return rf(ctx, tenant, labels, objectIDs)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, map[string]map[string]string, []string) map[string]*webhook.TenantWithLabels); ok {
-		r0 = rf(ctx, tenant, labels, objectIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]*webhook.TenantWithLabels)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, map[string]map[string]string, []string) error); ok {
-		r1 = rf(ctx, tenant, labels, objectIDs)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetTenantsForObjects provides a mock function with given fields: ctx, tenant, objectIDs, resourceType
-func (_m *TenantInputBuilder) GetTenantsForObjects(ctx context.Context, tenant string, objectIDs []string, resourceType resource.Type) (map[string]*webhook.TenantWithLabels, error) {
-	ret := _m.Called(ctx, tenant, objectIDs, resourceType)
-
-	var r0 map[string]*webhook.TenantWithLabels
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string, resource.Type) (map[string]*webhook.TenantWithLabels, error)); ok {
-		return rf(ctx, tenant, objectIDs, resourceType)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string, resource.Type) map[string]*webhook.TenantWithLabels); ok {
-		r0 = rf(ctx, tenant, objectIDs, resourceType)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]*webhook.TenantWithLabels)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string, resource.Type) error); ok {
-		r1 = rf(ctx, tenant, objectIDs, resourceType)
 	} else {
 		r1 = ret.Error(1)
 	}

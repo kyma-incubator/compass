@@ -19,6 +19,10 @@ type FormationAssignmentRepository struct {
 func (_m *FormationAssignmentRepository) Create(ctx context.Context, item *model.FormationAssignment) error {
 	ret := _m.Called(ctx, item)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Create")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) error); ok {
 		r0 = rf(ctx, item)
@@ -32,6 +36,10 @@ func (_m *FormationAssignmentRepository) Create(ctx context.Context, item *model
 // Delete provides a mock function with given fields: ctx, id, tenantID
 func (_m *FormationAssignmentRepository) Delete(ctx context.Context, id string, tenantID string) error {
 	ret := _m.Called(ctx, id, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Delete")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
@@ -47,6 +55,10 @@ func (_m *FormationAssignmentRepository) Delete(ctx context.Context, id string, 
 func (_m *FormationAssignmentRepository) DeleteAssignmentsForObjectID(ctx context.Context, tnt string, formationID string, objectID string) error {
 	ret := _m.Called(ctx, tnt, formationID, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteAssignmentsForObjectID")
+	}
+
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
 		r0 = rf(ctx, tnt, formationID, objectID)
@@ -60,6 +72,10 @@ func (_m *FormationAssignmentRepository) DeleteAssignmentsForObjectID(ctx contex
 // Exists provides a mock function with given fields: ctx, id, tenantID
 func (_m *FormationAssignmentRepository) Exists(ctx context.Context, id string, tenantID string) (bool, error) {
 	ret := _m.Called(ctx, id, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Exists")
+	}
 
 	var r0 bool
 	var r1 error
@@ -84,6 +100,10 @@ func (_m *FormationAssignmentRepository) Exists(ctx context.Context, id string, 
 // Get provides a mock function with given fields: ctx, id, tenantID
 func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, tenantID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, id, tenantID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
 
 	var r0 *model.FormationAssignment
 	var r1 error
@@ -111,6 +131,10 @@ func (_m *FormationAssignmentRepository) Get(ctx context.Context, id string, ten
 func (_m *FormationAssignmentRepository) GetAssignmentsForFormation(ctx context.Context, tenantID string, formationID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, formationID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetAssignmentsForFormation")
+	}
+
 	var r0 []*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
@@ -136,6 +160,10 @@ func (_m *FormationAssignmentRepository) GetAssignmentsForFormation(ctx context.
 // GetAssignmentsForFormationWithStates provides a mock function with given fields: ctx, tenantID, formationID, states
 func (_m *FormationAssignmentRepository) GetAssignmentsForFormationWithStates(ctx context.Context, tenantID string, formationID string, states []string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, formationID, states)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetAssignmentsForFormationWithStates")
+	}
 
 	var r0 []*model.FormationAssignment
 	var r1 error
@@ -163,6 +191,10 @@ func (_m *FormationAssignmentRepository) GetAssignmentsForFormationWithStates(ct
 func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Context, target string, source string, tenantID string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, target, source, tenantID, formationID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByTargetAndSource")
+	}
+
 	var r0 *model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*model.FormationAssignment, error)); ok {
@@ -188,6 +220,10 @@ func (_m *FormationAssignmentRepository) GetByTargetAndSource(ctx context.Contex
 // GetForFormation provides a mock function with given fields: ctx, tenantID, id, formationID
 func (_m *FormationAssignmentRepository) GetForFormation(ctx context.Context, tenantID string, id string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, id, formationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetForFormation")
+	}
 
 	var r0 *model.FormationAssignment
 	var r1 error
@@ -215,6 +251,10 @@ func (_m *FormationAssignmentRepository) GetForFormation(ctx context.Context, te
 func (_m *FormationAssignmentRepository) GetGlobalByID(ctx context.Context, id string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetGlobalByID")
+	}
+
 	var r0 *model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationAssignment, error)); ok {
@@ -240,6 +280,10 @@ func (_m *FormationAssignmentRepository) GetGlobalByID(ctx context.Context, id s
 // GetGlobalByIDAndFormationID provides a mock function with given fields: ctx, id, formationID
 func (_m *FormationAssignmentRepository) GetGlobalByIDAndFormationID(ctx context.Context, id string, formationID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, id, formationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetGlobalByIDAndFormationID")
+	}
 
 	var r0 *model.FormationAssignment
 	var r1 error
@@ -267,6 +311,10 @@ func (_m *FormationAssignmentRepository) GetGlobalByIDAndFormationID(ctx context
 func (_m *FormationAssignmentRepository) GetReverseBySourceAndTarget(ctx context.Context, tenantID string, formationID string, sourceID string, targetID string) (*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, formationID, sourceID, targetID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetReverseBySourceAndTarget")
+	}
+
 	var r0 *model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, string, string) (*model.FormationAssignment, error)); ok {
@@ -293,6 +341,10 @@ func (_m *FormationAssignmentRepository) GetReverseBySourceAndTarget(ctx context
 func (_m *FormationAssignmentRepository) List(ctx context.Context, pageSize int, cursor string, tenantID string) (*model.FormationAssignmentPage, error) {
 	ret := _m.Called(ctx, pageSize, cursor, tenantID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for List")
+	}
+
 	var r0 *model.FormationAssignmentPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, int, string, string) (*model.FormationAssignmentPage, error)); ok {
@@ -315,9 +367,43 @@ func (_m *FormationAssignmentRepository) List(ctx context.Context, pageSize int,
 	return r0, r1
 }
 
+// ListAllForFormation provides a mock function with given fields: ctx, tenant, formationID
+func (_m *FormationAssignmentRepository) ListAllForFormation(ctx context.Context, tenant string, formationID string) ([]*model.FormationAssignment, error) {
+	ret := _m.Called(ctx, tenant, formationID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllForFormation")
+	}
+
+	var r0 []*model.FormationAssignment
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]*model.FormationAssignment, error)); ok {
+		return rf(ctx, tenant, formationID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []*model.FormationAssignment); ok {
+		r0 = rf(ctx, tenant, formationID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]*model.FormationAssignment)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, tenant, formationID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // ListAllForObject provides a mock function with given fields: ctx, tenant, formationID, objectID
 func (_m *FormationAssignmentRepository) ListAllForObject(ctx context.Context, tenant string, formationID string, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenant, formationID, objectID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllForObject")
+	}
 
 	var r0 []*model.FormationAssignment
 	var r1 error
@@ -345,6 +431,10 @@ func (_m *FormationAssignmentRepository) ListAllForObject(ctx context.Context, t
 func (_m *FormationAssignmentRepository) ListAllForObjectGlobal(ctx context.Context, objectID string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllForObjectGlobal")
+	}
+
 	var r0 []*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) ([]*model.FormationAssignment, error)); ok {
@@ -370,6 +460,10 @@ func (_m *FormationAssignmentRepository) ListAllForObjectGlobal(ctx context.Cont
 // ListAllForObjectIDs provides a mock function with given fields: ctx, tenant, formationID, objectIDs
 func (_m *FormationAssignmentRepository) ListAllForObjectIDs(ctx context.Context, tenant string, formationID string, objectIDs []string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenant, formationID, objectIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListAllForObjectIDs")
+	}
 
 	var r0 []*model.FormationAssignment
 	var r1 error
@@ -397,6 +491,10 @@ func (_m *FormationAssignmentRepository) ListAllForObjectIDs(ctx context.Context
 func (_m *FormationAssignmentRepository) ListByFormationIDs(ctx context.Context, tenantID string, formationIDs []string, pageSize int, cursor string) ([]*model.FormationAssignmentPage, error) {
 	ret := _m.Called(ctx, tenantID, formationIDs, pageSize, cursor)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListByFormationIDs")
+	}
+
 	var r0 []*model.FormationAssignmentPage
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string, int, string) ([]*model.FormationAssignmentPage, error)); ok {
@@ -422,6 +520,10 @@ func (_m *FormationAssignmentRepository) ListByFormationIDs(ctx context.Context,
 // ListByFormationIDsNoPaging provides a mock function with given fields: ctx, tenantID, formationIDs
 func (_m *FormationAssignmentRepository) ListByFormationIDsNoPaging(ctx context.Context, tenantID string, formationIDs []string) ([][]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenantID, formationIDs)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ListByFormationIDsNoPaging")
+	}
 
 	var r0 [][]*model.FormationAssignment
 	var r1 error
@@ -449,6 +551,10 @@ func (_m *FormationAssignmentRepository) ListByFormationIDsNoPaging(ctx context.
 func (_m *FormationAssignmentRepository) ListForIDs(ctx context.Context, tenant string, ids []string) ([]*model.FormationAssignment, error) {
 	ret := _m.Called(ctx, tenant, ids)
 
+	if len(ret) == 0 {
+		panic("no return value specified for ListForIDs")
+	}
+
 	var r0 []*model.FormationAssignment
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.FormationAssignment, error)); ok {
@@ -474,6 +580,10 @@ func (_m *FormationAssignmentRepository) ListForIDs(ctx context.Context, tenant 
 // Update provides a mock function with given fields: ctx, _a1
 func (_m *FormationAssignmentRepository) Update(ctx context.Context, _a1 *model.FormationAssignment) error {
 	ret := _m.Called(ctx, _a1)
+
+	if len(ret) == 0 {
+		panic("no return value specified for Update")
+	}
 
 	var r0 error
 	if rf, ok := ret.Get(0).(func(context.Context, *model.FormationAssignment) error); ok {

@@ -17,6 +17,10 @@ type HttpClient struct {
 func (_m *HttpClient) Do(request *http.Request) (*http.Response, error) {
 	ret := _m.Called(request)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Do")
+	}
+
 	var r0 *http.Response
 	var r1 error
 	if rf, ok := ret.Get(0).(func(*http.Request) (*http.Response, error)); ok {

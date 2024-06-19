@@ -4,6 +4,7 @@ package automock
 
 import (
 	context "context"
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
 
 	formationassignment "github.com/kyma-incubator/compass/components/director/internal/domain/formationassignment"
 
@@ -110,21 +111,21 @@ func (_m *FormationAssignmentService) ListFormationAssignmentsForObjectID(ctx co
 }
 
 // ProcessFormationAssignmentPair provides a mock function with given fields: ctx, mappingPair
-func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *formationassignment.AssignmentMappingPairWithOperation) (bool, error) {
+func (_m *FormationAssignmentService) ProcessFormationAssignmentPair(ctx context.Context, mappingPair *notifications.AssignmentMappingPairWithOperation) (bool, error) {
 	ret := _m.Called(ctx, mappingPair)
 
 	var r0 bool
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) (bool, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *notifications.AssignmentMappingPairWithOperation) (bool, error)); ok {
 		return rf(ctx, mappingPair)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) bool); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *notifications.AssignmentMappingPairWithOperation) bool); ok {
 		r0 = rf(ctx, mappingPair)
 	} else {
 		r0 = ret.Get(0).(bool)
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *formationassignment.AssignmentMappingPairWithOperation) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *notifications.AssignmentMappingPairWithOperation) error); ok {
 		r1 = rf(ctx, mappingPair)
 	} else {
 		r1 = ret.Error(1)

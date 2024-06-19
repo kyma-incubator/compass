@@ -19,6 +19,10 @@ type ApplicationRepository struct {
 func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id string) (*model.Application, error) {
 	ret := _m.Called(ctx, tenant, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetByID")
+	}
+
 	var r0 *model.Application
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string) (*model.Application, error)); ok {
@@ -41,35 +45,13 @@ func (_m *ApplicationRepository) GetByID(ctx context.Context, tenant string, id 
 	return r0, r1
 }
 
-// ListByScenariosNoPaging provides a mock function with given fields: ctx, tenant, scenarios
-func (_m *ApplicationRepository) ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error) {
-	ret := _m.Called(ctx, tenant, scenarios)
-
-	var r0 []*model.Application
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) ([]*model.Application, error)); ok {
-		return rf(ctx, tenant, scenarios)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, string, []string) []*model.Application); ok {
-		r0 = rf(ctx, tenant, scenarios)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).([]*model.Application)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, string, []string) error); ok {
-		r1 = rf(ctx, tenant, scenarios)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
 // OwnerExists provides a mock function with given fields: ctx, tenant, id
 func (_m *ApplicationRepository) OwnerExists(ctx context.Context, tenant string, id string) (bool, error) {
 	ret := _m.Called(ctx, tenant, id)
+
+	if len(ret) == 0 {
+		panic("no return value specified for OwnerExists")
+	}
 
 	var r0 bool
 	var r1 error

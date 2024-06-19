@@ -3,6 +3,8 @@ package formationassignment
 import (
 	"context"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	"github.com/kyma-incubator/compass/components/director/internal/domain/statusreport"
 
 	"github.com/kyma-incubator/compass/components/director/pkg/str"
@@ -97,7 +99,7 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNo
 
 // GenerateFormationAssignmentPair generates a formation assignment pair with operation given an assignment and reverse assignment
 // If there is a missing reverse assignment, it still generates a pair with an empty ReverseAssignmentReqMapping
-func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*AssignmentMappingPairWithOperation, error) {
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPair(ctx context.Context, fa, reverseFA *model.FormationAssignment, operation model.FormationOperation) (*notifications.AssignmentMappingPairWithOperation, error) {
 	log.C(ctx).Infof("Generating formation assignment notifications for ID: %q and formation ID: %q", fa.ID, fa.FormationID)
 	notificationReq, err := fan.GenerateFormationAssignmentNotification(ctx, fa, operation)
 	if err != nil {
@@ -113,18 +115,18 @@ func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentPa
 		}
 	}
 
-	faReqMapping := FormationAssignmentRequestMapping{
+	faReqMapping := notifications.FormationAssignmentRequestMapping{
 		Request:             notificationReq,
 		FormationAssignment: fa,
 	}
 
-	reverseFAReqMapping := FormationAssignmentRequestMapping{
+	reverseFAReqMapping := notifications.FormationAssignmentRequestMapping{
 		Request:             reverseNotificationReq,
 		FormationAssignment: reverseFA,
 	}
 
-	return &AssignmentMappingPairWithOperation{
-		AssignmentMappingPair: &AssignmentMappingPair{
+	return &notifications.AssignmentMappingPairWithOperation{
+		AssignmentMappingPair: &notifications.AssignmentMappingPair{
 			AssignmentReqMapping:        &faReqMapping,
 			ReverseAssignmentReqMapping: &reverseFAReqMapping,
 		},
@@ -188,7 +190,7 @@ func (fan *formationAssignmentNotificationService) PrepareDetailsForNotification
 }
 
 // GenerateFormationAssignmentNotificationExt generates extended formation assignment notification by given formation(and reverse formation) assignment request mapping and formation operation
-func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
+func (fan *formationAssignmentNotificationService) GenerateFormationAssignmentNotificationExt(ctx context.Context, faRequestMapping, reverseFaRequestMapping *notifications.FormationAssignmentRequestMapping, operation model.FormationOperation) (*webhookclient.FormationAssignmentNotificationRequestExt, error) {
 	targetSubtype, err := fan.getObjectSubtype(ctx, faRequestMapping.FormationAssignment.TenantID, faRequestMapping.FormationAssignment.Target, faRequestMapping.FormationAssignment.TargetType)
 	if err != nil {
 		return nil, err

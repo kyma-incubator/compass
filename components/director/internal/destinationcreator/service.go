@@ -41,7 +41,6 @@ type httpClient interface {
 
 //go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type applicationRepository interface {
-	ListByScenariosNoPaging(ctx context.Context, tenant string, scenarios []string) ([]*model.Application, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
 	OwnerExists(ctx context.Context, tenant, id string) (bool, error)
 }

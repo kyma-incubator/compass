@@ -19,6 +19,10 @@ type LabelInputBuilder struct {
 func (_m *LabelInputBuilder) GetLabelsForObject(ctx context.Context, tenant string, objectID string, objectType model.LabelableObject) (map[string]string, error) {
 	ret := _m.Called(ctx, tenant, objectID, objectType)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabelsForObject")
+	}
+
 	var r0 map[string]string
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string, string, model.LabelableObject) (map[string]string, error)); ok {
@@ -44,6 +48,10 @@ func (_m *LabelInputBuilder) GetLabelsForObject(ctx context.Context, tenant stri
 // GetLabelsForObjects provides a mock function with given fields: ctx, tenant, objectIDs, objectType
 func (_m *LabelInputBuilder) GetLabelsForObjects(ctx context.Context, tenant string, objectIDs []string, objectType model.LabelableObject) (map[string]map[string]string, error) {
 	ret := _m.Called(ctx, tenant, objectIDs, objectType)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetLabelsForObjects")
+	}
 
 	var r0 map[string]map[string]string
 	var r1 error

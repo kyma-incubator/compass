@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/kyma-incubator/compass/components/director/internal/domain/notifications"
+
 	"github.com/kyma-incubator/compass/components/director/pkg/apperrors"
 	formationassignmentpkg "github.com/kyma-incubator/compass/components/director/pkg/formationassignment"
 	"github.com/kyma-incubator/compass/components/director/pkg/formationconstraint"
@@ -36,18 +38,13 @@ type labelDefRepository interface {
 //go:generate mockery --exported --name=labelRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type labelRepository interface {
 	Delete(context.Context, string, model.LabelableObject, string, string) error
-	ListForObjectIDs(ctx context.Context, tenant string, objectType model.LabelableObject, objectIDs []string) (map[string]map[string]interface{}, error)
-	ListForObject(ctx context.Context, tenant string, objectType model.LabelableObject, objectID string) (map[string]*model.Label, error)
 }
 
 //go:generate mockery --exported --name=runtimeRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeRepository interface {
 	GetByFiltersAndIDUsingUnion(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (*model.Runtime, error)
-	ListAll(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListAllWithUnionSetCombination(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
 	ListOwnedRuntimes(ctx context.Context, tenant string, filter []*labelfilter.LabelFilter) ([]*model.Runtime, error)
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.Runtime, error)
-	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.Runtime, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.Runtime, error)
 	OwnerExistsByFiltersAndID(ctx context.Context, tenant, id string, filter []*labelfilter.LabelFilter) (bool, error)
 }
@@ -55,9 +52,6 @@ type runtimeRepository interface {
 //go:generate mockery --exported --name=runtimeContextRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
 type runtimeContextRepository interface {
 	GetByRuntimeID(ctx context.Context, tenant, runtimeID string) (*model.RuntimeContext, error)
-	ListByIDs(ctx context.Context, tenant string, ids []string) ([]*model.RuntimeContext, error)
-	ListByScenariosAndRuntimeIDs(ctx context.Context, tenant string, scenarios []string, runtimeIDs []string) ([]*model.RuntimeContext, error)
-	ListByScenarios(ctx context.Context, tenant string, scenarios []string) ([]*model.RuntimeContext, error)
 	GetByID(ctx context.Context, tenant, id string) (*model.RuntimeContext, error)
 	ExistsByRuntimeID(ctx context.Context, tenant, rtmID string) (bool, error)
 }
@@ -92,7 +86,6 @@ type FormationTemplateRepository interface {
 //
 //go:generate mockery --name=NotificationsService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type NotificationsService interface {
-	GenerateFormationAssignmentNotifications(ctx context.Context, tenant, objectID string, formation *model.Formation, operation model.FormationOperation, objectType graphql.FormationObjectType) ([]*webhookclient.FormationAssignmentNotificationRequestTargetMapping, error)
 	GenerateFormationNotifications(ctx context.Context, formationTemplateWebhooks []*model.Webhook, tenantID string, formation *model.Formation, formationTemplateName, formationTemplateID string, formationOperation model.FormationOperation) ([]*webhookclient.FormationNotificationRequest, error)
 	SendNotification(ctx context.Context, webhookNotificationReq webhookclient.WebhookExtRequest) (*webhookdir.Response, error)
 	PrepareDetailsForNotificationStatusReturned(ctx context.Context, formation *model.Formation, operation model.FormationOperation) (*formationconstraint.NotificationStatusReturnedOperationDetails, error)
@@ -148,7 +141,6 @@ type automaticFormationAssignmentRepository interface {
 type tenantService interface {
 	GetInternalTenant(ctx context.Context, externalTenant string) (string, error)
 	GetTenantByExternalID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
-	GetTenantByID(ctx context.Context, id string) (*model.BusinessTenantMapping, error)
 }
 
 //go:generate mockery --exported --name=constraintEngine --output=automock --outpkg=automock --case=underscore --disable-version-string
@@ -160,7 +152,6 @@ type constraintEngine interface {
 type asaEngine interface {
 	EnsureScenarioAssigned(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
 	UnassignFormationComingFromASA(ctx context.Context, in *model.AutomaticScenarioAssignment, processScenarioFunc ProcessScenarioFunc) error
-	GetMatchingFuncByFormationObjectType(objType graphql.FormationObjectType) (MatchingFunc, error)
 	GetScenariosFromMatchingASAs(ctx context.Context, objectID string, objType graphql.FormationObjectType) ([]string, error)
 	IsFormationComingFromASA(ctx context.Context, objectID, formation string, objectType graphql.FormationObjectType) (bool, error)
 }
@@ -168,11 +159,19 @@ type asaEngine interface {
 //go:generate mockery --exported --name=assignmentOperationService --output=automock --outpkg=automock --case=underscore --disable-version-string
 type assignmentOperationService interface {
 	Create(ctx context.Context, in *model.AssignmentOperationInput) (string, error)
-	Finish(ctx context.Context, assignmentID, formationID string) error
 	GetLatestOperation(ctx context.Context, assignmentID, formationID string) (*model.AssignmentOperation, error)
 	Update(ctx context.Context, assignmentID, formationID string, newTrigger model.OperationTrigger) error
-	ListByFormationAssignmentIDs(ctx context.Context, formationAssignmentIDs []string, pageSize int, cursor string) ([]*model.AssignmentOperationPage, error)
 	DeleteByIDs(ctx context.Context, ids []string) error
+}
+
+//go:generate mockery --exported --name=applicationRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type applicationRepository interface {
+	GetByID(ctx context.Context, tenant, id string) (*model.Application, error)
+}
+
+//go:generate mockery --exported --name=webhookRepository --output=automock --outpkg=automock --case=underscore --disable-version-string
+type webhookRepository interface {
+	ListByReferenceObjectIDGlobal(ctx context.Context, objID string, objType model.WebhookReferenceObjectType) ([]*model.Webhook, error)
 }
 
 type listFormationsFn func(ctx context.Context, formationIDs []string) ([]*model.Formation, error)
@@ -680,14 +679,14 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 			return ft.formation, nil
 		}
 
-		requests, terr := s.notificationsService.GenerateFormationAssignmentNotifications(ctx, tnt, objectID, formationFromDB, model.AssignFormation, objectType)
+		assignmentMappingPairs, terr := s.generateAssignmentMappingPairs(ctx, assignments, model.AssignFormation)
 		err = terr
 		if err != nil {
 			return nil, errors.Wrapf(err, "while generating notifications for %s assignment", objectType)
 		}
 
 		if err = s.executeInTransaction(ctx, func(ctxWithTransact context.Context) error {
-			if err = s.formationAssignmentService.ProcessFormationAssignments(ctxWithTransact, assignments, requests, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
+			if err = s.formationAssignmentService.ProcessFormationAssignments(ctxWithTransact, assignmentMappingPairs, s.formationAssignmentService.ProcessFormationAssignmentPair, model.AssignFormation); err != nil {
 				log.C(ctxWithTransact).Errorf("Error occurred while processing formationAssignments %s", err.Error())
 				return err
 			}
@@ -716,6 +715,52 @@ func (s *service) AssignFormation(ctx context.Context, tnt, objectID string, obj
 	}
 
 	return formationFromDB, nil
+}
+
+func (s *service) generateAssignmentMappingPairs(ctx context.Context, assignments []*model.FormationAssignment, formationOperation model.FormationOperation) ([]*notifications.AssignmentMappingPair, error) {
+	notificationsMapping := make(map[string]map[string]*webhookclient.FormationAssignmentNotificationRequest)
+	sourceToTargetAssignments := make(map[string]map[string]*model.FormationAssignment)
+	for i, assignment := range assignments {
+		// Preparing entries for both source and target notifications in case of reverse assignment has already been deleted, otherwise we need to check if key exists every time we try to get an entry
+		if _, ok := notificationsMapping[assignment.Source]; !ok {
+			notificationsMapping[assignment.Source] = make(map[string]*webhookclient.FormationAssignmentNotificationRequest)
+		}
+		if _, ok := notificationsMapping[assignment.Target]; !ok {
+			notificationsMapping[assignment.Target] = make(map[string]*webhookclient.FormationAssignmentNotificationRequest)
+		}
+
+		// Preparing entries for both source and target assignments in case of reverse assignment has already been deleted, otherwise we need to check if key exists every time we try to get an entry
+		if _, ok := sourceToTargetAssignments[assignment.Source]; !ok {
+			sourceToTargetAssignments[assignment.Source] = make(map[string]*model.FormationAssignment)
+		}
+		if _, ok := sourceToTargetAssignments[assignment.Target]; !ok {
+			sourceToTargetAssignments[assignment.Target] = make(map[string]*model.FormationAssignment)
+		}
+
+		assignmentNotification, err := s.formationAssignmentNotificationService.GenerateFormationAssignmentNotification(ctx, assignment, formationOperation)
+		if err != nil {
+			return nil, errors.Wrapf(err, "while generating formation assignment notification for assignment with ID %q", assignment.ID)
+		}
+		notificationsMapping[assignment.Source][assignment.Target] = assignmentNotification
+
+		sourceToTargetAssignments[assignment.Source][assignment.Target] = assignments[i]
+	}
+
+	assignmentMappingPairs := make([]*notifications.AssignmentMappingPair, 0, len(assignments))
+	for i, assignment := range assignments {
+		assignmentMappingPairs = append(assignmentMappingPairs, &notifications.AssignmentMappingPair{
+			AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
+				Request:             notificationsMapping[assignment.Source][assignment.Target],
+				FormationAssignment: assignments[i],
+			},
+			ReverseAssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
+				Request:             notificationsMapping[assignment.Target][assignment.Source],
+				FormationAssignment: sourceToTargetAssignments[assignment.Target][assignment.Source],
+			},
+		})
+	}
+
+	return assignmentMappingPairs, nil
 }
 
 func (s *service) prepareDetailsForAssign(ctx context.Context, tnt, objectID string, objectType graphql.FormationObjectType, formation *model.Formation, formationTemplate *model.FormationTemplate) (*formationconstraint.AssignFormationOperationDetails, error) {
@@ -1108,24 +1153,13 @@ func (s *service) UnassignFormation(ctx context.Context, tnt, objectID string, o
 	transactionCtx := persistence.SaveToContext(ctx, tx)
 	defer s.transact.RollbackUnlessCommitted(transactionCtx, tx)
 
-	requests, nerr := s.notificationsService.GenerateFormationAssignmentNotifications(transactionCtx, tnt, objectID, formationFromDB, model.UnassignFormation, objectType)
+	assignmentMappingPairs, nerr := s.generateAssignmentMappingPairs(ctx, initialAssignmentsData, model.UnassignFormation)
 	err = nerr
 	if err != nil {
-		if apperrors.IsNotFoundError(err) {
-			if commitErr := tx.Commit(); commitErr != nil {
-				err = errors.Wrapf(
-					errors.Wrapf(commitErr, "while committing transaction"),
-					errors.Wrapf(nerr, "while generating formation assignment notifications").Error(),
-				)
-				return nil, err
-			}
-
-			return formationFromDB, nil
-		}
 		return nil, errors.Wrapf(err, "while generating notifications for %s unassignment", objectType)
 	}
 
-	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, initialAssignmentsData, requests, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
+	if nerr = s.formationAssignmentService.ProcessFormationAssignments(transactionCtx, assignmentMappingPairs, s.formationAssignmentService.CleanupFormationAssignment, model.UnassignFormation); nerr != nil {
 		err = nerr
 		if commitErr := tx.Commit(); commitErr != nil {
 			err = errors.Wrapf(
@@ -1298,9 +1332,9 @@ func (s *service) resynchronizeFormation(ctx context.Context, formation *model.F
 func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Context, tenantID string, formation *model.Formation, shouldReset bool) (*model.Formation, error) {
 	resyncableFormationAssignments := make([]*model.FormationAssignment, 0)
 	failedDeleteErrorFormationAssignments := make([]*model.FormationAssignment, 0)
-	assignmentMappingNoNotificationPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
-	assignmentMappingSyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
-	assignmentMappingAsyncPairs := make([]*formationassignment.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingNoNotificationPairs := make([]*notifications.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingSyncPairs := make([]*notifications.AssignmentMappingPairWithOperation, 0)
+	assignmentMappingAsyncPairs := make([]*notifications.AssignmentMappingPairWithOperation, 0)
 
 	assignmentOperationTriggeredBy := model.ResyncAssignment
 	formationID := formation.ID
@@ -1375,9 +1409,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				}
 			}
 
-			var reverseReqMapping *formationassignment.FormationAssignmentRequestMapping
+			var reverseReqMapping *notifications.FormationAssignmentRequestMapping
 			if reverseFA != nil || notificationForReverseFA != nil {
-				reverseReqMapping = &formationassignment.FormationAssignmentRequestMapping{
+				reverseReqMapping = &notifications.FormationAssignmentRequestMapping{
 					Request:             notificationForReverseFA,
 					FormationAssignment: reverseFA,
 				}
@@ -1406,9 +1440,9 @@ func (s *service) resynchronizeFormationAssignmentNotifications(ctx context.Cont
 				}
 			}
 
-			assignmentPair := formationassignment.AssignmentMappingPairWithOperation{
-				AssignmentMappingPair: &formationassignment.AssignmentMappingPair{
-					AssignmentReqMapping: &formationassignment.FormationAssignmentRequestMapping{
+			assignmentPair := notifications.AssignmentMappingPairWithOperation{
+				AssignmentMappingPair: &notifications.AssignmentMappingPair{
+					AssignmentReqMapping: &notifications.FormationAssignmentRequestMapping{
 						Request:             notificationForFA,
 						FormationAssignment: fa,
 					},

@@ -19,6 +19,10 @@ type CertSubjectInputBuilder struct {
 func (_m *CertSubjectInputBuilder) GetTrustDetailsForObject(ctx context.Context, objectID string) (*webhook.TrustDetails, error) {
 	ret := _m.Called(ctx, objectID)
 
+	if len(ret) == 0 {
+		panic("no return value specified for GetTrustDetailsForObject")
+	}
+
 	var r0 *webhook.TrustDetails
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*webhook.TrustDetails, error)); ok {
@@ -34,32 +38,6 @@ func (_m *CertSubjectInputBuilder) GetTrustDetailsForObject(ctx context.Context,
 
 	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
 		r1 = rf(ctx, objectID)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// GetTrustDetailsForObjects provides a mock function with given fields: ctx, objectIDs
-func (_m *CertSubjectInputBuilder) GetTrustDetailsForObjects(ctx context.Context, objectIDs []string) (map[string]*webhook.TrustDetails, error) {
-	ret := _m.Called(ctx, objectIDs)
-
-	var r0 map[string]*webhook.TrustDetails
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, []string) (map[string]*webhook.TrustDetails, error)); ok {
-		return rf(ctx, objectIDs)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context, []string) map[string]*webhook.TrustDetails); ok {
-		r0 = rf(ctx, objectIDs)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(map[string]*webhook.TrustDetails)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context, []string) error); ok {
-		r1 = rf(ctx, objectIDs)
 	} else {
 		r1 = ret.Error(1)
 	}

@@ -18,6 +18,10 @@ type FormationTemplateRepo struct {
 func (_m *FormationTemplateRepo) Get(ctx context.Context, id string) (*model.FormationTemplate, error) {
 	ret := _m.Called(ctx, id)
 
+	if len(ret) == 0 {
+		panic("no return value specified for Get")
+	}
+
 	var r0 *model.FormationTemplate
 	var r1 error
 	if rf, ok := ret.Get(0).(func(context.Context, string) (*model.FormationTemplate, error)); ok {

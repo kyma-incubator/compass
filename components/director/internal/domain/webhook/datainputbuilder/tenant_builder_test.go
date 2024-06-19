@@ -43,8 +43,7 @@ func TestWebhookTenantBuilder_GetTenantForObject(t *testing.T) {
 			expectedTenantWithLabels: testAppTenantWithLabels,
 		},
 		{
-			name:         "error when getting lowest tenant owner fails",
-			labelBuilder: unusedLabelBuilder,
+			name: "error when getting lowest tenant owner fails",
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("GetLowestOwnerForResource", emptyCtx, resource.Application, ApplicationID).Return("", testErr).Once()
@@ -55,8 +54,7 @@ func TestWebhookTenantBuilder_GetTenantForObject(t *testing.T) {
 			expectedErrMsg: fmt.Sprintf("while getting tenant lowest owner for object with id %q", ApplicationID),
 		},
 		{
-			name:         "error when getting tenant by id fails",
-			labelBuilder: unusedLabelBuilder,
+			name: "error when getting tenant by id fails",
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("GetLowestOwnerForResource", emptyCtx, resource.Application, ApplicationID).Return(ApplicationTenantID, nil).Once()
@@ -89,8 +87,14 @@ func TestWebhookTenantBuilder_GetTenantForObject(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			labelBuilder := tCase.labelBuilder()
-			tenantRepo := tCase.tenantRepo()
+			labelBuilder := &automock.LabelInputBuilder{}
+			if tCase.labelBuilder != nil {
+				labelBuilder = tCase.labelBuilder()
+			}
+			tenantRepo := &automock.TenantRepository{}
+			if tCase.tenantRepo != nil {
+				tenantRepo = tCase.tenantRepo()
+			}
 			defer mock.AssertExpectationsForObjects(t, labelBuilder, tenantRepo)
 
 			webhookDataInputBuilder := databuilder.NewWebhookTenantBuilder(labelBuilder, tenantRepo)
@@ -145,8 +149,7 @@ func TestWebhookTenantBuilder_GetTenantsForObjects(t *testing.T) {
 			},
 		},
 		{
-			name:         "error when getting lowest tenant resource owner for object fails",
-			labelBuilder: unusedLabelBuilder,
+			name: "error when getting lowest tenant resource owner for object fails",
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("GetLowestOwnerForResource", emptyCtx, resource.Application, ApplicationID).Return("", testErr).Once()
@@ -157,8 +160,7 @@ func TestWebhookTenantBuilder_GetTenantsForObjects(t *testing.T) {
 			expectedErrMsg: fmt.Sprintf("while getting tenant for object with ID %q", ApplicationID),
 		},
 		{
-			name:         "error when getting tenant by id fails",
-			labelBuilder: unusedLabelBuilder,
+			name: "error when getting tenant by id fails",
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("GetLowestOwnerForResource", emptyCtx, resource.Application, ApplicationID).Return(ApplicationTenantID, nil).Once()
@@ -191,8 +193,14 @@ func TestWebhookTenantBuilder_GetTenantsForObjects(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			labelBuilder := tCase.labelBuilder()
-			tenantRepo := tCase.tenantRepo()
+			labelBuilder := &automock.LabelInputBuilder{}
+			if tCase.labelBuilder != nil {
+				labelBuilder = tCase.labelBuilder()
+			}
+			tenantRepo := &automock.TenantRepository{}
+			if tCase.tenantRepo != nil {
+				tenantRepo = tCase.tenantRepo()
+			}
 			defer mock.AssertExpectationsForObjects(t, labelBuilder, tenantRepo)
 
 			webhookDataInputBuilder := databuilder.NewWebhookTenantBuilder(labelBuilder, tenantRepo)
@@ -238,8 +246,7 @@ func TestWebhookTenantBuilder_GetTenantForApplicationTemplate(t *testing.T) {
 			expectedTenantWithLabels: testAppTemplateTenantWithLabels,
 		},
 		{
-			name:         "error when getting tenant fails",
-			labelBuilder: unusedLabelBuilder,
+			name: "error when getting tenant fails",
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("GetByExternalTenant", emptyCtx, ApplicationTemplateTenantID).Return(nil, testErr).Once()
@@ -265,8 +272,6 @@ func TestWebhookTenantBuilder_GetTenantForApplicationTemplate(t *testing.T) {
 		},
 		{
 			name:                     "success when application templates has no owner",
-			labelBuilder:             unusedLabelBuilder,
-			tenantRepo:               unusedTenantRepo,
 			objectLabels:             fixLabelsMapForApplicationTemplateWithLabels(),
 			expectedTenantWithLabels: nil,
 		},
@@ -275,8 +280,14 @@ func TestWebhookTenantBuilder_GetTenantForApplicationTemplate(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			labelBuilder := tCase.labelBuilder()
-			tenantRepo := tCase.tenantRepo()
+			labelBuilder := &automock.LabelInputBuilder{}
+			if tCase.labelBuilder != nil {
+				labelBuilder = tCase.labelBuilder()
+			}
+			tenantRepo := &automock.TenantRepository{}
+			if tCase.tenantRepo != nil {
+				tenantRepo = tCase.tenantRepo()
+			}
 			defer mock.AssertExpectationsForObjects(t, labelBuilder, tenantRepo)
 
 			webhookDataInputBuilder := databuilder.NewWebhookTenantBuilder(labelBuilder, tenantRepo)
@@ -354,8 +365,7 @@ func TestWebhookTenantBuilder_GetTenantsForApplicationTemplates(t *testing.T) {
 			},
 		},
 		{
-			name:         "error when getting tenant fails",
-			labelBuilder: unusedLabelBuilder,
+			name: "error when getting tenant fails",
 			tenantRepo: func() *automock.TenantRepository {
 				repo := &automock.TenantRepository{}
 				repo.On("GetByExternalTenant", emptyCtx, ApplicationTemplateTenantID).Return(nil, testErr).Once()
@@ -390,8 +400,14 @@ func TestWebhookTenantBuilder_GetTenantsForApplicationTemplates(t *testing.T) {
 	for _, tCase := range testCases {
 		t.Run(tCase.name, func(t *testing.T) {
 			// GIVEN
-			labelBuilder := tCase.labelBuilder()
-			tenantRepo := tCase.tenantRepo()
+			labelBuilder := &automock.LabelInputBuilder{}
+			if tCase.labelBuilder != nil {
+				labelBuilder = tCase.labelBuilder()
+			}
+			tenantRepo := &automock.TenantRepository{}
+			if tCase.tenantRepo != nil {
+				tenantRepo = tCase.tenantRepo()
+			}
 			defer mock.AssertExpectationsForObjects(t, labelBuilder, tenantRepo)
 
 			webhookDataInputBuilder := databuilder.NewWebhookTenantBuilder(labelBuilder, tenantRepo)

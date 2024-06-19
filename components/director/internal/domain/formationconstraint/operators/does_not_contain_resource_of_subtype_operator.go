@@ -32,7 +32,11 @@ func (e *ConstraintEngine) DoesNotContainResourceOfSubtype(ctx context.Context, 
 
 	switch i.ResourceType {
 	case model.ApplicationResourceType:
-		applications, err := e.applicationRepository.ListByScenariosNoPaging(ctx, i.Tenant, []string{i.FormationName})
+		applicationIDs, err := e.formationRepo.ListObjectIDsOfTypeForFormations(ctx, i.Tenant, []string{i.FormationName}, model.FormationAssignmentTypeApplication)
+		if err != nil {
+			return false, err
+		}
+		applications, err := e.applicationRepository.ListAllByIDs(ctx, i.Tenant, applicationIDs)
 		if err != nil {
 			return false, errors.Wrapf(err, "while listing applications in scenario %q", i.FormationName)
 		}
