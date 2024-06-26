@@ -22,8 +22,8 @@ import (
 const (
 	tableName                             string = `public.formations`
 	nameColumn                            string = `name`
-	listObjectIDsOfTypeForFormation       string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.source_type = ?;"
-	listObjectIDsOfTypeForFormationGlobal string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.source_type = ?;"
+	listObjectIDsOfTypeForFormation       string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.source_type = ? UNION SELECT DISTINCT fa.target FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND f.tenant_id = ? AND fa.target_type = ?;"
+	listObjectIDsOfTypeForFormationGlobal string = "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.source_type = ? UNION SELECT DISTINCT fa.target FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.%s AND fa.target_type = ?;"
 )
 
 var (
@@ -204,10 +204,12 @@ func (r *repository) ListObjectIDsOfTypeForFormations(ctx context.Context, tenan
 	}
 
 	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
-	args, _ := inCond.GetQueryArgs()
+	inCondArgs, _ := inCond.GetQueryArgs()
 
+	args := append(inCondArgs, tenantID, objectType)
+	args = append(args, inCondArgs...)
 	args = append(args, tenantID, objectType)
-	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormation, inCond.GetQueryPart())
+	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormation, inCond.GetQueryPart(), inCond.GetQueryPart())
 	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
 
 	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
@@ -233,10 +235,12 @@ func (r *repository) ListObjectIDsOfTypeForFormationsGlobal(ctx context.Context,
 
 	var objectIDs []string
 	inCond := repo.NewInConditionForStringValues(nameColumn, formationNames)
-	args, _ := inCond.GetQueryArgs()
+	inCondArgs, _ := inCond.GetQueryArgs()
 
+	args := append(inCondArgs, objectType)
+	args = append(args, inCondArgs...)
 	args = append(args, objectType)
-	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormationGlobal, inCond.GetQueryPart())
+	listObjectIDsOfTypeForFormationStatement := fmt.Sprintf(listObjectIDsOfTypeForFormationGlobal, inCond.GetQueryPart(), inCond.GetQueryPart())
 	listObjectIDsOfTypeForFormationStatement = sqlx.Rebind(sqlx.DOLLAR, listObjectIDsOfTypeForFormationStatement)
 
 	log.C(ctx).Debugf("Executing DB query: %s", listObjectIDsOfTypeForFormationStatement)
