@@ -288,13 +288,13 @@ func TestRepository_ListByIDs(t *testing.T) {
 func TestRepository_ListObjectIDsOfTypeForFormations(t *testing.T) {
 	tnt := "tnt"
 	formationName := "formation_name"
-	dbQuery := "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($1) AND f.tenant_id = $2 AND fa.source_type = $3;"
+	dbQuery := "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($1) AND f.tenant_id = $2 AND fa.source_type = $3 UNION SELECT DISTINCT fa.target FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($4) AND f.tenant_id = $5 AND fa.target_type = $6"
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := sqlmock.NewRows([]string{"source"}).AddRow(ApplicationID)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
-			WithArgs(formationName, tnt, model.FormationAssignmentTypeApplication).
+			WithArgs(formationName, tnt, model.FormationAssignmentTypeApplication, formationName, tnt, model.FormationAssignmentTypeApplication).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -313,7 +313,7 @@ func TestRepository_ListObjectIDsOfTypeForFormations(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
-			WithArgs(formationName, tnt, model.FormationAssignmentTypeApplication).
+			WithArgs(formationName, tnt, model.FormationAssignmentTypeApplication, formationName, tnt, model.FormationAssignmentTypeApplication).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -341,13 +341,13 @@ func TestRepository_ListObjectIDsOfTypeForFormations(t *testing.T) {
 
 func TestRepository_ListObjectIDsOfTypeForFormationsGlobal(t *testing.T) {
 	formationName := "formation_name"
-	dbQuery := "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($1) AND fa.source_type = $2;"
+	dbQuery := "SELECT DISTINCT fa.source FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($1) AND fa.source_type = $2 UNION SELECT DISTINCT fa.target FROM formations f JOIN formation_assignments fa ON f.id = fa.formation_id WHERE f.name IN ($3) AND fa.target_type = $4;"
 	t.Run("Success", func(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		rowsToReturn := sqlmock.NewRows([]string{"source"}).AddRow(ApplicationID)
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
-			WithArgs(formationName, model.FormationAssignmentTypeApplication).
+			WithArgs(formationName, model.FormationAssignmentTypeApplication, formationName, model.FormationAssignmentTypeApplication).
 			WillReturnRows(rowsToReturn)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
@@ -366,7 +366,7 @@ func TestRepository_ListObjectIDsOfTypeForFormationsGlobal(t *testing.T) {
 		db, dbMock := testdb.MockDatabase(t)
 
 		dbMock.ExpectQuery(regexp.QuoteMeta(dbQuery)).
-			WithArgs(formationName, model.FormationAssignmentTypeApplication).
+			WithArgs(formationName, model.FormationAssignmentTypeApplication, formationName, model.FormationAssignmentTypeApplication).
 			WillReturnError(testErr)
 
 		ctx := persistence.SaveToContext(context.TODO(), db)
