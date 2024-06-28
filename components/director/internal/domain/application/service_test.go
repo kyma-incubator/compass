@@ -62,11 +62,6 @@ func TestService_Create(t *testing.T) {
 		"applicationType":      "test-app-with-ppms",
 		"ppmsProductVersionId": "1",
 	}
-	normalizedLabels := map[string]interface{}{
-		"integrationSystemID": intSysID,
-		"label":               "value",
-		"name":                "mp-foo-bar-not",
-	}
 	labelsWithoutIntSys := map[string]interface{}{
 		"name": "mp-test",
 	}
@@ -78,7 +73,6 @@ func TestService_Create(t *testing.T) {
 	externalTnt := "external-tnt"
 
 	appModel := modelFromInput(modelInput, tnt, id, applicationMatcher(modelInput.Name, modelInput.Description))
-	normalizedAppModel := modelFromInput(normalizedModelInput, tnt, id, applicationMatcher(normalizedModelInput.Name, normalizedModelInput.Description))
 
 	appWithScenariosLabel := applicationRegisterInput()
 	appWithScenariosLabel.Labels[model.ScenariosKey] = []string{testScenario}
@@ -99,11 +93,10 @@ func TestService_Create(t *testing.T) {
 		ExpectedErr       error
 	}{
 		{
-			Name:              "Returns success when listing existing applications returns empty applications",
+			Name:              "Returns success for normalized name",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -134,119 +127,12 @@ func TestService_Create(t *testing.T) {
 			},
 			Input:       applicationRegisterInput(),
 			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns success when listing existing applications returns application with different name",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       applicationRegisterInput(),
-			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns error when listing existing applications returns application with same name",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name}}, nil).Once()
-				return repo
-			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
-			BundleServiceFn: UnusedBundleService,
-			UIDServiceFn:    UnusedUIDService,
-			Input:           applicationRegisterInput(),
-			ExpectedErr:     apperrors.NewNotUniqueNameError(resource.Application),
-		},
-		{
-			Name:              "Returns success when listing existing applications returns application with different name and incoming name is already normalized",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, normalizedLabels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, resource.Application, id, normalizedModelInput.Bundles).Return(nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       normalizedModelInput,
-			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns error when listing existing applications returns application with same name and incoming name is already normalized",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name}}, nil).Once()
-				return repo
-			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
-			BundleServiceFn: UnusedBundleService,
-			UIDServiceFn:    UnusedUIDService,
-			Input:           normalizedModelInput,
-			ExpectedErr:     apperrors.NewNotUniqueNameError(resource.Application),
 		},
 		{
 			Name:              "Success when no labels provided",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -275,7 +161,6 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -307,7 +192,6 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
@@ -328,30 +212,10 @@ func TestService_Create(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:              "Returns error when listing existing applications fails",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, testErr).Once()
-				return repo
-			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
-			BundleServiceFn: UnusedBundleService,
-			UIDServiceFn:    UnusedUIDService,
-			Input:           applicationRegisterInput(),
-			ExpectedErr:     testErr,
-		},
-		{
 			Name:              "Returns error when integration system doesn't exist",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				return repo
-			},
-			WebhookRepoFn: UnusedWebhookRepository,
+			AppRepoFn:         UnusedApplicationRepository,
+			WebhookRepoFn:     UnusedWebhookRepository,
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
@@ -366,12 +230,8 @@ func TestService_Create(t *testing.T) {
 		{
 			Name:              "Returns error when checking for integration system fails",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				return repo
-			},
-			WebhookRepoFn: UnusedWebhookRepository,
+			AppRepoFn:         UnusedApplicationRepository,
+			WebhookRepoFn:     UnusedWebhookRepository,
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
@@ -388,7 +248,6 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -425,7 +284,6 @@ func TestService_Create(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -510,23 +368,17 @@ func TestService_CreateFromTemplate(t *testing.T) {
 		"applicationType":      "test-app-with-ppms",
 		"ppmsProductVersionId": "1",
 	}
-	normalizedLabels := map[string]interface{}{
-		"integrationSystemID": intSysID,
-		"label":               "value",
-		"name":                "mp-foo-bar-not",
-	}
 	labelsWithoutIntSys := map[string]interface{}{
 		"name": "mp-test",
 	}
 	var nilLabels map[string]interface{}
 
 	id := "foo"
-	appTemplteID := "test-app-template"
+	appTemplateID := "test-app-template"
 	tnt := "tenant"
 	externalTnt := "external-tnt"
 
-	appFromTemplateModel := modelFromInput(modelInput, tnt, id, applicationFromTemplateMatcher(modelInput.Name, modelInput.Description, &appTemplteID))
-	normalizedAppModel := modelFromInput(normalizedModelInput, tnt, id, applicationFromTemplateMatcher(normalizedModelInput.Name, normalizedModelInput.Description, &appTemplteID))
+	appFromTemplateModel := modelFromInput(modelInput, tnt, id, applicationFromTemplateMatcher(modelInput.Name, modelInput.Description, &appTemplateID))
 
 	ctx := context.TODO()
 	ctx = tenant.SaveToContext(ctx, tnt, externalTnt)
@@ -548,7 +400,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -579,156 +430,12 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			},
 			Input:       applicationRegisterInput(),
 			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns success when listing existing applications returns empty applications",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{}, nil).Once()
-				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       applicationRegisterInput(),
-			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns success when listing existing applications returns application with different name",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, labels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, resource.Application, id, modelInput.Bundles).Return(nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       applicationRegisterInput(),
-			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns error when listing existing applications returns application with same name",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: modelInput.Name}}, nil).Once()
-				return repo
-			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
-			BundleServiceFn: UnusedBundleService,
-			UIDServiceFn:    UnusedUIDService,
-			Input:           applicationRegisterInput(),
-			ExpectedErr:     apperrors.NewNotUniqueNameError(resource.Application),
-		},
-		{
-			Name:              "Returns success when listing existing applications returns application with different name and incoming name is already normalized",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name + "-test"}}, nil).Once()
-				repo.On("Create", ctx, tnt, mock.MatchedBy(normalizedAppModel.ApplicationMatcherFn)).Return(nil).Once()
-				return repo
-			},
-			WebhookRepoFn: func() *automock.WebhookRepository {
-				repo := &automock.WebhookRepository{}
-				repo.On("CreateMany", ctx, tnt, mock.Anything).Return(nil).Once()
-				return repo
-			},
-			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
-				repo := &automock.IntegrationSystemRepository{}
-				repo.On("Exists", ctx, intSysID).Return(true, nil).Once()
-				return repo
-			},
-			LabelServiceFn: func() *automock.LabelService {
-				svc := &automock.LabelService{}
-				svc.On("UpsertMultipleLabels", ctx, tnt, model.ApplicationLabelableObject, id, normalizedLabels).Return(nil).Once()
-				return svc
-			},
-			BundleServiceFn: func() *automock.BundleService {
-				svc := &automock.BundleService{}
-				svc.On("CreateMultiple", ctx, resource.Application, id, normalizedModelInput.Bundles).Return(nil).Once()
-				return svc
-			},
-			UIDServiceFn: func() *automock.UIDService {
-				svc := &automock.UIDService{}
-				svc.On("Generate").Return(id)
-				return svc
-			},
-			Input:       normalizedModelInput,
-			ExpectedErr: nil,
-		},
-		{
-			Name:              "Returns error when listing existing applications returns application with same name and incoming name is already normalized",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return([]*model.Application{{Name: normalizedModelInput.Name}}, nil).Once()
-				return repo
-			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
-			BundleServiceFn: UnusedBundleService,
-			UIDServiceFn:    UnusedUIDService,
-			Input:           normalizedModelInput,
-			ExpectedErr:     apperrors.NewNotUniqueNameError(resource.Application),
 		},
 		{
 			Name:              "Success when no labels provided",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(applicationMatcher("test", nil))).Return(nil).Once()
 				return repo
 			},
@@ -757,7 +464,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(testErr).Once()
 				return repo
 			},
@@ -778,30 +484,10 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			ExpectedErr: testErr,
 		},
 		{
-			Name:              "Returns error when listing existing applications fails",
-			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, testErr).Once()
-				return repo
-			},
-			WebhookRepoFn:   UnusedWebhookRepository,
-			IntSysRepoFn:    UnusedIntegrationSystemRepository,
-			LabelServiceFn:  UnusedLabelService,
-			BundleServiceFn: UnusedBundleService,
-			UIDServiceFn:    UnusedUIDService,
-			Input:           applicationRegisterInput(),
-			ExpectedErr:     testErr,
-		},
-		{
 			Name:              "Returns error when integration system doesn't exist",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				return repo
-			},
-			WebhookRepoFn: UnusedWebhookRepository,
+			AppRepoFn:         UnusedApplicationRepository,
+			WebhookRepoFn:     UnusedWebhookRepository,
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, nil).Once()
@@ -816,12 +502,8 @@ func TestService_CreateFromTemplate(t *testing.T) {
 		{
 			Name:              "Returns error when checking for integration system fails",
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
-			AppRepoFn: func() *automock.ApplicationRepository {
-				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
-				return repo
-			},
-			WebhookRepoFn: UnusedWebhookRepository,
+			AppRepoFn:         UnusedApplicationRepository,
+			WebhookRepoFn:     UnusedWebhookRepository,
 			IntSysRepoFn: func() *automock.IntegrationSystemRepository {
 				repo := &automock.IntegrationSystemRepository{}
 				repo.On("Exists", ctx, intSysID).Return(false, testErr).Once()
@@ -838,7 +520,6 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			AppNameNormalizer: &normalizer.DefaultNormalizator{},
 			AppRepoFn: func() *automock.ApplicationRepository {
 				repo := &automock.ApplicationRepository{}
-				repo.On("ListAll", ctx, mock.Anything).Return(nil, nil).Once()
 				repo.On("Create", ctx, tnt, mock.MatchedBy(appFromTemplateModel.ApplicationMatcherFn)).Return(nil).Once()
 				return repo
 			},
@@ -885,7 +566,7 @@ func TestService_CreateFromTemplate(t *testing.T) {
 			svc.SetTimestampGen(func() time.Time { return timestamp })
 
 			// WHEN
-			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplteID, false)
+			result, err := svc.CreateFromTemplate(ctx, testCase.Input, &appTemplateID, false)
 
 			// then
 			assert.IsType(t, "string", result)
