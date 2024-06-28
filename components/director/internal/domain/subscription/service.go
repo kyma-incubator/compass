@@ -370,7 +370,7 @@ func (s *service) SubscribeTenantToApplication(ctx context.Context, providerID, 
 		}
 	}
 
-	appID, systemFieldDiscoveryValue, err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomainValue, region, subscriptionID, subscriptionPayload)
+	appID, systemFieldDiscoveryValue, err := s.createApplicationFromTemplate(ctx, appTemplate, subscribedSubaccountID, consumerTenantID, subdomainValue, region, subscriptionID, subscriptionPayload)
 	if err != nil {
 		return false, systemFieldDiscoveryValue, "", "", err
 	}
@@ -445,7 +445,7 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 	return "", errors.Errorf("could not determine flow")
 }
 
-func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region, subscriptionID string, subscriptionPayload string) (string, bool, error) {
+func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subdomain, region, subscriptionID string, subscriptionPayload string) (string, bool, error) {
 	log.C(ctx).Debugf("Preparing Values for Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	values, err := s.preparePlaceholderValues(appTemplate, subdomain, region, subscriptionPayload)
 	if err != nil {
