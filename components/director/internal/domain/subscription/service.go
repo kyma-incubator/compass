@@ -446,27 +446,27 @@ func (s *service) DetermineSubscriptionFlow(ctx context.Context, providerID, reg
 }
 
 func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate *model.ApplicationTemplate, subscribedSubaccountID, consumerTenantID, subscribedAppName, subdomain, region, subscriptionID string, subscriptionPayload string) (string, bool, error) {
-	log.C(ctx).Debugf("Preparing Values for Application Template with name %q", appTemplate.Name)
+	log.C(ctx).Debugf("Preparing Values for Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	values, err := s.preparePlaceholderValues(appTemplate, subdomain, region, subscriptionPayload)
 	if err != nil {
-		return "", false, errors.Wrapf(err, "while preparing the values for Application template %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while preparing the values for Application template %q and ID %s", appTemplate.Name, appTemplate.ID)
 	}
 
-	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
+	log.C(ctx).Debugf("Preparing ApplicationCreateInput JSON from Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	appCreateInputJSON, err := s.appTemplateSvc.PrepareApplicationCreateInputJSON(appTemplate, values)
 	if err != nil {
-		return "", false, errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while preparing ApplicationCreateInput JSON from Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	}
 
-	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+	log.C(ctx).Debugf("Converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	appCreateInputGQL, err := s.appConv.CreateRegisterInputJSONToGQL(appCreateInputJSON)
 	if err != nil {
 		return "", false, errors.Wrapf(err, "while converting ApplicationCreateInput JSON to GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
 	}
 
-	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %q", appTemplate.Name)
+	log.C(ctx).Infof("Validating GraphQL ApplicationRegistrationInput from Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	if err := inputvalidation.Validate(appCreateInputGQL); err != nil {
-		return "", false, errors.Wrapf(err, "while validating application input from Application Template with name %q", appTemplate.Name)
+		return "", false, errors.Wrapf(err, "while validating application input from Application Template with name %q and ID %s", appTemplate.Name, appTemplate.ID)
 	}
 
 	appCreateInputModel, err := s.appConv.CreateInputFromGraphQL(ctx, appCreateInputGQL)
@@ -490,21 +490,21 @@ func (s *service) createApplicationFromTemplate(ctx context.Context, appTemplate
 		return "", false, err
 	} else {
 		if apperrors.IsNotFoundError(err) {
-			log.C(ctx).Infof("%s label for Application Template with ID %s is missing", SystemFieldDiscoveryLabelKey, appTemplate.ID)
+			log.C(ctx).Infof("%s label for Application Template with name %q and ID %s is missing", SystemFieldDiscoveryLabelKey, appTemplate.Name, appTemplate.ID)
 		} else {
 			systemFieldDiscoveryValue, ok = systemFieldDiscoveryLabel.Value.(bool)
 			if !ok {
-				log.C(ctx).Infof("%s label for Application Template with ID %s is not a boolean", SystemFieldDiscoveryLabelKey, appTemplate.ID)
+				log.C(ctx).Infof("%s label for Application Template with name %q and ID %s is not a boolean", SystemFieldDiscoveryLabelKey, appTemplate.Name, appTemplate.ID)
 			}
 		}
 	}
 
-	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q", subscribedAppName, appTemplate.Name)
+	log.C(ctx).Infof("Creating an Application with name %q from Application Template with name %q and ID %s", appCreateInputModel.Name, appTemplate.Name, appTemplate.ID)
 	appID, err := s.appSvc.CreateFromTemplate(ctx, appCreateInputModel, &appTemplate.ID, systemFieldDiscoveryValue)
 	if err != nil {
-		return "", systemFieldDiscoveryValue, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %s", subscribedAppName, appTemplate.Name)
+		return "", systemFieldDiscoveryValue, errors.Wrapf(err, "while creating an Application with name %s from Application Template with name %q and ID %s", appCreateInputModel.Name, appTemplate.Name, appTemplate.ID)
 	}
-	log.C(ctx).Infof("Successfully created an Application with id %q and name %q from Application Template with name %q", appID, subscribedAppName, appTemplate.Name)
+	log.C(ctx).Infof("Successfully created an Application with id %q and name %q from Application Template with name %q and ID %q", appID, appCreateInputModel.Name, appTemplate.Name, appTemplate.ID)
 
 	return appID, systemFieldDiscoveryValue, nil
 }
