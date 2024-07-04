@@ -1,4 +1,4 @@
-## :warning: This repository has been deprecated and will be archived soon. :warning:
+## :warning: This repository has been deprecated and archived. :warning:
 
 
 <p align="center">
